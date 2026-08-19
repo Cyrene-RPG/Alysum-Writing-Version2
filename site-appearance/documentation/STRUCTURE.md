@@ -52,7 +52,7 @@ site-appearance/
   documentation/  map — STRUCTURE, CONVENTIONS, ARCHITECTURE, DOMAIN
   tokens/
   css-styles/     theme.css, gradient-themes/, typography.css, surface-styles/
-  boot.js         and the rest of the theme runtime
+  js-runtime/     boot.js and the rest of the theme runtime
   fonts/
   components/     later — shared chrome
 ```
@@ -63,7 +63,7 @@ site-appearance/
 2. `/site-appearance/css-styles/gradient-themes/index.css`
 3. `/site-appearance/css-styles/typography.css`
 4. `/site-appearance/css-styles/surface-styles/index.css`
-5. `/site-appearance/boot.js` (no defer)
+5. `/site-appearance/js-runtime/boot.js` (no defer)
 
 Settings on main-site is the **picker**. Every other application only **applies** what was saved.
 
@@ -115,7 +115,7 @@ core/
   notifications/             later
   moderation/                later — staff / reports (not an application)
   tests/                     engine tests later
-  server/                    HTTP, jobs, SQL — browsers never load this
+  server/                    HTTP, jobs — browsers never load this
 ```
 
 Same name under `applications/` and `core/` means screen vs data (example: `applications/encyclopedia/` is the shelf UI, `core/encyclopedia/` is the blob store).
@@ -124,13 +124,14 @@ Same name under `applications/` and `core/` means screen vs data (example: `appl
 
 ## File tree at the repo root
 
-You should see **three product folders**, then `hosting/` for deploy contracts:
+You should see **three product folders**, then `hosting/` for deploy contracts and `supabase/` for SQL blueprints:
 
 ```
 applications/
 core/
 site-appearance/
 hosting/
+supabase/
 ```
 
 `api/` is not a product folder. Vercel will only run functions from a root `api/` directory; it re-exports `core/server/http-handlers/`.

@@ -5,7 +5,7 @@ import {
     applyChromeGradient,
     getStoredGradientThemeId,
     getThemePreview
-} from "@alysum/site-appearance/gradient-theme.js";
+} from "@alysum/site-appearance/js-runtime/gradient-theme.js";
 import {
     DISPLAY_TEXT_STYLES,
     DISPLAY_TEXT_STYLE_META,
@@ -13,7 +13,7 @@ import {
     applyDisplayTextStyle,
     getStoredDisplayTextStyleId,
     initDisplayTextStyleOnPage
-} from "@alysum/site-appearance/display-text-style.js";
+} from "@alysum/site-appearance/js-runtime/display-text-style.js";
 import {
     DISPLAY_TEXT_COLORS,
     applyDisplayTextColor,
@@ -22,8 +22,8 @@ import {
     initDisplayTextColorOnPage,
     getColorPreview,
     resolveDisplayColorPair
-} from "@alysum/site-appearance/display-text-color.js";
-import { paintChipInk } from "@alysum/site-appearance/text-ink.js";
+} from "@alysum/site-appearance/js-runtime/display-text-color.js";
+import { paintChipInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
 import {
     BODY_BG_PRESETS,
     applyBodyBackground,
@@ -35,30 +35,30 @@ import {
     setAppearanceMixMode,
     isAppearanceLinked,
     getMixableBodyBgPresets
-} from "@alysum/site-appearance/body-background.js";
+} from "@alysum/site-appearance/js-runtime/body-background.js";
 import {
     SURFACE_STYLES,
     applySurfaceStyle,
     getStoredSurfaceStyleId,
     initSurfaceStyleOnPage
-} from "@alysum/site-appearance/surface-style.js";
+} from "@alysum/site-appearance/js-runtime/surface-style.js";
 import {
     CORNER_STYLES,
     applyCornerStyle,
     getStoredCornerStyleId,
     initCornerStyleOnPage
-} from "@alysum/site-appearance/corner-style.js";
+} from "@alysum/site-appearance/js-runtime/corner-style.js";
 import {
     applyUiColor,
     getStoredUiColorId,
     initUiColorOnPage
-} from "@alysum/site-appearance/ui-color.js";
+} from "@alysum/site-appearance/js-runtime/ui-color.js";
 import {
     initUiColorPicker,
     setUiColorChipActive,
     refreshUiColorThemeChip
 } from "/js/settings/ui-colors.js";
-import { initAppearanceLoadouts } from "/js/settings/loadouts.js?v=2";
+import { initAppearanceLoadouts } from "/js/settings/loadouts.js?v=3";
 
 export function setAvatarPreview(imageUrl, label) {
     if (!els.profileAvatarPreview || !els.profileAvatarPreviewWrap) return;

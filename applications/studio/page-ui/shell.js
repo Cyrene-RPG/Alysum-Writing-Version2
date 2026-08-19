@@ -2,7 +2,7 @@
  * Welcome bar + logout for studio/editor. Do not import main-site modules.
  */
 import { wireLogoutButtons } from "@alysum/authentication/logout.js";
-import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/appearance-loadout-menu.js";
+import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/appearance-loadout-menu.js";
 
 function closeWelcomePfpMenu() {
     const menu = document.getElementById("welcomePfpMenu");

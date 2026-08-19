@@ -21,7 +21,7 @@ import {
 
 export const LOADOUT_KEY = "alysum-appearance-loadouts";
 export const LOADOUT_SLOT_COUNT = 5;
-export const LOADOUT_NAME_MAX = 5;
+export const LOADOUT_NAME_MAX = 6;
 
 function clipLabel(label, fallback = "Saved") {
     const next = String(label || "").trim().slice(0, LOADOUT_NAME_MAX);
@@ -64,8 +64,38 @@ function blancLoadout() {
     };
 }
 
+function alysumLoadout() {
+    return {
+        label: "Alysum",
+        gradientTheme: "classic",
+        bodyBg: "default",
+        bodyBgCustom: "",
+        appearanceMix: "free",
+        uiColor: "theme",
+        uiColorCustom: "",
+        surfaceStyle: "solid",
+        cornerStyle: "round",
+        textStyle: "classic",
+        textColor: "theme",
+        textColorMain: "",
+        textColorAccent: ""
+    };
+}
+
 function defaultSlots() {
-    return [noirLoadout(), blancLoadout(), null, null, null];
+    return [noirLoadout(), blancLoadout(), alysumLoadout(), null, null];
+}
+
+function isAlysumLabel(label) {
+    return String(label || "").trim().toLowerCase() === "alysum";
+}
+
+function ensureAlysumSlot(slots) {
+    if (slots.some((slot) => slot && isAlysumLabel(slot.label))) return slots;
+    const emptyIndex = slots.findIndex((slot) => !slot);
+    if (emptyIndex < 0) return slots;
+    slots[emptyIndex] = alysumLoadout();
+    return writeAppearanceLoadouts(slots);
 }
 
 function normalizeSlot(slot) {
@@ -122,6 +152,13 @@ export function applyAppearanceLoadout(slot) {
     applyCornerStyle(loadout.cornerStyle);
     applyDisplayTextStyle(loadout.textStyle);
     applyDisplayTextColor(loadout.textColor, loadout.textColorMain, loadout.textColorAccent);
+    try {
+        document.documentElement.dispatchEvent(
+            new CustomEvent("alysum-appearance-loadout-applied", { detail: { loadout } })
+        );
+    } catch {
+        /* ignore */
+    }
     return true;
 }
 
@@ -139,7 +176,8 @@ export function readAppearanceLoadouts() {
             writeAppearanceLoadouts(seeded);
             return seeded;
         }
-        return raw.map((slot) => normalizeSlot(slot));
+        const slots = raw.map((slot) => normalizeSlot(slot));
+        return ensureAlysumSlot(slots);
     } catch {
         const seeded = defaultSlots();
         writeAppearanceLoadouts(seeded);

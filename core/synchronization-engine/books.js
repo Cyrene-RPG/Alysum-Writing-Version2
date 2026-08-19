@@ -16,7 +16,7 @@ import {
     mergeSectionsByChapterId,
     walkBookChapters,
     withUpdatedWords,
-} from "../writing-engine/manuscript.js";
+} from "../writing-engine/manuscript.js?v=3";
 import { countWordsInChapter } from "../writing-engine/word-count.js";
 
 const CACHE_PREFIX = "alysum:editor:draft-cache-";
@@ -103,12 +103,14 @@ function mergeLoadedBook(cached, cloudBook) {
     if (!cached) return { book: cloudBook, push: false };
     if (!cloudBook) return { book: cached, push: false };
     const cacheNewer = Number(cached.updated || 0) > Number(cloudBook.updated || 0);
+    const base = cacheNewer ? cached : cloudBook;
+    const other = cacheNewer ? cloudBook : cached;
     const book = withUpdatedWords({
         ...cloudBook,
         title: pickBookTitle(cloudBook.title, cached.title, cacheNewer),
-        sections: mergeSectionsByChapterId(cloudBook.sections, cached.sections, {
-            baseUpdated: Number(cloudBook.updated) || 0,
-            otherUpdated: Number(cached.updated) || 0,
+        sections: mergeSectionsByChapterId(base.sections, other.sections, {
+            baseUpdated: Number(base.updated) || 0,
+            otherUpdated: Number(other.updated) || 0,
         }),
         updated: Math.max(Number(cloudBook.updated) || 0, Number(cached.updated) || 0),
     });

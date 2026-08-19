@@ -2,8 +2,6 @@
 :root {
     --bg: #0b1220;
     --panel: var(--alysum-ui-panel, #111827);
-    --text: #fff;
-    --muted: #9ca3af;
     --border: rgba(255, 255, 255, 0.1);
 }
 html {
@@ -289,8 +287,9 @@ body {
     list-style: none;
 }
 .writer-tree-node.is-dragging,
-.writer-tree-item.is-dragging {
-    opacity: 0.45;
+.writer-tree-item.is-dragging,
+.writer-tree-ghost {
+    opacity: 0.5;
     cursor: grabbing;
 }
 .writer-tree-children {
@@ -300,7 +299,7 @@ body {
     gap: 6px;
     margin: 4px 0 0;
     padding: 4px 0 0 14px;
-    min-height: 10px;
+    min-height: 20px;
 }
 .writer-tree-node.is-collapsed > .writer-tree-children {
     display: none;
@@ -326,6 +325,12 @@ body {
     margin: 0;
     padding: 0;
     min-height: 0;
+}
+.writer-tree-list.is-note-dragging .writer-tree-notes:empty {
+    display: flex;
+    margin: 4px 0 0;
+    padding: 4px 0 0 22px;
+    min-height: 28px;
 }
 .writer-tree-item--folder {
     background: color-mix(in srgb, var(--alysum-ui-raised, #2a2a2a) 80%, transparent);
@@ -391,12 +396,14 @@ body {
 .writer-main {
     display: flex;
     flex-direction: column;
+    min-width: 0;
     background: linear-gradient(
         180deg,
         color-mix(in srgb, var(--alysum-ui-panel, #111827) 88%, white),
         var(--alysum-ui-panel, #111827)
     );
     overflow: auto;
+    overflow-x: hidden;
     position: relative;
 }
 .writer-book-title,

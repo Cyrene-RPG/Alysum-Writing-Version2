@@ -9,7 +9,7 @@ import {
     setSupportLinksDisabled,
 } from "/js/settings/author-page.js";
 import { applySecurityPanel, resetDeleteChallenge } from "/js/settings/security.js";
-import { applyChromeGradient, getStoredGradientThemeId, getThemePreview } from "@alysum/site-appearance/gradient-theme.js";
+import { applyChromeGradient, getStoredGradientThemeId, getThemePreview } from "@alysum/site-appearance/js-runtime/gradient-theme.js";
 import { getProfileRow, LOCAL_GUEST_USER_ID } from "@alysum/synchronization-engine/local-adapter.js";
 import { normalizeAccountType } from "@alysum/account/mode.js";
 import { fillWelcomeBar } from "/js/welcome-bar.js";

@@ -2,7 +2,7 @@ import { els } from "/js/settings/elements.js";
 import { state } from "/js/settings/state.js";
 import { showMsg, mergeUserRow, aboutMeText, supportLinksFromSources } from "/js/settings/helpers.js";
 import { showSettingsTab } from "/js/settings/nav.js";
-import { setAvatarPreview } from "/js/settings/appearance.js?v=16";
+import { setAvatarPreview } from "/js/settings/appearance.js?v=17";
 import {
     updateAuthorBioCount,
     renderSupportLinkFields,

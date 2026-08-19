@@ -5,7 +5,8 @@ import {
     applyAppearanceLoadout,
     getLoadoutPreview,
     readAppearanceLoadouts
-} from "./appearance-loadout.js";
+} from "./appearance-loadout.js?v=3";
+import { scheduleChromeInk } from "./text-ink.js";
 
 function closeMenu(menu) {
     if (!menu) return;
@@ -48,13 +49,6 @@ function renderItems(panel) {
         b.addEventListener("click", () => {
             applyAppearanceLoadout(slot);
             closeMenu(panel.closest(".wd-loadout-menu"));
-            try {
-                document.documentElement.dispatchEvent(
-                    new CustomEvent("alysum-appearance-loadout-applied", { detail: { index } })
-                );
-            } catch {
-                /* ignore */
-            }
         });
         panel.appendChild(b);
     });
@@ -95,6 +89,7 @@ export function initAppearanceLoadoutMenu() {
         const existing = menu.querySelector(".wd-loadout-btn");
         if (existing) existing.textContent = "Themes";
         refreshAppearanceLoadoutMenu();
+        scheduleChromeInk();
         return;
     }
     menu.dataset.ready = "1";
@@ -117,4 +112,5 @@ export function initAppearanceLoadoutMenu() {
     window.addEventListener("storage", (e) => {
         if (e.key === "alysum-appearance-loadouts") refreshAppearanceLoadoutMenu();
     });
+    scheduleChromeInk();
 }

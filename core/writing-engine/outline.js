@@ -6,8 +6,10 @@
 import { newChapterId } from "./media-format.js";
 
 export function itemKind(item) {
-    const kind = String(item?.kind || "chapter");
-    if (kind === "folder" || kind === "note") return kind;
+    const kind = String(item?.kind || item?.type || "").trim().toLowerCase();
+    if (kind === "note") return "note";
+    if (kind === "folder") return "folder";
+    if (!kind && Array.isArray(item?.children)) return "folder";
     return "chapter";
 }
 
@@ -79,8 +81,73 @@ export function walkBookChapters(list, out = []) {
     return out;
 }
 
+function uniqueChapterIds(list) {
+    const ids = new Set();
+    for (const chapter of walkBookChapters(list)) {
+        const id = String(chapter?.id || "");
+        if (id) ids.add(id);
+    }
+    return ids;
+}
+
 export function countBookChapters(list) {
-    return walkBookChapters(list).length;
+    return uniqueChapterIds(list).size;
+}
+
+export function countBookFolders(list) {
+    let count = 0;
+    function walk(items) {
+        if (!Array.isArray(items)) return;
+        for (const item of items) {
+            if (itemKind(item) !== "folder") continue;
+            count += 1;
+            walk(item.children);
+        }
+    }
+    walk(list);
+    return count;
+}
+
+function idsInFolders(list, into = new Set()) {
+    if (!Array.isArray(list)) return into;
+    for (const item of list) {
+        if (itemKind(item) !== "folder") continue;
+        for (const child of item.children || []) {
+            const id = String(child?.id || "");
+            if (id) into.add(id);
+            if (itemKind(child) === "folder") idsInFolders([child], into);
+        }
+    }
+    return into;
+}
+
+/** Keep one copy of each id. If it appears in a folder and at root, keep the nested copy. */
+export function dedupeBookItems(list) {
+    const nested = idsInFolders(list);
+    function walk(items, insideFolder) {
+        const out = [];
+        const seen = new Set();
+        for (const item of Array.isArray(items) ? items : []) {
+            const id = String(item?.id || "");
+            const kind = itemKind(item);
+            if (kind === "folder") {
+                const children = walk(item.children, true);
+                if (id && seen.has(id)) {
+                    out.push(...children);
+                    continue;
+                }
+                if (id) seen.add(id);
+                out.push({ ...item, kind: "folder", children });
+                continue;
+            }
+            if (id && seen.has(id)) continue;
+            if (id && !insideFolder && nested.has(id)) continue;
+            if (id) seen.add(id);
+            out.push(item);
+        }
+        return out;
+    }
+    return walk(list, false);
 }
 
 function emptyChapter(title = "Chapter 1") {
@@ -101,8 +168,10 @@ export function ensureBodyChapter(list) {
 }
 
 function keepBookChapters(original, next) {
-    if (countBookChapters(next) < countBookChapters(original)) return original;
-    return ensureBodyChapter(next);
+    const cleanedNext = dedupeBookItems(next);
+    const cleanedOrig = dedupeBookItems(original);
+    if (countBookChapters(cleanedNext) < countBookChapters(cleanedOrig)) return cleanedOrig;
+    return ensureBodyChapter(cleanedNext);
 }
 
 function folderTarget(list, folderId) {
@@ -188,6 +257,26 @@ export function removeItem(list, itemId) {
     return next;
 }
 
+export function moveItem(list, itemId, folderId) {
+    const next = cloneList(list);
+    const id = String(itemId || "");
+    const destId = String(folderId || "");
+    if (!id || !destId || id === destId) return next;
+    const found = findInList(next, id);
+    const dest = findInList(next, destId);
+    if (!found || !dest || itemKind(dest.item) !== "folder") return next;
+    if (itemKind(found.item) === "folder" && findInList(found.item.children, destId)) return next;
+    dest.item.children = Array.isArray(dest.item.children) ? dest.item.children : [];
+    if (found.list === dest.item.children) {
+        const [item] = found.list.splice(found.index, 1);
+        dest.item.children.push(item);
+        return next;
+    }
+    const [item] = found.list.splice(found.index, 1);
+    dest.item.children.push(item);
+    return next;
+}
+
 function indexBookItems(list, map = new Map()) {
     if (!Array.isArray(list)) return map;
     for (const item of list) {
@@ -203,7 +292,38 @@ function listNotes(list) {
     return (Array.isArray(list) ? list : []).filter((item) => itemKind(item) === "note");
 }
 
+function keepUnusedChild(child, available, notesIndexed) {
+    const id = String(child?.id || "");
+    const kind = itemKind(child);
+    if (kind === "note") {
+        if (!notesIndexed) return true;
+        if (!id || !available.has(id)) return false;
+        available.delete(id);
+        return true;
+    }
+    if (!id || !available.has(id)) return false;
+    if (kind === "folder") {
+        child.children = (child.children || []).filter((nested) => keepUnusedChild(nested, available, notesIndexed));
+        available.delete(id);
+        return true;
+    }
+    available.delete(id);
+    return true;
+}
+
+function restoreLeftoverFolders(next, available, notesIndexed = false) {
+    for (const leftover of [...available.values()]) {
+        if (itemKind(leftover) !== "folder") continue;
+        const id = String(leftover.id || "");
+        if (!available.has(id)) continue;
+        leftover.children = (leftover.children || []).filter((child) => keepUnusedChild(child, available, notesIndexed));
+        available.delete(id);
+        next.push(leftover);
+    }
+}
+
 export function applyOutline(list, nodes) {
+    const original = cloneList(list);
     const cloned = cloneList(list);
     const byId = indexBookItems(cloned);
     function build(entries, previousList) {
@@ -220,8 +340,8 @@ export function applyOutline(list, nodes) {
         return out;
     }
     const next = build(nodes, cloned);
-    for (const leftover of byId.values()) next.push(leftover);
-    return keepBookChapters(cloned, next);
+    restoreLeftoverFolders(next, byId);
+    return keepBookChapters(original, next);
 }
 
 function indexAllItems(list, map = new Map()) {
@@ -238,6 +358,7 @@ function indexAllItems(list, map = new Map()) {
 }
 
 export function applyOutlineAndNotes(list, nodes, groups) {
+    const original = cloneList(list);
     const cloned = cloneList(list);
     const byId = indexAllItems(cloned);
     const used = new Set();
@@ -276,11 +397,19 @@ export function applyOutlineAndNotes(list, nodes, groups) {
         }
         chapter.notes = notes;
     }
+    const leftoverById = new Map();
     for (const leftover of byId.values()) {
-        if (used.has(String(leftover.id))) continue;
+        const id = String(leftover.id || "");
+        if (!id || used.has(id)) continue;
+        leftoverById.set(id, leftover);
+    }
+    restoreLeftoverFolders(next, leftoverById, true);
+    for (const [id, leftover] of leftoverById) {
+        if (used.has(id) || itemKind(leftover) !== "note") continue;
+        used.add(id);
         next.push(leftover);
     }
-    return keepBookChapters(cloned, next);
+    return keepBookChapters(original, next);
 }
 
 export function applyNoteGroups(list, groups) {

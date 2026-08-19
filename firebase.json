@@ -7,6 +7,7 @@
       "**/node_modules/**",
       "applications/archive/**",
       "core/server/**",
+      "supabase/**",
       "site-appearance/documentation/**",
       "core/tests/**"
     ],
@@ -83,6 +84,7 @@
       { "source": "/js/editor/page.js", "destination": "/applications/editor/page-ui/page.js" },
       { "source": "/js/editor/shell.js", "destination": "/applications/editor/page-ui/shell.js" },
       { "source": "/js/editor/tree.js", "destination": "/applications/editor/page-ui/tree.js" },
+      { "source": "/js/editor/sortable.js", "destination": "/applications/editor/page-ui/sortable.js" },
       { "source": "/js/editor/toolbar.js", "destination": "/applications/editor/page-ui/toolbar.js" },
       { "source": "/js/editor/document.js", "destination": "/applications/editor/page-ui/document.js" },
       { "source": "/js/editor/autosave.js", "destination": "/applications/editor/page-ui/autosave.js" },

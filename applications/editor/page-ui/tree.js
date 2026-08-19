@@ -1,3 +1,5 @@
+import Sortable from "./sortable.js?v=1";
+
 function escapeHtml(str) {
     return String(str ?? "")
         .replace(/&/g, "&amp;")
@@ -20,7 +22,7 @@ function chapterIdsFromList(mount) {
 function readOutline(ul) {
     if (!ul) return [];
     return [...ul.children]
-        .filter((node) => node.classList.contains("writer-tree-node"))
+        .filter((node) => node.classList.contains("writer-tree-node") && node.dataset.kind !== "note")
         .map((node) => ({
             id: node.dataset.itemId,
             children: readOutline(node.querySelector(":scope > [data-nest='outline']")),
@@ -66,79 +68,99 @@ function bindRow(row, { onSelect, onDelete, onAddNote }) {
     });
 }
 
-function isNote(node) {
-    return node?.dataset.kind === "note";
+function destroySortables(el) {
+    (el._sortables || []).forEach((sortable) => {
+        try {
+            sortable.destroy();
+        } catch {
+            /* already gone */
+        }
+    });
+    el._sortables = [];
 }
 
-function bindDrag(node, root, onDrop) {
-    let startParent = null;
-    let startIndex = -1;
-    node.addEventListener("dragstart", (event) => {
-        if (event.target.closest("[data-tree-delete], [data-tree-toggle], [data-tree-note]")) {
-            event.preventDefault();
-            return;
-        }
-        event.stopPropagation();
-        startParent = node.parentElement;
-        startIndex = startParent ? [...startParent.children].indexOf(node) : -1;
-        event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.setData("text/plain", node.dataset.itemId || "");
-        node.classList.add("is-dragging");
-    });
-    node.addEventListener("dragend", () => {
-        node.classList.remove("is-dragging");
-        const parent = node.parentElement;
-        if (!parent || !root.isConnected || !root.contains(node)) return;
-        const index = [...parent.children].indexOf(node);
-        if (parent === startParent && index === startIndex) return;
-        onDrop?.();
-    });
-    node.addEventListener("dragover", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const dragging = root.querySelector(".is-dragging");
-        if (!dragging || dragging === node || dragging.contains(node)) return;
-        const noteDrag = isNote(dragging);
-        if (noteDrag && node.dataset.kind === "chapter") {
-            const row = node.querySelector(":scope > .writer-tree-item");
-            const rect = row?.getBoundingClientRect();
-            const nest = rect ? event.clientY > rect.top + rect.height * 0.55 : true;
-            if (nest) {
-                node.querySelector(":scope > [data-nest='notes']")?.appendChild(dragging);
-            } else {
-                node.parentElement?.insertBefore(dragging, node);
-            }
-            return;
-        }
-        if (noteDrag !== isNote(node)) return;
-        const row = node.querySelector(":scope > .writer-tree-item");
-        if (!row) return;
-        const rect = row.getBoundingClientRect();
-        const before = event.clientY < rect.top + rect.height / 2;
-        node.parentElement?.insertBefore(dragging, before ? node : node.nextSibling);
-    });
-    node.addEventListener("drop", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const dragging = root.querySelector(".is-dragging");
-        if (!dragging || dragging === node || dragging.contains(node)) return;
-        if (isNote(dragging) && node.dataset.kind === "chapter") return;
-        if (node.dataset.kind === "folder") {
-            node.querySelector(":scope > [data-nest='outline']")?.appendChild(dragging);
-        }
-    });
+function nestNoteUnderChapter(drag, over) {
+    if (drag?.dataset.kind !== "note" || !over) return false;
+    const chapter = over.dataset.kind === "chapter"
+        ? over
+        : over.closest?.(".writer-tree-node[data-kind='chapter']");
+    if (!chapter) return false;
+    const notes = chapter.querySelector(":scope > [data-nest='notes']");
+    if (!notes) return false;
+    if (chapter.classList.contains("is-collapsed")) setNodeCollapsed(chapter, false);
+    if (drag.parentElement !== notes) notes.appendChild(drag);
+    return true;
 }
 
-function bindListDrop(ul, root, notesOnly) {
-    ul.addEventListener("dragover", (event) => {
-        if (event.target !== ul) return;
-        event.preventDefault();
-        event.stopPropagation();
-        const dragging = root.querySelector(".is-dragging");
-        if (!dragging) return;
-        if (notesOnly && !isNote(dragging)) return;
-        ul.appendChild(dragging);
+function bindOutlineSortable(ul, mount, onEnd) {
+    let expandTimer = 0;
+    const sortable = Sortable.create(ul, {
+        group: {
+            name: "outline",
+            pull: true,
+            put: (_to, _from, dragEl) => dragEl?.dataset?.kind !== "note",
+        },
+        animation: 200,
+        draggable: ".writer-tree-node",
+        ghostClass: "writer-tree-ghost",
+        chosenClass: "is-dragging",
+        dragClass: "is-dragging",
+        filter: "[data-tree-delete], [data-tree-toggle], [data-tree-note]",
+        preventOnFilter: false,
+        fallbackOnBody: true,
+        swapThreshold: 0.65,
+        emptyInsertThreshold: 16,
+        invertSwap: true,
+        onMove(evt) {
+            if (evt.dragged?.contains(evt.to)) return false;
+            if (nestNoteUnderChapter(evt.dragged, evt.related)) return false;
+            const folder = evt.to?.closest?.(".writer-tree-node[data-kind='folder']");
+            window.clearTimeout(expandTimer);
+            if (!folder || !folder.classList.contains("is-collapsed")) return true;
+            expandTimer = window.setTimeout(() => setNodeCollapsed(folder, false), 400);
+            return true;
+        },
+        onEnd(evt) {
+            window.clearTimeout(expandTimer);
+            mount.classList.remove("is-note-dragging");
+            if (evt.from === evt.to && evt.oldIndex === evt.newIndex) return;
+            onEnd();
+        },
     });
+    mount._sortables.push(sortable);
+}
+
+function bindNotesSortable(ul, mount, onEnd) {
+    const sortable = Sortable.create(ul, {
+        group: {
+            name: "notes",
+            pull: true,
+            put: (_to, _from, dragEl) => dragEl?.dataset?.kind === "note",
+        },
+        animation: 200,
+        draggable: ".writer-tree-node",
+        ghostClass: "writer-tree-ghost",
+        chosenClass: "is-dragging",
+        dragClass: "is-dragging",
+        filter: "[data-tree-delete], [data-tree-toggle], [data-tree-note]",
+        preventOnFilter: false,
+        fallbackOnBody: true,
+        swapThreshold: 0.65,
+        emptyInsertThreshold: 40,
+        onStart() {
+            mount.classList.add("is-note-dragging");
+        },
+        onMove(evt) {
+            nestNoteUnderChapter(evt.dragged, evt.related);
+            return true;
+        },
+        onEnd(evt) {
+            mount.classList.remove("is-note-dragging");
+            if (evt.from === evt.to && evt.oldIndex === evt.newIndex) return;
+            onEnd();
+        },
+    });
+    mount._sortables.push(sortable);
 }
 
 const collapsedIds = new Set();
@@ -178,7 +200,7 @@ function itemRow(item, selectedId, { canDelete = true, canCollapse = false } = {
 function noteLeafHtml(note, selectedId) {
     const id = String(note.id || "");
     return `
-        <li class="writer-tree-node" data-item-id="${escapeHtml(id)}" data-kind="note" draggable="true">
+        <li class="writer-tree-node" data-item-id="${escapeHtml(id)}" data-kind="note">
             ${itemRow(note, selectedId)}
         </li>`;
 }
@@ -187,16 +209,17 @@ function outlineNodeHtml(item, selectedId, showNotes) {
     const kind = kindOf(item);
     if (kind === "note") return showNotes ? noteLeafHtml(item, selectedId) : "";
     const id = String(item.id || "");
-    const hasNotes = showNotes && kind === "chapter" && Array.isArray(item.notes) && item.notes.length > 0;
+    const noteList = showNotes && kind === "chapter" ? (item.notes || []) : [];
+    const hasNotes = noteList.length > 0;
     const collapsed = collapsedIds.has(id) ? " is-collapsed" : "";
     const folderKids = kind === "folder"
         ? `<ul class="writer-tree-children" data-nest="outline">${(item.children || []).map((child) => outlineNodeHtml(child, selectedId, showNotes)).join("")}</ul>`
         : "";
     const notes = showNotes && kind === "chapter"
-        ? `<ul class="writer-tree-children writer-tree-notes" data-nest="notes">${(item.notes || []).map((note) => noteLeafHtml(note, selectedId)).join("")}</ul>`
+        ? `<ul class="writer-tree-children writer-tree-notes" data-nest="notes">${noteList.map((note) => noteLeafHtml(note, selectedId)).join("")}</ul>`
         : "";
     return `
-        <li class="writer-tree-node${collapsed}" data-item-id="${escapeHtml(id)}" data-kind="${kind}" draggable="true">
+        <li class="writer-tree-node${collapsed}" data-item-id="${escapeHtml(id)}" data-kind="${kind}">
             ${itemRow(item, selectedId, { canCollapse: hasNotes })}
             ${folderKids}
             ${notes}
@@ -208,13 +231,14 @@ function outlineNodeHtml(item, selectedId, showNotes) {
  */
 export function renderTree({ mount, chapters, selectedId, onSelect, onDelete, onReorder }) {
     if (!mount) return;
+    destroySortables(mount);
     const list = Array.isArray(chapters) ? chapters : [];
 
     mount.innerHTML = list.map((chapter) => {
         const id = String(chapter.id || "");
         const active = id === String(selectedId || "") ? " is-active" : "";
         return `
-            <li class="writer-tree-item${active}" data-chapter-id="${escapeHtml(id)}" draggable="true">
+            <li class="writer-tree-item${active}" data-chapter-id="${escapeHtml(id)}">
                 <button type="button" class="writer-tree-open" data-tree-open>${escapeHtml(chapter.title || "Untitled")}</button>
                 <span class="writer-tree-actions">
                     <button type="button" data-tree-delete title="Delete">×</button>
@@ -224,36 +248,22 @@ export function renderTree({ mount, chapters, selectedId, onSelect, onDelete, on
 
     mount.querySelectorAll(":scope > .writer-tree-item").forEach((row) => {
         bindRow(row, { onSelect, onDelete });
-        row.addEventListener("dragstart", (event) => {
-            if (event.target.closest("[data-tree-delete]")) {
-                event.preventDefault();
-                return;
-            }
-            row.dataset.treeFrom = String([...mount.children].indexOf(row));
-            event.dataTransfer.effectAllowed = "move";
-            event.dataTransfer.setData("text/plain", row.dataset.chapterId);
-            row.classList.add("is-dragging");
-        });
-        row.addEventListener("dragend", () => {
-            row.classList.remove("is-dragging");
-            if (!mount.isConnected || !mount.contains(row)) return;
-            const from = Number(row.dataset.treeFrom);
-            delete row.dataset.treeFrom;
-            if (Number.isFinite(from) && [...mount.children].indexOf(row) === from) return;
-            onReorder?.(chapterIdsFromList(mount));
-        });
-        row.addEventListener("dragover", (event) => {
-            event.preventDefault();
-            const dragging = mount.querySelector(".writer-tree-item.is-dragging");
-            if (!dragging || dragging === row) return;
-            const rect = row.getBoundingClientRect();
-            const before = event.clientY < rect.top + rect.height / 2;
-            mount.insertBefore(dragging, before ? row : row.nextSibling);
-        });
-        row.addEventListener("drop", (event) => {
-            event.preventDefault();
-        });
     });
+
+    mount._sortables = [];
+    mount._sortables.push(Sortable.create(mount, {
+        group: `matter-${mount.id || "list"}`,
+        animation: 200,
+        draggable: ".writer-tree-item",
+        ghostClass: "writer-tree-ghost",
+        chosenClass: "is-dragging",
+        filter: "[data-tree-delete]",
+        preventOnFilter: false,
+        onEnd(evt) {
+            if (evt.from === evt.to && evt.oldIndex === evt.newIndex) return;
+            onReorder?.(chapterIdsFromList(mount));
+        },
+    }));
 }
 
 /**
@@ -268,9 +278,9 @@ export function renderOutline({
     onDelete,
     onAddNote,
     onReorder,
-    onNotesReorder,
 }) {
     if (!mount) return;
+    destroySortables(mount);
     mount.innerHTML = (Array.isArray(items) ? items : [])
         .map((item) => outlineNodeHtml(item, selectedId, showNotes))
         .join("");
@@ -282,14 +292,15 @@ export function renderOutline({
     mount.querySelectorAll(".writer-tree-node").forEach((node) => {
         const row = node.querySelector(":scope > .writer-tree-item");
         bindRow(row, { onSelect, onDelete, onAddNote });
-        bindDrag(node, mount, saveOrder);
         if (!row?.querySelector("[data-tree-toggle]")) return;
         row.addEventListener("click", (event) => {
             if (event.target.closest("[data-tree-delete], [data-tree-note]")) return;
             toggleNodeCollapsed(node);
         });
     });
-    mount.querySelectorAll("[data-nest='outline']").forEach((ul) => bindListDrop(ul, mount, false));
-    mount.querySelectorAll("[data-nest='notes']").forEach((ul) => bindListDrop(ul, mount, true));
-    bindListDrop(mount, mount, false);
+
+    mount._sortables = [];
+    bindOutlineSortable(mount, mount, saveOrder);
+    mount.querySelectorAll("[data-nest='outline']").forEach((ul) => bindOutlineSortable(ul, mount, saveOrder));
+    mount.querySelectorAll("[data-nest='notes']").forEach((ul) => bindNotesSortable(ul, mount, saveOrder));
 }

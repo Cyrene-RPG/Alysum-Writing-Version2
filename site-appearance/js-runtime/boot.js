@@ -133,6 +133,12 @@
         if (window.__alysumTextInk) window.__alysumTextInk.applyToRoot(root, hex, kind);
     }
 
+    function scheduleChromeInk() {
+        if (window.__alysumTextInk && window.__alysumTextInk.scheduleChromeInk) {
+            window.__alysumTextInk.scheduleChromeInk();
+        }
+    }
+
     function applyUiSurfaces(root, hex) {
         if (!parseHex(hex)) return;
         var clean = String(hex).charAt(0) === "#" ? hex : "#" + hex;
@@ -184,6 +190,44 @@
 
     try {
         var root = document.documentElement;
+        var resetAppearance =
+            (location.hostname === "127.0.0.1" || location.hostname === "localhost") &&
+            /(?:^|[?&])reset-appearance=1(?:&|$)/.test(location.search);
+        if (resetAppearance) {
+            var appearanceKeys = [
+                "alysum-gradient-theme",
+                "alysum-gradient-theme-preview",
+                "alysum-display-text-style",
+                "alysum-display-text-color",
+                "alysum-display-text-color-main",
+                "alysum-display-text-color-accent",
+                "alysum-surface-style",
+                "alysum-corner-style",
+                "alysum-appearance-mix",
+                "alysum-body-bg",
+                "alysum-body-bg-custom",
+                "alysum-ui-color",
+                "alysum-ui-color-hex",
+                "alysum-ui-color-custom",
+                "alysum-appearance-loadouts"
+            ];
+            for (var i = 0; i < appearanceKeys.length; i++) {
+                localStorage.removeItem(appearanceKeys[i]);
+            }
+            root.removeAttribute("data-gradient-theme");
+            root.removeAttribute("data-body-bg");
+            root.removeAttribute("data-ui-color");
+            root.removeAttribute("data-surface-style");
+            root.removeAttribute("data-corner-style");
+            root.removeAttribute("data-display-text-style");
+            root.removeAttribute("data-display-text-color");
+            root.classList.remove("surface-glass");
+            try {
+                history.replaceState(null, "", location.pathname);
+            } catch (resetErr) {
+                /* ignore */
+            }
+        }
         var g = localStorage.getItem("alysum-gradient-theme");
         if (g && g !== "classic") root.setAttribute("data-gradient-theme", g);
 
@@ -266,6 +310,7 @@
                 clearUiSurfaces(root);
             }
         }
+        scheduleChromeInk();
     } catch (e) {
         /* ignore */
     }

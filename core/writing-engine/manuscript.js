@@ -11,12 +11,14 @@ import {
     applyOutlineAndNotes,
     cloneItem,
     cloneList,
+    dedupeBookItems,
     ensureBodyChapter,
     findInList,
     itemKind,
+    moveItem,
     removeItem,
     walkBookChapters,
-} from "./outline.js";
+} from "./outline.js?v=3";
 import { countWordsInChapter, countWordsInSections } from "./word-count.js";
 
 const SECTION_KEYS = ["front", "body", "back"];
@@ -29,13 +31,16 @@ export {
     applyOutline,
     applyOutlineAndNotes,
     countBookChapters,
+    countBookFolders,
+    dedupeBookItems,
     itemKind,
     lastNote,
     lastOfKind,
+    moveItem,
     noteParentChapterId,
     parentFolderId,
     walkBookChapters,
-} from "./outline.js";
+} from "./outline.js?v=3";
 
 export function cloneSections(sections) {
     const src = sections && typeof sections === "object" ? sections : {};
@@ -160,6 +165,12 @@ export function applyBodyTree(sections, nodes, groups) {
     return next;
 }
 
+export function moveBodyItem(sections, itemId, folderId) {
+    const next = cloneSections(sections);
+    next.body = moveItem(next.body, itemId, folderId);
+    return next;
+}
+
 export function addBodyFolder(sections, title, folderId) {
     const next = cloneSections(sections);
     next.body = addFolder(next.body, title, folderId);
@@ -275,6 +286,7 @@ export function mergeSectionsByChapterId(base, other, options = {}) {
             const id = String(item.id || "");
             if (!id || seen.has(id)) continue;
             seen.add(id);
+            if (findChapter(next, id)) continue;
             placeChapter(next, section, parentFolderId, cloneItem(item));
         }
     }
@@ -283,6 +295,7 @@ export function mergeSectionsByChapterId(base, other, options = {}) {
     if (options.unionMissing !== false) {
         for (const key of SECTION_KEYS) addMissing(extra[key], key, "");
     }
+    for (const key of SECTION_KEYS) next[key] = dedupeBookItems(next[key]);
     return next;
 }
 

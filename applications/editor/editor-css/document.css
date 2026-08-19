@@ -1,7 +1,11 @@
 .writer-page {
     flex: 1 0 auto;
+    min-width: 0;
+    max-width: 100%;
     min-height: calc(100% - 7rem);
     overflow: visible;
+    overflow-wrap: anywhere;
+    word-break: break-word;
     padding: 28px clamp(18px, 4vw, 56px) 48px;
     outline: none;
     line-height: 1.7;

@@ -4,6 +4,7 @@
  */
 html {
     background-color: var(--bg, #0b1220);
+    color: var(--text, #f8fafc);
 }
 
 :root {
@@ -13,6 +14,8 @@ html {
     --text-ink-grey: #5e5e5e;
     --ui-text: var(--text-ink-white);
     --ui-muted: #c8c8c8;
+    --chrome-text: #fff;
+    --chrome-muted: #c8c8c8;
 }
 
 :root[data-ui-ink="white"] {
@@ -93,10 +96,15 @@ body {
 .card,
 .legal-card,
 .settings-nav,
-.wd-pfp-dropdown {
+.wd-pfp-dropdown,
+.sidebar,
+.writer-tree,
+.writer-rail,
+.appearance-tab-panel,
+.settings-tab-panel {
     --text: var(--ui-text);
     --muted: var(--ui-muted);
-    color: var(--ui-text, #fff);
+    color: var(--ui-text, var(--text, #fff));
 }
 
 .panel,
@@ -121,6 +129,16 @@ body {
         --alysum-chrome-gradient,
         linear-gradient(135deg, var(--purple-dark, #5b21b6), var(--purple, #6d28d9))
     );
+    --chrome-text: #fff;
+    --chrome-muted: #c8c8c8;
+    color: var(--chrome-text, #fff);
+}
+
+.ui-bar,
+.wd-welcome-bar,
+.wd-nav-wrap {
+    --chrome-text: #fff;
+    --chrome-muted: #c8c8c8;
 }
 
 .legal-kicker {

@@ -6,16 +6,16 @@ import {
     readAppearanceLoadouts,
     renameAppearanceLoadout,
     saveAppearanceLoadoutToSlot
-} from "@alysum/site-appearance/appearance-loadout.js";
+} from "@alysum/site-appearance/js-runtime/appearance-loadout.js?v=3";
 import { alysumConfirm, alysumPrompt } from "/js/prompt.js?v=2";
-import { getAppearanceMixMode, getBodyBgPreview, getStoredBodyBgId, getStoredCustomBodyBg } from "@alysum/site-appearance/body-background.js";
-import { getStoredGradientThemeId } from "@alysum/site-appearance/gradient-theme.js";
-import { getStoredSurfaceStyleId } from "@alysum/site-appearance/surface-style.js";
-import { getStoredCornerStyleId } from "@alysum/site-appearance/corner-style.js";
-import { getStoredDisplayTextStyleId } from "@alysum/site-appearance/display-text-style.js";
-import { getStoredCustomDisplayColors, getStoredDisplayTextColorId } from "@alysum/site-appearance/display-text-color.js";
-import { getStoredCustomUiColor, getStoredUiColorId } from "@alysum/site-appearance/ui-color.js";
-import { paintChipInk } from "@alysum/site-appearance/text-ink.js";
+import { getAppearanceMixMode, getBodyBgPreview, getStoredBodyBgId, getStoredCustomBodyBg } from "@alysum/site-appearance/js-runtime/body-background.js";
+import { getStoredGradientThemeId } from "@alysum/site-appearance/js-runtime/gradient-theme.js";
+import { getStoredSurfaceStyleId } from "@alysum/site-appearance/js-runtime/surface-style.js";
+import { getStoredCornerStyleId } from "@alysum/site-appearance/js-runtime/corner-style.js";
+import { getStoredDisplayTextStyleId } from "@alysum/site-appearance/js-runtime/display-text-style.js";
+import { getStoredCustomDisplayColors, getStoredDisplayTextColorId } from "@alysum/site-appearance/js-runtime/display-text-color.js";
+import { getStoredCustomUiColor, getStoredUiColorId } from "@alysum/site-appearance/js-runtime/ui-color.js";
+import { paintChipInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
 import {
     refreshUiColorThemeChip,
     setUiColorChipActive,

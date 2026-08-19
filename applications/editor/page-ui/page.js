@@ -1,7 +1,7 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { signOutAndGoToHome } from "@alysum/authentication/logout.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=3";
 import {
     addBodyFolder,
     addBodyNote,
@@ -9,6 +9,8 @@ import {
     applyBodyOutline,
     applyBodyTree,
     countBookChapters,
+    countBookFolders,
+    dedupeBookItems,
     findChapter,
     itemKind,
     lastNote,
@@ -23,7 +25,7 @@ import {
     setChapterContent,
     setChapterTitle,
     withUpdatedWords,
-} from "@alysum/writing-engine/manuscript.js";
+} from "@alysum/writing-engine/manuscript.js?v=3";
 import { countWordsInHtml, countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { createAutosave } from "./autosave.js";
 import { mountDocument } from "./document.js?v=4";
@@ -31,7 +33,7 @@ import { confirmDeleteChapter } from "./prompt.js";
 import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=2";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { mountToolbar } from "./toolbar.js?v=3";
-import { expandTreeItem, renderOutline, renderTree } from "./tree.js?v=10";
+import { expandTreeItem, renderOutline, renderTree } from "./tree.js?v=15";
 
 const TREE_COLLAPSE_KEY = "alysum:editor:chapters-collapsed";
 const RAIL_COLLAPSE_KEY = "alysum:editor:rail-collapsed";
@@ -90,7 +92,16 @@ async function boot() {
         return;
     }
 
-    book = withUpdatedWords(book);
+    function cleanSections(sections) {
+        const src = sections && typeof sections === "object" ? sections : {};
+        return {
+            front: dedupeBookItems(src.front),
+            body: dedupeBookItems(src.body),
+            back: dedupeBookItems(src.back),
+        };
+    }
+
+    book = withUpdatedWords({ ...book, sections: cleanSections(book.sections) });
     let selectedId = fallbackChapterId(book.sections, listBodyChapters(book.sections)[0]?.id || "");
 
     const loading = document.getElementById("loadingPanel");
@@ -272,8 +283,7 @@ async function boot() {
                 ? mergeSectionsByChapterId(next.sections, saved.sections, {
                     baseUpdated: Number(next.updated) || Date.now(),
                     otherUpdated: Number(saved.updated) || 0,
-                    unionMissing: countBookChapters(next.sections?.body)
-                        >= countBookChapters(saved.sections?.body),
+                    unionMissing: false,
                 })
                 : next.sections;
             book = withUpdatedWords({
@@ -290,9 +300,14 @@ async function boot() {
     let closing = false;
 
     function persist(next, immediate = false, options = {}) {
+        if (!options.skipClean) {
+            next = { ...next, sections: cleanSections(next.sections) };
+        }
         const prevCount = countBookChapters(book.sections?.body);
         const nextCount = countBookChapters(next.sections?.body);
-        if (!options.allowFewerChapters && nextCount < prevCount) {
+        const prevFolders = countBookFolders(book.sections?.body);
+        const nextFolders = countBookFolders(next.sections?.body);
+        if (!options.allowFewerChapters && (nextCount < prevCount || nextFolders < prevFolders)) {
             next = { ...next, sections: book.sections };
         }
         book = withUpdatedWords(next);
@@ -414,7 +429,7 @@ async function boot() {
                 void persist({
                     ...book,
                     sections: reorderSectionChapters(book.sections, key, orderedIds),
-                }, true);
+                }, true, { skipClean: true });
             },
         });
     }
@@ -429,12 +444,13 @@ async function boot() {
             onDelete: (id) => deleteItem(id, "body"),
             onAddNote: addNoteToChapter,
             onReorder: (nodes, noteGroups) => {
-                if (selectedKind() !== "folder") applyChapterContent(editor.getHtml());
-                const sections = noteGroups
+                let sections = noteGroups
                     ? applyBodyTree(book.sections, nodes, noteGroups)
                     : applyBodyOutline(book.sections, nodes);
-                void persist({ ...book, sections }, true);
-                drawTree();
+                if (selectedKind() !== "folder") {
+                    sections = setChapterContent(sections, selectedId, editor.getHtml());
+                }
+                void persist({ ...book, sections }, true, { skipClean: true });
             },
         });
     }

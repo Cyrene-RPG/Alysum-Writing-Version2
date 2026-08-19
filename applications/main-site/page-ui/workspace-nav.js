@@ -1,6 +1,6 @@
 import { wireLogoutButtons } from "@alysum/authentication/logout.js";
 import { initWelcomePfpMenu } from "/js/welcome-bar.js";
-import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/appearance-loadout-menu.js";
+import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/appearance-loadout-menu.js";
 
 function navHref(page) {
     return page;

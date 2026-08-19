@@ -10,7 +10,7 @@ Every HTML page loads these **before** application styles, in this order:
 2. `/site-appearance/css-styles/gradient-themes/index.css`
 3. `/site-appearance/css-styles/typography.css`
 4. `/site-appearance/css-styles/surface-styles/index.css`
-5. `/site-appearance/boot.js` (no `defer` — prevents flash)
+5. `/site-appearance/js-runtime/boot.js` (no `defer` — prevents flash)
 
 Settings (main-site) is the theme **picker**. Every other application only **applies** the saved look.
 

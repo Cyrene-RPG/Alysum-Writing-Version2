@@ -2,8 +2,6 @@
 :root {
     --bg: #0b1220;
     --panel: var(--alysum-ui-panel, #111827);
-    --text: #fff;
-    --muted: #9ca3af;
     --border: rgba(255, 255, 255, 0.1);
 }
 body {

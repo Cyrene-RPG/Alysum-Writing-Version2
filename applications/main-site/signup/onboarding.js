@@ -9,13 +9,13 @@ import {
     applyGradientTheme,
     getStoredGradientThemeId,
     getThemePreview
-} from "@alysum/site-appearance/gradient-theme.js";
+} from "@alysum/site-appearance/js-runtime/gradient-theme.js";
 import {
     DISPLAY_TEXT_STYLES,
     DISPLAY_TEXT_STYLE_META,
     applyDisplayTextStyle,
     getStoredDisplayTextStyleId
-} from "@alysum/site-appearance/display-text-style.js";
+} from "@alysum/site-appearance/js-runtime/display-text-style.js";
 import {
     showError,
     clearError,

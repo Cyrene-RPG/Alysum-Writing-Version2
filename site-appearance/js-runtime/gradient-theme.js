@@ -40,7 +40,7 @@ export const GRADIENT_THEMES = [
     { id: "tide", label: "Tide pool", hint: "Sea glass & deep water", preview: "linear-gradient(160deg, #134e4a 0%, #14b8a6 40%, #67e8f9 100%)" },
     { id: "volcano", label: "Volcano", hint: "Magma core & ash smoke", preview: "radial-gradient(circle at 50% 80%, #fbbf24 0%, #ea580c 25%, #b91c1c 55%, #1c1917 100%)" },
     { id: "opal", label: "Opal", hint: "Iridescent pearl shimmer", preview: "linear-gradient(135deg, #a5f3fc 0%, #c4b5fd 25%, #fbcfe8 50%, #fef08a 75%, #99f6e4 100%)" },
-    { id: "noir", label: "Noir", hint: "Monochrome graphite fade", preview: "linear-gradient(135deg, #09090b 0%, #3f3f46 50%, #a1a1aa 100%)" },
+    { id: "noir", label: "Noir", hint: "Monochrome graphite fade", preview: "linear-gradient(135deg, #000000 0%, #18181b 50%, #3f3f46 100%)" },
     { id: "blanc", label: "Blanc", hint: "Light opposite of Noir", preview: "linear-gradient(135deg, #ffffff 0%, #e4e4e7 50%, #52525b 100%)" }
 ];
 

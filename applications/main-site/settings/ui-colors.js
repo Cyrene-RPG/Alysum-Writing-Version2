@@ -5,8 +5,8 @@ import {
     getStoredUiColorId,
     getStoredCustomUiColor,
     getUiColorPreview
-} from "@alysum/site-appearance/ui-color.js";
-import { paintChipInk } from "@alysum/site-appearance/text-ink.js";
+} from "@alysum/site-appearance/js-runtime/ui-color.js";
+import { paintChipInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
 
 export function setUiColorChipActive(id) {
     els.uiColorChipRow?.querySelectorAll(".theme-chip").forEach((x) => {

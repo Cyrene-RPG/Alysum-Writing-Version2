@@ -133,16 +133,45 @@
 
 .appearance-tab-panel .appearance-fold-body .appearance-grid:not(.appearance-grid--fonts) {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    box-sizing: content-box;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(10, 72px);
+    grid-template-columns: none;
+    grid-auto-columns: 72px;
     gap: 8px;
-    max-height: none;
-    overflow: visible;
-    padding: 2px 0;
+    min-height: calc(10 * 72px + 9 * 8px);
+    max-height: calc(10 * 72px + 9 * 8px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 2px 18px;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--purple-bright, #a1a1aa) 75%, white) rgba(0, 0, 0, 0.4);
+}
+
+.appearance-tab-panel .appearance-fold-body .appearance-grid:not(.appearance-grid--fonts)::-webkit-scrollbar {
+    height: 12px;
+}
+
+.appearance-tab-panel .appearance-fold-body .appearance-grid:not(.appearance-grid--fonts)::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 999px;
+}
+
+.appearance-tab-panel .appearance-fold-body .appearance-grid:not(.appearance-grid--fonts)::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--purple-bright, #a1a1aa) 70%, white);
+    border-radius: 999px;
 }
 
 .appearance-tab-panel .appearance-fold-body .appearance-grid:not(.appearance-grid--fonts) > .theme-chip {
-    width: auto;
-    min-width: 0;
+    width: 72px;
+    height: 72px;
+    min-width: 72px;
+    min-height: 72px;
+    max-width: 72px;
+    aspect-ratio: 1;
+    padding: 6px 4px;
+    border-radius: 12px;
+    overflow: hidden;
 }
 
 .appearance-tab-panel .appearance-fold-body .appearance-grid--fonts {
@@ -171,15 +200,30 @@
 
 .font-group-row {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, 72px);
+    grid-auto-flow: row;
+    grid-auto-rows: 72px;
     gap: 8px;
     overflow: visible;
-    padding: 0;
+    padding: 2px 0;
+    justify-content: start;
 }
 
 .font-group-row .theme-chip {
-    width: auto;
-    min-width: 0;
+    width: 72px;
+    height: 72px;
+    min-width: 72px;
+    min-height: 72px;
+    max-width: 72px;
+    aspect-ratio: 1;
+    padding: 6px 4px;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
 }
 
 .appearance-tab-panel .surface-chip--glass {
@@ -298,33 +342,37 @@
 }
 
 .appearance-tab-panel .appearance-grid--accent,
-.appearance-tab-panel .appearance-grid--fonts,
 .appearance-tab-panel .appearance-grid--colors,
 .appearance-tab-panel .appearance-grid--bg {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: none;
 }
 
 .appearance-tab-panel .theme-chip {
-    min-height: 44px;
-    padding: 9px 7px;
-    font-size: 11px;
-    line-height: 1.3;
+    min-height: 72px;
+    padding: 6px 4px;
+    font-size: 10px;
+    line-height: 1.15;
     border-radius: 12px;
 }
 
 .appearance-tab-panel .theme-chip.text-style-chip,
 .appearance-tab-panel .theme-chip.title-color-chip {
     min-height: 72px;
-    padding: 10px 6px;
+    padding: 6px 4px;
 }
 
 .appearance-tab-panel .text-style-chip-preview {
-    font-size: 24px;
-    margin-bottom: 4px;
+    font-size: 20px;
+    margin-bottom: 0;
+    margin-top: 0;
 }
 
 .appearance-tab-panel .text-style-chip-label {
-    font-size: 10px;
+    font-size: 9px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .theme-chip {
@@ -338,7 +386,7 @@
     text-align: center;
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(255, 255, 255, 0.06);
-    color: #fff;
+    color: var(--ui-text, var(--text));
     font-weight: 800;
     font-size: 12px;
     line-height: 1.3;
