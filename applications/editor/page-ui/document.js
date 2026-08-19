@@ -9,11 +9,25 @@ export function mountDocument({ pageEl, onInput }) {
     pageEl.setAttribute("role", "textbox");
     pageEl.setAttribute("aria-multiline", "true");
 
-    function emit() {
-        if (typeof onInput === "function") onInput(pageEl.innerHTML);
+    let mute = false;
+
+    function emit(event) {
+        if (mute || !pageEl.isConnected) return;
+        if (typeof onInput === "function") onInput(pageEl.innerHTML, event);
     }
 
     pageEl.addEventListener("input", emit);
+    pageEl.addEventListener("keydown", (event) => {
+        if (event.key !== "Tab" || event.altKey || event.ctrlKey || event.metaKey) return;
+        if (!pageEl.classList.contains("is-auto-indent")) return;
+        event.preventDefault();
+        try {
+            document.execCommand("insertText", false, "\t");
+        } catch {
+            /* ignore */
+        }
+        emit(event);
+    });
     try {
         document.execCommand("defaultParagraphSeparator", false, "p");
     } catch {
@@ -24,9 +38,15 @@ export function mountDocument({ pageEl, onInput }) {
         setHtml(html) {
             const next = String(html || "").trim() ? String(html) : "<p><br></p>";
             if (pageEl.innerHTML === next) return;
-            pageEl.innerHTML = next;
+            mute = true;
+            try {
+                pageEl.innerHTML = next;
+            } finally {
+                mute = false;
+            }
         },
         getHtml() {
+            if (!pageEl.isConnected) return "";
             return pageEl.innerHTML;
         },
         focus() {

@@ -3,7 +3,7 @@ import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js";
 import { createEmptyBook } from "@alysum/writing-engine/manuscript.js";
 import { countWordsInSections } from "@alysum/writing-engine/word-count.js";
-import { initWorkspaceShell } from "./shell.js";
+import { initWorkspaceShell } from "./shell.js?v=2";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 
 function escapeHtml(str) {
@@ -54,12 +54,13 @@ function renderBooks(mount, books) {
 }
 
 async function boot() {
-    initWorkspaceShell({ title: "Studio", subtitle: "Open a book and keep writing." });
+    initWorkspaceShell({ lead: "Writing ", accent: "Studio", subtitle: "Open a book and keep writing." });
     const session = await requireStudioSession(supabase, "studio.html");
     if (!session) return;
     const profile = await loadWorkspaceProfile(supabase, session);
     initWorkspaceShell({
-        title: "Studio",
+        lead: "Writing ",
+        accent: "Studio",
         subtitle: "Open a book and keep writing.",
         name: profile.name,
         imageUrl: profile.imageUrl,

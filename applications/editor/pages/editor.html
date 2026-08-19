@@ -18,11 +18,11 @@
     </script>
     <link rel="stylesheet" href="/site-appearance/css-styles/theme.css" />
     <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
-    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=7" />
     <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css" />
     <script src="/site-appearance/body-background-presets-data.js"></script>
     <script src="/site-appearance/text-ink-data.js"></script>
-    <script src="/site-appearance/boot.js"></script>
+    <script src="/site-appearance/boot.js?v=3"></script>
     <script src="/site-appearance/body-background-sync.js"></script>
     <link rel="manifest" href="/manifest.webmanifest">
     <meta charset="UTF-8">
@@ -30,10 +30,10 @@
     <meta name="robots" content="noindex, nofollow">
     <title>Writer — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="/css/workspace-nav.css?v=20" />
-    <link rel="stylesheet" href="/css/editor/page.css?v=19" />
-    <link rel="stylesheet" href="/css/editor/document.css?v=4" />
-    <script src="/site-appearance/gradient-theme-sync.js" defer></script>
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=24" />
+    <link rel="stylesheet" href="/css/editor/page.css?v=23" />
+    <link rel="stylesheet" href="/css/editor/document.css?v=5" />
+    <script src="/site-appearance/gradient-theme-sync.js?v=3" defer></script>
 </head>
 <body>
     <header class="wd-welcome-bar ui-bar" aria-label="Welcome">
@@ -53,7 +53,7 @@
                 </div>
             </div>
             <div class="wd-welcome-copy">
-                <h1 class="wd-welcome-title" id="welcomeTitle">Writer</h1>
+                <h1 class="wd-welcome-title" id="welcomeTitle">Working On <span class="wd-name">…</span></h1>
                 <p class="wd-welcome-sub" id="welcomeSubtitle"></p>
             </div>
         </div>
@@ -120,15 +120,17 @@
                 </div>
             </aside>
             <section class="writer-main">
-                <span class="writer-status" id="saveStatus" role="status">Saved.</span>
+                <span class="writer-status" id="saveStatus" role="status" hidden></span>
                 <input class="writer-book-title" id="bookTitle" aria-label="Book title" />
-                <input class="writer-chapter-title" id="chapterTitle" aria-label="Chapter title" />
+                <div class="writer-chapter-bar">
+                    <input class="writer-chapter-title" id="chapterTitle" aria-label="Chapter title" />
+                    <div class="writer-wordcount" aria-live="polite">
+                        <span id="chapterWords">0</span> / <span id="totalWords">0</span>
+                    </div>
+                </div>
                 <p class="writer-folder-hint" id="folderHint" hidden>This is a folder. Add chapters inside it from the Chapters tab, or drag a chapter onto the folder.</p>
                 <div class="writer-toolbar" id="writerToolbar" role="toolbar" aria-label="Formatting"></div>
                 <div class="writer-page" id="pageEditor" aria-label="Chapter text"></div>
-                <div class="writer-wordcount" aria-live="polite">
-                    <span id="chapterWords">0</span> / <span id="totalWords">0</span>
-                </div>
             </section>
             <aside class="writer-rail" id="writerRail" aria-label="Tools">
                 <div class="writer-rail-head">
@@ -148,6 +150,6 @@
             </div>
         </div>
     </div>
-    <script type="module" src="/js/editor/page.js?v=16"></script>
+    <script type="module" src="/js/editor/page.js?v=24"></script>
 </body>
 </html>

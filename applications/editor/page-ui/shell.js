@@ -42,11 +42,23 @@ function wirePfpMenu() {
     });
 }
 
-export function setWelcomeCopy(title, subtitle) {
+export function setWelcomeCopy(leadOrOpts, accent, subtitle) {
+    const opts = leadOrOpts && typeof leadOrOpts === "object"
+        ? leadOrOpts
+        : { lead: leadOrOpts, accent, subtitle };
     const titleEl = document.getElementById("welcomeTitle");
     const subEl = document.getElementById("welcomeSubtitle");
-    if (titleEl && title != null) titleEl.textContent = title;
-    if (subEl && subtitle != null) subEl.textContent = subtitle;
+    if (titleEl && (opts.lead != null || opts.accent != null)) {
+        titleEl.replaceChildren();
+        if (opts.lead) titleEl.append(String(opts.lead));
+        if (opts.accent) {
+            const nameEl = document.createElement("span");
+            nameEl.className = "wd-name";
+            nameEl.textContent = String(opts.accent);
+            titleEl.append(nameEl);
+        }
+    }
+    if (subEl && opts.subtitle != null) subEl.textContent = opts.subtitle;
 }
 
 export function setWelcomeAvatar(imageUrl, name) {
@@ -77,10 +89,16 @@ export function setWelcomeInitial(name) {
     setWelcomeAvatar("", name);
 }
 
-export function initWorkspaceShell({ title, subtitle, name, imageUrl } = {}) {
+export function initWorkspaceShell({ lead, accent, title, subtitle, name, imageUrl } = {}) {
     wireLogoutButtons(document);
     wirePfpMenu();
     initAppearanceLoadoutMenu();
-    if (title || subtitle) setWelcomeCopy(title || "", subtitle || "");
+    if (lead != null || accent != null || title != null || subtitle != null) {
+        setWelcomeCopy({
+            lead: lead ?? "",
+            accent: accent ?? title ?? "",
+            subtitle,
+        });
+    }
     if (name || imageUrl) setWelcomeAvatar(imageUrl, name);
 }

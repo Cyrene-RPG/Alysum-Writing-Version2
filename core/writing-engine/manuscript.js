@@ -8,13 +8,16 @@ import {
     addNote,
     applyNoteGroups,
     applyOutline,
+    applyOutlineAndNotes,
+    cloneItem,
     cloneList,
     ensureBodyChapter,
     findInList,
+    itemKind,
     removeItem,
     walkBookChapters,
 } from "./outline.js";
-import { countWordsInSections } from "./word-count.js";
+import { countWordsInChapter, countWordsInSections } from "./word-count.js";
 
 const SECTION_KEYS = ["front", "body", "back"];
 
@@ -24,6 +27,8 @@ export {
     addNote,
     applyNoteGroups,
     applyOutline,
+    applyOutlineAndNotes,
+    countBookChapters,
     itemKind,
     lastNote,
     lastOfKind,
@@ -149,15 +154,21 @@ export function applyBodyNotes(sections, groups) {
     return next;
 }
 
+export function applyBodyTree(sections, nodes, groups) {
+    const next = cloneSections(sections);
+    next.body = applyOutlineAndNotes(next.body, nodes, groups);
+    return next;
+}
+
 export function addBodyFolder(sections, title, folderId) {
     const next = cloneSections(sections);
     next.body = addFolder(next.body, title, folderId);
     return next;
 }
 
-export function addBodyNote(sections, chapterId, title) {
+export function addBodyNote(sections, chapterId, title, folderId) {
     const next = cloneSections(sections);
-    next.body = addNote(next.body, chapterId, title);
+    next.body = addNote(next.body, chapterId, title, folderId);
     return next;
 }
 
@@ -180,6 +191,98 @@ export function setChapterContent(sections, chapterId, content) {
         ...found.chapter,
         content: typeof content === "string" ? content : "",
     };
+    return next;
+}
+
+function chapterHasSubstance(chapter) {
+    return countWordsInChapter(chapter) > 0;
+}
+
+function pickChapterTitle(baseTitle, otherTitle, otherIsNewer) {
+    const base = String(baseTitle || "").trim();
+    const other = String(otherTitle || "").trim();
+    if (!other) return base || "Untitled";
+    if (!base || base === "Untitled") return other;
+    if (otherIsNewer) return other;
+    return base;
+}
+
+function mergeChapterFields(baseChapter, otherChapter, otherIsNewer) {
+    const baseHas = chapterHasSubstance(baseChapter);
+    const otherHas = chapterHasSubstance(otherChapter);
+    let content = typeof baseChapter.content === "string" ? baseChapter.content : "";
+    if (otherHas && (!baseHas || otherIsNewer)) {
+        content = typeof otherChapter.content === "string" ? otherChapter.content : content;
+    }
+    return {
+        ...baseChapter,
+        title: pickChapterTitle(baseChapter.title, otherChapter.title, otherIsNewer),
+        content,
+    };
+}
+
+function placeChapter(sections, section, parentFolderId, chapter) {
+    const key = SECTION_KEYS.includes(section) ? section : "body";
+    if (parentFolderId) {
+        const found = findInList(sections[key], parentFolderId);
+        if (found && itemKind(found.item) === "folder") {
+            found.item.children.push(chapter);
+            return;
+        }
+    }
+    sections[key].push(chapter);
+}
+
+/**
+ * Union chapters by id. Never mint ids, never drop chapters, never replace
+ * existing text with blank. Matching ids update title/content in place when
+ * the other copy has substance (and is newer if both have text).
+ */
+export function mergeSectionsByChapterId(base, other, options = {}) {
+    const next = cloneSections(base);
+    const extra = cloneSections(other);
+    const otherIsNewer = Number(options.otherUpdated || 0) > Number(options.baseUpdated || 0);
+    const seen = new Set();
+
+    function updateList(list) {
+        if (!Array.isArray(list)) return;
+        for (let index = 0; index < list.length; index += 1) {
+            const item = list[index];
+            const kind = itemKind(item);
+            if (kind === "folder") {
+                updateList(item.children);
+                continue;
+            }
+            if (kind !== "chapter") continue;
+            const id = String(item.id || "");
+            if (!id) continue;
+            seen.add(id);
+            const found = findChapter(extra, id);
+            if (!found || itemKind(found.chapter) !== "chapter") continue;
+            list[index] = mergeChapterFields(item, found.chapter, otherIsNewer);
+        }
+    }
+
+    function addMissing(list, section, parentFolderId) {
+        if (!Array.isArray(list)) return;
+        for (const item of list) {
+            const kind = itemKind(item);
+            if (kind === "folder") {
+                addMissing(item.children, section, String(item.id || ""));
+                continue;
+            }
+            if (kind !== "chapter") continue;
+            const id = String(item.id || "");
+            if (!id || seen.has(id)) continue;
+            seen.add(id);
+            placeChapter(next, section, parentFolderId, cloneItem(item));
+        }
+    }
+
+    for (const key of SECTION_KEYS) updateList(next[key]);
+    if (options.unionMissing !== false) {
+        for (const key of SECTION_KEYS) addMissing(extra[key], key, "");
+    }
     return next;
 }
 

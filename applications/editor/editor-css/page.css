@@ -399,12 +399,20 @@ body {
     font-size: 1.35rem;
     font-weight: 800;
 }
+.writer-chapter-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 12px 0 0;
+    border-bottom: 1px solid var(--border);
+}
 .writer-chapter-title {
+    flex: 1;
+    min-width: 0;
     padding: 0 16px 10px;
     font-size: 1.05rem;
     font-weight: 700;
     color: var(--muted);
-    border-bottom: 1px solid var(--border);
 }
 .writer-folder-hint {
     margin: 0;
@@ -441,6 +449,9 @@ body {
 .writer-tool:hover {
     background: color-mix(in srgb, var(--accent, #6d28d9) 35%, transparent);
 }
+.writer-tool[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--accent, #6d28d9) 45%, transparent);
+}
 .writer-status {
     position: absolute;
     right: 14px;
@@ -449,13 +460,12 @@ body {
     font-weight: 700;
     color: var(--ok, #4ade80);
 }
+.writer-status[hidden] { display: none !important; }
 .writer-wordcount {
-    position: absolute;
-    right: 16px;
-    bottom: 0;
-    z-index: 2;
-    padding: 6px 10px;
-    border-radius: 8px 8px 0 0;
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: 6px 12px;
+    border-radius: 8px;
     background: var(--accent, #6d28d9);
     color: #fff;
     font-size: 12px;

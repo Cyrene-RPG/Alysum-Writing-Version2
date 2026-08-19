@@ -71,7 +71,7 @@
     font-weight: 900;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ui-text, var(--text, #fff));
     user-select: none;
 }
 
@@ -208,7 +208,7 @@
     margin: 0 0 6px;
     font-size: 14px;
     font-weight: 900;
-    color: var(--gold);
+    color: var(--ui-text, var(--text, #fff));
     letter-spacing: 0.05em;
     text-transform: uppercase;
 }
@@ -581,7 +581,7 @@ html[data-ui-tone="light"] .text-style-chip-label {
     min-height: 1.2em;
     font-size: 13px;
     font-weight: 700;
-    color: var(--gold);
+    color: var(--ui-text, var(--text, #fff));
 }
 
 @media (max-width: 640px) {

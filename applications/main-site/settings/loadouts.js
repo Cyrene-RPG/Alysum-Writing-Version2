@@ -7,7 +7,7 @@ import {
     renameAppearanceLoadout,
     saveAppearanceLoadoutToSlot
 } from "@alysum/site-appearance/appearance-loadout.js";
-import { alysumConfirm, alysumPrompt } from "/js/prompt.js";
+import { alysumConfirm, alysumPrompt } from "/js/prompt.js?v=2";
 import { getAppearanceMixMode, getBodyBgPreview, getStoredBodyBgId, getStoredCustomBodyBg } from "@alysum/site-appearance/body-background.js";
 import { getStoredGradientThemeId } from "@alysum/site-appearance/gradient-theme.js";
 import { getStoredSurfaceStyleId } from "@alysum/site-appearance/surface-style.js";

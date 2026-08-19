@@ -6,15 +6,18 @@ import {
     addBodyFolder,
     addBodyNote,
     addSectionChapter,
-    applyBodyNotes,
     applyBodyOutline,
+    applyBodyTree,
+    countBookChapters,
     findChapter,
     itemKind,
     lastNote,
     lastOfKind,
     listBodyChapters,
     listSectionChapters,
+    mergeSectionsByChapterId,
     noteParentChapterId,
+    parentFolderId,
     removeSectionChapter,
     reorderSectionChapters,
     setChapterContent,
@@ -23,12 +26,12 @@ import {
 } from "@alysum/writing-engine/manuscript.js";
 import { countWordsInHtml, countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { createAutosave } from "./autosave.js";
-import { mountDocument } from "./document.js";
+import { mountDocument } from "./document.js?v=3";
 import { confirmDeleteChapter } from "./prompt.js";
-import { initWorkspaceShell, setWelcomeCopy } from "./shell.js";
+import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=2";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
-import { mountToolbar } from "./toolbar.js";
-import { expandTreeItem, renderOutline, renderTree } from "./tree.js?v=7";
+import { mountToolbar } from "./toolbar.js?v=1";
+import { expandTreeItem, renderOutline, renderTree } from "./tree.js?v=10";
 
 const TREE_COLLAPSE_KEY = "alysum:editor:chapters-collapsed";
 const RAIL_COLLAPSE_KEY = "alysum:editor:rail-collapsed";
@@ -69,7 +72,7 @@ function storedTab() {
 }
 
 async function boot() {
-    initWorkspaceShell({ title: "Writer", subtitle: "Loading…" });
+    initWorkspaceShell({ lead: "Working On ", accent: "…", subtitle: "Loading…" });
     const session = await requireStudioSession(supabase, window.location.pathname + window.location.search);
     if (!session) return;
     const profilePromise = loadWorkspaceProfile(supabase, session);
@@ -108,6 +111,20 @@ async function boot() {
     const pageEl = document.getElementById("pageEditor");
     const toolbarMount = document.getElementById("writerToolbar");
     const saveStatus = document.getElementById("saveStatus");
+    let saveStatusTimer = 0;
+    function setSaveStatus(text, hideAfterMs) {
+        if (!saveStatus) return;
+        clearTimeout(saveStatusTimer);
+        const label = String(text || "").trim();
+        saveStatus.textContent = label;
+        saveStatus.hidden = !label;
+        if (label && hideAfterMs) {
+            saveStatusTimer = setTimeout(() => {
+                saveStatus.textContent = "";
+                saveStatus.hidden = true;
+            }, hideAfterMs);
+        }
+    }
     const chapterWordsEl = document.getElementById("chapterWords");
     const totalWordsEl = document.getElementById("totalWords");
     const treeToggle = document.getElementById("treeToggle");
@@ -227,7 +244,8 @@ async function boot() {
 
     const profile = await profilePromise;
     initWorkspaceShell({
-        title: book.title || "Untitled Book",
+        lead: "Working On ",
+        accent: book.title || "Untitled Book",
         subtitle: "Writing",
         name: profile.name,
         imageUrl: profile.imageUrl,
@@ -245,17 +263,50 @@ async function boot() {
                 media_format: next.media_format,
             });
             if (next._rev !== bookRev) return;
-            book = { ...next, ...saved, sections: saved.sections || next.sections, _rev: next._rev };
-            if (saveStatus) saveStatus.textContent = "Saved.";
+            const nextTitle = String(next.title || "").trim();
+            const savedTitle = String(saved?.title || "").trim();
+            const title = nextTitle && nextTitle !== "Untitled Book"
+                ? nextTitle
+                : (savedTitle || nextTitle || "Untitled Book");
+            const sections = saved?.sections
+                ? mergeSectionsByChapterId(next.sections, saved.sections, {
+                    baseUpdated: Number(next.updated) || Date.now(),
+                    otherUpdated: Number(saved.updated) || 0,
+                    unionMissing: countBookChapters(next.sections?.body)
+                        >= countBookChapters(saved.sections?.body),
+                })
+                : next.sections;
+            book = withUpdatedWords({
+                ...next,
+                ...saved,
+                title,
+                sections,
+                _rev: next._rev,
+            });
+            setSaveStatus("Saved.", 1600);
         },
     });
 
-    function persist(next, immediate = false) {
+    let closing = false;
+
+    function persist(next, immediate = false, options = {}) {
+        const prevCount = countBookChapters(book.sections?.body);
+        const nextCount = countBookChapters(next.sections?.body);
+        if (!options.allowFewerChapters && nextCount < prevCount) {
+            next = { ...next, sections: book.sections };
+        }
         book = withUpdatedWords(next);
         book._rev = ++bookRev;
-        if (saveStatus) saveStatus.textContent = "Saving…";
+        setSaveStatus("Saving…");
         paintWordCount(chapterWordsEl, totalWordsEl, book, selectedId);
-        setWelcomeCopy(book.title || "Untitled Book", "Writing");
+        setWelcomeCopy({ lead: "Working On ", accent: book.title || "Untitled Book" });
+        api.stashBook(book.id, {
+            title: book.title,
+            sections: book.sections,
+            words: book.words,
+            media_format: book.media_format,
+            updated: Date.now(),
+        });
         autosave.schedule(book);
         if (immediate) return autosave.flush();
         return Promise.resolve();
@@ -265,8 +316,17 @@ async function boot() {
         return itemKind(currentChapter(book, selectedId));
     }
 
-    function applyChapterContent(html) {
-        if (selectedKind() === "folder") return;
+    function isBlankHtml(html) {
+        return countWordsInHtml(html) === 0;
+    }
+
+    function applyChapterContent(html, event) {
+        if (closing || selectedKind() === "folder") return;
+        const stored = currentChapter(book, selectedId);
+        if (isBlankHtml(html) && countWordsInHtml(stored?.content) > 0) {
+            const typed = event?.isTrusted && String(event.inputType || "") !== "";
+            if (!typed) return;
+        }
         persist({ ...book, sections: setChapterContent(book.sections, selectedId, html) });
     }
 
@@ -274,7 +334,7 @@ async function boot() {
         pageEl,
         onInput: applyChapterContent,
     });
-    mountToolbar({ mount: toolbarMount, editor });
+    mountToolbar({ mount: toolbarMount, editor, pageEl });
 
     function showChapter(id) {
         const chapter = currentChapter(book, id);
@@ -308,7 +368,7 @@ async function boot() {
     async function deleteItem(id, sectionKey) {
         if (!(await confirmDeleteChapter())) return;
         const sections = removeSectionChapter(book.sections, sectionKey, id);
-        await persist({ ...book, sections }, true);
+        await persist({ ...book, sections }, true, { allowFewerChapters: true });
         showChapter(fallbackChapterId(sections, selectedId));
     }
 
@@ -338,13 +398,13 @@ async function boot() {
             onSelect: selectItem,
             onDelete: (id) => deleteItem(id, "body"),
             onAddNote: addNoteToChapter,
-            onReorder: (nodes) => {
+            onReorder: (nodes, noteGroups) => {
                 if (selectedKind() !== "folder") applyChapterContent(editor.getHtml());
-                void persist({ ...book, sections: applyBodyOutline(book.sections, nodes) }, true);
-            },
-            onNotesReorder: (groups) => {
-                if (selectedKind() !== "folder") applyChapterContent(editor.getHtml());
-                void persist({ ...book, sections: applyBodyNotes(book.sections, groups) }, true);
+                const sections = noteGroups
+                    ? applyBodyTree(book.sections, nodes, noteGroups)
+                    : applyBodyOutline(book.sections, nodes);
+                void persist({ ...book, sections }, true);
+                drawTree();
             },
         });
     }
@@ -372,11 +432,11 @@ async function boot() {
 
     async function addNoteToChapter(chapterId) {
         await saveChapter();
-        const parentId = chapterId || noteParentChapterId(book.sections.body, selectedId);
-        if (!parentId) return;
-        const sections = addBodyNote(book.sections, parentId);
-        const added = lastNote(sections.body, parentId);
-        expandTreeItem(parentId);
+        const nestUnder = chapterId || noteParentChapterId(book.sections.body, selectedId);
+        const folderId = nestUnder ? "" : parentFolderId(book.sections.body, selectedId);
+        const sections = addBodyNote(book.sections, nestUnder, "", folderId);
+        const added = lastNote(sections.body, nestUnder, folderId);
+        if (nestUnder) expandTreeItem(nestUnder);
         await persist({ ...book, sections }, true);
         setTab("chapters");
         if (added) showChapter(added.id);
@@ -425,9 +485,17 @@ async function boot() {
     }, true);
 
     bookTitle?.addEventListener("input", () => {
-        persist({ ...book, title: bookTitle.value });
+        if (closing) return;
+        const title = String(bookTitle.value || "").trim();
+        if (!title) {
+            if (String(book.title || "").trim() && book.title !== "Untitled Book") return;
+            persist({ ...book, title: "Untitled Book" });
+            return;
+        }
+        persist({ ...book, title });
     });
     chapterTitle?.addEventListener("input", () => {
+        if (closing) return;
         persist({
             ...book,
             sections: setChapterTitle(book.sections, selectedId, chapterTitle.value),
@@ -435,18 +503,29 @@ async function boot() {
         drawTree();
     });
 
-    function snapshotAndFlush() {
-        if (selectedKind() !== "folder") applyChapterContent(editor.getHtml());
-        void autosave.flush();
+    function snapshotAndFlush(tearingDown = false) {
+        if (tearingDown) closing = true;
+        let next = book;
+        const title = String(bookTitle?.value || "").trim();
+        if (title) next = { ...next, title };
+        const heading = String(chapterTitle?.value || "").trim();
+        if (heading) next = { ...next, sections: setChapterTitle(next.sections, selectedId, heading) };
+        if (selectedKind() !== "folder") {
+            const html = editor.getHtml();
+            if (!isBlankHtml(html)) {
+                next = { ...next, sections: setChapterContent(next.sections, selectedId, html) };
+            }
+        }
+        persist(next, true);
     }
     document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "hidden") snapshotAndFlush();
+        if (document.visibilityState === "hidden") snapshotAndFlush(false);
     });
-    window.addEventListener("pagehide", snapshotAndFlush);
-    window.addEventListener("beforeunload", snapshotAndFlush);
+    window.addEventListener("pagehide", () => snapshotAndFlush(true));
+    window.addEventListener("beforeunload", () => snapshotAndFlush(true));
 
     showChapter(selectedId);
-    if (saveStatus) saveStatus.textContent = "Saved.";
+    setSaveStatus("");
 }
 
 boot();

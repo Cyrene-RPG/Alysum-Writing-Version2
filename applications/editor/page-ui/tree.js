@@ -20,7 +20,7 @@ function chapterIdsFromList(mount) {
 function readOutline(ul) {
     if (!ul) return [];
     return [...ul.children]
-        .filter((node) => node.classList.contains("writer-tree-node") && node.dataset.kind !== "note")
+        .filter((node) => node.classList.contains("writer-tree-node"))
         .map((node) => ({
             id: node.dataset.itemId,
             children: readOutline(node.querySelector(":scope > [data-nest='outline']")),
@@ -30,7 +30,7 @@ function readOutline(ul) {
 function readNoteGroups(mount) {
     return [...mount.querySelectorAll(".writer-tree-node[data-kind='chapter']")].map((node) => ({
         chapterId: node.dataset.itemId,
-        noteIds: [...node.querySelectorAll(":scope > [data-nest='notes'] > .writer-tree-node")]
+        noteIds: [...node.querySelectorAll(":scope > [data-nest='notes'] > .writer-tree-node[data-kind='note']")]
             .map((note) => note.dataset.itemId)
             .filter(Boolean),
     }));
@@ -71,23 +71,27 @@ function isNote(node) {
 }
 
 function bindDrag(node, root, onDrop) {
-    let didDrag = false;
+    let startParent = null;
+    let startIndex = -1;
     node.addEventListener("dragstart", (event) => {
         if (event.target.closest("[data-tree-delete], [data-tree-toggle], [data-tree-note]")) {
             event.preventDefault();
             return;
         }
         event.stopPropagation();
-        didDrag = true;
+        startParent = node.parentElement;
+        startIndex = startParent ? [...startParent.children].indexOf(node) : -1;
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.setData("text/plain", node.dataset.itemId || "");
         node.classList.add("is-dragging");
     });
     node.addEventListener("dragend", () => {
-        const moved = didDrag;
-        didDrag = false;
         node.classList.remove("is-dragging");
-        if (moved) onDrop?.();
+        const parent = node.parentElement;
+        if (!parent || !root.isConnected || !root.contains(node)) return;
+        const index = [...parent.children].indexOf(node);
+        if (parent === startParent && index === startIndex) return;
+        onDrop?.();
     });
     node.addEventListener("dragover", (event) => {
         event.preventDefault();
@@ -95,12 +99,18 @@ function bindDrag(node, root, onDrop) {
         const dragging = root.querySelector(".is-dragging");
         if (!dragging || dragging === node || dragging.contains(node)) return;
         const noteDrag = isNote(dragging);
-        if (noteDrag !== isNote(node)) {
-            if (noteDrag && node.dataset.kind === "chapter") {
+        if (noteDrag && node.dataset.kind === "chapter") {
+            const row = node.querySelector(":scope > .writer-tree-item");
+            const rect = row?.getBoundingClientRect();
+            const nest = rect ? event.clientY > rect.top + rect.height * 0.55 : true;
+            if (nest) {
                 node.querySelector(":scope > [data-nest='notes']")?.appendChild(dragging);
+            } else {
+                node.parentElement?.insertBefore(dragging, node);
             }
             return;
         }
+        if (noteDrag !== isNote(node)) return;
         const row = node.querySelector(":scope > .writer-tree-item");
         if (!row) return;
         const rect = row.getBoundingClientRect();
@@ -111,7 +121,8 @@ function bindDrag(node, root, onDrop) {
         event.preventDefault();
         event.stopPropagation();
         const dragging = root.querySelector(".is-dragging");
-        if (!dragging || dragging === node || dragging.contains(node) || isNote(dragging)) return;
+        if (!dragging || dragging === node || dragging.contains(node)) return;
+        if (isNote(dragging) && node.dataset.kind === "chapter") return;
         if (node.dataset.kind === "folder") {
             node.querySelector(":scope > [data-nest='outline']")?.appendChild(dragging);
         }
@@ -125,7 +136,7 @@ function bindListDrop(ul, root, notesOnly) {
         event.stopPropagation();
         const dragging = root.querySelector(".is-dragging");
         if (!dragging) return;
-        if (notesOnly !== isNote(dragging)) return;
+        if (notesOnly && !isNote(dragging)) return;
         ul.appendChild(dragging);
     });
 }
@@ -136,7 +147,7 @@ export function expandTreeItem(id) {
     collapsedIds.delete(String(id || ""));
 }
 
-function itemRow(item, selectedId, { canDelete = true, canAddNote = false, canCollapse = false } = {}) {
+function itemRow(item, selectedId, { canDelete = true, canCollapse = false } = {}) {
     const id = String(item.id || "");
     const kind = kindOf(item);
     const active = id === String(selectedId || "") ? " is-active" : "";
@@ -148,14 +159,11 @@ function itemRow(item, selectedId, { canDelete = true, canAddNote = false, canCo
         ? `<button type="button" class="writer-tree-fold writer-tree-fold--after" data-tree-toggle aria-label="Toggle notes">${collapsed ? "▸" : "▾"}</button>`
         : "";
     const kindLabel = kind === "note" ? `<span class="writer-tree-kind">Note</span>` : "";
-    const noteBtn = canAddNote
-        ? `<button type="button" class="writer-tree-note-btn" data-tree-note title="Add note">Note</button>`
-        : "";
     const del = canDelete
         ? `<button type="button" data-tree-delete title="Delete">×</button>`
         : "";
-    const actions = noteBtn || del
-        ? `<span class="writer-tree-actions">${noteBtn}${del}</span>`
+    const actions = del
+        ? `<span class="writer-tree-actions">${del}</span>`
         : "";
     return `
         <div class="writer-tree-item writer-tree-item--${kind}${active}" data-item-id="${escapeHtml(id)}">
@@ -177,7 +185,7 @@ function noteLeafHtml(note, selectedId) {
 
 function outlineNodeHtml(item, selectedId, showNotes) {
     const kind = kindOf(item);
-    if (kind === "note") return "";
+    if (kind === "note") return showNotes ? noteLeafHtml(item, selectedId) : "";
     const id = String(item.id || "");
     const hasNotes = showNotes && kind === "chapter" && Array.isArray(item.notes) && item.notes.length > 0;
     const collapsed = collapsedIds.has(id) ? " is-collapsed" : "";
@@ -189,7 +197,7 @@ function outlineNodeHtml(item, selectedId, showNotes) {
         : "";
     return `
         <li class="writer-tree-node${collapsed}" data-item-id="${escapeHtml(id)}" data-kind="${kind}" draggable="true">
-            ${itemRow(item, selectedId, { canAddNote: showNotes && kind === "chapter", canCollapse: hasNotes })}
+            ${itemRow(item, selectedId, { canCollapse: hasNotes })}
             ${folderKids}
             ${notes}
         </li>`;
@@ -221,12 +229,17 @@ export function renderTree({ mount, chapters, selectedId, onSelect, onDelete, on
                 event.preventDefault();
                 return;
             }
+            row.dataset.treeFrom = String([...mount.children].indexOf(row));
             event.dataTransfer.effectAllowed = "move";
             event.dataTransfer.setData("text/plain", row.dataset.chapterId);
             row.classList.add("is-dragging");
         });
         row.addEventListener("dragend", () => {
             row.classList.remove("is-dragging");
+            if (!mount.isConnected || !mount.contains(row)) return;
+            const from = Number(row.dataset.treeFrom);
+            delete row.dataset.treeFrom;
+            if (Number.isFinite(from) && [...mount.children].indexOf(row) === from) return;
             onReorder?.(chapterIdsFromList(mount));
         });
         row.addEventListener("dragover", (event) => {
@@ -263,8 +276,7 @@ export function renderOutline({
         .join("");
 
     const saveOrder = () => {
-        onReorder?.(readOutline(mount));
-        if (showNotes) onNotesReorder?.(readNoteGroups(mount));
+        onReorder?.(readOutline(mount), showNotes ? readNoteGroups(mount) : null);
     };
 
     mount.querySelectorAll(".writer-tree-node").forEach((node) => {
@@ -279,4 +291,5 @@ export function renderOutline({
     });
     mount.querySelectorAll("[data-nest='outline']").forEach((ul) => bindListDrop(ul, mount, false));
     mount.querySelectorAll("[data-nest='notes']").forEach((ul) => bindListDrop(ul, mount, true));
+    bindListDrop(mount, mount, false);
 }

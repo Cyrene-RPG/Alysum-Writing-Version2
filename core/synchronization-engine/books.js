@@ -10,7 +10,14 @@ import {
     updateBook as updateLocalBook,
 } from "./local-adapter.js";
 import * as cloud from "./cloud-adapter.js";
-import { createEmptyBook, ensureChapterIds, withUpdatedWords } from "../writing-engine/manuscript.js";
+import {
+    createEmptyBook,
+    ensureChapterIds,
+    mergeSectionsByChapterId,
+    walkBookChapters,
+    withUpdatedWords,
+} from "../writing-engine/manuscript.js";
+import { countWordsInChapter } from "../writing-engine/word-count.js";
 
 const CACHE_PREFIX = "alysum:editor:draft-cache-";
 
@@ -50,6 +57,72 @@ function removeCache(userId, id) {
 
 function sortByUpdated(books) {
     return [...books].sort((a, b) => Number(b.updated || 0) - Number(a.updated || 0));
+}
+
+function allChapters(sections) {
+    const src = sections && typeof sections === "object" ? sections : {};
+    return [
+        ...walkBookChapters(src.front),
+        ...walkBookChapters(src.body),
+        ...walkBookChapters(src.back),
+    ];
+}
+
+function chapterMap(sections) {
+    return new Map(allChapters(sections).map((chapter) => [String(chapter.id || ""), chapter]));
+}
+
+function pickBookTitle(cloudTitle, cacheTitle, cacheNewer) {
+    const cloud = String(cloudTitle || "").trim() || "Untitled Book";
+    const cache = String(cacheTitle || "").trim();
+    if (cache && cache !== "Untitled Book" && (cloud === "Untitled Book" || cacheNewer)) return cache;
+    return cloud;
+}
+
+function shouldPushMerged(cloudBook, merged) {
+    const prior = chapterMap(cloudBook?.sections);
+    for (const chapter of allChapters(merged?.sections)) {
+        const id = String(chapter.id || "");
+        if (!id) continue;
+        const existing = prior.get(id);
+        if (!existing) return true;
+        const mergedWords = countWordsInChapter(chapter);
+        const existingWords = countWordsInChapter(existing);
+        if (mergedWords > existingWords) return true;
+        if (mergedWords > 0 && String(chapter.content || "") !== String(existing.content || "")) return true;
+        const mergedTitle = String(chapter.title || "").trim();
+        const existingTitle = String(existing.title || "").trim();
+        if (mergedTitle && mergedTitle !== existingTitle && (!existingTitle || existingTitle === "Untitled")) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function mergeLoadedBook(cached, cloudBook) {
+    if (!cached) return { book: cloudBook, push: false };
+    if (!cloudBook) return { book: cached, push: false };
+    const cacheNewer = Number(cached.updated || 0) > Number(cloudBook.updated || 0);
+    const book = withUpdatedWords({
+        ...cloudBook,
+        title: pickBookTitle(cloudBook.title, cached.title, cacheNewer),
+        sections: mergeSectionsByChapterId(cloudBook.sections, cached.sections, {
+            baseUpdated: Number(cloudBook.updated) || 0,
+            otherUpdated: Number(cached.updated) || 0,
+        }),
+        updated: Math.max(Number(cloudBook.updated) || 0, Number(cached.updated) || 0),
+    });
+    return { book, push: shouldPushMerged(cloudBook, book) };
+}
+
+function stashPatch(previous, id, userId, patch) {
+    return {
+        ...(previous || { id, user_id: userId }),
+        ...patch,
+        id,
+        user_id: userId,
+        updated: Number(patch.updated) || Date.now(),
+    };
 }
 
 function asBook(payload) {
@@ -98,6 +171,9 @@ export function createBooksApi(session, supabase) {
             async updateBook(id, patch) {
                 return normalizeBook(updateLocalBook(id, patch));
             },
+            stashBook(id, patch) {
+                return normalizeBook(updateLocalBook(id, { ...patch, updated: Date.now() }));
+            },
             async deleteBook(id) {
                 deleteLocalBook(id);
             },
@@ -109,8 +185,14 @@ export function createBooksApi(session, supabase) {
         async listBooks() {
             try {
                 const books = await cloud.listBooks(supabase, userId);
-                writeCache(userId, books);
-                return books.map(normalizeBook).filter(Boolean);
+                const cached = readCache(userId);
+                const byId = new Map(cached.map((row) => [row.id, row]));
+                const merged = books.map((book) => {
+                    const prior = byId.get(book.id);
+                    return prior ? mergeLoadedBook(prior, book).book : book;
+                });
+                writeCache(userId, merged);
+                return merged.map(normalizeBook).filter(Boolean);
             } catch {
                 return sortByUpdated(readCache(userId));
             }
@@ -119,14 +201,26 @@ export function createBooksApi(session, supabase) {
             const cached = readCache(userId).find((row) => row.id === id) || null;
             try {
                 const book = await cloud.getBook(supabase, userId, id);
-                if (book && cached && Number(cached.updated || 0) > Number(book.updated || 0)) {
-                    try {
-                        const pushed = await cloud.updateBook(supabase, userId, id, cached);
-                        upsertCache(userId, pushed);
-                        return normalizeBook(pushed);
-                    } catch {
-                        return normalizeBook(cached);
+                if (book && cached) {
+                    const picked = mergeLoadedBook(cached, book);
+                    if (picked.push) {
+                        try {
+                            const pushed = await cloud.updateBook(supabase, userId, id, {
+                                title: picked.book.title,
+                                sections: picked.book.sections,
+                                words: picked.book.words,
+                                media_format: picked.book.media_format,
+                            });
+                            const keep = mergeLoadedBook(picked.book, pushed).book;
+                            upsertCache(userId, keep);
+                            return normalizeBook(keep);
+                        } catch {
+                            upsertCache(userId, picked.book);
+                            return normalizeBook(picked.book);
+                        }
                     }
+                    upsertCache(userId, picked.book);
+                    return normalizeBook(picked.book);
                 }
                 if (book) {
                     upsertCache(userId, book);
@@ -157,21 +251,22 @@ export function createBooksApi(session, supabase) {
         },
         async updateBook(id, patch) {
             const previous = readCache(userId).find((row) => row.id === id);
-            const optimistic = {
-                ...(previous || { id, user_id: userId }),
-                ...patch,
-                id,
-                user_id: userId,
-                updated: Date.now(),
-            };
+            const optimistic = stashPatch(previous, id, userId, { ...patch, updated: Date.now() });
             upsertCache(userId, optimistic);
             try {
                 const book = await cloud.updateBook(supabase, userId, id, patch);
-                upsertCache(userId, book);
-                return book;
+                const keep = mergeLoadedBook(optimistic, book).book;
+                upsertCache(userId, keep);
+                return keep;
             } catch {
                 return optimistic;
             }
+        },
+        stashBook(id, patch) {
+            const previous = readCache(userId).find((row) => row.id === id);
+            const optimistic = stashPatch(previous, id, userId, { ...patch, updated: Date.now() });
+            upsertCache(userId, optimistic);
+            return normalizeBook(optimistic);
         },
         async deleteBook(id) {
             removeCache(userId, id);

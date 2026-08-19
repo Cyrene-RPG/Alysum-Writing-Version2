@@ -74,7 +74,7 @@
     font-weight: 900;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ui-text, var(--text, #fff));
 }
 
 .profile-box .field {

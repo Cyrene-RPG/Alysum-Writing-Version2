@@ -58,7 +58,7 @@ import {
     setUiColorChipActive,
     refreshUiColorThemeChip
 } from "/js/settings/ui-colors.js";
-import { initAppearanceLoadouts } from "/js/settings/loadouts.js";
+import { initAppearanceLoadouts } from "/js/settings/loadouts.js?v=2";
 
 export function setAvatarPreview(imageUrl, label) {
     if (!els.profileAvatarPreview || !els.profileAvatarPreviewWrap) return;
