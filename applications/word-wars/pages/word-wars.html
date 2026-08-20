@@ -18,12 +18,12 @@
       }
     }
     </script>
-    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=6" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=7" />
     <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
     <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=7" />
-    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=4" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=11" />
     <script src="/site-appearance/js-runtime/body-background-presets-data.js?v=3"></script>
-    <script src="/site-appearance/js-runtime/text-ink-data.js?v=5"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js?v=6"></script>
     <script src="/site-appearance/js-runtime/boot.js?v=7"></script>
     <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
     <link rel="manifest" href="/manifest.webmanifest">
@@ -32,12 +32,12 @@
     <meta name="robots" content="noindex, nofollow">
     <title>Word War — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="/css/workspace-nav.css?v=27" />
-    <link rel="stylesheet" href="/css/editor/page.css?v=42" />
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=28" />
+    <link rel="stylesheet" href="/css/editor/page.css?v=46" />
     <link rel="stylesheet" href="/css/editor/document.css?v=11" />
     <link rel="stylesheet" href="/css/editor/editor-fonts.css?v=1" />
     <link rel="stylesheet" href="/css/editor/scene-breaks.css?v=1" />
-    <link rel="stylesheet" href="/css/word-wars/room.css?v=2" />
+    <link rel="stylesheet" href="/css/word-wars/room.css?v=8" />
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 </head>
 <body class="ww-body">
@@ -58,7 +58,7 @@
                 </div>
             </div>
             <div class="wd-welcome-copy">
-                <h1 class="wd-welcome-title" id="welcomeTitle">Word War</h1>
+                <h1 class="wd-welcome-title" id="welcomeTitle">Word <span class="wd-name">Wars</span></h1>
                 <p class="wd-welcome-sub" id="welcomeSubtitle"></p>
             </div>
         </div>
@@ -73,19 +73,23 @@
     <div class="ww-loading" id="loadingPanel">Loading war…</div>
     <div class="ww-room hidden" id="roomShell">
         <aside class="ww-chapters" aria-label="Chapters">
-            <p class="ww-label">Chapters</p>
+            <div class="ww-chapters-head">
+                <p class="ww-label">Chapters</p>
+                <button type="button" class="writer-tree-toggle" id="treeToggle" aria-expanded="true" title="Hide chapters">‹</button>
+            </div>
             <ul id="chapterList"></ul>
         </aside>
         <section class="ww-stage" id="stage">
             <div class="ww-stage-bar">
                 <span id="timerEl">—</span>
-                <span id="wordEl">0 words</span>
-                <span id="saveStatus"></span>
+                <span class="ww-watch-who hidden" id="watchWho"></span>
+                <button type="button" class="ww-view-toggle" id="myViewBtn" aria-pressed="false">Go live</button>
+                <span class="ww-view-live hidden" id="myViewLive">LIVE</span>
+                <span id="wordEl" class="ww-word-badge">0 words</span>
                 <button type="button" class="ww-finish hidden" id="finishBtn">Finish</button>
                 <button type="button" class="ww-leave" id="leaveBtn">Leave</button>
             </div>
             <div class="ww-spectate hidden" id="spectatePane">
-                <p class="ww-spectate-name" id="spectateName"></p>
                 <div class="writer-page" id="spectatePage"></div>
             </div>
             <div class="ww-editor" id="editorPane">
@@ -95,11 +99,14 @@
                 </div>
             </div>
         </section>
-        <aside class="ww-tiles" aria-label="Writers">
-            <p class="ww-label">Writers</p>
-            <div id="tileList"></div>
+        <aside class="ww-others" aria-label="Others">
+            <div class="ww-others-head">
+                <p class="ww-label">Others</p>
+                <button type="button" class="writer-tree-toggle" id="railToggle" aria-expanded="true" title="Hide others">›</button>
+            </div>
+            <div class="ww-others-list" id="tileList"></div>
         </aside>
     </div>
-    <script type="module" src="/js/word-wars/room.js?v=1"></script>
+    <script type="module" src="/js/word-wars/room.js?v=9"></script>
 </body>
 </html>

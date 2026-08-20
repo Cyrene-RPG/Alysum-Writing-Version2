@@ -42,7 +42,7 @@ function whiteInk() {
 const COLOR_TOKEN_RE =
     /#(?:[0-9a-f]{6}|[0-9a-f]{3})\b|rgba?\(\s*[^)]+\)|hsla?\(\s*[^)]+\)/gi;
 
-const CHROME_BARS = ".ui-bar, .wd-welcome-bar, .wd-nav-wrap, .legal-hero";
+const CHROME_BARS = ".ui-bar, .wd-welcome-bar, .wd-nav-wrap, .legal-hero, .writer-tree, .writer-rail, .ww-chapters, .ww-others";
 const CHROME_CONTROLS = ".wd-nav > a, .wd-nav > button, .wd-loadout-btn";
 const FALLBACK_UNDERLAY = { r: 17, g: 24, b: 39, a: 1 };
 

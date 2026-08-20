@@ -26,6 +26,11 @@ export function rpcErrorMessage(error, fallback = "Something went wrong") {
     return safeString(error?.message, fallback);
 }
 
+function isMissingRpc(error) {
+    const message = safeString(error?.message);
+    return /schema cache|could not find the function/i.test(message);
+}
+
 export async function createWordWarRoom({
     durationMin = 15,
     maxWriters = 4,
@@ -33,13 +38,19 @@ export async function createWordWarRoom({
     isLocked = false,
     shareRequired = false,
 } = {}) {
-    const { data, error } = await supabase.rpc("create_word_war_room", {
+    const args = {
         p_duration_min: durationMin,
         p_max_writers: maxWriters,
         p_book_id: bookId,
         p_is_locked: isLocked,
+    };
+    let { data, error } = await supabase.rpc("create_word_war_room", {
+        ...args,
         p_share_required: shareRequired,
     });
+    if (error && isMissingRpc(error)) {
+        ({ data, error } = await supabase.rpc("create_word_war_room", args));
+    }
     if (error) throwRpc(error);
     return safeObject(data);
 }

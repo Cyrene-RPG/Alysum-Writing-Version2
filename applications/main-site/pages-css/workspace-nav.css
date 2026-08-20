@@ -308,7 +308,7 @@
     border-radius: 999px;
     border: 1px solid transparent;
     background: transparent;
-    color: var(--chrome-muted, var(--muted, #d1d5db));
+    color: var(--chrome-text, var(--ui-text, var(--text, #fff)));
     font-family: inherit;
     font-size: clamp(12px, 0.85vw, 13px);
     font-weight: 700;

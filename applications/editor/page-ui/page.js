@@ -32,7 +32,7 @@ import { confirmDeleteChapter } from "./prompt.js";
 import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=2";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { mountToolbar } from "./toolbar.js?v=6";
-import { expandTreeItem, renderOutline, renderTree } from "./tree.js?v=17";
+import { expandTreeItem, markTreeActive, renderOutline, renderTree } from "./tree.js?v=19";
 import {
     applyChapterTypographyStyles,
     chapterTypography,
@@ -121,6 +121,7 @@ async function boot() {
 
     loading?.classList.add("hidden");
     shell?.classList.remove("hidden");
+    window.__alysumTextInk?.scheduleChromeInk?.();
 
     const { setTab, expandMatter } = mountWriterChrome({
         shell,
@@ -317,7 +318,14 @@ async function boot() {
         }
         if (!options.keepFind) findUi?.close();
         paintWordCount(chapterWordsEl, totalWordsEl, book, selectedId);
-        drawTree();
+        if (options.rebuildTree) drawTree();
+        else paintSelection();
+    }
+
+    function paintSelection() {
+        const mounts = [chapterList, frontList, bodyList, backList];
+        const found = mounts.map((mount) => markTreeActive(mount, selectedId)).some(Boolean);
+        if (!found) drawTree();
     }
 
     function saveChapter() {
@@ -325,9 +333,9 @@ async function boot() {
         return autosave.flush();
     }
 
-    async function selectItem(id) {
+    function selectItem(id) {
         if (id === selectedId) return;
-        await saveChapter();
+        if (selectedKind() !== "folder") applyChapterContent(editor.getHtml());
         showChapter(id);
     }
 
@@ -335,7 +343,7 @@ async function boot() {
         if (!(await confirmDeleteChapter())) return;
         const sections = removeSectionChapter(book.sections, sectionKey, id);
         await persist({ ...book, sections }, true, { allowFewerChapters: true });
-        showChapter(fallbackChapterId(sections, selectedId));
+        showChapter(fallbackChapterId(sections, selectedId), { rebuildTree: true });
     }
 
     function bindFlat(mount, key, chapters) {
@@ -392,7 +400,7 @@ async function boot() {
         await persist({ ...book, sections }, true);
         if (tab) setTab(tab);
         if (tab === "book") expandMatter(key);
-        if (added) showChapter(added.id);
+        if (added) showChapter(added.id, { rebuildTree: true });
     }
 
     async function addNoteToChapter(chapterId) {
@@ -404,7 +412,7 @@ async function boot() {
         if (nestUnder) expandTreeItem(nestUnder);
         await persist({ ...book, sections }, true);
         setTab("chapters");
-        if (added) showChapter(added.id);
+        if (added) showChapter(added.id, { rebuildTree: true });
     }
 
     folderView?.addEventListener("click", (event) => {
@@ -421,7 +429,7 @@ async function boot() {
         const added = lastOfKind(sections.body, "folder");
         await persist({ ...book, sections }, true);
         setTab("chapters");
-        if (added) showChapter(added.id);
+        if (added) showChapter(added.id, { rebuildTree: true });
     });
     noteAdd?.addEventListener("click", () => addNoteToChapter());
     frontAdd?.addEventListener("click", () => addPage("front", "book"));

@@ -56,8 +56,12 @@
     padding: 4px 0 0 22px;
     min-height: 28px;
 }
-.writer-tree-item--folder {
-    background: color-mix(in srgb, var(--alysum-ui-raised, #2a2a2a) 80%, transparent);
+.writer-tree-item--folder,
+.writer-tree-item--folder.is-active {
+    background: var(--alysum-ui-panel, #111827);
+    border-color: transparent;
+    box-shadow: none;
+    filter: none;
 }
 .writer-tree-item:has([data-tree-toggle]) {
     cursor: pointer;
@@ -87,7 +91,19 @@
     padding-left: 22px;
 }
 .writer-tree-item.is-active {
-    border-color: color-mix(in srgb, var(--accent, #6d28d9) 70%, transparent);
+    border-color: transparent;
+    box-shadow: none;
+}
+.writer-tree-item.is-active:not(.writer-tree-item--folder) {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: none;
+}
+.writer-tree-item.is-active:not(.writer-tree-item--folder) .writer-tree-kind,
+.writer-tree-item.is-active:not(.writer-tree-item--folder) .writer-tree-fold,
+.writer-tree-item.is-active:not(.writer-tree-item--folder) .writer-tree-actions button,
+.writer-tree-item.is-active:not(.writer-tree-item--folder) .writer-tree-open {
+    color: inherit;
 }
 .writer-tree-open {
     flex: 1;

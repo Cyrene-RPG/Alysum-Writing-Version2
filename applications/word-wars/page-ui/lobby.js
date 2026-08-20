@@ -1,5 +1,5 @@
 /**
- * Word Wars lobby — create, open list, join by code, waiting room.
+ * Word Wars lobby — create, open list, join by code. Join drops into a live sprint.
  */
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
@@ -13,14 +13,19 @@ import {
     joinWordWarRoomById,
     listOpenWordWarLobbies,
     getWordWarLobby,
-    updateWordWarLobby,
     startWordWar,
-    leaveWordWarRoom,
-    meFromLobby,
-} from "@alysum/community/word-wars.js";
+} from "@alysum/community/word-wars.js?v=2";
+import { paintChipInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
+import {
+    DEMO_HARD_CODE,
+    DEMO_HARD_ID,
+    demoLobbySnapshot,
+    demoOpenCards,
+    isDemoRoom,
+    storeDemoLobby,
+} from "/js/word-wars/demo.js";
 
 const LENGTHS = [5, 10, 15, 20, 25, 30, 45, 0];
-const POLL_MS = 1500;
 
 function escapeHtml(str) {
     return String(str ?? "")
@@ -59,7 +64,7 @@ function requireBook(bookId) {
 }
 
 async function boot() {
-    initWorkspaceShell({ lead: "", accent: "Word Wars", subtitle: "Write together." });
+    initWorkspaceShell({ lead: "Word ", accent: "Wars", subtitle: "Write together." });
     const session = await requireStudioSession(supabase, "word-wars-lobby.html");
     if (!session) return;
     if (session.mode !== "cloud") {
@@ -69,8 +74,8 @@ async function boot() {
 
     const profile = await loadWorkspaceProfile(supabase, session);
     initWorkspaceShell({
-        lead: "",
-        accent: "Word Wars",
+        lead: "Word ",
+        accent: "Wars",
         subtitle: "Write together.",
         name: profile.name,
         imageUrl: profile.imageUrl,
@@ -87,8 +92,6 @@ async function boot() {
 
     const loading = document.getElementById("loadingPanel");
     const shell = document.getElementById("lobbyShell");
-    const createView = document.getElementById("createView");
-    const waitView = document.getElementById("waitView");
     const bookSelect = document.getElementById("bookSelect");
     const lengthSlider = document.getElementById("lengthSlider");
     const writersValue = document.getElementById("writersValue");
@@ -98,7 +101,6 @@ async function boot() {
     const codeSlots = document.getElementById("codeSlots");
     const createError = document.getElementById("createError");
     const joinError = document.getElementById("joinError");
-    const waitError = document.getElementById("waitError");
 
     loading?.classList.add("hidden");
     shell?.classList.remove("hidden");
@@ -107,8 +109,6 @@ async function boot() {
     let maxWriters = 4;
     let locked = false;
     let shareRequired = false;
-    let lobby = null;
-    let pollTimer = 0;
     let busy = false;
 
     bookSelect.innerHTML = books.length
@@ -234,13 +234,38 @@ async function boot() {
         return { label: "Share off", share: false };
     }
 
+    function paintControlInk() {
+        const root = getComputedStyle(document.documentElement);
+        const chrome = root.getPropertyValue("--alysum-chrome-gradient").trim()
+            || root.getPropertyValue("--theme-welcome-bar").trim()
+            || "#6d28d9";
+        const sprint = document.getElementById("createBtn");
+        if (sprint) paintChipInk(sprint, chrome);
+        const join = document.getElementById("joinCodeBtn");
+        if (join) {
+            paintChipInk(join, root.getPropertyValue("--pink").trim() || "#f9a8d4");
+        }
+    }
+
+    function paintNoteInk() {
+        const paper = getComputedStyle(document.documentElement)
+            .getPropertyValue("--alysum-display-highlight")
+            .trim() || "#fde68a";
+        openList.querySelectorAll(".ww-card, .ww-open-empty").forEach((el) => {
+            const ink = paintChipInk(el, paper);
+            if (ink) el.style.setProperty("--muted", ink.muted);
+        });
+        paintControlInk();
+    }
+
     function paintOpen(list) {
-        const rows = Array.isArray(list) ? list : [];
+        const rows = [...demoOpenCards(), ...(Array.isArray(list) ? list : [])];
         openCount.textContent = rows.length
             ? `Join a sprint · ${rows.length} ${rows.length === 1 ? "lobby" : "lobbies"} open now`
             : "Join a sprint · none open now";
         if (!rows.length) {
-            openList.innerHTML = `<p class="hint">No public lobbies right now.</p>`;
+            openList.innerHTML = `<p class="hint ww-open-empty">Pin a sprint here — none open now.</p>`;
+            paintNoteInk();
             return;
         }
         openList.innerHTML = rows
@@ -251,17 +276,15 @@ async function boot() {
                 const status = shareStatus(row);
                 const code = String(row.code || "");
                 return `
-                    <article class="ww-card">
-                        <h3>${escapeHtml(row.hostBookTitle || row.hostDisplayName || "Word War")}</h3>
+                    <button type="button" class="ww-card" data-join-id="${escapeHtml(row.roomId)}" ${full ? "disabled" : ""} aria-label="${full ? "Lobby full" : `Join ${escapeHtml(row.hostBookTitle || row.hostDisplayName || "Word War")}`}">
+                        <span class="ww-card-title">${escapeHtml(row.hostBookTitle || row.hostDisplayName || "Word War")}</span>
                         <span class="ww-card-code">#${escapeHtml(code)}</span>
-                        <p class="ww-card-meta">${escapeHtml(durationLabel(row.durationMin).toUpperCase())} · ${count}/${max}</p>
-                        <div class="ww-card-foot">
-                            <span class="ww-status${status.share ? " is-share" : ""}">${escapeHtml(status.label)}</span>
-                            <button type="button" class="ww-card-join" data-join-id="${escapeHtml(row.roomId)}" ${full ? "disabled" : ""}>${full ? "Full" : "Join"}</button>
-                        </div>
-                    </article>`;
+                        <span class="ww-card-meta">${escapeHtml(durationLabel(row.durationMin).toUpperCase())} · ${count}/${max}</span>
+                        <span class="ww-status${status.share ? " is-share" : ""}">${escapeHtml(full ? "Full" : status.label)}</span>
+                    </button>`;
             })
             .join("");
+        paintNoteInk();
     }
 
     async function refreshOpen() {
@@ -272,85 +295,22 @@ async function boot() {
         }
     }
 
-    function paintWait() {
-        if (!lobby) return;
-        const me = meFromLobby(lobby, uid);
-        const people = Array.isArray(lobby.participants) ? lobby.participants : [];
-        document.getElementById("waitCode").textContent = lobby.code || "——————";
-        document.getElementById("waitMeta").textContent = [
-            durationLabel(lobby.durationMin),
-            lobby.shareRequired ? "live writing required" : "live writing optional",
-            lobby.isLocked ? "invite only" : "open",
-        ].join(" · ");
-        document.getElementById("waitPeople").innerHTML = people
-            .map((p) => {
-                const ready = p.isReady ? "Ready" : "Not ready";
-                const host = p.isHost ? " · host" : "";
-                return `<li><span>${escapeHtml(p.displayName || "Writer")}${escapeHtml(host)}</span><span>${ready}</span></li>`;
-            })
-            .join("");
-        const readyBtn = document.getElementById("readyBtn");
-        readyBtn.textContent = me?.isReady ? "Unready" : "Ready";
-        const startBtn = document.getElementById("startBtn");
-        startBtn.classList.toggle("hidden", !me?.isHost);
-        const lockWaitBtn = document.getElementById("lockWaitBtn");
-        lockWaitBtn?.classList.toggle("hidden", !me?.isHost);
-        if (lockWaitBtn) {
-            lockWaitBtn.classList.toggle("is-on", !!lobby.isLocked);
-            lockWaitBtn.textContent = lobby.isLocked ? "Unlock lobby" : "Lock lobby";
-        }
-    }
-
-    function showCreate() {
-        createView.classList.remove("hidden");
-        waitView.classList.add("hidden");
-        lobby = null;
-        setRoomUrl("");
-        clearInterval(pollTimer);
-        void refreshOpen();
-    }
-
-    function showWait(next) {
-        lobby = next;
-        setRoomUrl(next.roomId);
-        createView.classList.add("hidden");
-        waitView.classList.remove("hidden");
-        paintWait();
-        clearInterval(pollTimer);
-        pollTimer = setInterval(() => {
-            void pollLobby();
-        }, POLL_MS);
-    }
-
-    async function pollLobby() {
-        if (!lobby?.roomId) return;
-        try {
-            const next = await getWordWarLobby({ roomId: lobby.roomId });
-            if (!next) {
-                showCreate();
-                return;
-            }
-            if (next.status === "active") {
-                window.location.replace(`word-wars.html?room=${encodeURIComponent(next.roomId)}`);
-                return;
-            }
-            if (next.status !== "lobby") {
-                showCreate();
-                return;
-            }
-            lobby = next;
-            paintWait();
-        } catch {
-            /* keep last snapshot */
-        }
-    }
-
-    async function enterRoom(next) {
-        if (next.status === "active") {
+    async function goToWar(next) {
+        if (!next?.roomId) return;
+        if (isDemoRoom(next.roomId)) {
+            storeDemoLobby(next);
             window.location.replace(`word-wars.html?room=${encodeURIComponent(next.roomId)}`);
             return;
         }
-        showWait(next);
+        let live = next;
+        if (live.status !== "active") {
+            try {
+                live = await startWordWar(live.roomId);
+            } catch {
+                /* joiners of a leftover waiting lobby still enter the room */
+            }
+        }
+        window.location.replace(`word-wars.html?room=${encodeURIComponent(live.roomId)}`);
     }
 
     document.getElementById("refreshLobbiesBtn")?.addEventListener("click", () => {
@@ -374,7 +334,7 @@ async function boot() {
                 isLocked: locked,
                 shareRequired,
             });
-            await enterRoom(next);
+            await goToWar(next);
         } catch (err) {
             showError(createError, err?.message || "Could not create lobby.");
         } finally {
@@ -393,7 +353,7 @@ async function boot() {
         showError(joinError, "");
         try {
             const next = await joinFn(bookId);
-            await enterRoom(next);
+            await goToWar(next);
         } catch (err) {
             showError(joinError, err?.message || "Could not join.");
         } finally {
@@ -407,76 +367,41 @@ async function boot() {
             showError(joinError, "Enter the six-character code.");
             return;
         }
+        if (code === DEMO_HARD_CODE) {
+            void joinWithBook(async (bookId) => demoLobbySnapshot(DEMO_HARD_ID, uid, profile.name, bookId));
+            return;
+        }
         void joinWithBook((bookId) => joinWordWarRoom(code, bookId));
     });
 
     openList.addEventListener("click", (event) => {
         const btn = event.target.closest("[data-join-id]");
         if (!btn || btn.disabled) return;
-        void joinWithBook((bookId) => joinWordWarRoomById(btn.dataset.joinId, bookId));
+        const roomId = btn.dataset.joinId;
+        if (isDemoRoom(roomId)) {
+            void joinWithBook(async (bookId) => demoLobbySnapshot(roomId, uid, profile.name, bookId));
+            return;
+        }
+        void joinWithBook((bookId) => joinWordWarRoomById(roomId, bookId));
     });
 
-    document.getElementById("copyCodeBtn")?.addEventListener("click", async () => {
-        const code = lobby?.code || "";
-        try {
-            await navigator.clipboard.writeText(code);
-        } catch {
-            /* ignore */
-        }
-    });
-
-    document.getElementById("lockWaitBtn")?.addEventListener("click", async () => {
-        if (!lobby?.roomId) return;
-        showError(waitError, "");
-        try {
-            lobby = await updateWordWarLobby(lobby.roomId, { isLocked: !lobby.isLocked });
-            paintWait();
-        } catch (err) {
-            showError(waitError, err?.message || "Could not update lock.");
-        }
-    });
-
-    document.getElementById("readyBtn")?.addEventListener("click", async () => {
-        if (!lobby?.roomId) return;
-        const me = meFromLobby(lobby, uid);
-        try {
-            lobby = await updateWordWarLobby(lobby.roomId, { isReady: !me?.isReady });
-            paintWait();
-        } catch (err) {
-            showError(waitError, err?.message || "Could not update ready.");
-        }
-    });
-
-    document.getElementById("startBtn")?.addEventListener("click", async () => {
-        if (!lobby?.roomId) return;
-        showError(waitError, "");
-        try {
-            const next = await startWordWar(lobby.roomId);
-            await enterRoom(next);
-        } catch (err) {
-            showError(waitError, err?.message || "Could not start.");
-        }
-    });
-
-    document.getElementById("leaveBtn")?.addEventListener("click", async () => {
-        if (!lobby?.roomId) return;
-        try {
-            await leaveWordWarRoom(lobby.roomId);
-        } catch {
-            /* still leave the view */
-        }
-        showCreate();
-    });
+    document.documentElement.addEventListener("alysum-display-text-color", paintNoteInk);
+    window.addEventListener("alysum-gradient-theme", paintNoteInk);
+    paintControlInk();
 
     await refreshOpen();
 
     const existingId = roomIdFromUrl();
     if (existingId) {
-        try {
-            const next = await getWordWarLobby({ roomId: existingId });
-            if (next) await enterRoom(next);
-        } catch {
-            setRoomUrl("");
+        if (isDemoRoom(existingId)) {
+            await goToWar(demoLobbySnapshot(existingId, uid, profile.name, selectedBookId()));
+        } else {
+            try {
+                const next = await getWordWarLobby({ roomId: existingId });
+                if (next) await goToWar(next);
+            } catch {
+                setRoomUrl("");
+            }
         }
     }
 }

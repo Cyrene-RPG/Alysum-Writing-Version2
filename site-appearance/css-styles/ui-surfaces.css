@@ -114,11 +114,15 @@ body {
 .sidebar,
 .writer-tree,
 .writer-rail,
+.ww-chapters,
+.ww-others,
 .appearance-tab-panel,
 .settings-tab-panel {
-    --text: var(--ui-text);
-    --muted: var(--ui-muted);
-    color: var(--ui-text, var(--text, #fff));
+    --chrome-text: var(--ui-text);
+    --chrome-muted: var(--ui-muted);
+    --text: var(--chrome-text, var(--ui-text));
+    --muted: var(--chrome-muted, var(--ui-muted));
+    color: var(--chrome-text, var(--ui-text, var(--text, #fff)));
 }
 
 .panel,

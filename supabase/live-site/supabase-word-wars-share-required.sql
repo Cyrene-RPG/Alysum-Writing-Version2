@@ -551,3 +551,5 @@ GRANT EXECUTE ON FUNCTION public.start_word_war(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_word_war_progress(uuid, integer, integer, boolean, boolean, text, text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_word_war_lobby(uuid, integer, text, boolean, boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.word_war_lobby_json(uuid) TO authenticated;
+
+NOTIFY pgrst, 'reload schema';

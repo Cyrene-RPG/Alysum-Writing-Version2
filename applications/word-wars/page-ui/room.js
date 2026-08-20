@@ -12,6 +12,7 @@ import {
 } from "@alysum/writing-engine/manuscript.js?v=5";
 import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
+import { paintChipInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
 import { initWorkspaceShell } from "/js/studio/shell.js?v=2";
 import { createAutosave } from "/js/editor/autosave.js";
 import { mountDocument } from "/js/editor/document.js?v=7";
@@ -23,6 +24,7 @@ import {
     finishWordWar,
     meFromLobby,
 } from "@alysum/community/word-wars.js";
+import { isDemoRoom, loadDemoLobby, storeDemoLobby } from "/js/word-wars/demo.js";
 
 const POLL_MS = 1500;
 const SHARE_MS = 500;
@@ -54,8 +56,8 @@ function sanitizeHtml(html) {
 function remainingMs(lobby) {
     const duration = (Number(lobby?.durationMin) || 0) * 60_000;
     if (!duration) return null;
-    const start = Date.parse(lobby.startedAt);
-    if (!Number.isFinite(start)) return 0;
+    const start = Date.parse(lobby.startedAt || lobby.createdAt);
+    if (!Number.isFinite(start)) return duration;
     const pauseTotal = Number(lobby.pauseMsTotal) || 0;
     const now = lobby.isPaused && lobby.pausedAt ? Date.parse(lobby.pausedAt) : Date.now();
     return start + duration + pauseTotal - now;
@@ -69,16 +71,14 @@ function formatRemain(ms) {
     return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-function previewText(html) {
-    const text = String(html || "")
-        .replace(/<[^>]*>/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-    return text.slice(0, 80);
+function peekHtml(html) {
+    const clean = sanitizeHtml(html).trim();
+    if (!clean) return "";
+    return clean.length > 900 ? `${clean.slice(0, 900)}…` : clean;
 }
 
 async function boot() {
-    initWorkspaceShell({ lead: "", accent: "Word War", subtitle: "Sprint" });
+    initWorkspaceShell({ lead: "Word ", accent: "Wars", subtitle: "Sprint" });
     const session = await requireStudioSession(supabase, window.location.pathname + window.location.search);
     if (!session) return;
     if (session.mode !== "cloud") {
@@ -94,24 +94,21 @@ async function boot() {
 
     const profile = await loadWorkspaceProfile(supabase, session);
     initWorkspaceShell({
-        lead: "",
-        accent: "Word War",
+        lead: "Word ",
+        accent: "Wars",
         subtitle: "Sprint",
         name: profile.name,
         imageUrl: profile.imageUrl,
     });
 
     const uid = session.user.id;
-    let lobby = await getWordWarLobby({ roomId });
+    const demo = isDemoRoom(roomId);
+    let lobby = demo ? loadDemoLobby(roomId) : await getWordWarLobby({ roomId });
     if (!lobby) {
         window.location.replace("word-wars-lobby.html");
         return;
     }
-    if (lobby.status === "lobby") {
-        window.location.replace(`word-wars-lobby.html?room=${encodeURIComponent(roomId)}`);
-        return;
-    }
-    if (lobby.status !== "active") {
+    if (lobby.status === "finished" || lobby.status === "cancelled") {
         window.location.replace("word-wars-lobby.html");
         return;
     }
@@ -138,15 +135,54 @@ async function boot() {
     const stage = document.getElementById("stage");
     const spectatePane = document.getElementById("spectatePane");
     const spectatePage = document.getElementById("spectatePage");
-    const spectateName = document.getElementById("spectateName");
+    const watchWho = document.getElementById("watchWho");
+    const myViewBtn = document.getElementById("myViewBtn");
+    const myViewLive = document.getElementById("myViewLive");
     const tileList = document.getElementById("tileList");
     const timerEl = document.getElementById("timerEl");
     const wordEl = document.getElementById("wordEl");
-    const saveStatus = document.getElementById("saveStatus");
     const finishBtn = document.getElementById("finishBtn");
 
     loading?.classList.add("hidden");
     shell?.classList.remove("hidden");
+    window.__alysumTextInk?.scheduleChromeInk?.();
+
+    const treeToggle = document.getElementById("treeToggle");
+    const railToggle = document.getElementById("railToggle");
+    const TREE_KEY = "alysum:word-wars:chapters-collapsed";
+    const RAIL_KEY = "alysum:word-wars:others-collapsed";
+    function storedFlag(key) {
+        try {
+            return localStorage.getItem(key) === "1";
+        } catch {
+            return false;
+        }
+    }
+    function setRailCollapsed(which, collapsed) {
+        const isTree = which === "tree";
+        shell?.classList.toggle(isTree ? "is-tree-collapsed" : "is-rail-collapsed", collapsed);
+        const btn = isTree ? treeToggle : railToggle;
+        if (btn) {
+            btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+            btn.title = collapsed
+                ? (isTree ? "Show chapters" : "Show others")
+                : (isTree ? "Hide chapters" : "Hide others");
+            btn.textContent = isTree ? (collapsed ? "›" : "‹") : (collapsed ? "‹" : "›");
+        }
+        try {
+            localStorage.setItem(isTree ? TREE_KEY : RAIL_KEY, collapsed ? "1" : "0");
+        } catch {
+            /* ignore */
+        }
+    }
+    setRailCollapsed("tree", storedFlag(TREE_KEY));
+    setRailCollapsed("rail", storedFlag(RAIL_KEY));
+    treeToggle?.addEventListener("click", () => {
+        setRailCollapsed("tree", !shell?.classList.contains("is-tree-collapsed"));
+    });
+    railToggle?.addEventListener("click", () => {
+        setRailCollapsed("rail", !shell?.classList.contains("is-rail-collapsed"));
+    });
 
     const chapters = () => listBodyChapters(book.sections).filter((ch) => ch && ch.kind !== "folder");
     let selectedId = chapters()[0]?.id || "";
@@ -179,7 +215,6 @@ async function boot() {
                 words: next.words,
                 media_format: next.media_format,
             });
-            saveStatus.textContent = "Saved";
         },
     });
 
@@ -200,11 +235,28 @@ async function boot() {
     }
 
     function paintChapters() {
-        chapterList.innerHTML = chapters()
-            .map((ch) => (
-                `<li><button type="button" class="${ch.id === selectedId ? "is-on" : ""}" data-ch="${escapeHtml(ch.id)}">${escapeHtml(ch.title || "Untitled")}</button></li>`
-            ))
-            .join("");
+        const list = chapters();
+        const buttons = [...chapterList.querySelectorAll("[data-ch]")];
+        const same = buttons.length === list.length
+            && buttons.every((btn, i) => btn.dataset.ch === String(list[i]?.id || ""));
+        if (!same) {
+            chapterList.innerHTML = list
+                .map((ch) => (
+                    `<li><button type="button" class="${ch.id === selectedId ? "is-on" : ""}" data-ch="${escapeHtml(ch.id)}">${escapeHtml(ch.title || "Untitled")}</button></li>`
+                ))
+                .join("");
+        } else {
+            buttons.forEach((btn) => {
+                const on = btn.dataset.ch === selectedId;
+                if (!on) btn.style.removeProperty("color");
+                btn.classList.toggle("is-on", on);
+            });
+        }
+        const active = chapterList.querySelector("button.is-on");
+        if (active) {
+            const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+            paintChipInk(active, accent || getComputedStyle(active).backgroundColor);
+        }
     }
 
     function loadChapter() {
@@ -242,6 +294,23 @@ async function boot() {
             payload.liveChapterId = chapter?.id || "";
         }
         try {
+            if (demo) {
+                lobby = {
+                    ...lobby,
+                    participants: (lobby.participants || []).map((p) => (
+                        p.userId === uid
+                            ? {
+                                ...p,
+                                ...payload,
+                                wordsAtStart: wordsAtStart || words,
+                            }
+                            : p
+                    )),
+                };
+                storeDemoLobby(lobby);
+                if (!wordsAtStart) wordsAtStart = words;
+                return;
+            }
             lobby = await updateWordWarProgress(roomId, payload);
             const nextMe = meFromLobby(lobby, uid);
             if (nextMe?.wordsAtStart) wordsAtStart = Number(nextMe.wordsAtStart) || wordsAtStart;
@@ -257,66 +326,99 @@ async function boot() {
         }
     }
 
+    function paintMyView() {
+        const spectating = pinnedId !== "self";
+        const showGoLive = !spectating && !sharing && !shareLocked;
+        myViewBtn?.classList.toggle("hidden", !showGoLive);
+        myViewBtn?.classList.toggle("is-on", false);
+        myViewBtn?.setAttribute("aria-pressed", "false");
+        myViewLive?.classList.toggle("hidden", spectating || !sharing);
+        if (shareLocked && !spectating) myViewLive?.classList.remove("hidden");
+    }
+
     function paintStage() {
         const spectating = pinnedId !== "self";
         stage.classList.toggle("is-spectating", spectating);
         spectatePane.classList.toggle("hidden", !spectating);
-        if (!spectating) return;
+        paintMyView();
+        if (!spectating) {
+            watchWho?.classList.add("hidden");
+            if (watchWho) watchWho.textContent = "";
+            return;
+        }
         const person = (lobby.participants || []).find((p) => p.userId === pinnedId);
-        spectateName.textContent = person
+        const label = person
             ? `${person.displayName || "Writer"}${person.liveChapterTitle ? ` · ${person.liveChapterTitle}` : ""}`
             : "Writer";
+        if (watchWho) {
+            watchWho.classList.remove("hidden");
+            watchWho.textContent = label;
+        }
         if (person?.shareDraft) {
             spectatePage.innerHTML = sanitizeHtml(person.liveChapterHtml);
         } else {
-            spectatePage.innerHTML = `<p>${escapeHtml(person?.displayName || "Writer")} is not sharing.</p>`;
+            spectatePage.innerHTML = `<p>${escapeHtml(person?.displayName || "Writer")} is not sharing their page.</p>`;
         }
     }
 
     function paintTiles() {
         const people = Array.isArray(lobby.participants) ? lobby.participants : [];
+        tileList.style.setProperty("--n", String(Math.max(1, people.length)));
         tileList.innerHTML = people
             .map((p) => {
                 const mine = p.userId === uid;
                 const id = mine ? "self" : p.userId;
                 const on = pinnedId === id ? " is-on" : "";
                 const share = mine ? sharing : !!p.shareDraft;
-                const preview = share ? previewText(mine ? editor.getHtml() : p.liveChapterHtml) : "";
-                const shareBtn = mine && !shareLocked
-                    ? `<button type="button" class="ww-share" data-share-toggle>${sharing ? "Stop sharing" : "Share writing"}</button>`
-                    : `<span>${mine && shareLocked ? "Sharing required" : share ? "Sharing" : "Not sharing"}</span>`;
+                const live = share && !!(mine ? editor.getHtml() : p.liveChapterHtml);
+                const peek = live ? peekHtml(mine ? editor.getHtml() : p.liveChapterHtml) : "";
+                const name = mine ? "You" : (p.displayName || "Writer");
+                const watch = mine ? (sharing ? "Live" : "You") : (share ? "Watch" : "Off");
                 return `
-                    <div class="ww-tile${on}">
-                        <button type="button" class="ww-tile-pin" data-pin="${escapeHtml(id)}">
-                            <strong>${escapeHtml(p.displayName || "Writer")}${mine ? " (you)" : ""}</strong>
-                        </button>
-                        ${shareBtn}
-                        ${preview ? `<div class="ww-tile-preview">${escapeHtml(preview)}</div>` : ""}
+                    <div class="ww-tile${on}${mine ? " is-you" : ""}${live ? " is-live" : ""}" data-pin="${escapeHtml(id)}">
+                        ${live ? `<span class="ww-tile-live">LIVE</span>` : ""}
+                        <div class="ww-tile-cam" aria-hidden="true">${peek ? `<div class="ww-tile-cam-page">${peek}</div>` : ""}</div>
+                        <span class="ww-tile-meta">
+                            <span>
+                                <strong>${escapeHtml(name)}</strong>
+                                <span class="ww-tile-watch">${watch}</span>
+                            </span>
+                        </span>
                     </div>`;
             })
             .join("");
         finishBtn.classList.toggle("hidden", !meFromLobby(lobby, uid)?.isHost);
+        paintMyView();
     }
 
     chapterList.addEventListener("click", (event) => {
         const btn = event.target.closest("[data-ch]");
         if (!btn) return;
         selectedId = btn.dataset.ch;
+        pinnedId = "self";
         paintChapters();
+        paintTiles();
+        paintStage();
         loadChapter();
     });
 
+    myViewBtn?.addEventListener("click", () => {
+        if (shareLocked) return;
+        sharing = true;
+        pinnedId = "self";
+        paintTiles();
+        paintStage();
+        void pushProgress();
+    });
+    myViewLive?.addEventListener("click", () => {
+        if (shareLocked) return;
+        sharing = false;
+        paintTiles();
+        paintStage();
+        void pushProgress();
+    });
+
     tileList.addEventListener("click", (event) => {
-        const toggle = event.target.closest("[data-share-toggle]");
-        if (toggle) {
-            event.preventDefault();
-            event.stopPropagation();
-            if (shareLocked) return;
-            sharing = !sharing;
-            paintTiles();
-            void pushProgress();
-            return;
-        }
         const tile = event.target.closest("[data-pin]");
         if (!tile) return;
         pinnedId = tile.dataset.pin;
@@ -336,7 +438,7 @@ async function boot() {
     document.getElementById("leaveBtn")?.addEventListener("click", async () => {
         await autosave.flush?.();
         try {
-            await leaveWordWarRoom(roomId);
+            if (!demo) await leaveWordWarRoom(roomId);
         } catch {
             /* leave anyway */
         }
@@ -346,7 +448,7 @@ async function boot() {
     finishBtn?.addEventListener("click", async () => {
         await autosave.flush?.();
         try {
-            await finishWordWar(roomId);
+            if (!demo) await finishWordWar(roomId);
         } catch {
             /* still leave */
         }
@@ -365,9 +467,17 @@ async function boot() {
     }, 1000);
 
     setInterval(async () => {
+        if (demo) {
+            const next = loadDemoLobby(roomId);
+            if (next) lobby = next;
+            paintTiles();
+            paintStage();
+            paintTimer();
+            return;
+        }
         try {
             const next = await getWordWarLobby({ roomId });
-            if (!next || next.status !== "active") {
+            if (!next || (next.status !== "active" && next.status !== "lobby")) {
                 window.location.replace("word-wars-lobby.html");
                 return;
             }

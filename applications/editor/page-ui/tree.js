@@ -1,4 +1,5 @@
 import Sortable from "./sortable.js?v=2";
+import { paintChipInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
 
 function escapeHtml(str) {
     return String(str ?? "")
@@ -11,6 +12,46 @@ function escapeHtml(str) {
 function kindOf(item) {
     const kind = String(item?.kind || "chapter");
     return kind === "folder" || kind === "note" ? kind : "chapter";
+}
+
+function accentFill() {
+    if (typeof getComputedStyle !== "function") return "";
+    return getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+}
+
+function paintActiveRowInk(mount) {
+    if (!mount) return;
+    const fill = accentFill();
+    mount.querySelectorAll(".writer-tree-item.is-active:not(.writer-tree-item--folder)").forEach((row) => {
+        const ink = paintChipInk(row, fill || getComputedStyle(row).backgroundColor);
+        if (!ink) return;
+        row.querySelectorAll("button, .writer-tree-kind").forEach((el) => {
+            el.style.color = ink.hex;
+        });
+    });
+}
+
+function clearRowInk(row) {
+    if (!row) return;
+    row.style.removeProperty("color");
+    row.querySelectorAll("button, .writer-tree-kind").forEach((el) => {
+        el.style.removeProperty("color");
+    });
+}
+
+export function markTreeActive(mount, selectedId) {
+    if (!mount) return false;
+    const id = String(selectedId || "");
+    let found = false;
+    mount.querySelectorAll(".writer-tree-item").forEach((row) => {
+        const rowId = String(row.dataset.itemId || row.dataset.chapterId || "");
+        const on = rowId === id;
+        if (on) found = true;
+        if (row.classList.contains("is-active") && !on) clearRowInk(row);
+        row.classList.toggle("is-active", on);
+    });
+    paintActiveRowInk(mount);
+    return found;
 }
 
 function chapterIdsFromList(mount) {
@@ -292,6 +333,7 @@ export function renderTree({ mount, chapters, selectedId, onSelect, onDelete, on
             onReorder?.(chapterIdsFromList(mount));
         },
     }));
+    paintActiveRowInk(mount);
 }
 
 /**
@@ -331,4 +373,5 @@ export function renderOutline({
     bindOutlineSortable(mount, mount, saveOrder);
     mount.querySelectorAll("[data-nest='outline']").forEach((ul) => bindOutlineSortable(ul, mount, saveOrder));
     mount.querySelectorAll("[data-nest='notes']").forEach((ul) => bindNotesSortable(ul, mount, saveOrder));
+    paintActiveRowInk(mount);
 }

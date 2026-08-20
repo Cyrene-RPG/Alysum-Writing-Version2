@@ -1,0 +1,337 @@
+/* Book picker = a pencil: tip, barrel, ferrule, eraser. */
+.ww-pencil {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    height: 46px;
+    filter: drop-shadow(2px 3px 0 color-mix(in srgb, var(--text) 12%, transparent));
+}
+.ww-pencil::before {
+    content: "";
+    flex: 0 0 34px;
+    background:
+        linear-gradient(90deg,
+            color-mix(in srgb, var(--text) 55%, var(--accent, var(--pink))) 0 7px,
+            color-mix(in srgb, var(--accent, var(--pink)) 28%, var(--alysum-ui-chrome, #fff)) 7px 100%
+        );
+    clip-path: polygon(0 50%, 100% 0, 100% 100%);
+}
+.ww-pencil::after {
+    content: "";
+    flex: 0 0 30px;
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--text) 38%, var(--alysum-ui-chrome, #888)) 0 3px,
+        color-mix(in srgb, var(--alysum-ui-chrome, #ccc) 75%, var(--text)) 3px 5px,
+        color-mix(in srgb, var(--text) 38%, var(--alysum-ui-chrome, #888)) 5px 8px,
+        color-mix(in srgb, var(--alysum-ui-chrome, #ccc) 75%, var(--text)) 8px 10px,
+        color-mix(in srgb, var(--text) 38%, var(--alysum-ui-chrome, #888)) 10px 13px,
+        color-mix(in srgb, var(--pink, #ec4899) 78%, var(--alysum-ui-panel, #111)) 13px 100%
+    );
+    border-radius: 0 8px 8px 0;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 12%, transparent);
+}
+.ww-pencil select {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0 12px;
+    font-size: 15px;
+    font-weight: 700;
+    background:
+        repeating-linear-gradient(
+            90deg,
+            transparent 0 10px,
+            color-mix(in srgb, var(--text) 6%, transparent) 10px 11px
+        ),
+        var(
+            --theme-welcome-bar,
+            var(
+                --alysum-chrome-gradient,
+                linear-gradient(135deg, var(--purple, #6d28d9), var(--pink, #ec4899))
+            )
+        );
+    background-size: auto, cover;
+    background-position: 0 0, center;
+    color: var(--text);
+    cursor: pointer;
+}
+.ww-pencil select:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--theme-header-mid, var(--purple, #6d28d9)) 55%, transparent);
+}
+
+/* Lobby = two Pink-Pearl erasers. */
+.ww-seg--erasers {
+    gap: 14px;
+    align-items: flex-end;
+}
+.ww-seg--erasers .ww-seg-btn {
+    flex: 0 0 auto;
+    width: 92px;
+    padding: 10px 8px 12px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    border: 0;
+    border-radius: 5px 5px 8px 8px;
+    transform: rotate(-3deg);
+    background:
+        linear-gradient(
+            90deg,
+            transparent 0 28%,
+            color-mix(in srgb, var(--alysum-ui-chrome, #fff) 35%, white) 28% 72%,
+            transparent 72%
+        ),
+        linear-gradient(
+            180deg,
+            color-mix(in srgb, var(--pink, #fbcfe8) 78%, white),
+            color-mix(in srgb, var(--pink, #f9a8d4) 62%, var(--accent, var(--pink)))
+        );
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--text) 10%, transparent),
+        2px 3px 0 color-mix(in srgb, var(--text) 10%, transparent);
+    color: var(--text-ink-black, #121212);
+}
+.ww-seg--erasers .ww-seg-btn:nth-child(2) { transform: rotate(2.5deg); }
+.ww-seg--erasers .ww-seg-btn.is-on {
+    color: var(--text-ink-black, #121212);
+    background:
+        linear-gradient(
+            90deg,
+            transparent 0 28%,
+            color-mix(in srgb, var(--alysum-ui-chrome, #fff) 40%, var(--text)) 28% 72%,
+            transparent 72%
+        ),
+        var(--accent, var(--pink, #db2777));
+}
+
+/* Live writing = a little desk sharpener (box + hole + blade). */
+.ww-sprint-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px 16px;
+    align-items: center;
+    margin: 4px 0 8px;
+    min-height: 168px;
+}
+@media (max-width: 640px) {
+    .ww-sprint-row { grid-template-columns: 1fr; min-height: 0; }
+}
+.ww-field--share { max-width: 120px; margin-bottom: 0; }
+.ww-seg--sharpener {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+    width: 98px;
+    padding: 18px 8px 7px;
+    clip-path: none;
+    border-radius: 7px 7px 4px 4px;
+    background:
+        linear-gradient(
+            180deg,
+            color-mix(in srgb, var(--alysum-ui-chrome, #1f2937) 50%, var(--text)) 0 16px,
+            color-mix(in srgb, var(--alysum-ui-panel, #111827) 80%, var(--alysum-ui-chrome, #1f2937)) 16px 100%
+        );
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--text) 14%, transparent),
+        3px 4px 0 color-mix(in srgb, var(--text) 12%, transparent);
+}
+.ww-seg--sharpener::before {
+    content: "";
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    width: 18px;
+    height: 3px;
+    margin-left: -9px;
+    border-radius: 1px;
+    background: color-mix(in srgb, var(--text) 48%, var(--alysum-ui-chrome, #888));
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--text) 18%, transparent);
+}
+.ww-seg--sharpener::after { display: none; }
+.ww-seg--sharpener .ww-seg-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    width: auto;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 7px;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+    border-radius: 0;
+}
+.ww-seg--sharpener .ww-seg-btn::before {
+    content: "";
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background:
+        radial-gradient(
+            circle at 38% 32%,
+            color-mix(in srgb, var(--text) 18%, white) 0 5%,
+            var(--bg, #0b1220) 12% 40%,
+            color-mix(in srgb, var(--text) 42%, var(--alysum-ui-chrome, #888)) 46% 60%,
+            color-mix(in srgb, var(--alysum-ui-chrome, #888) 78%, var(--text)) 64% 100%
+        );
+    box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--text) 28%, var(--alysum-ui-chrome, #888)),
+        inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+.ww-seg--sharpener .ww-seg-btn:last-child::before {
+    width: 22px;
+    height: 22px;
+}
+.ww-seg--sharpener .ww-seg-btn.is-on {
+    background: transparent;
+    color: var(--accent, var(--pink, #db2777));
+}
+.ww-seg--sharpener .ww-seg-btn.is-on::before {
+    box-shadow:
+        0 0 0 3px var(--accent, var(--pink, #db2777)),
+        0 0 10px color-mix(in srgb, var(--accent, var(--pink, #db2777)) 55%, transparent),
+        inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+.ww-sprint-launch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 148px;
+    padding: 8px 8px 4px;
+}
+.ww-cta--sprint {
+    width: auto;
+    display: inline-block;
+    overflow: hidden;
+    margin-top: 0;
+    padding: 16px 32px 18px;
+    font-size: clamp(22px, 3.2vw, 34px);
+    letter-spacing: 0.01em;
+    line-height: 1;
+    color: var(--text);
+    border: 1px solid rgba(255, 255, 255, 0.38);
+    border-radius: 999px;
+    transform: rotate(-0.35deg);
+    background: var(
+        --alysum-chrome-gradient,
+        linear-gradient(135deg, var(--purple, #6d28d9), var(--pink, #ec4899))
+    );
+    background-size: 180% 180%;
+    background-position: 8% 50%;
+    text-shadow: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+    filter: none;
+    transition:
+        transform 0.22s ease,
+        background-position 0.4s ease,
+        box-shadow 0.22s ease,
+        filter 0.22s ease;
+}
+.ww-cta--sprint[data-ink="white"] { color: var(--text-ink-white, #fff); }
+.ww-cta--sprint[data-ink="cream"] { color: var(--text-ink-cream, #f3ead2); }
+.ww-cta--sprint[data-ink="black"] { color: var(--text-ink-black, #121212); }
+.ww-cta--sprint[data-ink="grey"] { color: var(--text-ink-grey, #5e5e5e); }
+.ww-cta--sprint:hover,
+.ww-cta--sprint:focus-visible {
+    transform: rotate(0deg) scale(1.07);
+    background-position: 92% 50%;
+    outline: none;
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.32),
+        0 0 22px color-mix(in srgb, var(--pink, #ec4899) 35%, transparent);
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--theme-header-mid, var(--purple, #6d28d9)) 40%, transparent));
+}
+.ww-cta--sprint::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 0;
+    border-radius: inherit;
+    transform: none;
+    background: linear-gradient(
+        115deg,
+        transparent 35%,
+        rgba(255, 255, 255, 0.34) 50%,
+        transparent 65%
+    );
+    background-size: 220% 100%;
+    background-position: 130% 0;
+    pointer-events: none;
+    transition: background-position 0.45s ease;
+}
+.ww-cta--sprint:hover::after,
+.ww-cta--sprint:focus-visible::after {
+    background-position: -30% 0;
+}
+.ww-cta-hint { margin: 10px 0 0; text-align: center; font-size: 12px; }
+
+.ww-join {
+    position: relative;
+    flex-shrink: 0;
+    border: 0;
+    border-radius: 5px 5px 8px 8px;
+    padding: 10px 16px 12px;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    color: var(--text-ink-black, #121212);
+    transform: rotate(2.2deg);
+    background:
+        linear-gradient(
+            90deg,
+            transparent 0 28%,
+            color-mix(in srgb, var(--alysum-ui-chrome, #fff) 35%, white) 28% 72%,
+            transparent 72%
+        ),
+        linear-gradient(
+            180deg,
+            color-mix(in srgb, var(--pink, #fbcfe8) 78%, white),
+            color-mix(in srgb, var(--pink, #f9a8d4) 62%, var(--accent, var(--pink)))
+        );
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--text) 10%, transparent),
+        2px 3px 0 color-mix(in srgb, var(--text) 10%, transparent);
+    filter: none;
+}
+.ww-join::after { content: none; }
+.ww-join:hover,
+.ww-join:focus-visible {
+    outline: none;
+    color: var(--text-ink-black, #121212);
+    transform: rotate(0deg) scale(1.06);
+    filter: drop-shadow(0 0 12px color-mix(in srgb, var(--accent, var(--pink, #db2777)) 70%, transparent));
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--text) 10%, transparent),
+        0 0 0 2px color-mix(in srgb, var(--accent, var(--pink, #db2777)) 45%, transparent),
+        0 0 18px color-mix(in srgb, var(--accent, var(--pink, #db2777)) 55%, transparent);
+}
+
+html[data-corner-style="sharp"] .ww-cta.ww-cta--sprint,
+html[data-corner-style="sharp"] .ww-cta.ww-cta--sprint::after {
+    border-radius: 0;
+}
+html[data-corner-style="sharp"] .ww-join,
+html[data-corner-style="sharp"] .ww-join::after,
+html[data-corner-style="sharp"] .ww-seg--erasers .ww-seg-btn {
+    border-radius: 0;
+}
+html[data-corner-style="sharp"] .ww-pencil::after {
+    border-radius: 0;
+}

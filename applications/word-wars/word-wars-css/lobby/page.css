@@ -1,0 +1,155 @@
+* { box-sizing: border-box; }
+html,
+body {
+    height: 100%;
+    max-height: 100dvh;
+    overflow: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+body {
+    margin: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background:
+        radial-gradient(circle at top, var(--theme-body-spot-strong, transparent) 0%, transparent 42%),
+        linear-gradient(180deg, var(--bg-gradient-top, var(--bg, #0b1220)) 0%, var(--bg, #0b1220) 100%);
+    color: var(--text);
+}
+.hidden { display: none !important; }
+.wrap {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    width: 100%;
+    padding: 16px clamp(12px, 2vw, 24px) 24px;
+}
+.wrap::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+.panel {
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--alysum-ui-panel, #111827) 88%, white),
+        var(--alysum-ui-panel, #111827)
+    );
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    border-radius: var(--glass-radius, 18px);
+    padding: 20px clamp(16px, 3vw, 28px) 28px;
+}
+.hint {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.ww-shell {
+    display: grid;
+    grid-template-columns: minmax(188px, 232px) minmax(0, 1fr);
+    gap: 28px;
+    align-items: stretch;
+    max-width: 1080px;
+    height: 100%;
+    min-height: 0;
+    margin: 0 auto;
+}
+@media (max-width: 860px) {
+    .ww-shell { grid-template-columns: 1fr; }
+}
+
+.ww-open,
+.ww-main {
+    position: relative;
+    isolation: isolate;
+    min-height: 0;
+    overflow: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    border-radius: var(--glass-radius, 18px);
+}
+.ww-open::-webkit-scrollbar,
+.ww-main::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+/* Settings = a notebook page. Controls sit in the writing area, not on the margin. */
+.ww-main {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--alysum-ui-panel, #111827);
+    background-image:
+        linear-gradient(
+            90deg,
+            transparent 36px,
+            color-mix(in srgb, var(--accent, var(--pink)) 42%, transparent) 37px,
+            color-mix(in srgb, var(--accent, var(--pink)) 42%, transparent) 38px,
+            transparent 39px
+        ),
+        repeating-linear-gradient(
+            transparent 0 31px,
+            color-mix(in srgb, var(--text) 7%, transparent) 31px 32px
+        ),
+        linear-gradient(
+            180deg,
+            color-mix(in srgb, white 8%, transparent),
+            transparent 42%
+        );
+    padding: 22px 28px 32px 52px;
+}
+.ww-main::before {
+    content: "";
+    position: absolute;
+    inset: 14px auto 14px 10px;
+    width: 16px;
+    pointer-events: none;
+    z-index: 1;
+    background:
+        repeating-radial-gradient(
+            circle at 8px 10px,
+            color-mix(in srgb, var(--bg, #0b1220) 55%, black) 0 5px,
+            transparent 6px 36px
+        );
+    opacity: 0.55;
+}
+
+.ww-open-head h2,
+.ww-join-friend h2 {
+    margin: 0;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.ww-refresh,
+.ww-copy,
+.ww-lock-wait,
+.ww-leave,
+.ww-ready {
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.14));
+    background: var(--alysum-ui-chrome, transparent);
+    color: var(--text);
+    border-radius: var(--glass-radius, 10px);
+    padding: 6px 10px;
+    cursor: pointer;
+    font-weight: 700;
+}
+.ww-error {
+    margin: 10px 0 0;
+    color: var(--accent, var(--pink));
+    font-size: 13px;
+}

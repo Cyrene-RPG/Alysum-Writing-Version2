@@ -27,7 +27,7 @@
 
     var COLOR_TOKEN_RE =
         /#(?:[0-9a-f]{6}|[0-9a-f]{3})\b|rgba?\(\s*[^)]+\)|hsla?\(\s*[^)]+\)/gi;
-    var CHROME_BARS = ".ui-bar, .wd-welcome-bar, .wd-nav-wrap, .legal-hero";
+    var CHROME_BARS = ".ui-bar, .wd-welcome-bar, .wd-nav-wrap, .legal-hero, .writer-tree, .writer-rail, .ww-chapters, .ww-others";
     var CHROME_CONTROLS = ".wd-nav > a, .wd-nav > button, .wd-loadout-btn";
     var FALLBACK_UNDERLAY = { r: 17, g: 24, b: 39, a: 1 };
 

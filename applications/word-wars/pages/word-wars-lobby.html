@@ -20,8 +20,8 @@
     </script>
     <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=6" />
     <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
-    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=7" />
-    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=4" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=9" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=6" />
     <script src="/site-appearance/js-runtime/body-background-presets-data.js?v=3"></script>
     <script src="/site-appearance/js-runtime/text-ink-data.js?v=5"></script>
     <script src="/site-appearance/js-runtime/boot.js?v=7"></script>
@@ -33,7 +33,7 @@
     <title>Word Wars — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="/css/workspace-nav.css?v=27" />
-    <link rel="stylesheet" href="/css/word-wars/lobby.css?v=2" />
+    <link rel="stylesheet" href="/css/word-wars/lobby.css?v=20" />
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 </head>
 <body>
@@ -54,7 +54,7 @@
                 </div>
             </div>
             <div class="wd-welcome-copy">
-                <h1 class="wd-welcome-title" id="welcomeTitle">Word Wars</h1>
+                <h1 class="wd-welcome-title" id="welcomeTitle">Word <span class="wd-name">Wars</span></h1>
                 <p class="wd-welcome-sub" id="welcomeSubtitle"></p>
             </div>
         </div>
@@ -84,12 +84,14 @@
             <div class="ww-main" id="createView">
                 <header class="ww-hero">
                     <p class="ww-kicker">Create a lobby</p>
-                    <h1>Set the terms of the sprint.</h1>
+                    <h1>Settings</h1>
                 </header>
 
                 <label class="ww-field">
                     <span class="ww-label">Book</span>
-                    <select id="bookSelect"></select>
+                    <div class="ww-pencil">
+                        <select id="bookSelect"></select>
+                    </div>
                 </label>
 
                 <div class="ww-field">
@@ -109,7 +111,7 @@
                     </div>
                     <div class="ww-field">
                         <span class="ww-label">Lobby</span>
-                        <div class="ww-seg" role="radiogroup" aria-label="Lobby privacy">
+                        <div class="ww-seg ww-seg--erasers" role="radiogroup" aria-label="Lobby privacy">
                             <button type="button" class="ww-seg-btn is-on" id="lockOpenBtn">Open</button>
                             <button type="button" class="ww-seg-btn" id="lockLockedBtn">Locked</button>
                         </div>
@@ -117,17 +119,20 @@
                     </div>
                 </div>
 
-                <div class="ww-field">
-                    <span class="ww-label">Live writing</span>
-                    <div class="ww-seg" role="radiogroup" aria-label="Live writing">
-                        <button type="button" class="ww-seg-btn" id="shareRequiredBtn" data-share="required">Required</button>
-                        <button type="button" class="ww-seg-btn is-on" id="shareOptionalBtn" data-share="optional">Optional</button>
+                <div class="ww-sprint-row">
+                    <div class="ww-field ww-field--share">
+                        <span class="ww-label">Live writing</span>
+                        <div class="ww-seg ww-seg--sharpener" role="radiogroup" aria-label="Live writing">
+                            <button type="button" class="ww-seg-btn" id="shareRequiredBtn" data-share="required">Required</button>
+                            <button type="button" class="ww-seg-btn is-on" id="shareOptionalBtn" data-share="optional">Optional</button>
+                        </div>
+                    </div>
+                    <div class="ww-sprint-launch">
+                        <button type="button" class="ww-cta ww-cta--sprint" id="createBtn">Start a sprint</button>
+                        <p class="hint ww-cta-hint">opens a live sprint · others join straight in</p>
+                        <p class="ww-error" id="createError" hidden></p>
                     </div>
                 </div>
-
-                <button type="button" class="ww-cta" id="createBtn">Start a sprint</button>
-                <p class="hint ww-cta-hint">needs 2 writers minimum · everyone marked ready</p>
-                <p class="ww-error" id="createError" hidden></p>
 
                 <section class="ww-join-friend">
                     <div>
@@ -141,25 +146,8 @@
                     <p class="ww-error" id="joinError" hidden></p>
                 </section>
             </div>
-
-            <div class="ww-main hidden" id="waitView">
-                <header class="ww-hero">
-                    <p class="ww-kicker">Waiting room</p>
-                    <h1>Room <span id="waitCode">——————</span></h1>
-                    <p class="hint" id="waitMeta"></p>
-                </header>
-                <button type="button" class="ww-copy" id="copyCodeBtn">Copy code</button>
-                <button type="button" class="ww-lock-wait hidden" id="lockWaitBtn">Lock lobby</button>
-                <ul class="ww-people" id="waitPeople"></ul>
-                <div class="ww-wait-actions">
-                    <button type="button" class="ww-ready" id="readyBtn">Ready</button>
-                    <button type="button" class="ww-cta hidden" id="startBtn">Start the war</button>
-                    <button type="button" class="ww-leave" id="leaveBtn">Leave</button>
-                </div>
-                <p class="ww-error" id="waitError" hidden></p>
-            </div>
         </div>
     </div>
-    <script type="module" src="/js/word-wars/lobby.js?v=2"></script>
+    <script type="module" src="/js/word-wars/lobby.js?v=11"></script>
 </body>
 </html>

@@ -116,6 +116,7 @@
       { "source": "/js/editor/toolbar.js", "destination": "/applications/editor/page-ui/toolbar.js" },
       { "source": "/js/editor/document.js", "destination": "/applications/editor/page-ui/document.js" },
       { "source": "/js/word-wars/lobby.js", "destination": "/applications/word-wars/page-ui/lobby.js" },
+      { "source": "/js/word-wars/demo.js", "destination": "/applications/word-wars/page-ui/demo.js" },
       { "source": "/js/word-wars/room.js", "destination": "/applications/word-wars/page-ui/room.js" },
       { "source": "/js/editor/autosave.js", "destination": "/applications/editor/page-ui/autosave.js" },
       { "source": "/js/editor/prompt.js", "destination": "/applications/editor/page-ui/prompt.js" },
@@ -173,6 +174,10 @@
       { "source": "/css/editor/editor-fonts.css", "destination": "/applications/editor/editor-css/editor-fonts.css" },
       { "source": "/css/editor/scene-breaks.css", "destination": "/applications/editor/editor-css/scene-breaks.css" },
       { "source": "/css/word-wars/lobby.css", "destination": "/applications/word-wars/word-wars-css/lobby.css" },
+      { "source": "/css/word-wars/lobby/page.css", "destination": "/applications/word-wars/word-wars-css/lobby/page.css" },
+      { "source": "/css/word-wars/lobby/notes.css", "destination": "/applications/word-wars/word-wars-css/lobby/notes.css" },
+      { "source": "/css/word-wars/lobby/settings.css", "destination": "/applications/word-wars/word-wars-css/lobby/settings.css" },
+      { "source": "/css/word-wars/lobby/stationery.css", "destination": "/applications/word-wars/word-wars-css/lobby/stationery.css" },
       { "source": "/css/word-wars/room.css", "destination": "/applications/word-wars/word-wars-css/room.css" }
     ]
   }

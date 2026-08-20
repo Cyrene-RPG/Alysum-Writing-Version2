@@ -155,6 +155,26 @@ html.surface-glass .writer-tree-item {
     box-shadow: inset 0 1px 1px var(--glass-highlight);
 }
 
+html.surface-glass .writer-tree-item.writer-tree-item--folder,
+html.surface-glass .writer-tree-item.writer-tree-item--folder.is-active {
+    background: var(--alysum-ui-panel, #111827);
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-color: transparent;
+    box-shadow: none;
+    filter: none;
+}
+
+html.surface-glass .writer-tree-item.is-active:not(.writer-tree-item--folder) {
+    background: var(--accent);
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-color: var(--accent);
+    box-shadow: none;
+}
+
 html.surface-glass .writer-tab {
     background: color-mix(in srgb, var(--glass-sheet-raised) 70%, transparent);
     border-color: var(--glass-edge);
@@ -163,6 +183,138 @@ html.surface-glass .writer-tab {
 html.surface-glass .writer-tab.is-active {
     background: transparent;
     border-bottom-color: transparent;
+}
+
+html.surface-glass .ww-open,
+html.surface-glass .ww-main {
+    isolation: auto;
+    background-color: var(--glass-sheet);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    border: 1px solid var(--glass-edge);
+    box-shadow:
+        0 24px 48px -18px var(--glass-shadow),
+        0 10px 30px -12px var(--glass-shadow),
+        inset 0 2px 3px -1px var(--glass-highlight),
+        inset 0 -2px 4px -1px var(--glass-caustic);
+}
+
+html.surface-glass .ww-open::after,
+html.surface-glass .ww-main::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background-image: linear-gradient(
+        180deg,
+        var(--glass-reflection-start) 0%,
+        var(--glass-reflection-end) 40%
+    );
+}
+
+html.surface-glass .ww-open-empty,
+html.surface-glass .ww-card {
+    background-color: color-mix(
+        in srgb,
+        var(--alysum-display-highlight, var(--pink, #fbcfe8)) 55%,
+        transparent
+    );
+    backdrop-filter: blur(16px) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(16px) saturate(var(--glass-saturate));
+    border-color: var(--glass-edge);
+    box-shadow:
+        1px 2px 0 color-mix(in srgb, var(--text) 8%, transparent),
+        3px 8px 14px rgba(0, 0, 0, 0.18),
+        inset 0 2px 3px -1px var(--glass-highlight),
+        inset 0 -2px 4px -1px var(--glass-caustic);
+}
+
+html.surface-glass .ww-chapters,
+html.surface-glass .ww-others {
+    background-color: var(--glass-sheet-chrome);
+    background-image: linear-gradient(
+        180deg,
+        var(--glass-reflection-start) 0%,
+        var(--glass-reflection-end) 40%
+    );
+    background-repeat: no-repeat;
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    border-color: var(--glass-edge);
+    box-shadow:
+        0 24px 48px -18px var(--glass-shadow),
+        inset 0 2px 3px -1px var(--glass-highlight),
+        inset 0 -2px 4px -1px var(--glass-caustic);
+}
+
+html.surface-glass .ww-stage {
+    background-color: var(--glass-sheet);
+    background-image: linear-gradient(
+        180deg,
+        var(--glass-reflection-start) 0%,
+        var(--glass-reflection-end) 40%
+    );
+    background-repeat: no-repeat;
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    border-color: var(--glass-edge);
+    box-shadow:
+        0 24px 48px -18px var(--glass-shadow),
+        inset 0 2px 3px -1px var(--glass-highlight),
+        inset 0 -2px 4px -1px var(--glass-caustic);
+}
+
+html.surface-glass .ww-chapters button {
+    background: var(--glass-sheet-raised);
+    backdrop-filter: blur(16px) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(16px) saturate(var(--glass-saturate));
+    border-color: var(--glass-edge);
+    box-shadow: inset 0 1px 1px var(--glass-highlight);
+}
+
+html.surface-glass .ww-chapters button.is-on {
+    background: var(--accent);
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-color: var(--accent);
+    box-shadow: none;
+}
+
+html.surface-glass .ww-room.is-tree-collapsed .ww-chapters,
+html.surface-glass .ww-room.is-rail-collapsed .ww-others {
+    background: transparent;
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 0;
+    box-shadow: none;
+}
+
+html.surface-glass .ww-tile,
+html.surface-glass .ww-tile-cam,
+html.surface-glass .ww-tile-cam-page,
+html.surface-glass .ww-view-toggle,
+html.surface-glass .ww-view-live,
+html.surface-glass .ww-stage-bar {
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    filter: none;
+}
+
+html.surface-glass .ww-tile {
+    background-color: var(--glass-sheet-raised);
+}
+
+html.surface-glass .ww-tile-cam {
+    background-color: var(--alysum-ui-chrome, #141414);
+}
+
+html.surface-glass .ww-view-toggle {
+    background-color: var(--alysum-ui-chrome, #1f2937);
 }
 
 html.surface-glass .settings-nav button:not(.active):not([aria-selected="true"]),
