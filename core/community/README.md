@@ -1,5 +1,3 @@
 # Community
 
-Later: writer's lounge, word wars, badges, leaderboard.
-
-Do not put live code here yet.
+RPC helpers for Word Wars live in `word-wars.js`. Lounge and badges later. No HTML here.

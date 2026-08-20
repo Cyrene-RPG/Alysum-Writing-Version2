@@ -41,3 +41,11 @@
     color: var(--muted, #9ca3af);
 }
 .writer-page img { max-width: 100%; height: auto; }
+
+.writer-page .xp-reviewed,
+.writer-page [data-xp-reviewed] {
+    background: color-mix(in srgb, var(--accent, #a78bfa) 18%, transparent);
+    border-radius: 0.15em;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+}

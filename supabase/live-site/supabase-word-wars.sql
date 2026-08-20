@@ -1,6 +1,7 @@
 -- Run once in Supabase → SQL Editor (safe to re-run).
 -- Word Wars: friendly writing spar lobbies (test branch).
 -- Apply before using word-wars-lobby.html with cloud sync.
+-- Then apply supabase-word-wars-share-required.sql (share required, 10-min sprints, tighter RLS).
 
 -- ---------------------------------------------------------------------------
 -- 1. Tables

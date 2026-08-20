@@ -1,0 +1,165 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/",
+        "@alysum/statistics/": "/core/statistics/",
+        "@alysum/community/": "/core/community/"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=6" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=7" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=4" />
+    <script src="/site-appearance/js-runtime/body-background-presets-data.js?v=3"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js?v=5"></script>
+    <script src="/site-appearance/js-runtime/boot.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow">
+    <title>Word Wars — Alysum</title>
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=27" />
+    <link rel="stylesheet" href="/css/word-wars/lobby.css?v=2" />
+    <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
+</head>
+<body>
+    <header class="wd-welcome-bar ui-bar" aria-label="Welcome">
+        <div class="wd-welcome-inner">
+            <div class="wd-pfp-menu" id="welcomePfpMenu">
+                <button type="button" class="wd-pfp-btn" id="welcomePfpBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="welcomePfpDropdown" aria-label="Account menu">
+                    <span class="wd-pfp" id="welcomePfp">
+                        <img id="welcomePfpImg" alt="" hidden />
+                        <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true">A</span>
+                    </span>
+                </button>
+                <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
+                    <a role="menuitem" href="studio.html" data-close-pfp-menu>Studio</a>
+                    <a role="menuitem" href="overview.html" data-close-pfp-menu>Overview</a>
+                    <a role="menuitem" href="settings.html" data-close-pfp-menu>Settings</a>
+                    <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
+                </div>
+            </div>
+            <div class="wd-welcome-copy">
+                <h1 class="wd-welcome-title" id="welcomeTitle">Word Wars</h1>
+                <p class="wd-welcome-sub" id="welcomeSubtitle"></p>
+            </div>
+        </div>
+    </header>
+    <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
+        <div class="wd-nav">
+            <a href="studio.html">Studio</a>
+            <a href="word-wars-lobby.html" class="is-active">Word Wars</a>
+        </div>
+    </nav>
+
+    <div class="wrap">
+        <div class="panel" id="loadingPanel">
+            <p class="hint" style="margin:0">Loading Word Wars…</p>
+        </div>
+
+        <div class="ww-shell hidden" id="lobbyShell">
+            <aside class="ww-open" aria-label="Open lobbies">
+                <div class="ww-open-head">
+                    <h2>Open lobbies</h2>
+                    <button type="button" class="ww-refresh" id="refreshLobbiesBtn" aria-label="Refresh">Refresh</button>
+                </div>
+                <p class="hint" id="openCount">Join a sprint</p>
+                <div class="ww-open-list" id="openList"></div>
+            </aside>
+
+            <div class="ww-main" id="createView">
+                <header class="ww-hero">
+                    <p class="ww-kicker">Create a lobby</p>
+                    <h1>Set the terms of the sprint.</h1>
+                </header>
+
+                <label class="ww-field">
+                    <span class="ww-label">Book</span>
+                    <select id="bookSelect"></select>
+                </label>
+
+                <div class="ww-field">
+                    <span class="ww-label">Sprint length</span>
+                    <div class="ww-slider" id="lengthSlider" role="radiogroup" aria-label="Sprint length"></div>
+                </div>
+
+                <div class="ww-row">
+                    <div class="ww-field">
+                        <span class="ww-label">Max writers</span>
+                        <div class="ww-stepper">
+                            <button type="button" id="writersMinus" aria-label="Fewer writers">−</button>
+                            <span id="writersValue">4</span>
+                            <button type="button" id="writersPlus" aria-label="More writers">+</button>
+                        </div>
+                        <p class="hint">2 minimum · 16 max. Open lobbies always seat 16.</p>
+                    </div>
+                    <div class="ww-field">
+                        <span class="ww-label">Lobby</span>
+                        <div class="ww-seg" role="radiogroup" aria-label="Lobby privacy">
+                            <button type="button" class="ww-seg-btn is-on" id="lockOpenBtn">Open</button>
+                            <button type="button" class="ww-seg-btn" id="lockLockedBtn">Locked</button>
+                        </div>
+                        <p class="hint" id="lockHint">Anyone can join from the list.</p>
+                    </div>
+                </div>
+
+                <div class="ww-field">
+                    <span class="ww-label">Live writing</span>
+                    <div class="ww-seg" role="radiogroup" aria-label="Live writing">
+                        <button type="button" class="ww-seg-btn" id="shareRequiredBtn" data-share="required">Required</button>
+                        <button type="button" class="ww-seg-btn is-on" id="shareOptionalBtn" data-share="optional">Optional</button>
+                    </div>
+                </div>
+
+                <button type="button" class="ww-cta" id="createBtn">Start a sprint</button>
+                <p class="hint ww-cta-hint">needs 2 writers minimum · everyone marked ready</p>
+                <p class="ww-error" id="createError" hidden></p>
+
+                <section class="ww-join-friend">
+                    <div>
+                        <h2>Join a friend</h2>
+                        <p class="hint">Paste the six-character code they sent you.</p>
+                    </div>
+                    <div class="ww-code-row">
+                        <div class="ww-code" id="codeSlots"></div>
+                        <button type="button" class="ww-join" id="joinCodeBtn">Join</button>
+                    </div>
+                    <p class="ww-error" id="joinError" hidden></p>
+                </section>
+            </div>
+
+            <div class="ww-main hidden" id="waitView">
+                <header class="ww-hero">
+                    <p class="ww-kicker">Waiting room</p>
+                    <h1>Room <span id="waitCode">——————</span></h1>
+                    <p class="hint" id="waitMeta"></p>
+                </header>
+                <button type="button" class="ww-copy" id="copyCodeBtn">Copy code</button>
+                <button type="button" class="ww-lock-wait hidden" id="lockWaitBtn">Lock lobby</button>
+                <ul class="ww-people" id="waitPeople"></ul>
+                <div class="ww-wait-actions">
+                    <button type="button" class="ww-ready" id="readyBtn">Ready</button>
+                    <button type="button" class="ww-cta hidden" id="startBtn">Start the war</button>
+                    <button type="button" class="ww-leave" id="leaveBtn">Leave</button>
+                </div>
+                <p class="ww-error" id="waitError" hidden></p>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="/js/word-wars/lobby.js?v=2"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+/* Already-checked Word Wars sentences in the editor. Not shown on the public reader. */
+
+.xp-reviewed,
+[data-xp-reviewed] {
+    background: color-mix(in srgb, var(--accent, #a78bfa) 18%, transparent);
+    border-radius: 0.15em;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+}

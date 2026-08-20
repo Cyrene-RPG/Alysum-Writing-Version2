@@ -51,8 +51,11 @@
       { "source": "/signup.html", "destination": "/applications/main-site/pages/signup.html" },
       { "source": "/settings.html", "destination": "/applications/main-site/pages/settings.html" },
       { "source": "/overview.html", "destination": "/applications/main-site/pages/overview.html" },
+      { "source": "/statistics-spec.html", "destination": "/applications/main-site/pages/statistics-spec.html" },
       { "source": "/studio.html", "destination": "/applications/studio/pages/studio.html" },
       { "source": "/editor.html", "destination": "/applications/editor/pages/editor.html" },
+      { "source": "/word-wars-lobby.html", "destination": "/applications/word-wars/pages/word-wars-lobby.html" },
+      { "source": "/word-wars.html", "destination": "/applications/word-wars/pages/word-wars.html" },
       { "source": "/reset-password.html", "destination": "/applications/main-site/pages/reset-password.html" },
       { "source": "/privacy-policy.html", "destination": "/applications/main-site/pages/privacy-policy.html" },
       { "source": "/terms-of-service.html", "destination": "/applications/main-site/pages/terms-of-service.html" },
@@ -79,6 +82,11 @@
       { "source": "/js/login-reset.js", "destination": "/applications/main-site/login/login-reset.js" },
       { "source": "/js/feature-highlights.js", "destination": "/applications/main-site/page-ui/feature-highlights.js" },
       { "source": "/js/overview.js", "destination": "/applications/main-site/page-ui/overview.js" },
+      { "source": "/js/statistics-ui/badge.js", "destination": "/applications/main-site/statistics-ui/badge.js" },
+      { "source": "/js/statistics-ui/spec-render.js", "destination": "/applications/main-site/statistics-ui/spec-render.js" },
+      { "source": "/js/statistics-ui/review-highlight.js", "destination": "/applications/main-site/statistics-ui/review-highlight.js" },
+      { "source": "/css/statistics-ui/badge.css", "destination": "/applications/main-site/statistics-ui/badge.css" },
+      { "source": "/css/statistics-ui/review-marks.css", "destination": "/applications/main-site/statistics-ui/review-marks.css" },
       { "source": "/js/studio/page.js", "destination": "/applications/studio/page-ui/page.js" },
       { "source": "/js/studio/shell.js", "destination": "/applications/studio/page-ui/shell.js" },
       { "source": "/js/editor/page.js", "destination": "/applications/editor/page-ui/page.js" },
@@ -107,6 +115,8 @@
       { "source": "/js/editor/sortable/plugins/multi-drag.js", "destination": "/applications/editor/page-ui/sortable/plugins/multi-drag.js" },
       { "source": "/js/editor/toolbar.js", "destination": "/applications/editor/page-ui/toolbar.js" },
       { "source": "/js/editor/document.js", "destination": "/applications/editor/page-ui/document.js" },
+      { "source": "/js/word-wars/lobby.js", "destination": "/applications/word-wars/page-ui/lobby.js" },
+      { "source": "/js/word-wars/room.js", "destination": "/applications/word-wars/page-ui/room.js" },
       { "source": "/js/editor/autosave.js", "destination": "/applications/editor/page-ui/autosave.js" },
       { "source": "/js/editor/prompt.js", "destination": "/applications/editor/page-ui/prompt.js" },
       { "source": "/js/editor/font-catalog.js", "destination": "/applications/editor/page-ui/font-catalog.js" },
@@ -161,7 +171,9 @@
       { "source": "/css/editor/page/find.css", "destination": "/applications/editor/editor-css/page/find.css" },
       { "source": "/css/editor/document.css", "destination": "/applications/editor/editor-css/document.css" },
       { "source": "/css/editor/editor-fonts.css", "destination": "/applications/editor/editor-css/editor-fonts.css" },
-      { "source": "/css/editor/scene-breaks.css", "destination": "/applications/editor/editor-css/scene-breaks.css" }
+      { "source": "/css/editor/scene-breaks.css", "destination": "/applications/editor/editor-css/scene-breaks.css" },
+      { "source": "/css/word-wars/lobby.css", "destination": "/applications/word-wars/word-wars-css/lobby.css" },
+      { "source": "/css/word-wars/room.css", "destination": "/applications/word-wars/word-wars-css/room.css" }
     ]
   }
 }

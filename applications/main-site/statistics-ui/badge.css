@@ -1,0 +1,41 @@
+/* XP border + rep gem. Full 1–30 styles come in a later pass. */
+
+.ov-avatar-wrap {
+    position: relative;
+}
+
+.badge-border {
+    box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 35%, transparent);
+}
+
+.badge-border--none {
+    box-shadow: none;
+}
+
+.gem {
+    position: absolute;
+    left: 50%;
+    bottom: -0.35rem;
+    width: 0.7rem;
+    height: 0.7rem;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.gem--hidden {
+    display: none;
+}
+
+.gem--gray { background: #9ca3af; }
+.gem--green { background: #22c55e; }
+.gem--blue { background: #3b82f6; }
+.gem--purple { background: #a855f7; }
+.gem--yellow { background: #eab308; }
+.gem--orange { background: #f97316; }
+.gem--teal { background: #14b8a6; }
+.gem--red { background: #ef4444; }
+.gem--diamond { background: #e5e7eb; }
+.gem--royal {
+    background: linear-gradient(135deg, #6366f1, #ec4899, #f59e0b);
+}

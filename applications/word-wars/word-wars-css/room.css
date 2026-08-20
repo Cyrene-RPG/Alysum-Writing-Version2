@@ -1,0 +1,178 @@
+.ww-body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background:
+        radial-gradient(circle at top, var(--theme-body-spot-strong, transparent) 0%, transparent 42%),
+        linear-gradient(180deg, var(--bg-gradient-top, var(--bg, #0b1220)) 0%, var(--bg, #0b1220) 100%);
+    color: var(--text);
+}
+.hidden { display: none !important; }
+.ww-loading {
+    padding: 24px;
+    color: var(--muted);
+}
+.ww-room {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(140px, 200px) minmax(0, 1fr) minmax(160px, 220px);
+    gap: 0;
+    border-top: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+}
+@media (max-width: 900px) {
+    .ww-room {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
+    }
+    .ww-tiles { flex-direction: row; overflow-x: auto; }
+}
+.ww-label {
+    margin: 0 0 8px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.ww-chapters,
+.ww-tiles {
+    padding: 12px;
+    overflow: auto;
+    background: color-mix(in srgb, var(--alysum-ui-panel, #111827) 92%, black);
+    border-right: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+}
+.ww-tiles {
+    border-right: 0;
+    border-left: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+}
+.ww-chapters ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.ww-chapters button {
+    width: 100%;
+    text-align: left;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: var(--glass-radius, 8px);
+    cursor: pointer;
+}
+.ww-chapters button.is-on,
+.ww-tile.is-on {
+    background: color-mix(in srgb, var(--accent, var(--pink)) 22%, transparent);
+}
+.ww-stage {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--alysum-ui-panel, #111827);
+}
+.ww-stage-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    font-size: 13px;
+    font-weight: 700;
+}
+.ww-stage-bar span { color: var(--muted); }
+.ww-leave,
+.ww-finish {
+    margin-left: auto;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.14));
+    background: transparent;
+    color: var(--text);
+    border-radius: var(--glass-radius, 8px);
+    padding: 6px 10px;
+    cursor: pointer;
+    font-weight: 700;
+}
+.ww-finish {
+    margin-left: 0;
+    background: var(--accent, var(--pink, #db2777));
+    border-color: transparent;
+    color: #fff;
+}
+.ww-editor {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+.ww-editor .writer-main-scroll {
+    flex: 1;
+    min-height: 0;
+}
+.ww-stage.is-spectating .ww-spectate {
+    display: block;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+}
+.ww-stage.is-spectating .ww-editor {
+    flex: 0 0 28vh;
+    max-height: 28vh;
+}
+.ww-spectate { display: none; }
+.ww-spectate-name {
+    margin: 0;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.ww-tile {
+    width: 100%;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+    background: var(--alysum-ui-chrome, transparent);
+    color: var(--text);
+    border-radius: var(--glass-radius, 12px);
+    padding: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    text-align: left;
+}
+.ww-tile strong { display: block; margin-bottom: 4px; }
+.ww-tile span { font-size: 12px; color: var(--muted); }
+.ww-tile-preview {
+    margin-top: 8px;
+    max-height: 72px;
+    overflow: hidden;
+    font-size: 11px;
+    line-height: 1.4;
+    opacity: 0.75;
+}
+.ww-tile-pin {
+    display: block;
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    padding: 0;
+    cursor: pointer;
+}
+.ww-share {
+    margin: 8px 0 0;
+    width: 100%;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.14));
+    background: transparent;
+    color: var(--text);
+    border-radius: var(--glass-radius, 8px);
+    padding: 6px 10px;
+    cursor: pointer;
+    font-weight: 700;
+}

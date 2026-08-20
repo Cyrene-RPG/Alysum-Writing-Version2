@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/statistics/": "/core/statistics/"
+      }
+    }
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Alysum statistics spec</title>
+    <style>
+        :root { color-scheme: light dark; }
+        body { font: 15px/1.45 system-ui, sans-serif; max-width: 52rem; margin: 2rem auto; padding: 0 1.25rem 4rem; }
+        h1, h2, h3 { line-height: 1.2; }
+        h1 { font-size: 1.75rem; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 0.75rem 0 1.5rem; }
+        th, td { border: 1px solid color-mix(in srgb, currentColor 22%, transparent); padding: 0.35rem 0.5rem; text-align: left; vertical-align: top; }
+        th { font-weight: 600; }
+        code { font-size: 0.86em; }
+        .hint { opacity: 0.75; font-size: 0.9rem; }
+        @media print {
+            body { margin: 0; max-width: none; }
+            a { color: inherit; text-decoration: none; }
+            nav { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="hint"><a href="/overview.html">Overview</a> · Print this page → Save as PDF</nav>
+    <h1>Alysum statistics spec</h1>
+    <p>Contract for XP, reputation, comments, reviews, and Word Wars writing XP. Amounts in the tables below are painted from <code>core/statistics/awards.js</code> — that file wins if anything else disagrees.</p>
+    <p>Written as if chapter comments, reviews, and Word Wars (live writing with other people) are live. Ship those UIs against this document. Do not invent a second XP scheme.</p>
+
+    <h2>1. Two ladders</h2>
+    <ul>
+        <li><strong>User level (XP)</strong> — site awards when you do things. Cosmetic. Unlocks profile borders through level 30 (308,000 XP). Wear any unlocked border. Do not spend XP on features.</li>
+        <li><strong>Reputation (Rep)</strong> — other people give points (public amount + public note). Unlocks a gem at the bottom-center of the border through level 50 (15,190). Also raises daily give count and max per action. Do not spend Rep on borders.</li>
+    </ul>
+    <p>Premium / subscriber borders are a separate pool.</p>
+
+    <h2>2. Awards (<code>awards.js</code>)</h2>
+    <p>Changing a number affects <strong>future</strong> grants only. Reversals subtract the amount stored on that <code>xp_events</code> row.</p>
+    <table>
+        <thead><tr><th>Key</th><th>Value</th></tr></thead>
+        <tbody id="awardsBody"></tbody>
+    </table>
+    <ul>
+        <li><code>null</code> = off (grants 0) until you set a number. <code>writing_sentence</code> starts off.</li>
+        <li>No per-word drip. Words only matter as 2k / 10k milestones on Word Wars sentences that lasted 12 hours.</li>
+        <li>Rep-level lump XP = <code>rep_level_lump_per_level × repLevel</code> (level 1 → 10, level 50 → 500).</li>
+    </ul>
+
+    <h2>3. XP levels 1–30</h2>
+    <p>Level is the highest n where xp ≥ threshold. Below 100 = level 0. Crossing a level unlocks that border forever (<code>border_unlock_max</code>).</p>
+    <p>Badge picker: 6×5 grid, <strong>column-major</strong> (1 top-left, 2–5 down, 6 starts column 2).</p>
+    <table>
+        <thead><tr><th>Level</th><th>XP</th><th>Metal</th></tr></thead>
+        <tbody id="xpBody"></tbody>
+    </table>
+    <p>+1 rep the first time you reach each XP level (<code>xp_level_grant</code>, ref <code>xp_level:n</code>, unique).</p>
+
+    <h2>4. Reputation give rules</h2>
+    <p>Button first lives under fiction chapter comments on read. Same RPC later for reviews / lounge (<code>target_type</code> + <code>target_id</code>).</p>
+    <ul>
+        <li>Book author cannot <strong>receive</strong> rep on comments on their own fiction.</li>
+        <li>Authors can <strong>give</strong> on own-fiction comments: 5/day, or 10/day once own reputation ≥ 5,000 — <em>in addition to</em> the global daily gift count.</li>
+        <li>Default 20 gifts per UTC day. If reputation level &gt; 20, daily gifts = that level.</li>
+        <li>Once per comment/post. At most two gifts to the same user per UTC day.</li>
+        <li>Per-action max from total rep points: 0–200 → 1, &gt;200 → 2, &gt;500 → 3, &gt;1k → 4, &gt;5k → 5, &gt;10k → 6.</li>
+        <li>Giving rep grants 3 XP to the giver regardless of amount.</li>
+    </ul>
+
+    <h2>5. Gems</h2>
+    <p>Color every 5 levels: gray, green, blue, purple, yellow, orange, teal, red, diamond (41–45 facets/corners), royal (46–50 multicolor). Cut/clarity steps 1–5 inside a band: hidden → revealed → cabochon → rough-cut → finished. Displayed gem follows current level; <code>rep_color_unlock</code> is monotonic so color family does not go backward.</p>
+
+    <h2>6. Rep levels 1–50</h2>
+    <p>Formula: <code>round(6.076 × n × n)</code>. n=50 → 15,190.</p>
+    <table>
+        <thead><tr><th>Level</th><th>Rep</th><th>Color</th><th>Cut</th></tr></thead>
+        <tbody id="repBody"></tbody>
+    </table>
+
+    <h2>7. Engagement XP (comments and reviews)</h2>
+    <p>Clock starts at <code>created_at</code> of the comment or review. RPC uses <code>engagement-xp.js</code>. Unlike subtracts the <strong>stored</strong> amount.</p>
+    <h3>Comments</h3>
+    <ul>
+        <li>Write: 3 XP, max 24 paying creates per UTC day. Delete reverses a paid create.</li>
+        <li>Incoming like: 3 XP only while the comment is younger than 24 hours, then 0. Already-granted XP stays.</li>
+        <li>No XP from your own like.</li>
+    </ul>
+    <h3>Reviews</h3>
+    <ul>
+        <li>Days 0–7: 15 XP per paying upvote.</li>
+        <li>After 7 days: 5 XP per new paying upvote. Do not rewrite old 15s to 5.</li>
+        <li>Max 100 paying upvotes per review. Un-upvote does not free a slot. Unique voter+review.</li>
+        <li>Delete the review: reverse create (if on) and all upvote XP rows for it.</li>
+    </ul>
+
+    <h2>8. Writing stats vs writing XP</h2>
+    <ul>
+        <li>Overview today/goal/streak/lifetime words = existing <code>writing_day_totals</code> / <code>users.words</code>. Never grants XP.</li>
+        <li>Writing XP = Word Wars eligible sentences only, plus 2k/10k on durable war-words.</li>
+    </ul>
+
+    <h2>9. Writing XP (Word Wars only)</h2>
+    <p>Word Wars is live writing with other people (timed or host-ended room). The solo book editor grants <strong>zero</strong> writing XP.</p>
+    <ul>
+        <li>Word Wars is synced to your real chapter(s). On leave or finish, scan those chapters — not a separate war buffer. Sentences already wrapped in <code>data-xp-reviewed</code> (highlighted in the editor) are skipped so they are not checked or paid twice. New writing after the highlight is reviewed next time. Paste of 2+ words is still void. Publish must strip these marks so readers do not see the highlight.</li>
+        <li>Seal once per (user, room) when <strong>your</strong> live session ends: the room <code>finished</code>, the room is <code>cancelled</code> after you were active, you <strong>leave</strong>, or you are kicked. Leaving does <strong>not</strong> void that writing — it still goes through eligibility and can grant XP.</li>
+        <li>New typing in the solo editor after you leave still grants nothing. Do not run a second job if the room later finishes (same user+room key).</li>
+        <li>LanguageTool / Layer 3 run on that sealed batch (on leave or on finish), never while typing. Informal lines like <code>hello cheese man how are you doing.</code> do not pass the cheap check. If LanguageTool only finds casing, Layer 3 still judges coherence. Dialogue that passed Layer 1 stays relaxed.</li>
+        <li>1-word paste allowed. 2+ word paste/drop voids the whole sentence.</li>
+        <li>Pass → provisional 12h. Delete or disqualifying edit of <em>that</em> sentence → revoke stored XP. Then FINAL; add word count to <code>writing_durable_words</code>; grant 2k and 10k steps (they stack at 10k).</li>
+        <li>Identity: ~70% similarity, not position, not IDs in published HTML.</li>
+    </ul>
+    <p>Worked examples (live from <code>eligibility.js</code>):</p>
+    <table>
+        <thead><tr><th>Sentence</th><th>Expected</th><th>Got</th><th>Why</th></tr></thead>
+        <tbody id="eligibilityBody"></tbody>
+    </table>
+
+    <h2>10. Anti-farm</h2>
+    <ul>
+        <li>Writing XP only from a Word Wars live session (including if you leave early). Paste phrase voids. Solo editor = 0.</li>
+        <li>Own-fiction cannot receive rep on their comments. Unique give target. Two gifts to same user per UTC day.</li>
+        <li>Comment create daily cap. Review max paying upvotes. No slot-free on unlike.</li>
+        <li>Daily login XP is UTC day, once. Login streak is a different local-day system.</li>
+    </ul>
+
+    <h2>11. Reversal matrix</h2>
+    <table>
+        <thead><tr><th>Event</th><th>What reverses</th></tr></thead>
+        <tbody>
+            <tr><td>Daily login</td><td>Never</td></tr>
+            <tr><td>Comment deleted</td><td>Create XP if it paid; comment-upvote rows for that comment</td></tr>
+            <tr><td>Unlike / un-upvote</td><td>Stored 3 / 15 / 5 — never rewrite history</td></tr>
+            <tr><td>Review deleted</td><td>Create (if on) + all upvote XP for that review</td></tr>
+            <tr><td>Rep drop / scale retune</td><td>Matching <code>rep_level_lump</code> row</td></tr>
+            <tr><td>War sentence deleted in 12h</td><td>That <code>writing_sentence</code> amount; words never become durable</td></tr>
+            <tr><td>Give-rep</td><td>Giver’s 3 XP stays</td></tr>
+        </tbody>
+    </table>
+
+    <h2>12. Files</h2>
+    <ul>
+        <li><code>core/statistics/</code> — awards, levels, writing-xp, sentence-split, grammar-hints, grammar-check (LanguageTool), eligibility, engagement-xp</li>
+        <li><code>core/statistics/review-marks.js</code> + <code>statistics-ui/review-highlight.js</code> — already-checked highlight</li>
+        <li><code>applications/main-site/statistics-ui/</code> — badge + this spec renderer</li>
+        <li>SQL (later): <code>supabase/live-site/supabase-statistics.sql</code></li>
+        <li>Import map: <code>@alysum/statistics/</code> → <code>/core/statistics/</code></li>
+        <li>RPCs (later): <code>claim_daily_login_xp</code>, <code>enqueue_writing_xp_war</code>, <code>finalize_writing_xp_sweep</code>, <code>give_reputation</code>, <code>reverse_xp_for_ref</code></li>
+    </ul>
+
+    <h2>13. Phases</h2>
+    <ol>
+        <li>This spec + JS tables (current).</li>
+        <li>Overview rank/XP/rep/writing stats display.</li>
+        <li>Ledger + daily login 20 XP RPC.</li>
+        <li>Word Wars writing XP pipeline.</li>
+        <li>30 borders + Badge picker.</li>
+        <li>Give-rep + gems.</li>
+        <li>Comment/review engagement XP.</li>
+    </ol>
+
+    <script type="module" src="/js/statistics-ui/spec-render.js"></script>
+</body>
+</html>

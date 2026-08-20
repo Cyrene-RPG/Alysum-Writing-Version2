@@ -17,7 +17,8 @@ Current files are legacy and will be remade. Do not add screens here.
 | publishing | Serialization and scheduled chapter releases |
 | encyclopedia | World Encyclopedia blob store (story bible, not chapter prose) |
 | collaboration | Beta rooms (live collaboration rooms later) |
-| community | Later: lounge, word wars, badges |
+| statistics | XP, reputation, Word Wars writing XP, comment/review engagement |
+| community | Word Wars RPCs; lounge and badges later |
 | analysis | Later: writing-aid reports |
 | notifications | Later: follows, replies, chapter drops |
 | moderation | Later: staff / reports (not an application) |

@@ -48,6 +48,8 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/studio/page-ui" / clean[len("/js/studio/") :]
     if clean.startswith("/js/editor/"):
         return ROOT / "applications/editor/page-ui" / clean[len("/js/editor/") :]
+    if clean.startswith("/js/word-wars/"):
+        return ROOT / "applications/word-wars/page-ui" / clean[len("/js/word-wars/") :]
     if clean.startswith("/js/"):
         name = clean[len("/js/") :]
         if name.startswith("homepage"):
@@ -67,6 +69,8 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/studio/studio-css" / clean[len("/css/studio/") :]
     if clean.startswith("/css/editor/"):
         return ROOT / "applications/editor/editor-css" / clean[len("/css/editor/") :]
+    if clean.startswith("/css/word-wars/"):
+        return ROOT / "applications/word-wars/word-wars-css" / clean[len("/css/word-wars/") :]
     if clean.startswith("/css/"):
         return ROOT / "applications/main-site/pages-css" / clean[len("/css/") :]
     if clean.startswith("/assets/"):
@@ -77,6 +81,10 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/studio/pages/studio.html"
     if clean == "/editor.html":
         return ROOT / "applications/editor/pages/editor.html"
+    if clean == "/word-wars-lobby.html":
+        return ROOT / "applications/word-wars/pages/word-wars-lobby.html"
+    if clean == "/word-wars.html":
+        return ROOT / "applications/word-wars/pages/word-wars.html"
     if clean.endswith(".html") and "/" not in clean[1:]:
         return ROOT / "applications/main-site/pages" / clean[1:]
     return ROOT / clean[1:]

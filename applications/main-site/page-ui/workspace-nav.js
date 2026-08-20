@@ -16,6 +16,7 @@ function detectActivePage() {
     if (file === "settings.html") return "settings";
     if (file === "studio.html") return "studio";
     if (file === "editor.html") return "editor";
+    if (file === "word-wars-lobby.html" || file === "word-wars.html") return "word-wars";
     if (file === "index.html") return "index";
     if (file === "login.html") return "login";
     return "";
@@ -49,8 +50,7 @@ function renderNavHtml(active) {
         <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
                 <div class="wd-nav">
                 <a href="${navHref("studio.html")}"${activeClass("studio", active)}>Studio</a>
-                <a href="${navHref("settings.html")}"${activeClass("settings", active)}>Settings</a>
-                <a href="${navHref("login.html")}"${activeClass("login", active)}>Login</a>
+                <a href="${navHref("word-wars-lobby.html")}"${activeClass("word-wars", active)}>Word Wars</a>
             </div>
         </nav>
     `;

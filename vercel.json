@@ -73,6 +73,14 @@
       "destination": "/applications/editor/page-ui/:path*"
     },
     {
+      "source": "/js/word-wars/:path*",
+      "destination": "/applications/word-wars/page-ui/:path*"
+    },
+    {
+      "source": "/js/statistics-ui/:path*",
+      "destination": "/applications/main-site/statistics-ui/:path*"
+    },
+    {
       "source": "/js/:path*",
       "destination": "/applications/main-site/page-ui/:path*"
     },
@@ -101,6 +109,14 @@
       "destination": "/applications/editor/editor-css/:path*"
     },
     {
+      "source": "/css/word-wars/:path*",
+      "destination": "/applications/word-wars/word-wars-css/:path*"
+    },
+    {
+      "source": "/css/statistics-ui/:path*",
+      "destination": "/applications/main-site/statistics-ui/:path*"
+    },
+    {
       "source": "/css/:path*",
       "destination": "/applications/main-site/pages-css/:path*"
     },
@@ -115,6 +131,14 @@
     {
       "source": "/editor.html",
       "destination": "/applications/editor/pages/editor.html"
+    },
+    {
+      "source": "/word-wars-lobby.html",
+      "destination": "/applications/word-wars/pages/word-wars-lobby.html"
+    },
+    {
+      "source": "/word-wars.html",
+      "destination": "/applications/word-wars/pages/word-wars.html"
     },
     {
       "source": "/:page.html",

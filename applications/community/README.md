@@ -1,5 +1,5 @@
 # Community
 
-Later: writer's lounge and word wars UI.
+Later: writer's lounge.
 
-Uses `core/community` and `site-appearance/`. Do not put live pages here yet.
+Word Wars pages live in `applications/word-wars/`. Uses `core/community` and `site-appearance/`.
