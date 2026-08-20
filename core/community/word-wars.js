@@ -1,6 +1,7 @@
 /**
  * Word Wars API — signed-in RPCs only. No WebRTC, no peer connections, no IPs.
- * Requires supabase-word-wars.sql and supabase-word-wars-share-required.sql.
+ * Requires supabase-word-wars.sql, supabase-word-wars-share-required.sql,
+ * and supabase-word-wars-waiting-lobby.sql (create stays in lobby until Begin).
  */
 
 import { supabase } from "../authentication/client.js";
@@ -95,14 +96,24 @@ export async function updateWordWarLobby(roomId, {
     bookId = null,
     isReady = null,
     isLocked = null,
+    maxWriters = null,
+    shareRequired = null,
 } = {}) {
-    const { data, error } = await supabase.rpc("update_word_war_lobby", {
+    const args = {
         p_room_id: roomId,
         p_duration_min: durationMin,
         p_book_id: bookId,
         p_is_ready: isReady,
         p_is_locked: isLocked,
+    };
+    let { data, error } = await supabase.rpc("update_word_war_lobby", {
+        ...args,
+        p_max_writers: maxWriters,
+        p_share_required: shareRequired,
     });
+    if (error && isMissingRpc(error)) {
+        ({ data, error } = await supabase.rpc("update_word_war_lobby", args));
+    }
     if (error) throwRpc(error);
     return safeObject(data);
 }
@@ -144,6 +155,15 @@ export async function leaveWordWarRoom(roomId) {
     });
     if (error) throwRpc(error);
     return safeObject(data, { left: true });
+}
+
+export async function kickWordWarParticipant(roomId, userId) {
+    const { data, error } = await supabase.rpc("kick_word_war_participant", {
+        p_room_id: roomId,
+        p_target_user_id: userId,
+    });
+    if (error) throwRpc(error);
+    return safeObject(data);
 }
 
 export async function finishWordWar(roomId) {

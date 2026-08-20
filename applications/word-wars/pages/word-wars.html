@@ -37,7 +37,7 @@
     <link rel="stylesheet" href="/css/editor/document.css?v=11" />
     <link rel="stylesheet" href="/css/editor/editor-fonts.css?v=1" />
     <link rel="stylesheet" href="/css/editor/scene-breaks.css?v=1" />
-    <link rel="stylesheet" href="/css/word-wars/room.css?v=8" />
+    <link rel="stylesheet" href="/css/word-wars/room.css?v=9" />
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 </head>
 <body class="ww-body">
@@ -83,6 +83,7 @@
             <div class="ww-stage-bar">
                 <span id="timerEl">—</span>
                 <span class="ww-watch-who hidden" id="watchWho"></span>
+                <button type="button" class="ww-leave hidden" id="kickBtn">Kick</button>
                 <button type="button" class="ww-view-toggle" id="myViewBtn" aria-pressed="false">Go live</button>
                 <span class="ww-view-live hidden" id="myViewLive">LIVE</span>
                 <span id="wordEl" class="ww-word-badge">0 words</span>
@@ -95,7 +96,7 @@
             <div class="ww-editor" id="editorPane">
                 <div class="writer-toolbar" id="writerToolbar"></div>
                 <div class="writer-main-scroll">
-                    <div class="writer-page" id="pageEditor" contenteditable="true"></div>
+                    <div class="writer-page" id="pageEditor" contenteditable="true" spellcheck="false"></div>
                 </div>
             </div>
         </section>
@@ -107,6 +108,6 @@
             <div class="ww-others-list" id="tileList"></div>
         </aside>
     </div>
-    <script type="module" src="/js/word-wars/room.js?v=9"></script>
+    <script type="module" src="/js/word-wars/room.js?v=12"></script>
 </body>
 </html>

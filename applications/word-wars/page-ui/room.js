@@ -22,9 +22,10 @@ import {
     updateWordWarProgress,
     leaveWordWarRoom,
     finishWordWar,
+    kickWordWarParticipant,
     meFromLobby,
-} from "@alysum/community/word-wars.js";
-import { isDemoRoom, loadDemoLobby, storeDemoLobby } from "/js/word-wars/demo.js";
+} from "@alysum/community/word-wars.js?v=3";
+import { isDemoRoom } from "/js/word-wars/demo.js?v=2";
 
 const POLL_MS = 1500;
 const SHARE_MS = 500;
@@ -102,10 +103,17 @@ async function boot() {
     });
 
     const uid = session.user.id;
-    const demo = isDemoRoom(roomId);
-    let lobby = demo ? loadDemoLobby(roomId) : await getWordWarLobby({ roomId });
+    if (isDemoRoom(roomId)) {
+        window.location.replace("word-wars-lobby.html");
+        return;
+    }
+    let lobby = await getWordWarLobby({ roomId });
     if (!lobby) {
         window.location.replace("word-wars-lobby.html");
+        return;
+    }
+    if (lobby.status === "lobby") {
+        window.location.replace(`word-wars-lobby.html?room=${encodeURIComponent(roomId)}`);
         return;
     }
     if (lobby.status === "finished" || lobby.status === "cancelled") {
@@ -136,6 +144,7 @@ async function boot() {
     const spectatePane = document.getElementById("spectatePane");
     const spectatePage = document.getElementById("spectatePage");
     const watchWho = document.getElementById("watchWho");
+    const kickBtn = document.getElementById("kickBtn");
     const myViewBtn = document.getElementById("myViewBtn");
     const myViewLive = document.getElementById("myViewLive");
     const tileList = document.getElementById("tileList");
@@ -294,23 +303,6 @@ async function boot() {
             payload.liveChapterId = chapter?.id || "";
         }
         try {
-            if (demo) {
-                lobby = {
-                    ...lobby,
-                    participants: (lobby.participants || []).map((p) => (
-                        p.userId === uid
-                            ? {
-                                ...p,
-                                ...payload,
-                                wordsAtStart: wordsAtStart || words,
-                            }
-                            : p
-                    )),
-                };
-                storeDemoLobby(lobby);
-                if (!wordsAtStart) wordsAtStart = words;
-                return;
-            }
             lobby = await updateWordWarProgress(roomId, payload);
             const nextMe = meFromLobby(lobby, uid);
             if (nextMe?.wordsAtStart) wordsAtStart = Number(nextMe.wordsAtStart) || wordsAtStart;
@@ -338,9 +330,11 @@ async function boot() {
 
     function paintStage() {
         const spectating = pinnedId !== "self";
+        const host = !!meFromLobby(lobby, uid)?.isHost;
         stage.classList.toggle("is-spectating", spectating);
         spectatePane.classList.toggle("hidden", !spectating);
         paintMyView();
+        kickBtn?.classList.toggle("hidden", !host || !spectating);
         if (!spectating) {
             watchWho?.classList.add("hidden");
             if (watchWho) watchWho.textContent = "";
@@ -435,10 +429,22 @@ async function boot() {
         scheduleShare();
     });
 
+    kickBtn?.addEventListener("click", async () => {
+        if (pinnedId === "self" || !meFromLobby(lobby, uid)?.isHost) return;
+        try {
+            lobby = await kickWordWarParticipant(roomId, pinnedId);
+        } catch {
+            return;
+        }
+        pinnedId = "self";
+        paintTiles();
+        paintStage();
+    });
+
     document.getElementById("leaveBtn")?.addEventListener("click", async () => {
         await autosave.flush?.();
         try {
-            if (!demo) await leaveWordWarRoom(roomId);
+            await leaveWordWarRoom(roomId);
         } catch {
             /* leave anyway */
         }
@@ -448,7 +454,7 @@ async function boot() {
     finishBtn?.addEventListener("click", async () => {
         await autosave.flush?.();
         try {
-            if (!demo) await finishWordWar(roomId);
+            await finishWordWar(roomId);
         } catch {
             /* still leave */
         }
@@ -467,21 +473,24 @@ async function boot() {
     }, 1000);
 
     setInterval(async () => {
-        if (demo) {
-            const next = loadDemoLobby(roomId);
-            if (next) lobby = next;
-            paintTiles();
-            paintStage();
-            paintTimer();
-            return;
-        }
         try {
             const next = await getWordWarLobby({ roomId });
-            if (!next || (next.status !== "active" && next.status !== "lobby")) {
+            if (!next || next.status === "finished" || next.status === "cancelled") {
+                window.location.replace("word-wars-lobby.html");
+                return;
+            }
+            if (next.status === "lobby") {
+                window.location.replace(`word-wars-lobby.html?room=${encodeURIComponent(roomId)}`);
+                return;
+            }
+            if (!meFromLobby(next, uid)) {
                 window.location.replace("word-wars-lobby.html");
                 return;
             }
             lobby = next;
+            if (pinnedId !== "self" && !(lobby.participants || []).some((p) => p.userId === pinnedId)) {
+                pinnedId = "self";
+            }
             paintTiles();
             paintStage();
             paintTimer();

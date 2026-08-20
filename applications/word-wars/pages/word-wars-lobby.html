@@ -33,7 +33,7 @@
     <title>Word Wars — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="/css/workspace-nav.css?v=27" />
-    <link rel="stylesheet" href="/css/word-wars/lobby.css?v=20" />
+    <link rel="stylesheet" href="/css/word-wars/lobby.css?v=22" />
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 </head>
 <body>
@@ -72,18 +72,27 @@
         </div>
 
         <div class="ww-shell hidden" id="lobbyShell">
-            <aside class="ww-open" aria-label="Open lobbies">
-                <div class="ww-open-head">
-                    <h2>Open lobbies</h2>
-                    <button type="button" class="ww-refresh" id="refreshLobbiesBtn" aria-label="Refresh">Refresh</button>
+            <aside class="ww-open" id="sideRail" aria-label="Open lobbies">
+                <div class="ww-open-pane" id="openPane">
+                    <div class="ww-open-head">
+                        <h2>Open lobbies</h2>
+                        <button type="button" class="ww-refresh" id="refreshLobbiesBtn" aria-label="Refresh">Refresh</button>
+                    </div>
+                    <p class="hint" id="openCount">Join a sprint</p>
+                    <div class="ww-open-list" id="openList"></div>
                 </div>
-                <p class="hint" id="openCount">Join a sprint</p>
-                <div class="ww-open-list" id="openList"></div>
+                <div class="ww-members-pane hidden" id="membersPane">
+                    <div class="ww-open-head">
+                        <h2>Joined members</h2>
+                    </div>
+                    <p class="hint" id="waitCount">0/4</p>
+                    <ul class="ww-people" id="waitPeople"></ul>
+                </div>
             </aside>
 
             <div class="ww-main" id="createView">
                 <header class="ww-hero">
-                    <p class="ww-kicker">Create a lobby</p>
+                    <p class="ww-kicker" id="lobbyKicker">Create a lobby</p>
                     <h1>Settings</h1>
                 </header>
 
@@ -107,7 +116,7 @@
                             <span id="writersValue">4</span>
                             <button type="button" id="writersPlus" aria-label="More writers">+</button>
                         </div>
-                        <p class="hint">2 minimum · 16 max. Open lobbies always seat 16.</p>
+                        <p class="hint">2 minimum · 16 max.</p>
                     </div>
                     <div class="ww-field">
                         <span class="ww-label">Lobby</span>
@@ -129,12 +138,28 @@
                     </div>
                     <div class="ww-sprint-launch">
                         <button type="button" class="ww-cta ww-cta--sprint" id="createBtn">Start a sprint</button>
-                        <p class="hint ww-cta-hint">opens a live sprint · others join straight in</p>
+                        <p class="hint ww-cta-hint" id="createHint">Invite writers, then Begin.</p>
+                        <button type="button" class="ww-cta ww-cta--sprint hidden" id="beginBtn">Begin</button>
+                        <p class="hint ww-cta-hint hidden" id="beginHint">Need 2 writers to start.</p>
                         <p class="ww-error" id="createError" hidden></p>
+                        <p class="ww-error" id="beginError" hidden></p>
                     </div>
                 </div>
 
-                <section class="ww-join-friend">
+                <section class="ww-wait hidden" id="waitPanel">
+                    <div class="ww-wait-foot">
+                        <div class="ww-wait-code">
+                            <span class="ww-label">Lobby code</span>
+                            <p class="ww-wait-code-value" id="waitCode"></p>
+                        </div>
+                        <div class="ww-wait-actions">
+                            <button type="button" class="ww-copy" id="copyCodeBtn">Copy code</button>
+                            <button type="button" class="ww-leave" id="leaveLobbyBtn">Leave</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="ww-join-friend" id="joinFriend">
                     <div>
                         <h2>Join a friend</h2>
                         <p class="hint">Paste the six-character code they sent you.</p>
@@ -148,6 +173,6 @@
             </div>
         </div>
     </div>
-    <script type="module" src="/js/word-wars/lobby.js?v=11"></script>
+    <script type="module" src="/js/word-wars/lobby.js?v=16"></script>
 </body>
 </html>

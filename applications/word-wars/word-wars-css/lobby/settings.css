@@ -234,10 +234,55 @@
 .ww-people li {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     gap: 8px;
     padding: 12px 14px;
     border-radius: var(--glass-radius, 12px);
     border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+}
+.ww-people li.is-empty {
+    color: var(--muted);
+    border-style: dashed;
+    font-style: italic;
+}
+.ww-people-name {
+    font-weight: 700;
+    min-width: 0;
+}
+.ww-people-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+}
+.ww-chip {
+    padding: 2px 8px;
+    border-radius: var(--glass-radius, 8px);
+    background: var(--accent, var(--pink, #db2777));
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.ww-wait {
+    position: relative;
+    z-index: 1;
+    margin-top: auto;
+}
+.ww-wait-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+}
+.ww-wait-code-value {
+    margin: 6px 0 0;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
 }
 .ww-wait-actions {
     display: flex;
@@ -245,3 +290,17 @@
     gap: 10px;
 }
 .ww-wait-actions .ww-cta { width: auto; flex: 1; }
+.ww-main.is-waiting {
+    overflow: auto;
+}
+.ww-main.is-waiting #createBtn,
+.ww-main.is-waiting #createHint,
+.ww-main.is-waiting #joinFriend { display: none; }
+.ww-main.is-waiting.is-guest #beginBtn { display: none; }
+.ww-main.is-guest .ww-pencil,
+.ww-main.is-guest .ww-slider,
+.ww-main.is-guest .ww-stepper,
+.ww-main.is-guest .ww-seg {
+    pointer-events: none;
+    opacity: 0.62;
+}

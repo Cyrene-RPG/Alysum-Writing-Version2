@@ -78,7 +78,7 @@ body {
     border-radius: 8px;
     border: 1px solid transparent;
     background: var(--alysum-ui-raised, #2a2a2a);
-    color: var(--ui-muted, #c5c5c5);
+    color: var(--ui-muted, #c5c5c553);
     font-size: 13px;
     font-weight: 800;
     font-family: inherit;

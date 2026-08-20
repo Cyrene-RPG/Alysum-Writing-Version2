@@ -181,3 +181,31 @@
     background: var(--muted);
 }
 .ww-status.is-share::before { background: var(--accent, var(--pink, #ec4899)); }
+
+.ww-open-pane,
+.ww-members-pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+}
+.ww-members-pane {
+    position: relative;
+    z-index: 1;
+}
+.ww-members-pane .ww-people {
+    flex: 1;
+    margin: 8px 2px 0;
+    max-height: none;
+}
+.ww-members-pane .ww-people li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    background: color-mix(in srgb, var(--alysum-ui-chrome, #1f2937) 72%, var(--alysum-ui-panel, #111827));
+}
+.ww-members-pane .ww-people-name {
+    font-size: 14px;
+    word-break: break-word;
+}

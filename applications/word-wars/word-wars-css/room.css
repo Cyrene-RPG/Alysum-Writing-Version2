@@ -138,14 +138,14 @@ html { height: 100%; }
 .ww-room.is-rail-collapsed .ww-others-head {
     display: contents;
 }
-.ww-room.is-tree-collapsed .ww-label,
+.ww-room.is-tree-collapsed .ww-chapters .ww-label,
 .ww-room.is-tree-collapsed #chapterList,
-.ww-room.is-rail-collapsed .ww-label,
+.ww-room.is-rail-collapsed .ww-others .ww-label,
 .ww-room.is-rail-collapsed .ww-others-list {
     display: none;
 }
-.ww-room.is-tree-collapsed .writer-tree-toggle,
-.ww-room.is-rail-collapsed .writer-tree-toggle {
+.ww-room.is-tree-collapsed .ww-chapters .writer-tree-toggle,
+.ww-room.is-rail-collapsed .ww-others .writer-tree-toggle {
     width: 40px;
     height: 40px;
     margin: 0;
@@ -255,6 +255,11 @@ html { height: 100%; }
 .ww-editor .writer-main-scroll {
     flex: 1;
     min-height: 0;
+}
+.ww-body .writer-page:focus,
+.ww-body .writer-page:focus-visible {
+    outline: none;
+    box-shadow: none;
 }
 
 .ww-stage.is-spectating .ww-editor { display: none; }
