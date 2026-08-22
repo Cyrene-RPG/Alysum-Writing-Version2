@@ -81,6 +81,8 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/studio/pages/studio.html"
     if clean == "/editor.html":
         return ROOT / "applications/editor/pages/editor.html"
+    if clean == "/book-invite.html":
+        return ROOT / "applications/editor/pages/book-invite.html"
     if clean == "/word-wars-lobby.html":
         return ROOT / "applications/word-wars/pages/word-wars-lobby.html"
     if clean == "/word-wars.html":

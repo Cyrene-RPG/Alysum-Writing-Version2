@@ -31,8 +31,8 @@
     <meta name="robots" content="noindex, nofollow">
     <title>Writer — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="/css/workspace-nav.css?v=28" />
-    <link rel="stylesheet" href="/css/editor/page.css?v=46" />
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=29" />
+    <link rel="stylesheet" href="/css/editor/page.css?v=47" />
     <link rel="stylesheet" href="/css/editor/document.css?v=11" />
     <link rel="stylesheet" href="/css/editor/editor-fonts.css?v=1" />
     <link rel="stylesheet" href="/css/editor/scene-breaks.css?v=1" />
@@ -71,12 +71,16 @@
         <div class="writer-loading" id="loadingPanel">Loading writer…</div>
         <div class="writer-shell hidden" id="writerShell">
             <aside class="writer-tree" id="chapterTree" aria-label="Manuscript">
-                <div class="writer-tree-head">
-                    <div class="writer-tabs" role="tablist" aria-label="Sidebar">
+                <div class="writer-tree-head" id="writerTreeHead">
+                    <div class="writer-tabs" role="tablist" aria-label="Sidebar" id="writerTabs">
                         <button type="button" class="writer-tab is-active" id="tabChapters" role="tab" aria-selected="true" data-tab="chapters">Chapters</button>
                         <button type="button" class="writer-tab" id="tabBook" role="tab" aria-selected="false" data-tab="book">Book</button>
                     </div>
                     <button type="button" class="writer-tree-toggle" id="treeToggle" aria-expanded="true" title="Hide sidebar">‹</button>
+                </div>
+                <div class="writer-settings-topbar hidden" id="settingsTopbar">
+                    <button type="button" class="writer-settings-back" id="settingsBackTop"><span aria-hidden="true">‹</span> Go back</button>
+                    <span class="writer-settings-title">Settings</span>
                 </div>
                 <div class="writer-tab-pane" id="chaptersPane">
                     <div class="writer-pane-head writer-pane-head--end">
@@ -87,6 +91,7 @@
                     <ul class="writer-tree-list" id="chapterList"></ul>
                 </div>
                 <div class="writer-tab-pane" id="bookPane" hidden>
+                    <div id="bookTree">
                     <p class="writer-pane-hint">Front, body, and back of the book</p>
                     <section class="writer-matter" data-matter="front" aria-labelledby="frontMatterTitle">
                         <div class="writer-pane-head">
@@ -120,10 +125,20 @@
                         <ul class="writer-tree-list writer-tree-list--matter" id="backList"></ul>
                         <p class="writer-empty" id="backEmpty" hidden>None yet. Use + to add.</p>
                     </section>
+                    </div>
+                    <div class="writer-settings-pane hidden" id="settingsPane">
+                        <div class="writer-settings-head">
+                            <p>Collaborators, version history, and export for this book</p>
+                        </div>
+                        <div class="writer-settings-scroll" id="settingsScroll"></div>
+                    </div>
+                    <div class="writer-book-foot" id="bookFootSettings">
+                        <button type="button" class="writer-settings-tab" id="tabSettings"><span aria-hidden="true">⚙</span> Settings</button>
+                    </div>
                 </div>
             </aside>
             <section class="writer-main">
-                <div class="writer-main-scroll">
+                <div class="writer-main-scroll" id="writerWritePane">
                 <span class="writer-status" id="saveStatus" role="status" hidden></span>
                 <input class="writer-book-title" id="bookTitle" aria-label="Book title" />
                 <div class="writer-chapter-bar">
@@ -139,6 +154,7 @@
                 <div class="writer-toolbar" id="writerToolbar" role="toolbar" aria-label="Formatting"></div>
                 <div class="writer-page" id="pageEditor" aria-label="Chapter text"></div>
                 </div>
+                <div class="lib-preview hidden" id="libraryPreviewPane"></div>
             </section>
             <aside class="writer-rail" id="writerRail" aria-label="Tools">
                 <div class="writer-rail-head">
@@ -159,6 +175,46 @@
             </div>
         </div>
     </div>
-    <script type="module" src="/js/editor/page.js?v=46"></script>
+    <div class="confirm-overlay" id="inviteOverlay" hidden>
+        <div class="confirm-card" role="dialog" aria-modal="true" aria-labelledby="inviteTitle">
+            <h2 class="confirm-title" id="inviteTitle">Invite editor</h2>
+            <p class="confirm-text">Enter an email. You’ll get a link they can open to join this book as an editor.</p>
+            <input type="email" id="inviteEmail" class="writer-invite-input" placeholder="editor@email.com" autocomplete="email" />
+            <p class="confirm-text" id="inviteLinkRow" hidden><span id="inviteLinkText"></span></p>
+            <p class="confirm-text writer-invite-error" id="inviteError" hidden></p>
+            <div class="confirm-actions">
+                <button type="button" class="confirm-yes" id="inviteCreate">Create link</button>
+                <button type="button" class="confirm-yes hidden" id="inviteCopy">Copy link</button>
+                <button type="button" class="confirm-no" id="inviteClose">Close</button>
+            </div>
+        </div>
+    </div>
+    <div class="confirm-overlay" id="chapterManageOverlay" hidden>
+        <div class="lib-modal" role="dialog" aria-modal="true" aria-labelledby="chapterManageTitle">
+            <div class="lib-modal-head">
+                <h2 id="chapterManageTitle">Manage chapters</h2>
+                <p>Drag chapters from Unpublished into Published. Nothing changes until you save.</p>
+            </div>
+            <div class="lib-modal-body">
+                <div class="lib-dual">
+                    <div class="lib-dual-col">
+                        <div class="lib-dual-head"><span>Unpublished</span><span id="unpublishedCount">0</span></div>
+                        <div class="lib-panel-list" id="unpublishedList"></div>
+                    </div>
+                    <div class="lib-dual-col">
+                        <div class="lib-dual-head"><span>Published order</span><span id="publishedCount">0</span></div>
+                        <div class="lib-panel-list" id="publishedList"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="lib-modal-foot">
+                <button type="button" class="confirm-no" id="chapterManageCancel">Cancel</button>
+                <button type="button" class="confirm-yes" id="chapterManageSave">Save</button>
+            </div>
+        </div>
+    </div>
+    <div class="lib-toast" id="libToast" hidden></div>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script type="module" src="/js/editor/page.js?v=47"></script>
 </body>
 </html>

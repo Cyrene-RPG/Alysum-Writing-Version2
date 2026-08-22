@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/",
+        "@alysum/statistics/": "/core/statistics/"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=7" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=7" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=11" />
+    <script src="/site-appearance/js-runtime/body-background-presets-data.js?v=3"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js?v=6"></script>
+    <script src="/site-appearance/js-runtime/boot.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow">
+    <title>Join book — Alysum</title>
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
+    <style>
+        body { margin: 0; min-height: 100vh; display: grid; place-items: center; }
+        .invite-card {
+            width: min(28rem, calc(100% - 32px));
+            padding: 24px;
+            border-radius: var(--glass-radius, 16px);
+            border: 1px solid var(--border, rgba(255,255,255,.12));
+            background: var(--alysum-ui-panel, #111827);
+        }
+        h1 { margin: 0 0 8px; font-size: 22px; }
+        p { margin: 0 0 16px; color: var(--muted); line-height: 1.5; }
+        .invite-btn {
+            width: 100%;
+            border: 0;
+            border-radius: var(--glass-radius, 12px);
+            padding: 12px;
+            font: inherit;
+            font-weight: 800;
+            background: var(--accent);
+            color: var(--text);
+            cursor: pointer;
+        }
+        .invite-btn[disabled] { opacity: .6; cursor: default; }
+    </style>
+</head>
+<body>
+    <div class="invite-card">
+        <h1 id="inviteHeading">Join this book</h1>
+        <p id="inviteCopy">Accept this invite to edit the manuscript with the owner.</p>
+        <button type="button" class="invite-btn" id="inviteAccept">Accept invite</button>
+    </div>
+    <script type="module" src="/js/editor/book-invite.js"></script>
+</body>
+</html>
