@@ -19,15 +19,6 @@ export function mountWriterChrome({
     tabBook,
     chaptersPane,
     bookPane,
-    bookTree,
-    settingsPane,
-    settingsTopbar,
-    writerTabs,
-    bookFootSettings,
-    tabSettings,
-    settingsBackTop,
-    tree,
-    onBookViewChange,
 }) {
     function treeCollapsed() {
         try {
@@ -114,30 +105,7 @@ export function mountWriterChrome({
         if (section) setMatterCollapsed(section, false);
     }
 
-    let bookView = "tree";
-
-    function setBookView(view) {
-        bookView = view === "settings" ? "settings" : "tree";
-        const settings = bookView === "settings";
-        tree?.classList.toggle("is-settings", settings);
-        if (bookTree) bookTree.classList.toggle("hidden", settings);
-        settingsPane?.classList.toggle("hidden", !settings);
-        settingsTopbar?.classList.toggle("hidden", !settings);
-        writerTabs?.classList.toggle("hidden", settings);
-        bookFootSettings?.classList.toggle("hidden", settings);
-        if (settings) {
-            chaptersPane.hidden = true;
-            bookPane.hidden = false;
-            tabChapters?.classList.remove("is-active");
-            tabBook?.classList.add("is-active");
-            tabChapters?.setAttribute("aria-selected", "false");
-            tabBook?.setAttribute("aria-selected", "true");
-        }
-        onBookViewChange?.(bookView);
-    }
-
     function setTab(tab) {
-        if (bookView === "settings") setBookView("tree");
         const bookTab = tab === "book";
         chaptersPane.hidden = bookTab;
         bookPane.hidden = !bookTab;
@@ -152,11 +120,8 @@ export function mountWriterChrome({
         }
     }
     setTab(storedTab());
-    setBookView("tree");
     tabChapters?.addEventListener("click", () => setTab("chapters"));
     tabBook?.addEventListener("click", () => setTab("book"));
-    tabSettings?.addEventListener("click", () => setBookView("settings"));
-    settingsBackTop?.addEventListener("click", () => setTab("book"));
 
-    return { setTab, expandMatter, setBookView, getBookView: () => bookView };
+    return { setTab, expandMatter };
 }

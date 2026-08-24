@@ -31,8 +31,8 @@
     <meta name="robots" content="noindex, nofollow">
     <title>Studio — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="/css/workspace-nav.css?v=29" />
-    <link rel="stylesheet" href="/css/studio/page.css?v=6" />
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=28" />
+    <link rel="stylesheet" href="/css/studio/page.css?v=2" />
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 </head>
 <body>
@@ -65,67 +65,21 @@
         </div>
     </nav>
     <div class="wrap">
-        <div class="studio-loading" id="loadingPanel">Loading studio…</div>
-        <div class="studio-app hidden" id="studioShell">
-            <div class="studio-topbar">
+        <div class="panel" id="loadingPanel">
+            <p class="hint" style="margin:0">Loading studio…</p>
+        </div>
+        <div class="panel hidden" id="studioShell">
+            <div class="studio-head">
                 <div>
-                    <h1>Studio</h1>
-                    <p>Open a book and keep writing.</p>
+                    <h1>Your books</h1>
+                    <p class="hint">Open a draft or start a new one.</p>
                 </div>
-                <a class="studio-gear" href="settings.html" aria-label="Settings" title="Settings">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                    </svg>
-                </a>
+                <button type="button" class="studio-new" id="newBookBtn">New book</button>
             </div>
-            <div class="studio-section-head">
-                <div>
-                    <h2>Your books</h2>
-                    <p class="studio-sub">Swipe or use the arrows to see more.</p>
-                </div>
-                <span class="studio-shelf-count" id="shelfCount">0 books</span>
-            </div>
-            <div class="studio-shelf-wrap">
-                <button type="button" class="studio-shelf-nav prev" id="shelfPrev" aria-label="Previous books">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
-                </button>
-                <button type="button" class="studio-shelf-nav next" id="shelfNext" aria-label="More books">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
-                </button>
-                <div class="studio-shelf" id="bookShelf"></div>
-            </div>
-            <div class="studio-dots" id="shelfDots"></div>
-            <div class="studio-stats">
-                <div class="studio-stat">
-                    <span class="studio-stat-num" id="statTotalWords">0</span>
-                    <span class="studio-stat-label">Total words across all books</span>
-                </div>
-                <div class="studio-stat">
-                    <span class="studio-stat-num" id="statBooks">0</span>
-                    <span class="studio-stat-label">Books</span>
-                </div>
-                <div class="studio-stat">
-                    <span class="studio-stat-num" id="statLoginStreak">0</span>
-                    <span class="studio-stat-label">Daily login streak</span>
-                </div>
-                <div class="studio-stat">
-                    <span class="studio-stat-num" id="statGoalStreak">0</span>
-                    <span class="studio-stat-label">Daily word goal streak</span>
-                </div>
-            </div>
-            <div class="studio-goal">
-                <div class="studio-goal-top">
-                    <span>Word goal today</span>
-                    <span class="studio-goal-pill" id="goalPill">0 / 2,000</span>
-                </div>
-                <div class="studio-goal-track">
-                    <div class="studio-goal-fill" id="goalFill"></div>
-                </div>
-            </div>
+            <div class="studio-list" id="bookList"></div>
             <p class="studio-status" id="studioStatus" role="status"></p>
         </div>
     </div>
-    <script type="module" src="/js/studio/page.js?v=6"></script>
+    <script type="module" src="/js/studio/page.js?v=4"></script>
 </body>
 </html>

@@ -76,9 +76,9 @@ body {
 .writer-rail {
     display: flex;
     flex-direction: column;
-    align-self: stretch;
+    align-self: start;
     width: 100%;
-    height: 100%;
+    height: auto;
     max-height: 100%;
     background: var(--alysum-ui-chrome, #141414);
     padding: 14px 12px;
@@ -243,7 +243,7 @@ body {
     overflow: visible;
 }
 #bookPane {
-    overflow: hidden;
+    overflow: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
@@ -251,86 +251,6 @@ body {
     display: none;
     width: 0;
     height: 0;
-}
-#bookTree {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    flex: 1 1 auto;
-    overflow: auto;
-    scrollbar-width: none;
-}
-#bookTree::-webkit-scrollbar { display: none; width: 0; height: 0; }
-#bookTree.hidden,
-.writer-settings-pane.hidden,
-.writer-book-foot.hidden,
-.writer-settings-topbar.hidden { display: none !important; }
-
-.writer-settings-topbar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border);
-}
-.writer-settings-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    border: 1px solid var(--border);
-    background: var(--alysum-ui-raised, #2a2a2a);
-    color: var(--text);
-    border-radius: var(--glass-radius, 10px);
-    padding: 8px 12px;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-}
-.writer-settings-title {
-    flex: 1;
-    text-align: center;
-    font-size: 13px;
-    font-weight: 800;
-    color: var(--muted);
-    margin-right: 48px;
-}
-.writer-settings-pane {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    flex: 1 1 auto;
-    overflow: hidden;
-}
-.writer-book-foot {
-    flex-shrink: 0;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
-}
-.writer-settings-tab {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    border: 1px solid var(--border);
-    background: color-mix(in srgb, var(--alysum-ui-raised, #2a2a2a) 80%, transparent);
-    color: var(--muted);
-    border-radius: var(--glass-radius, 12px);
-    padding: 9px 10px;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 800;
-    cursor: pointer;
-}
-.writer-tree.is-settings .writer-tree-head { display: none; }
-.writer-shell.is-tree-collapsed .writer-settings-topbar,
-.writer-shell.is-tree-collapsed .writer-book-foot,
-.writer-shell.is-tree-collapsed .writer-settings-pane {
-    display: none !important;
 }
 .writer-shell.is-tree-collapsed .writer-tree,
 .writer-shell.is-rail-collapsed .writer-rail {

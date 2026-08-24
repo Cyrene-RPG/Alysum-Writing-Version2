@@ -226,25 +226,20 @@
     font-size: clamp(22px, 4vw, 28px);
     font-weight: 900;
     line-height: 1.15;
-    color: var(--alysum-display-mid, var(--chrome-text, #fff));
-    text-shadow:
-        0 1px 3px var(--alysum-display-shadow, rgba(0, 0, 0, 0.25)),
-        0 0 18px var(--alysum-display-glow, transparent);
+    color: var(--chrome-text, #fff);
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
 }
 
 .wd-welcome-bar[data-chrome-ink="black"] .wd-welcome-title,
 .wd-welcome-bar[data-chrome-ink="grey"] .wd-welcome-title {
-    text-shadow:
-        0 1px 3px var(--alysum-display-shadow, transparent),
-        0 0 18px var(--alysum-display-glow, transparent);
+    text-shadow: none;
 }
 
 .wd-welcome-title .wd-name {
-    background: none;
-    -webkit-background-clip: border-box;
-    background-clip: border-box;
-    color: var(--alysum-display-highlight, var(--alysum-display-mid, #fff));
-    -webkit-text-fill-color: currentColor;
+    background: linear-gradient(90deg, #fff 0%, #fde68a 55%, #fbcfe8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
 }
 
 .wd-welcome-sub {

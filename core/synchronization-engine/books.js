@@ -212,8 +212,6 @@ export function createBooksApi(session, supabase) {
                                 sections: picked.book.sections,
                                 words: picked.book.words,
                                 media_format: picked.book.media_format,
-                                publish_meta: picked.book.publish_meta || {},
-                                published_chapter_ids: picked.book.published_chapter_ids || [],
                             });
                             const keep = mergeLoadedBook(picked.book, pushed).book;
                             upsertCache(userId, keep);

@@ -46,10 +46,6 @@ function rowTime(row, keys) {
 
 export function fromCloudRow(row) {
     if (!row || typeof row !== "object") return null;
-    const meta = row.publish_meta && typeof row.publish_meta === "object" && !Array.isArray(row.publish_meta)
-        ? row.publish_meta
-        : {};
-    const published = Array.isArray(row.published_chapter_ids) ? row.published_chapter_ids : [];
     return {
         id: String(row.id || ""),
         user_id: String(row.user_id || row.userId || ""),
@@ -57,8 +53,6 @@ export function fromCloudRow(row) {
         words: Number(row.words) || 0,
         sections: readSections(row.sections),
         media_format: String(row.media_format || row.mediaFormat || "novel"),
-        publish_meta: meta,
-        published_chapter_ids: published,
         created: rowTime(row, ["created", "created_at", "createdAt"]),
         updated: rowTime(row, ["updated", "updated_at", "updatedAt"]),
     };
@@ -89,19 +83,11 @@ function toCloudPatch(patch) {
     if (src.media_format != null || src.mediaFormat != null) {
         out.media_format = String(src.media_format || src.mediaFormat || "novel");
     }
-    if (src.publish_meta != null || src.publishMeta != null) {
-        const meta = src.publish_meta || src.publishMeta;
-        out.publish_meta = meta && typeof meta === "object" && !Array.isArray(meta) ? meta : {};
-    }
-    if (src.published_chapter_ids != null || src.publishedChapterIds != null) {
-        const ids = src.published_chapter_ids || src.publishedChapterIds;
-        out.published_chapter_ids = Array.isArray(ids) ? ids : [];
-    }
     return out;
 }
 
-async function selectVisibleBooks(supabase) {
-    const base = () => supabase.from("books").select("*");
+async function selectOwnBooks(supabase, userId) {
+    const base = () => supabase.from("books").select("*").eq("user_id", userId);
     let result = await base().order("updated", { ascending: false });
     if (result.error) {
         result = await base().order("updated_at", { ascending: false });
@@ -112,8 +98,8 @@ async function selectVisibleBooks(supabase) {
     return result;
 }
 
-export async function listBooks(supabase, _userId) {
-    const { data, error } = await selectVisibleBooks(supabase);
+export async function listBooks(supabase, userId) {
+    const { data, error } = await selectOwnBooks(supabase, userId);
     if (error) throw error;
     return (data || []).map(fromCloudRow).filter((book) => book && book.id);
 }
@@ -123,6 +109,7 @@ export async function getBook(supabase, userId, id) {
         .from("books")
         .select("*")
         .eq("id", id)
+        .eq("user_id", userId)
         .maybeSingle();
     if (error) throw error;
     return fromCloudRow(data);
@@ -140,6 +127,7 @@ export async function updateBook(supabase, userId, id, patch) {
         .from("books")
         .update(toCloudPatch(patch))
         .eq("id", id)
+        .eq("user_id", userId)
         .select("*")
         .single();
     if (error) throw error;
