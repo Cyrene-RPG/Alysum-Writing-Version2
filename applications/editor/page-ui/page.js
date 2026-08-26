@@ -1,7 +1,7 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { signOutAndGoToHome } from "@alysum/authentication/logout.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=4";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=5";
 import {
     addBodyFolder,
     addBodyNote,
@@ -28,7 +28,7 @@ import {
 import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
 import { createAutosave } from "./autosave.js";
 import { mountDocument } from "./document.js?v=7";
-import { confirmDeleteChapter } from "./prompt.js";
+import { confirmAction, confirmDeleteChapter } from "./prompt.js";
 import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=2";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { mountToolbar } from "./toolbar.js?v=6";
@@ -49,8 +49,11 @@ import {
     cleanSections,
 } from "./page/helpers.js?v=41";
 import { createFolderView } from "./page/folder-view.js?v=41";
-import { mountWriterChrome } from "./page/chrome.js?v=41";
+import { mountWriterChrome } from "./page/chrome.js?v=42";
 import { mountTypewriter } from "./page/typewriter.js?v=41";
+import { maybeCreateAutoVersion } from "@alysum/writing-engine/version-api.js";
+import { mountBookSettings } from "./settings.js";
+import { mountLibraryPreview } from "./library-preview.js";
 
 async function boot() {
     initWorkspaceShell({ lead: "Working On ", accent: "…", subtitle: "Loading…" });
@@ -71,7 +74,12 @@ async function boot() {
         return;
     }
 
-    book = withUpdatedWords({ ...book, sections: cleanSections(book.sections) });
+    book = withUpdatedWords({
+        ...book,
+        sections: cleanSections(book.sections),
+        publish_meta: book.publish_meta && typeof book.publish_meta === "object" ? book.publish_meta : {},
+        published_chapter_ids: Array.isArray(book.published_chapter_ids) ? book.published_chapter_ids : [],
+    });
     let selectedId = fallbackChapterId(book.sections, listBodyChapters(book.sections)[0]?.id || "");
 
     const loading = document.getElementById("loadingPanel");
@@ -123,7 +131,8 @@ async function boot() {
     shell?.classList.remove("hidden");
     window.__alysumTextInk?.scheduleChromeInk?.();
 
-    const { setTab, expandMatter } = mountWriterChrome({
+    let previewUi = null;
+    const { setTab, expandMatter, setBookView } = mountWriterChrome({
         shell,
         treeToggle,
         railToggle,
@@ -131,6 +140,17 @@ async function boot() {
         tabBook,
         chaptersPane,
         bookPane,
+        bookTree: document.getElementById("bookTree"),
+        settingsPane: document.getElementById("settingsPane"),
+        settingsTopbar: document.getElementById("settingsTopbar"),
+        writerTabs: document.getElementById("writerTabs"),
+        bookFootSettings: document.getElementById("bookFootSettings"),
+        tabSettings: document.getElementById("tabSettings"),
+        settingsBackTop: document.getElementById("settingsBackTop"),
+        tree: document.getElementById("chapterTree"),
+        onBookViewChange(view) {
+            if (view !== "settings") previewUi?.hide();
+        },
     });
     const paintFolderView = createFolderView({ folderView, folderMeta, folderList });
 
@@ -154,6 +174,8 @@ async function boot() {
                     sections: next.sections,
                     words: next.words,
                     media_format: next.media_format,
+                    publish_meta: next.publish_meta || {},
+                    published_chapter_ids: next.published_chapter_ids || [],
                 });
                 if (next._rev !== bookRev) return;
                 const nextTitle = String(next.title || "").trim();
@@ -173,9 +195,18 @@ async function boot() {
                     ...saved,
                     title,
                     sections,
+                    publish_meta: saved?.publish_meta || next.publish_meta || {},
+                    published_chapter_ids: saved?.published_chapter_ids || next.published_chapter_ids || [],
                     _rev: next._rev,
                 });
                 setSaveStatus("");
+                void maybeCreateAutoVersion({
+                    supabase,
+                    isLocalStudio: session.mode !== "cloud",
+                    userId: session.user?.id || "",
+                    bookId: book.id,
+                    book,
+                }).catch(() => {});
             } catch (err) {
                 setSaveStatus("Couldn't save.", 4000);
                 throw err;
@@ -208,6 +239,8 @@ async function boot() {
             sections: book.sections,
             words: book.words,
             media_format: book.media_format,
+            publish_meta: book.publish_meta || {},
+            published_chapter_ids: book.published_chapter_ids || [],
             updated: Date.now(),
         });
         autosave.schedule(book);
@@ -501,6 +534,49 @@ async function boot() {
     });
     window.addEventListener("pagehide", () => snapshotAndFlush(true));
     window.addEventListener("beforeunload", () => snapshotAndFlush(true));
+
+    previewUi = mountLibraryPreview({
+        pane: document.getElementById("libraryPreviewPane"),
+        writerMain: document.querySelector(".writer-main"),
+        supabase,
+        session,
+        getBook: () => book,
+        persistMeta: (patch) => {
+            persist({ ...book, ...patch });
+            if (bookTitle && patch.title != null) bookTitle.value = patch.title;
+            previewUi?.paint();
+        },
+        defaultAuthor: profile.name || "",
+    });
+    mountBookSettings({
+        mount: document.getElementById("settingsScroll"),
+        bookId: book.id,
+        session,
+        supabase,
+        getBook: () => book,
+        updateBook: (id, patch) => api.updateBook(id, patch),
+        flushSave: () => saveChapter(),
+        confirmRestore: () => confirmAction({
+            title: "Restore this version?",
+            text: "Your current draft will be replaced.",
+            confirmLabel: "Restore",
+        }),
+        async onRestored() {
+            api.stashBook(book.id, { updated: 0 });
+            const next = await api.getBook(book.id);
+            if (!next) return;
+            book = withUpdatedWords({ ...next, _rev: ++bookRev });
+            if (bookTitle) bookTitle.value = book.title || "";
+            const keep = currentChapter(book, selectedId);
+            selectedId = keep?.id || fallbackChapterId(book.sections, listBodyChapters(book.sections)[0]?.id || "");
+            showChapter(selectedId, { rebuildTree: true });
+            setWelcomeCopy({ lead: "Working On ", accent: book.title || "Untitled Book" });
+        },
+        onLibraryPreview() {
+            setBookView("settings");
+            previewUi?.show();
+        },
+    });
 
     showChapter(selectedId);
     setSaveStatus("");

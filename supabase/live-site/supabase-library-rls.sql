@@ -74,6 +74,37 @@ BEGIN
   END IF;
 END $$;
 
+-- Live manuscript editors (Settings → Collaborators)
+DO $$
+BEGIN
+  IF to_regclass('public.book_editors') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "books_select_editor" ON public.books;
+    CREATE POLICY "books_select_editor" ON public.books
+      FOR SELECT TO authenticated
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.book_editors e
+          WHERE e.book_id = books.id AND e.user_id = auth.uid()
+        )
+      );
+    DROP POLICY IF EXISTS "books_update_editor" ON public.books;
+    CREATE POLICY "books_update_editor" ON public.books
+      FOR UPDATE TO authenticated
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.book_editors e
+          WHERE e.book_id = books.id AND e.user_id = auth.uid()
+        )
+      )
+      WITH CHECK (
+        EXISTS (
+          SELECT 1 FROM public.book_editors e
+          WHERE e.book_id = books.id AND e.user_id = auth.uid()
+        )
+      );
+  END IF;
+END $$;
+
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.books TO authenticated;
 
 -- ---------------------------------------------------------------------------

@@ -32,7 +32,7 @@
     <title>Studio — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="/css/workspace-nav.css?v=28" />
-    <link rel="stylesheet" href="/css/studio/page.css?v=2" />
+    <link rel="stylesheet" href="/css/studio/page.css?v=3" />
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 </head>
 <body>
@@ -69,17 +69,34 @@
             <p class="hint" style="margin:0">Loading studio…</p>
         </div>
         <div class="panel hidden" id="studioShell">
-            <div class="studio-head">
+            <div class="studio-topbar">
+                <p>Open a book and keep writing.</p>
+            </div>
+            <div class="studio-stats" id="studioStats" aria-label="Writing statistics"></div>
+            <div class="studio-goal hidden" id="studioGoal">
+                <div class="studio-goal-top">
+                    <span>Word goal today</span>
+                    <span class="studio-goal-pill" id="studioGoalLabel"></span>
+                </div>
+                <div class="studio-goal-track"><div class="studio-goal-fill" id="studioGoalFill"></div></div>
+            </div>
+            <div class="studio-section-head">
                 <div>
                     <h1>Your books</h1>
-                    <p class="hint">Open a draft or start a new one.</p>
+                    <p class="hint">Swipe or use the arrows to see more.</p>
                 </div>
-                <button type="button" class="studio-new" id="newBookBtn">New book</button>
+                <span class="studio-shelf-count" id="shelfCount"></span>
             </div>
-            <div class="studio-list" id="bookList"></div>
+            <div class="studio-shelf-wrap">
+                <button class="studio-shelf-nav prev" id="prevBtn" type="button" aria-label="Previous books">‹</button>
+                <button class="studio-shelf-nav next" id="nextBtn" type="button" aria-label="More books">›</button>
+                <div class="studio-list" id="bookList"></div>
+            </div>
+            <div class="studio-dots" id="studioDots" aria-hidden="true"></div>
+            <button type="button" class="studio-new" id="newBookBtn"><span aria-hidden="true">+</span> New book</button>
             <p class="studio-status" id="studioStatus" role="status"></p>
         </div>
     </div>
-    <script type="module" src="/js/studio/page.js?v=4"></script>
+    <script type="module" src="/js/studio/page.js?v=5"></script>
 </body>
 </html>
