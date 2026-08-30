@@ -5,13 +5,20 @@ import {
     restoreBookVersion,
     sourceLabel,
 } from "@alysum/writing-engine/version-api.js";
-import {
-    createBookEditorInvite,
-    isBookEditorsSchemaMissing,
-    listBookCollaborators,
-    revokeBookEditor,
-} from "@alysum/collaboration/book-editors.js";
 import { downloadBookZip } from "./export-zip.js";
+
+let editorsApiPromise = null;
+function editorsModule() {
+    if (!editorsApiPromise) {
+        editorsApiPromise = import("@alysum/collaboration/book-editors.js").catch(() => null);
+    }
+    return editorsApiPromise;
+}
+
+function schemaMissing(collab, error) {
+    if (!collab) return true;
+    return collab.isBookEditorsSchemaMissing(error);
+}
 
 const PILLS = [
     { id: "all", label: "All" },
@@ -156,15 +163,17 @@ export function mountBookSettings({
             paintCollaborators();
             return;
         }
+        const collab = await editorsModule();
         try {
-            collaborators = await listBookCollaborators(bookId);
+            if (!collab) throw new Error("book_editors");
+            collaborators = await collab.listBookCollaborators(bookId);
         } catch (err) {
             collaborators = {
                 owner: { display_name: session?.user?.email || "You", role: "owner", is_you: true },
                 editors: [],
                 isOwner: true,
             };
-            if (!isBookEditorsSchemaMissing(err)) {
+            if (!schemaMissing(collab, err)) {
                 inviteBtn.disabled = false;
             }
         }
@@ -274,7 +283,9 @@ export function mountBookSettings({
         const btn = event.target.closest("[data-revoke]");
         if (!btn) return;
         try {
-            await revokeBookEditor(bookId, btn.dataset.revoke);
+            const collab = await editorsModule();
+            if (!collab) throw new Error("Invites are not available yet.");
+            await collab.revokeBookEditor(bookId, btn.dataset.revoke);
             await refreshCollaborators();
         } catch (err) {
             window.alert(String(err?.message || err || "Couldn't remove editor."));
@@ -293,7 +304,9 @@ export function mountBookSettings({
         inviteError.hidden = true;
         inviteCreate.disabled = true;
         try {
-            const created = await createBookEditorInvite(bookId, inviteEmail?.value || "");
+            const collab = await editorsModule();
+            if (!collab) throw new Error("book_editors");
+            const created = await collab.createBookEditorInvite(bookId, inviteEmail?.value || "");
             lastInviteUrl = created.url;
             if (inviteLinkText) inviteLinkText.textContent = lastInviteUrl;
             inviteLinkRow?.removeAttribute("hidden");
@@ -301,7 +314,8 @@ export function mountBookSettings({
             inviteCopy?.classList.remove("hidden");
         } catch (err) {
             inviteError.hidden = false;
-            inviteError.textContent = isBookEditorsSchemaMissing(err)
+            const collab = await editorsModule();
+            inviteError.textContent = schemaMissing(collab, err)
                 ? "Run supabase-book-editors.sql on the live database first."
                 : String(err?.message || err || "Couldn't create invite.");
         } finally {

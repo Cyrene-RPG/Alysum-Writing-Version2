@@ -1,6 +1,7 @@
 /* Alysum service worker
  * Strategy:
- *   - HTML documents: network-first (fall back to cache, then offline page)
+ *   - Workspace HTML (studio/editor): cache-first, then refresh in the background
+ *   - Other HTML documents: network-first (fall back to cache, then offline page)
  *   - Same-origin static assets (css/js/fonts/images): stale-while-revalidate
  *   - Cross-origin (Firebase, gstatic, googleapis, etc.): bypass entirely
  *   - On activate: clean up old caches
@@ -8,7 +9,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v2.44.0';
+const SW_VERSION = 'v2.45.0';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -85,6 +86,10 @@ function isCacheableAsset(url) {
     .test(url.pathname);
 }
 
+function isWorkspaceHtml(url) {
+  return /\/(?:studio|editor|word-wars|word-wars-lobby)\.html$/i.test(url.pathname);
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
@@ -100,6 +105,10 @@ self.addEventListener('fetch', (event) => {
   ) return;
 
   if (isHtmlRequest(request)) {
+    if (isWorkspaceHtml(url)) {
+      event.respondWith(staleWhileRevalidateHtml(event));
+      return;
+    }
     event.respondWith(networkFirstHtml(event));
     return;
   }
@@ -109,6 +118,30 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 });
+
+async function staleWhileRevalidateHtml(event) {
+  const cache = await caches.open(SHELL_CACHE);
+  const cached = await cache.match(event.request) || await cache.match(new URL(event.request.url).pathname);
+  const network = fetch(event.request, { cache: 'no-store' }).then((fresh) => {
+    if (fresh && fresh.ok) cache.put(event.request, fresh.clone());
+    return fresh;
+  }).catch(() => null);
+  if (cached) {
+    event.waitUntil(network);
+    return cached;
+  }
+  const fresh = await network;
+  if (fresh) return fresh;
+  const fallback = await cache.match('studio.html') || await cache.match('index.html');
+  if (fallback) return fallback;
+  return new Response(
+    '<!doctype html><meta charset="utf-8"><title>Offline</title>' +
+    '<body style="background:#020b18;color:#f8fafc;font-family:system-ui;padding:32px">' +
+    '<h1>Offline</h1><p>Alysum couldn\u2019t reach the network. ' +
+    'Reconnect and reload to continue.</p></body>',
+    { headers: { 'Content-Type': 'text/html; charset=utf-8' }, status: 200 }
+  );
+}
 
 async function networkFirstHtml(event) {
   const cache = await caches.open(SHELL_CACHE);

@@ -3,6 +3,7 @@
  */
 import { isDesktopLocalHost, goToLogin } from "./app.js";
 import { LOCAL_GUEST_USER, LOCAL_GUEST_USER_ID } from "../synchronization-engine/local-adapter.js";
+import { isProbablyOnline } from "../synchronization-engine/network.js";
 
 export { LOCAL_GUEST_USER, LOCAL_GUEST_USER_ID };
 
@@ -28,6 +29,10 @@ export async function resolveStudioSession(supabase) {
       return { mode: "cloud", user: sessionUser };
     }
   } catch (_) {}
+
+  if (!isProbablyOnline()) {
+    return { mode: "none", user: null };
+  }
 
   try {
     const { data } = await Promise.race([

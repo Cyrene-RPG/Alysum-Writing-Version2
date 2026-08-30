@@ -117,8 +117,18 @@ html.surface-glass .writer-tree {
 
 html.surface-glass .settings-nav,
 html.surface-glass .writer-tree,
-html.surface-glass .writer-rail {
+html.surface-glass .writer-rail,
+html.surface-glass .studio-book,
+html.surface-glass .studio-new-card,
+html.surface-glass .studio-stats,
+html.surface-glass .studio-goal,
+html.surface-glass .studio-shelf-nav {
     background-color: var(--glass-sheet-chrome);
+    background-image: linear-gradient(
+        180deg,
+        var(--glass-reflection-start) 0%,
+        var(--glass-reflection-end) 40%
+    );
 }
 
 html.surface-glass .writer-shell.is-tree-collapsed .writer-tree,

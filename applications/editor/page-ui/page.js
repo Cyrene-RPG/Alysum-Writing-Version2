@@ -1,7 +1,7 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { signOutAndGoToHome } from "@alysum/authentication/logout.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=5";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=7";
 import {
     addBodyFolder,
     addBodyNote,
@@ -25,12 +25,14 @@ import {
     setChapterTypography,
     withUpdatedWords,
 } from "@alysum/writing-engine/manuscript.js?v=5";
-import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
+import { countWordsInHtml, countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { createAutosave } from "./autosave.js";
 import { mountDocument } from "./document.js?v=7";
 import { confirmAction, confirmDeleteChapter } from "./prompt.js";
 import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=2";
-import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
+import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
+import { recordManuscriptWordGain } from "@alysum/account/manuscript-words.js";
+import { isProbablyOnline, onReconnect } from "@alysum/synchronization-engine/network.js";
 import { mountToolbar } from "./toolbar.js?v=6";
 import { expandTreeItem, markTreeActive, renderOutline, renderTree } from "./tree.js?v=19";
 import {
@@ -52,7 +54,7 @@ import { createFolderView } from "./page/folder-view.js?v=41";
 import { mountWriterChrome } from "./page/chrome.js?v=42";
 import { mountTypewriter } from "./page/typewriter.js?v=41";
 import { maybeCreateAutoVersion } from "@alysum/writing-engine/version-api.js";
-import { mountBookSettings } from "./settings.js";
+import { mountBookSettings } from "./settings.js?v=2";
 import { mountLibraryPreview } from "./library-preview.js";
 
 async function boot() {
@@ -60,6 +62,7 @@ async function boot() {
     const session = await requireStudioSession(supabase, window.location.pathname + window.location.search);
     if (!session) return;
     const profilePromise = loadWorkspaceProfile(supabase, session);
+    let profile = peekWorkspaceProfile(session);
 
     const bookId = bookIdFromUrl();
     if (!bookId) {
@@ -68,7 +71,13 @@ async function boot() {
     }
 
     const api = createBooksApi(session, supabase);
-    let book = await api.getBook(bookId);
+    let openedFromCache = false;
+    let book = api.peekBook?.(bookId) || null;
+    if (book) {
+        openedFromCache = true;
+    } else {
+        book = await api.getBook(bookId);
+    }
     if (!book) {
         window.location.replace("studio.html");
         return;
@@ -81,6 +90,13 @@ async function boot() {
         published_chapter_ids: Array.isArray(book.published_chapter_ids) ? book.published_chapter_ids : [],
     });
     let selectedId = fallbackChapterId(book.sections, listBodyChapters(book.sections)[0]?.id || "");
+    initWorkspaceShell({
+        lead: "Working On ",
+        accent: book.title || "Untitled Book",
+        subtitle: "Writing",
+        name: profile.name,
+        imageUrl: profile.imageUrl,
+    });
 
     const loading = document.getElementById("loadingPanel");
     const shell = document.getElementById("writerShell");
@@ -116,6 +132,22 @@ async function boot() {
             }, hideAfterMs);
         }
     }
+    function cloudLooksOffline(saved) {
+        if (session.mode !== "cloud") return false;
+        if (saved && saved._synced === false) return true;
+        return !isProbablyOnline();
+    }
+    function paintOfflineStatus(saved) {
+        if (session.mode !== "cloud") {
+            setSaveStatus("");
+            return;
+        }
+        if (cloudLooksOffline(saved)) {
+            setSaveStatus("Offline — saved on this device");
+            return;
+        }
+        setSaveStatus("");
+    }
     const chapterWordsEl = document.getElementById("chapterWords");
     const totalWordsEl = document.getElementById("totalWords");
     const treeToggle = document.getElementById("treeToggle");
@@ -130,6 +162,7 @@ async function boot() {
     loading?.classList.add("hidden");
     shell?.classList.remove("hidden");
     window.__alysumTextInk?.scheduleChromeInk?.();
+    paintOfflineStatus();
 
     let previewUi = null;
     const { setTab, expandMatter, setBookView } = mountWriterChrome({
@@ -154,13 +187,22 @@ async function boot() {
     });
     const paintFolderView = createFolderView({ folderView, folderMeta, folderList });
 
-    const profile = await profilePromise;
     initWorkspaceShell({
         lead: "Working On ",
         accent: book.title || "Untitled Book",
         subtitle: "Writing",
         name: profile.name,
         imageUrl: profile.imageUrl,
+    });
+    void profilePromise.then((next) => {
+        profile = next;
+        initWorkspaceShell({
+            lead: "Working On ",
+            accent: book.title || "Untitled Book",
+            subtitle: "Writing",
+            name: profile.name,
+            imageUrl: profile.imageUrl,
+        });
     });
     if (bookTitle) bookTitle.value = book.title || "";
 
@@ -199,6 +241,10 @@ async function boot() {
                     published_chapter_ids: saved?.published_chapter_ids || next.published_chapter_ids || [],
                     _rev: next._rev,
                 });
+                if (saved?._synced === false) {
+                    paintOfflineStatus(saved);
+                    return;
+                }
                 setSaveStatus("");
                 void maybeCreateAutoVersion({
                     supabase,
@@ -227,7 +273,14 @@ async function boot() {
         if (!options.allowFewerChapters && (nextCount < prevCount || nextFolders < prevFolders)) {
             next = { ...next, sections: book.sections };
         }
+        const prevWords = countWordsInSections(book.sections);
         book = withUpdatedWords(next);
+        recordManuscriptWordGain({
+            userId: session.user?.id,
+            supabase,
+            isLocal: session.mode !== "cloud",
+            gained: countWordsInSections(book.sections) - prevWords,
+        });
         book._rev = ++bookRev;
         paintWordCount(chapterWordsEl, totalWordsEl, book, selectedId);
         if (itemKind(currentChapter(book, selectedId)) === "folder") {
@@ -579,7 +632,49 @@ async function boot() {
     });
 
     showChapter(selectedId);
-    setSaveStatus("");
+    paintOfflineStatus();
+    if (openedFromCache && session.mode === "cloud") {
+        void api.getBook(bookId).then((fresh) => {
+            if (!fresh || book._pending || bookRev > 0) return;
+            if (Number(fresh.updated || 0) <= Number(book.updated || 0)) return;
+            book = withUpdatedWords({
+                ...fresh,
+                sections: cleanSections(fresh.sections),
+                _rev: bookRev,
+            });
+            if (bookTitle) bookTitle.value = book.title || "";
+            const keep = currentChapter(book, selectedId);
+            selectedId = keep?.id || fallbackChapterId(book.sections, listBodyChapters(book.sections)[0]?.id || "");
+            showChapter(selectedId, { rebuildTree: true });
+            setWelcomeCopy({ lead: "Working On ", accent: book.title || "Untitled Book" });
+        }).catch(() => {});
+    }
+    onReconnect(async () => {
+        if (session.mode !== "cloud") return;
+        if (!api.hasPending?.()) {
+            paintOfflineStatus();
+            return;
+        }
+        setSaveStatus("Uploading…");
+        const result = await api.syncPending();
+        if (result?.failed) {
+            paintOfflineStatus({ _synced: false });
+            return;
+        }
+        setSaveStatus("Saved", 2000);
+    });
+    if (session.mode === "cloud" && isProbablyOnline()) {
+        void api.syncPending().then((result) => {
+            if (result?.failed) paintOfflineStatus({ _synced: false });
+        });
+    }
 }
 
-boot();
+boot().catch((err) => {
+    const loading = document.getElementById("loadingPanel");
+    if (loading) {
+        loading.classList.remove("hidden");
+        loading.textContent = "Couldn't load writer.";
+    }
+    console.error(err);
+});

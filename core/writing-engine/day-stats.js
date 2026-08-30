@@ -52,6 +52,52 @@ export function wordsTypedOnDay(writingDayTotals, dayKey) {
     return readDayWordCount(writingDayTotals, dayKey);
 }
 
+/** Sunday of the local calendar week containing `d`. */
+export function localWeekStartKey(d = new Date()) {
+    return localDayKey(new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay()));
+}
+
+/** Saturday of the local calendar week containing `d`. */
+export function localWeekEndKey(d = new Date()) {
+    return addLocalDays(localWeekStartKey(d), 6);
+}
+
+/** First day of the local calendar month containing `d`. */
+export function localMonthStartKey(d = new Date()) {
+    return localDayKey(new Date(d.getFullYear(), d.getMonth(), 1));
+}
+
+/** Last day of the local calendar month containing `d`. */
+export function localMonthEndKey(d = new Date()) {
+    return localDayKey(new Date(d.getFullYear(), d.getMonth() + 1, 0));
+}
+
+export function wordsInDayRange(writingDayTotals, startKey, endKey) {
+    if (typeof startKey !== "string" || typeof endKey !== "string" || startKey > endKey) return 0;
+    const map = normalizeWritingDayTotals(writingDayTotals);
+    let total = 0;
+    for (const [day, words] of Object.entries(map)) {
+        if (day >= startKey && day <= endKey) total += words;
+    }
+    return total;
+}
+
+/** Words logged on days in this local week (Sun–Sat). Earlier weeks are excluded. */
+export function wordsThisLocalWeek(writingDayTotals, d = new Date()) {
+    const today = localDayKey(d);
+    const start = localWeekStartKey(d);
+    const end = localWeekEndKey(d);
+    return wordsInDayRange(writingDayTotals, start, today < end ? today : end);
+}
+
+/** Words logged on days in this local calendar month. Earlier months are excluded. */
+export function wordsThisLocalMonth(writingDayTotals, d = new Date()) {
+    const today = localDayKey(d);
+    const start = localMonthStartKey(d);
+    const end = localMonthEndKey(d);
+    return wordsInDayRange(writingDayTotals, start, today < end ? today : end);
+}
+
 /**
  * Apply typed-word delta for one local day. Returns merged totals (never drops other days).
  */

@@ -95,7 +95,11 @@ html[data-ui-tone="light"] .appearance-block,
 html[data-ui-tone="light"] .appearance-mix-controls,
 html[data-ui-tone="light"] .wd-pfp-dropdown,
 html[data-ui-tone="light"] .writer-tree,
-html[data-ui-tone="light"] .writer-rail {
+html[data-ui-tone="light"] .writer-rail,
+html[data-ui-tone="light"] .studio-book,
+html[data-ui-tone="light"] .studio-new-card,
+html[data-ui-tone="light"] .studio-stats,
+html[data-ui-tone="light"] .studio-goal {
     color-scheme: light;
 }
 
@@ -114,6 +118,10 @@ body {
 .sidebar,
 .writer-tree,
 .writer-rail,
+.studio-book,
+.studio-new-card,
+.studio-stats,
+.studio-goal,
 .ww-chapters,
 .ww-others,
 .appearance-tab-panel,

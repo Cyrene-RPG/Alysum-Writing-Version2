@@ -1,11 +1,13 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=7";
 import { createEmptyBook } from "@alysum/writing-engine/manuscript.js";
 import { countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { initWorkspaceShell } from "./shell.js?v=2";
-import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
-import { computeGoalStreakFromTotals, localDayKey, wordsTypedOnDay } from "@alysum/writing-engine/day-stats.js";
+import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
+import { manuscriptWordsThisMonth, manuscriptWordsThisWeek, readManuscriptDayTotals } from "@alysum/account/manuscript-words.js";
+import { localDayKey, localMonthStartKey, localWeekStartKey, wordsTypedOnDay } from "@alysum/writing-engine/day-stats.js";
+import { isProbablyOnline, onReconnect } from "@alysum/synchronization-engine/network.js";
 
 function escapeHtml(str) {
     return String(str ?? "")
@@ -40,23 +42,52 @@ function validNumber(value) {
     return Number.isFinite(number) ? number : null;
 }
 
-function renderStats(mount, books, profile) {
-    const totalWords = books.reduce((total, book) => {
-        const words = validNumber(book.words);
-        return total + (words > 0 ? words : countWordsInSections(book.sections));
-    }, 0);
+function bookWordCount(book) {
+    const words = validNumber(book?.words);
+    return words > 0 ? words : countWordsInSections(book?.sections);
+}
+
+function msUntilNextLocalMidnight(d = new Date()) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() - d.getTime();
+}
+
+function watchStatPeriods(onPeriodChange) {
+    let day = localDayKey();
+    let week = localWeekStartKey();
+    let month = localMonthStartKey();
+    const tick = () => {
+        const nextDay = localDayKey();
+        const nextWeek = localWeekStartKey();
+        const nextMonth = localMonthStartKey();
+        if (nextDay === day && nextWeek === week && nextMonth === month) return;
+        day = nextDay;
+        week = nextWeek;
+        month = nextMonth;
+        onPeriodChange();
+    };
+    const armMidnight = () => {
+        window.setTimeout(() => {
+            tick();
+            armMidnight();
+        }, msUntilNextLocalMidnight() + 50);
+    };
+    armMidnight();
+    window.setInterval(tick, 60_000);
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") tick();
+    });
+}
+
+function renderStats(mount, books, profile, userId) {
+    const totalWords = books.reduce((total, book) => total + bookWordCount(book), 0);
+    const monthWords = Math.min(totalWords, manuscriptWordsThisMonth(profile?.writingDayTotals, userId));
+    const weekWords = Math.min(totalWords, manuscriptWordsThisWeek(profile?.writingDayTotals, userId));
     const stats = [
         { value: totalWords, label: "Total words across all books" },
-        { value: books.length, label: "Books" },
+        { value: monthWords, label: "Total words this month" },
+        { value: weekWords, label: "Total words this week" },
+        { value: validNumber(profile?.streak) ?? 0, label: "Daily login streak" },
     ];
-    const streak = validNumber(profile?.streak);
-    if (streak !== null) stats.push({ value: streak, label: "Daily login streak" });
-    if (validNumber(profile?.dailyWordGoal) !== null && profile?.writingDayTotals && typeof profile.writingDayTotals === "object") {
-        stats.push({
-            value: computeGoalStreakFromTotals(profile.writingDayTotals, profile.dailyWordGoal),
-            label: "Daily word goal streak",
-        });
-    }
     mount.innerHTML = stats.map((stat) => `
         <div class="studio-stat">
             <span class="studio-stat-num">${stat.value.toLocaleString()}</span>
@@ -64,22 +95,29 @@ function renderStats(mount, books, profile) {
         </div>`).join("");
 }
 
-function renderGoal(goalMount, labelMount, fillMount, profile) {
+function renderGoal(goalMount, labelMount, fillMount, profile, userId) {
     const goal = validNumber(profile?.dailyWordGoal);
-    const totals = profile?.writingDayTotals;
-    if (goal === null || goal <= 0 || !totals || typeof totals !== "object") return;
-    const today = wordsTypedOnDay(totals, localDayKey());
+    if (goal === null || goal <= 0) return;
+    const today = wordsTypedOnDay(readManuscriptDayTotals(profile?.writingDayTotals, userId), localDayKey());
     const percentage = Math.min(100, Math.round((today / goal) * 100));
     labelMount.textContent = `${today.toLocaleString()} / ${goal.toLocaleString()}`;
     fillMount.style.width = `${percentage}%`;
     goalMount.classList.remove("hidden");
 }
 
+function lastWorkedAt(book) {
+    return Math.max(Number(book?.updated) || 0, Number(book?.created) || 0);
+}
+
+function sortBooksByLastWorked(books) {
+    return [...books].sort((a, b) => lastWorkedAt(b) - lastWorkedAt(a));
+}
+
 function renderBooks(mount, books) {
     const newCard = `<button type="button" class="studio-new-card" id="newBookCard"><span class="studio-plus" aria-hidden="true">+</span><span>New book</span></button>`;
-    mount.innerHTML = newCard + books
+    mount.innerHTML = newCard + sortBooksByLastWorked(books)
         .map((book, index) => {
-            const words = Number(book.words) || countWordsInSections(book.sections);
+            const words = bookWordCount(book);
             const chapters = chapterCount(book);
             return `
                 <a class="studio-book studio-book-${index % 5}" href="editor.html?book=${encodeURIComponent(book.id)}">
@@ -118,7 +156,7 @@ async function boot() {
     initWorkspaceShell({ lead: "Writing ", accent: "Studio", subtitle: "Open a book and keep writing." });
     const session = await requireStudioSession(supabase, "studio.html");
     if (!session) return;
-    const profile = await loadWorkspaceProfile(supabase, session);
+    let profile = peekWorkspaceProfile(session);
     initWorkspaceShell({
         lead: "Writing ",
         accent: "Studio",
@@ -130,7 +168,6 @@ async function boot() {
     const loading = document.getElementById("loadingPanel");
     const shell = document.getElementById("studioShell");
     const list = document.getElementById("bookList");
-    const newBtn = document.getElementById("newBookBtn");
     const status = document.getElementById("studioStatus");
     const stats = document.getElementById("studioStats");
     const goal = document.getElementById("studioGoal");
@@ -138,34 +175,80 @@ async function boot() {
     const goalFill = document.getElementById("studioGoalFill");
 
     const api = createBooksApi(session, supabase);
-    let books = [];
-    try {
-        books = await api.listBooks();
-    } catch {
-        books = [];
-        if (status) status.textContent = "Could not load books.";
+    let books = api.peekBooks?.() || [];
+
+    function paintStudioStatus() {
+        if (!status || session.mode !== "cloud") return;
+        if (!isProbablyOnline()) {
+            status.textContent = books.length
+                ? "Offline — showing books on this device"
+                : "Connect once to load your books";
+            return;
+        }
+        status.textContent = "";
+    }
+
+    function paintShelf() {
+        renderBooks(list, books);
+        document.getElementById("shelfCount").textContent = `${books.length} book${books.length === 1 ? "" : "s"}`;
+        paintTotals();
+        paintStudioStatus();
+        window.__alysumTextInk?.scheduleChromeInk?.();
     }
 
     loading?.classList.add("hidden");
     shell?.classList.remove("hidden");
-    renderBooks(list, books);
-    renderStats(stats, books, profile);
-    renderGoal(goal, goalLabel, goalFill, profile);
-    document.getElementById("shelfCount").textContent = `${books.length} book${books.length === 1 ? "" : "s"}`;
+    const paintTotals = () => {
+        renderStats(stats, books, profile, session.user?.id);
+        renderGoal(goal, goalLabel, goalFill, profile, session.user?.id);
+    };
+    paintShelf();
     initShelf(list, document.getElementById("studioDots"), document.getElementById("prevBtn"), document.getElementById("nextBtn"));
+    watchStatPeriods(paintTotals);
 
-    newBtn?.addEventListener("click", async () => {
-        newBtn.disabled = true;
+    void loadWorkspaceProfile(supabase, session).then((next) => {
+        profile = next;
+        initWorkspaceShell({
+            lead: "Writing ",
+            accent: "Studio",
+            subtitle: "Open a book and keep writing.",
+            name: profile.name,
+            imageUrl: profile.imageUrl,
+        });
+        paintTotals();
+    });
+    void api.listBooks().then((next) => {
+        books = next;
+        paintShelf();
+    }).catch(() => {});
+    onReconnect(async () => {
+        if (session.mode !== "cloud") return;
+        if (api.hasPending?.() && status) status.textContent = "Uploading…";
+        await api.syncPending();
+        try {
+            books = await api.listBooks();
+        } catch {
+            /* keep cache */
+        }
+        paintShelf();
+    });
+    if (session.mode === "cloud" && isProbablyOnline()) {
+        void api.syncPending();
+    }
+
+    list?.addEventListener("click", async (event) => {
+        const card = event.target.closest("#newBookCard");
+        if (!card || card.disabled) return;
+        card.disabled = true;
         if (status) status.textContent = "Creating…";
         try {
             const created = await api.insertBook(createEmptyBook());
             window.location.href = `editor.html?book=${encodeURIComponent(created.id)}`;
         } catch {
             if (status) status.textContent = "Could not create a book.";
-            newBtn.disabled = false;
+            card.disabled = false;
         }
     });
-    document.getElementById("newBookCard")?.addEventListener("click", () => newBtn?.click());
 }
 
 boot();

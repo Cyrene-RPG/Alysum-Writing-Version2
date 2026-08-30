@@ -4,14 +4,15 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { goToLogin } from "@alysum/desktop/app.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=4";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=6";
 import {
     listBodyChapters,
     setChapterContent,
     withUpdatedWords,
 } from "@alysum/writing-engine/manuscript.js?v=5";
-import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
+import { countWordsInHtml, countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
+import { recordManuscriptWordGain } from "@alysum/account/manuscript-words.js";
 import { paintChipInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
 import { initWorkspaceShell } from "/js/studio/shell.js?v=2";
 import { createAutosave } from "/js/editor/autosave.js";
@@ -134,6 +135,7 @@ async function boot() {
         window.location.replace("studio.html");
         return;
     }
+    book = withUpdatedWords(book);
 
     const loading = document.getElementById("loadingPanel");
     const shell = document.getElementById("roomShell");
@@ -234,9 +236,16 @@ async function boot() {
     function applyHtml(html) {
         const chapter = currentChapter();
         if (!chapter) return;
+        const prevWords = countWordsInSections(book.sections);
         book = withUpdatedWords({
             ...book,
             sections: setChapterContent(book.sections, chapter.id, html),
+        });
+        recordManuscriptWordGain({
+            userId: uid,
+            supabase,
+            isLocal: false,
+            gained: countWordsInSections(book.sections) - prevWords,
         });
         autosave.schedule(book);
         paintWords();

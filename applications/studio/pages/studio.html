@@ -17,12 +17,12 @@
       }
     }
     </script>
-    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=6" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=8" />
     <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
-    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=7" />
-    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=10" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=12" />
     <script src="/site-appearance/js-runtime/body-background-presets-data.js?v=3"></script>
-    <script src="/site-appearance/js-runtime/text-ink-data.js?v=5"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js?v=7"></script>
     <script src="/site-appearance/js-runtime/boot.js?v=7"></script>
     <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
     <link rel="manifest" href="/manifest.webmanifest">
@@ -31,8 +31,8 @@
     <meta name="robots" content="noindex, nofollow">
     <title>Studio — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="/css/workspace-nav.css?v=28" />
-    <link rel="stylesheet" href="/css/studio/page.css?v=3" />
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=29" />
+    <link rel="stylesheet" href="/css/studio/page.css?v=8" />
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 </head>
 <body>
@@ -72,7 +72,6 @@
             <div class="studio-topbar">
                 <p>Open a book and keep writing.</p>
             </div>
-            <div class="studio-stats" id="studioStats" aria-label="Writing statistics"></div>
             <div class="studio-goal hidden" id="studioGoal">
                 <div class="studio-goal-top">
                     <span>Word goal today</span>
@@ -93,10 +92,11 @@
                 <div class="studio-list" id="bookList"></div>
             </div>
             <div class="studio-dots" id="studioDots" aria-hidden="true"></div>
-            <button type="button" class="studio-new" id="newBookBtn"><span aria-hidden="true">+</span> New book</button>
             <p class="studio-status" id="studioStatus" role="status"></p>
+            <div class="studio-stats" id="studioStats" aria-label="Writing statistics"></div>
         </div>
     </div>
-    <script type="module" src="/js/studio/page.js?v=5"></script>
+    <script src="/js/pwa-register.js?v=3" defer></script>
+    <script type="module" src="/js/studio/page.js?v=14"></script>
 </body>
 </html>
