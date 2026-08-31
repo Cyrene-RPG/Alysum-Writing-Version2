@@ -1,6 +1,6 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=7";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=8";
 import {
     countBookChapters,
     countBookFolders,

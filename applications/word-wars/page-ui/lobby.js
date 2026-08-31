@@ -4,7 +4,7 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { goToLogin } from "@alysum/desktop/app.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=9";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { initWorkspaceShell } from "/js/studio/shell.js?v=2";
 import {
@@ -111,7 +111,7 @@ async function boot() {
     } else {
         const api = createBooksApi(session, supabase);
         try {
-            books = await api.listBooks();
+            books = (await api.listBooks()).filter((book) => String(book.user_id || "") === String(uid));
         } catch {
             books = [];
         }
