@@ -80,6 +80,12 @@ export function normalizePageBgId(value) {
     return /^[a-z0-9-]{1,40}$/i.test(id) ? id : "";
 }
 
+export function normalizeTextColor(value) {
+    const id = String(value || "").trim();
+    if (!id) return "";
+    return /^[a-z0-9-]{1,40}$/i.test(id) ? id : "";
+}
+
 export function readPublishDraft(book) {
     const raw = book?.publish_meta && typeof book.publish_meta === "object" && !Array.isArray(book.publish_meta)
         ? book.publish_meta
@@ -110,6 +116,10 @@ export function readPublishDraft(book) {
         pageBgId: normalizePageBgId(raw.pageBgId || raw.page_bg_id)
             || (normalizeHexColor(raw.pageBg || raw.page_bg) ? "custom" : ""),
         pageBg: normalizeHexColor(raw.pageBg || raw.page_bg),
+        textColor: normalizeTextColor(raw.textColor || raw.text_color),
+        textColorMain: normalizeHexColor(raw.textColorMain || raw.text_color_main),
+        textColorAccent: normalizeHexColor(raw.textColorAccent || raw.text_color_accent),
+        siteAccent: normalizeTextColor(raw.siteAccent || raw.site_accent),
     };
 }
 

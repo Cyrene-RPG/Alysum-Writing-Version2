@@ -200,6 +200,8 @@ export function bindBookMenu({ getBooks, setBooks, paintShelf, api, supabase, se
     document.getElementById("bookMenuSettings")?.addEventListener("click", () => {
         const book = menuBook;
         if (!book) return;
+        // Opens the editor with the settings pane on the left AND the library
+        // preview in the middle (see preview-session.js — "settings" enters both).
         window.location.href = `/editor?book=${encodeURIComponent(book.id)}&view=settings`;
     });
     document.getElementById("bookMenuPublish")?.addEventListener("click", async () => {

@@ -135,9 +135,20 @@ export function syncDisplayTextColorAttribute(colorId) {
     else root.setAttribute("data-display-text-color", id);
 }
 
-export function applyDisplayTextColorVars(main, accent) {
+const DISPLAY_VAR_NAMES = [
+    "--alysum-display-top",
+    "--alysum-display-mid",
+    "--alysum-display-deep",
+    "--alysum-display-highlight",
+    "--alysum-display-edge",
+    "--alysum-display-glow",
+    "--alysum-display-shadow",
+    "--alysum-display-solid",
+];
+
+export function applyDisplayTextColorVars(main, accent, el) {
     if (typeof document === "undefined") return;
-    const root = document.documentElement;
+    const root = el || document.documentElement;
     const top = lighten(accent, 0.72);
     const mid = main;
     const deep = darken(main, 0.38);
@@ -155,6 +166,11 @@ export function applyDisplayTextColorVars(main, accent) {
     root.style.setProperty("--alysum-display-glow", glow);
     root.style.setProperty("--alysum-display-shadow", shadow);
     root.style.setProperty("--alysum-display-solid", solid);
+}
+
+export function clearDisplayTextColorVars(el) {
+    if (!el) return;
+    DISPLAY_VAR_NAMES.forEach((name) => el.style.removeProperty(name));
 }
 
 export function applyDisplayTextColor(colorId, customMain, customAccent) {

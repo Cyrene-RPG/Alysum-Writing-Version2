@@ -1,11 +1,27 @@
 /**
  * Listing theme = Settings UI colors. Page background = Settings page backgrounds.
- * Visit-only; callers persist.
+ * Title colors = Settings display title colors. Visit-only; callers persist.
  */
 import { BODY_BG_PRESETS, getBodyBgPreview } from "./body-background.js";
+import {
+    DISPLAY_TEXT_COLORS,
+    getColorPreview,
+    getStoredCustomDisplayColors,
+} from "./display-text-color.js?v=2";
 import { paintChipInk } from "./text-ink.js";
 import { UI_COLORS, getUiColorPreview } from "./ui-color.js";
-import { resolveVisitBackgroundHex } from "./visit-page-look.js";
+import { GRADIENT_THEMES, getThemePreview } from "./gradient-theme.js";
+import { resolveVisitBackgroundHex } from "./visit-page-look.js?v=10";
+
+const TITLE_CHIPS = [
+    { id: "", label: "Visitor", hint: "Reader’s Appearance title color" },
+    ...DISPLAY_TEXT_COLORS,
+];
+
+const ACCENT_CHIPS = [
+    { id: "", label: "Visitor", hint: "Leave hero and Start reading on listing look" },
+    ...GRADIENT_THEMES,
+];
 
 const LEGACY_TO_UI = {
     dark: "default",
@@ -96,9 +112,67 @@ function syncBgChips(root, look) {
     if (customChip && look?.pageBg) paintChip(customChip, look.pageBg);
 }
 
+function titlePreview(item, look) {
+    if (item.id === "custom") {
+        const main = look?.textColorMain || getStoredCustomDisplayColors().main;
+        const accent = look?.textColorAccent || getStoredCustomDisplayColors().accent;
+        return `linear-gradient(145deg, ${accent}, ${main})`;
+    }
+    if (!item.id) {
+        return getColorPreview("theme");
+    }
+    return getColorPreview(item.id);
+}
+
+function paintTitleChips(root, look) {
+    const row = root.querySelector("[data-book-title-swatches]");
+    if (!row) return;
+    const current = String(look?.textColor || "");
+    row.innerHTML = "";
+    TITLE_CHIPS.forEach((item) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `book-look-swatch${item.id === current ? " is-on" : ""}`;
+        btn.dataset.titleId = item.id || "visitor";
+        btn.title = item.hint || item.label;
+        paintChip(btn, titlePreview(item, look));
+        const label = document.createElement("span");
+        label.textContent = item.label;
+        btn.appendChild(label);
+        row.appendChild(btn);
+    });
+    const custom = root.querySelector("[data-book-title-custom]");
+    const main = root.querySelector("[data-book-title-main]");
+    const accent = root.querySelector("[data-book-title-accent]");
+    if (custom) custom.hidden = current !== "custom";
+    if (main && look?.textColorMain) main.value = look.textColorMain;
+    if (accent && look?.textColorAccent) accent.value = look.textColorAccent;
+}
+
+function paintAccentChips(root, look) {
+    const row = root.querySelector("[data-book-accent-swatches]");
+    if (!row) return;
+    const current = String(look?.siteAccent || "");
+    row.innerHTML = "";
+    ACCENT_CHIPS.forEach((item) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `book-look-swatch${item.id === current ? " is-on" : ""}`;
+        btn.dataset.accentId = item.id || "visitor";
+        btn.title = item.hint || item.label;
+        paintChip(btn, item.id ? getThemePreview(item.id) : getThemePreview("classic"));
+        const label = document.createElement("span");
+        label.textContent = item.label;
+        btn.appendChild(label);
+        row.appendChild(btn);
+    });
+}
+
 export function paintBookLookPicker(root, look) {
     paintSwatches(root, look);
     paintBgChips(root, look);
+    paintTitleChips(root, look);
+    paintAccentChips(root, look);
 }
 
 export function readBookLookPicker(root) {
@@ -108,12 +182,24 @@ export function readBookLookPicker(root) {
     const bgChip = root.querySelector("[data-book-bg-chips] .is-on");
     const pageBgId = bgChip?.dataset.bgId || "";
     const color = root.querySelector("[data-book-bg-color]");
+    const titleChip = root.querySelector("[data-book-title-swatches] .is-on");
+    const titleId = titleChip ? String(titleChip.dataset.titleId || "") : "";
+    const textColor = titleId === "visitor" ? "" : titleId;
+    const titleMain = root.querySelector("[data-book-title-main]");
+    const titleAccent = root.querySelector("[data-book-title-accent]");
+    const accentChip = root.querySelector("[data-book-accent-swatches] .is-on");
+    const accentId = accentChip ? String(accentChip.dataset.accentId || "") : "";
+    const siteAccent = accentId === "visitor" ? "" : accentId;
     return {
         pageLook: lookId,
         pageLookSaved: null,
         pageLookCustom: lookId === "custom" ? (lookColor?.value || "") : "",
         pageBgId,
         pageBg: pageBgId === "custom" ? (color?.value || "") : "",
+        textColor,
+        textColorMain: textColor === "custom" ? (titleMain?.value || "") : "",
+        textColorAccent: textColor === "custom" ? (titleAccent?.value || "") : "",
+        siteAccent,
     };
 }
 
@@ -147,6 +233,10 @@ export function bindBookLookPicker(root, { onChange } = {}) {
             pageLookCustom: "",
             pageBgId: "",
             pageBg: "",
+            textColor: "",
+            textColorMain: "",
+            textColorAccent: "",
+            siteAccent: "",
         });
     });
     root.querySelector("[data-book-look-color]")?.addEventListener("input", (event) => {
@@ -174,5 +264,54 @@ export function bindBookLookPicker(root, { onChange } = {}) {
     root.querySelector("[data-book-bg-reset]")?.addEventListener("click", () => {
         const current = readBookLookPicker(root);
         emit({ ...current, pageBgId: "", pageBg: "" });
+    });
+    root.querySelector("[data-book-title-swatches]")?.addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-title-id]");
+        if (!btn) return;
+        event.stopPropagation();
+        const current = readBookLookPicker(root);
+        const textColor = String(btn.dataset.titleId || "") === "visitor"
+            ? ""
+            : String(btn.dataset.titleId || "");
+        const stored = getStoredCustomDisplayColors();
+        emit({
+            ...current,
+            textColor,
+            textColorMain: textColor === "custom"
+                ? (root.querySelector("[data-book-title-main]")?.value || current.textColorMain || stored.main)
+                : "",
+            textColorAccent: textColor === "custom"
+                ? (root.querySelector("[data-book-title-accent]")?.value || current.textColorAccent || stored.accent)
+                : "",
+        });
+    });
+    root.querySelector("[data-book-title-main]")?.addEventListener("input", (event) => {
+        const current = readBookLookPicker(root);
+        emit({
+            ...current,
+            textColor: "custom",
+            textColorMain: event.target.value,
+            textColorAccent: current.textColorAccent || getStoredCustomDisplayColors().accent,
+        });
+    });
+    root.querySelector("[data-book-title-accent]")?.addEventListener("input", (event) => {
+        const current = readBookLookPicker(root);
+        emit({
+            ...current,
+            textColor: "custom",
+            textColorMain: current.textColorMain || getStoredCustomDisplayColors().main,
+            textColorAccent: event.target.value,
+        });
+    });
+    root.querySelector("[data-book-accent-swatches]")?.addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-accent-id]");
+        if (!btn) return;
+        event.stopPropagation();
+        const current = readBookLookPicker(root);
+        const raw = String(btn.dataset.accentId || "");
+        emit({
+            ...current,
+            siteAccent: raw === "visitor" ? "" : raw,
+        });
     });
 }

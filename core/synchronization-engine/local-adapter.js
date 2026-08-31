@@ -2,7 +2,7 @@
  * Local-only Studio data (books + profile) for desktop "Host Local Version".
  * Same shapes as Supabase rows; persisted in localStorage on this device.
  */
-import { localDayKey } from "../writing-engine/day-stats.js";
+import { DEFAULT_DAILY_WORD_GOAL, localDayKey } from "../writing-engine/day-stats.js";
 import { ensureLoginStreakLocalPatch } from "../account/login-streak.js";
 
 export const LOCAL_GUEST_USER_ID = "alysum-local-guest";
@@ -12,7 +12,7 @@ export const LOCAL_VAULT_STORAGE_KEY = "alysum-local-host-vault";
 
 export const LOCAL_STUDIO_STORAGE_KEY = "alysum-local-studio-v1";
 const STORAGE_KEY = LOCAL_STUDIO_STORAGE_KEY;
-const DEFAULT_GOAL = 2000;
+const DEFAULT_GOAL = DEFAULT_DAILY_WORD_GOAL;
 
 function defaultState() {
   return {

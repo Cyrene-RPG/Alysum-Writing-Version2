@@ -12,7 +12,8 @@ import {
     normalizePageBgId,
     normalizePageLook,
     normalizePageLookSaved,
-} from "./publish-meta.js";
+    normalizeTextColor,
+} from "./publish-meta.js?v=7";
 
 const LOCAL_KEY = "alysum:library:local-listings";
 
@@ -136,6 +137,10 @@ export function buildLibraryPayload(book, form) {
         pageBgId: normalizePageBgId(form.pageBgId)
             || (normalizeHexColor(form.pageBg) ? "custom" : ""),
         pageBg: normalizeHexColor(form.pageBg),
+        textColor: normalizeTextColor(form.textColor),
+        textColorMain: normalizeHexColor(form.textColorMain),
+        textColorAccent: normalizeHexColor(form.textColorAccent),
+        siteAccent: normalizeTextColor(form.siteAccent),
         isPublished: Boolean(form.isPublished),
         serializationStatus: form.complete ? "complete" : "in_progress",
         publishedChapterIds: posted.map((ch) => ch.id),

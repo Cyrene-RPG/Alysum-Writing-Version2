@@ -1,11 +1,28 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
-import { fetchPublishedWork } from "@alysum/library/work.js?v=2";
+import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
+import { fetchPublishedWork } from "@alysum/library/work.js?v=4";
 import { cropFrameStyle, coverCropForImage, isFullCoverCrop, peekCoverSrc } from "@alysum/publishing/cover-upload.js?v=10";
 import { genreLabel } from "@alysum/publishing/genres.js?v=4";
-import { applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=8";
+import { applyVisitListingLook, applyVisitSiteAccent, applyVisitTitleColor, applyVisitWelcomeChrome } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=11";
+import { initWorkspaceShell } from "/js/studio/shell.js?v=2";
 
 const READ_KEY = "alysum:library:read-position";
+const WELCOME = {
+    lead: "The ",
+    accent: "Library",
+    subtitle: "A reading room, catalogued with care",
+};
+
+function initBookWelcome(session) {
+    initWorkspaceShell(WELCOME);
+    if (!session || session.mode === "none") return;
+    const profile = peekWorkspaceProfile(session);
+    initWorkspaceShell({ ...WELCOME, name: profile.name, imageUrl: profile.imageUrl });
+    void loadWorkspaceProfile(supabase, session).then((next) => {
+        initWorkspaceShell({ ...WELCOME, name: next.name, imageUrl: next.imageUrl });
+    });
+}
 
 function escapeHtml(str) {
     return String(str ?? "")
@@ -140,22 +157,28 @@ function paintChapters(work, owner, saved) {
 }
 
 async function boot() {
+    const session = await resolveStudioSession(supabase);
+    initBookWelcome(session);
     const id = bookIdFromUrl();
     const work = id ? await fetchPublishedWork(supabase, id) : null;
     if (!work) {
         showEmpty();
         return;
     }
-    const session = await resolveStudioSession(supabase);
     const owner = isOwner(work, session);
     const saved = readProgress(work.id);
     const chapters = work.chapters || [];
     const current = chapters.find((chapter) => chapter.id === saved?.chapterId) || chapters[0];
 
     document.title = `${work.title || "Untitled"} — Alysum`;
-    applyVisitListingLook(document.body, document.getElementById("bookPage"), work);
-    document.getElementById("bookPage").hidden = false;
+    const bookPage = document.getElementById("bookPage");
+    applyVisitListingLook(bookPage, document.getElementById("bookCard") || bookPage, work);
+    bookPage.hidden = false;
     document.getElementById("bookTitle").textContent = work.title || "Untitled";
+    applyVisitTitleColor(document.getElementById("bookTitle"), work);
+    applyVisitSiteAccent(document.getElementById("bookCard"), work);
+    applyVisitWelcomeChrome(document.querySelector(".wd-welcome-bar"), work);
+    applyVisitTitleColor(document.getElementById("welcomeTitle"), work);
     document.getElementById("bookAuthor").textContent = work.author || "Unknown";
     document.getElementById("bookMeta").textContent =
         `${chapters.length} chapter${chapters.length === 1 ? "" : "s"} published`;

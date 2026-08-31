@@ -2,6 +2,7 @@ import { els } from "/js/signup/elements.js";
 import { state } from "/js/signup/state.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { ACCOUNT_BOTH } from "@alysum/account/mode.js";
+import { DEFAULT_DAILY_WORD_GOAL } from "@alysum/writing-engine/day-stats.js";
 import { formatUsernameError, usernameAlreadyTaken as accountUsernameTaken } from "@alysum/account/username.js";
 import {
     GRADIENT_THEMES,
@@ -233,7 +234,7 @@ export async function createProfileAndEnterStudio() {
             profile_image_url: profileImageUrl,
             words: 0,
             streak: 0,
-            daily_word_goal: 2000,
+            daily_word_goal: DEFAULT_DAILY_WORD_GOAL,
             writing_day_totals: {}
         });
 

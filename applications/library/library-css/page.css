@@ -245,6 +245,10 @@ body {
     background: color-mix(in srgb, var(--text) 28%, transparent);
     border-radius: 999px;
 }
+.lib-shelf-row .lib-card {
+    flex: 0 0 150px;
+    width: 150px;
+}
 .lib-card {
     display: block;
     width: 150px;
@@ -488,7 +492,7 @@ body {
         gap: 14px;
         padding: 6px 0 10px;
     }
-    .lib-card { width: auto; }
+    .lib-grid .lib-card { width: auto; }
     .lib-cover { height: auto; aspect-ratio: 2 / 3; }
     .lib-card:hover .lib-cover { transform: none; }
     .lib-hover { display: none !important; }

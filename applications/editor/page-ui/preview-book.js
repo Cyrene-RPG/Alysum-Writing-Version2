@@ -1,8 +1,8 @@
 import { listBodyChaptersWithDepth } from "@alysum/writing-engine/manuscript.js?v=6";
 import { genreLabel, matchingGenreKeys, toggleGenreSelection } from "@alysum/publishing/genres.js?v=4";
-import { CONTENT_WARNINGS, RATINGS, toggleContentWarning } from "@alysum/publishing/publish-meta.js?v=5";
+import { CONTENT_WARNINGS, RATINGS, toggleContentWarning } from "@alysum/publishing/publish-meta.js?v=7";
 import { isLibraryListed, readLocalLibraryListings } from "@alysum/publishing/post-work.js?v=8";
-import { applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=8";
+import { applyVisitListingLook, applyVisitSiteAccent, applyVisitTitleColor } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=10";
 import { isFullCoverCrop, libraryCardCrop, coverCropForImage } from "@alysum/publishing/cover-upload.js?v=10";
 import { paintBookHero, resolvePreviewCoverSrc, wideCropFromMeta } from "./cover.js?v=15";
 
@@ -108,8 +108,12 @@ export function applyPreviewLook(targets, meta, pageEl) {
     if (!bg) return;
     const page = pageEl && bg.contains(pageEl) ? pageEl : bg;
     applyVisitListingLook(bg, page, meta);
+    applyVisitTitleColor(bg.querySelector("#libTitle"), meta);
+    applyVisitSiteAccent(bg.querySelector(".book-card"), meta);
     for (let i = 1; i < targets.length; i++) {
         applyVisitListingLook(targets[i], targets[i], meta);
+        applyVisitTitleColor(targets[i].querySelector("#libTitle"), meta);
+        applyVisitSiteAccent(targets[i].querySelector(".book-card"), meta);
     }
 }
 

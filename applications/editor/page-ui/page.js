@@ -16,7 +16,8 @@ import { createAutosave } from "./autosave.js";
 import { mountDocument } from "./document.js?v=8";
 import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=2";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
-import { recordManuscriptWordGain } from "@alysum/account/manuscript-words.js";
+import { recordTypedWords } from "@alysum/account/writing-stats.js";
+import { typedWordDelta } from "@alysum/statistics/typed-input.js";
 import { isProbablyOnline, onReconnect } from "@alysum/synchronization-engine/network.js";
 import { mountToolbar } from "./toolbar.js?v=7";
 import { bindManuscriptNav } from "./page/manuscript-nav.js?v=1";
@@ -39,7 +40,7 @@ import { createFolderView } from "./page/folder-view.js?v=41";
 import { mountWriterChrome } from "./page/chrome.js?v=47";
 import { mountTypewriter } from "./page/typewriter.js?v=41";
 import { maybeCreateAutoVersion } from "@alysum/writing-engine/version-api.js";
-import { mountPreviewSession } from "./page/preview-session.js?v=21";
+import { mountPreviewSession } from "./page/preview-session.js?v=24";
 import { bindPersistHooks } from "./page/persist-hooks.js?v=1";
 
 async function boot() {
@@ -264,11 +265,12 @@ async function boot() {
         }
         const prevWords = countWordsInSections(book.sections);
         book = withUpdatedWords(next);
-        recordManuscriptWordGain({
+        // Only credit words the writer actually typed (not paste / undo / programmatic).
+        recordTypedWords({
             userId: session.user?.id,
             supabase,
             isLocal: session.mode !== "cloud",
-            gained: countWordsInSections(book.sections) - prevWords,
+            typedDelta: typedWordDelta(prevWords, countWordsInSections(book.sections), options.event),
         });
         book._rev = ++bookRev;
         paintWordCount(chapterWordsEl, totalWordsEl, book, selectedId);
@@ -305,7 +307,7 @@ async function boot() {
             const typed = event?.isTrusted && String(event.inputType || "") !== "";
             if (!typed) return;
         }
-        persist({ ...book, sections: setChapterContent(book.sections, selectedId, html) });
+        persist({ ...book, sections: setChapterContent(book.sections, selectedId, html) }, false, { event });
     }
 
     const editor = mountDocument({

@@ -1,6 +1,6 @@
-import { DEFAULT_PAGE_LOOK, mergePublishMeta, readPublishDraft } from "@alysum/publishing/publish-meta.js?v=5";
-import { bindBookLookPicker, paintBookLookPicker } from "@alysum/site-appearance/js-runtime/book-look-picker.js?v=2";
-import { applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=8";
+import { DEFAULT_PAGE_LOOK, mergePublishMeta, readPublishDraft } from "@alysum/publishing/publish-meta.js?v=7";
+import { bindBookLookPicker, paintBookLookPicker } from "@alysum/site-appearance/js-runtime/book-look-picker.js?v=4";
+import { applyVisitListingLook, applyVisitSiteAccent, applyVisitTitleColor } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=10";
 
 function lookHtml() {
     return `
@@ -19,6 +19,18 @@ function lookHtml() {
                 <div data-book-bg-custom hidden>
                     <input type="color" data-book-bg-color value="#0b1220" />
                 </div>
+            </div>
+            <button type="button" class="writer-look-drop-btn" data-look-drop-btn="title" aria-expanded="false">Title colors</button>
+            <div class="writer-look-drop" data-look-drop="title" hidden>
+                <div data-book-title-swatches class="book-look-swatches"></div>
+                <div data-book-title-custom hidden>
+                    <input type="color" data-book-title-main value="#f59e0b" />
+                    <input type="color" data-book-title-accent value="#fde68a" />
+                </div>
+            </div>
+            <button type="button" class="writer-look-drop-btn" data-look-drop-btn="accent" aria-expanded="false">Site accents</button>
+            <div class="writer-look-drop" data-look-drop="accent" hidden>
+                <div data-book-accent-swatches class="book-look-swatches"></div>
             </div>
         </div>
     `;
@@ -78,6 +90,10 @@ export function mountPageLookRail({
             pageLookCustom: "",
             pageBgId: "",
             pageBg: "",
+            textColor: "",
+            textColorMain: "",
+            textColorAccent: "",
+            siteAccent: "",
         };
         saveLook(look);
         applyLook(look);
@@ -97,19 +113,25 @@ export function mountPageLookRail({
         const existing = book.publish_meta && typeof book.publish_meta === "object" && !Array.isArray(book.publish_meta)
             ? book.publish_meta
             : {};
-        persistMeta({
+            persistMeta({
             publish_meta: mergePublishMeta(existing, {
                 pageLook: look.pageLook || DEFAULT_PAGE_LOOK,
                 pageLookSaved: look.pageLookSaved,
                 pageLookCustom: look.pageLookCustom,
                 pageBgId: look.pageBgId,
                 pageBg: look.pageBg,
+                textColor: look.textColor || "",
+                textColorMain: look.textColorMain || "",
+                textColorAccent: look.textColorAccent || "",
+                siteAccent: look.siteAccent || "",
             }),
         });
     }
 
     function applyLook(look) {
         applyVisitListingLook(previewPane, previewPane?.querySelector(".book-page"), look);
+        applyVisitTitleColor(previewPane?.querySelector("#libTitle"), look);
+        applyVisitSiteAccent(previewPane?.querySelector(".book-card"), look);
     }
 
     function expand() {

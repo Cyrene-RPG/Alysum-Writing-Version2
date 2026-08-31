@@ -1,0 +1,18 @@
+.reader-end {
+    margin-top: 40px;
+    padding-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+}
+
+.reader-end-kicker {
+    margin: 0 0 16px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--reader-soft);
+}
+
+.reader-end[hidden] { display: none !important; }

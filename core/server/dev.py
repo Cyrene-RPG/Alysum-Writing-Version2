@@ -72,6 +72,8 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/word-wars/page-ui" / clean[len("/js/word-wars/") :]
     if clean.startswith("/js/library/"):
         return ROOT / "applications/library/page-ui" / clean[len("/js/library/") :]
+    if clean.startswith("/js/statistics-ui/"):
+        return ROOT / "applications/main-site/statistics-ui" / clean[len("/js/statistics-ui/") :]
     if clean.startswith("/js/"):
         name = clean[len("/js/") :]
         if name.startswith("homepage"):
@@ -95,6 +97,8 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/word-wars/word-wars-css" / clean[len("/css/word-wars/") :]
     if clean.startswith("/css/library/"):
         return ROOT / "applications/library/library-css" / clean[len("/css/library/") :]
+    if clean.startswith("/css/statistics-ui/"):
+        return ROOT / "applications/main-site/statistics-ui" / clean[len("/css/statistics-ui/") :]
     if clean.startswith("/css/"):
         return ROOT / "applications/main-site/pages-css" / clean[len("/css/") :]
     if clean.startswith("/assets/"):

@@ -2,7 +2,7 @@ import {
     MIN_PUBLISH_WORDS,
     publishWordCount,
 } from "@alysum/publishing/chapter-length.js?v=1";
-import { saveLibraryListing, unlistLibraryListing } from "@alysum/publishing/post-work.js?v=11";
+import { saveLibraryListing, unlistLibraryListing } from "@alysum/publishing/post-work.js?v=13";
 
 export function paintPostError(el, message) {
     if (!el) return;
@@ -91,6 +91,10 @@ export function publishMetaFromForm(form) {
         pageLookCustom: form.pageLookCustom,
         pageBgId: form.pageBgId,
         pageBg: form.pageBg,
+        textColor: form.textColor,
+        textColorMain: form.textColorMain,
+        textColorAccent: form.textColorAccent,
+        siteAccent: form.siteAccent,
     };
 }
 

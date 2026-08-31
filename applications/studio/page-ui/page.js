@@ -4,10 +4,10 @@ import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=8";
 import { createEmptyBook } from "@alysum/writing-engine/manuscript.js";
 import { countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { initWorkspaceShell } from "./shell.js?v=2";
-import { bindBookMenu } from "./book-menu.js?v=5";
+import { bindBookMenu } from "./book-menu.js?v=6";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
-import { manuscriptWordsThisMonth, manuscriptWordsThisWeek, readManuscriptDayTotals } from "@alysum/account/manuscript-words.js";
-import { localDayKey, localMonthStartKey, localWeekStartKey, wordsTypedOnDay } from "@alysum/writing-engine/day-stats.js";
+import { getWritingStats, typedWordsThisMonth, typedWordsThisWeek } from "@alysum/account/writing-stats.js";
+import { localDayKey, localMonthStartKey, localWeekStartKey } from "@alysum/writing-engine/day-stats.js";
 import { isProbablyOnline, onReconnect } from "@alysum/synchronization-engine/network.js";
 import {
     cropFrameStyle,
@@ -88,28 +88,32 @@ function watchStatPeriods(onPeriodChange) {
 
 function renderStats(mount, books, profile, userId) {
     const totalWords = books.reduce((total, book) => total + bookWordCount(book), 0);
-    const monthWords = Math.min(totalWords, manuscriptWordsThisMonth(profile?.writingDayTotals, userId));
-    const weekWords = Math.min(totalWords, manuscriptWordsThisWeek(profile?.writingDayTotals, userId));
+    const s = getWritingStats(profile || {}, { userId });
+    const level = s.level;
+    const into = s.levelInfo;
+    const xpTile = into.next == null
+        ? `${s.xp.toLocaleString()} XP · max level`
+        : `${into.into.toLocaleString()} / ${into.span.toLocaleString()} XP to L${level + 1}`;
     const stats = [
         { value: totalWords, label: "Total words across all books" },
-        { value: monthWords, label: "Total words this month" },
-        { value: weekWords, label: "Total words this week" },
-        { value: validNumber(profile?.streak) ?? 0, label: "Daily login streak" },
+        { value: s.wordsThisMonth, label: "Words written this month" },
+        { value: s.wordsThisWeek, label: "Words written this week" },
+        { value: s.streak, label: "Daily login streak" },
+        { value: level, label: xpTile },
+        { value: s.goalStreak, label: "Goal-hit streak (days)" },
     ];
     mount.innerHTML = stats.map((stat) => `
         <div class="studio-stat">
-            <span class="studio-stat-num">${stat.value.toLocaleString()}</span>
+            <span class="studio-stat-num">${Number(stat.value).toLocaleString()}</span>
             <span class="studio-stat-label">${stat.label}</span>
         </div>`).join("");
 }
 
 function renderGoal(goalMount, labelMount, fillMount, profile, userId) {
-    const goal = validNumber(profile?.dailyWordGoal);
-    if (goal === null || goal <= 0) return;
-    const today = wordsTypedOnDay(readManuscriptDayTotals(profile?.writingDayTotals, userId), localDayKey());
-    const percentage = Math.min(100, Math.round((today / goal) * 100));
-    labelMount.textContent = `${today.toLocaleString()} / ${goal.toLocaleString()}`;
-    fillMount.style.width = `${percentage}%`;
+    const s = getWritingStats(profile || {}, { userId });
+    if (!s.goal || s.goal <= 0) return;
+    labelMount.textContent = `${s.wordsToday.toLocaleString()} / ${s.goal.toLocaleString()}`;
+    fillMount.style.width = `${s.goalPct}%`;
     goalMount.classList.remove("hidden");
 }
 
@@ -255,6 +259,25 @@ async function boot() {
     paintShelf();
     initShelf(list, document.getElementById("studioDots"), document.getElementById("prevBtn"), document.getElementById("nextBtn"));
     watchStatPeriods(paintTotals);
+
+    // Live-refresh: the editor / Word Wars tab writes alysum:typed-words:{uid};
+    // also recompute when this tab regains focus.
+    window.addEventListener("storage", (event) => {
+        if (event.key && event.key.startsWith("alysum:typed-words:")) paintTotals();
+    });
+    window.addEventListener("focus", paintTotals);
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") paintTotals();
+    });
+    if (session.mode === "cloud") {
+        supabase.rpc("claim_daily_login_xp").then(({ data }) => {
+            if (data?.granted) {
+                if (profile) profile.xp = data.xp;
+                paintTotals();
+            }
+        }).catch(() => {});
+        supabase.rpc("finalize_writing_xp_sweep").catch(() => {});
+    }
 
     void loadWorkspaceProfile(supabase, session).then((next) => {
         profile = next;

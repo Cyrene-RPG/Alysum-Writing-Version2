@@ -43,12 +43,25 @@
     padding: 0;
 }
 .lib-preview .book-title-input {
-    color: var(--ui-text);
+    color: var(--alysum-display-mid, var(--ui-text));
+    caret-color: var(--alysum-display-mid, var(--ui-text));
     font-size: clamp(28px, 3.2vw, 42px);
     font-weight: 800;
     letter-spacing: -0.4px;
     line-height: 1.12;
-    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.55);
+    background-color: transparent;
+    background-image: linear-gradient(
+        145deg,
+        var(--alysum-display-highlight, var(--alysum-display-mid, var(--ui-text))),
+        var(--alysum-display-mid, var(--ui-text)) 55%,
+        var(--alysum-display-deep, var(--alysum-display-mid, var(--ui-text)))
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter:
+        drop-shadow(0 2px 12px var(--alysum-display-shadow, rgba(0, 0, 0, 0.5)))
+        drop-shadow(0 0 16px var(--alysum-display-glow, transparent));
 }
 .lib-preview .book-author-input {
     width: auto;

@@ -14,7 +14,8 @@ import {
 } from "@alysum/writing-engine/manuscript.js?v=5";
 import { countWordsInHtml, countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
-import { recordManuscriptWordGain } from "@alysum/account/manuscript-words.js";
+import { recordTypedWords } from "@alysum/account/writing-stats.js";
+import { typedWordDelta } from "@alysum/statistics/typed-input.js";
 import { paintChipInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
 import { initWorkspaceShell } from "/js/studio/shell.js?v=2";
 import { createAutosave } from "/js/editor/autosave.js";
@@ -238,10 +239,11 @@ async function boot() {
     let shareTimer = 0;
     let typing = false;
 
+    let sprintTypedWords = 0;
     const editor = mountDocument({
         pageEl,
-        onInput: (html) => {
-            applyHtml(html);
+        onInput: (html, event) => {
+            applyHtml(html, event);
         },
     });
     mountToolbar({
@@ -292,7 +294,7 @@ async function boot() {
         return chapters().find((ch) => ch.id === selectedId) || chapters()[0];
     }
 
-    function applyHtml(html) {
+    function applyHtml(html, event) {
         const chapter = currentChapter();
         if (!chapter) return;
         const prevWords = countWordsInSections(book.sections);
@@ -300,12 +302,14 @@ async function boot() {
             ...book,
             sections: setChapterContent(book.sections, chapter.id, html),
         });
+        const typed = typedWordDelta(prevWords, countWordsInSections(book.sections), event);
+        if (typed > 0) sprintTypedWords += typed;
         if (!demo) {
-            recordManuscriptWordGain({
+            recordTypedWords({
                 userId: uid,
                 supabase,
-                isLocal: false,
-                gained: countWordsInSections(book.sections) - prevWords,
+                isLocal: session.mode !== "cloud",
+                typedDelta: typed,
             });
         }
         autosave.schedule(book);
@@ -362,7 +366,7 @@ async function boot() {
         const html = editor.getHtml();
         const words = countWordsInHtml(html);
         const payload = {
-            sprintWords: wordsAtStart ? Math.max(0, words - wordsAtStart) : 0,
+            sprintWords: sprintTypedWords, // typed-only — pasting can't pad the leaderboard
             isTyping: typing,
             shareDraft: sharing,
         };

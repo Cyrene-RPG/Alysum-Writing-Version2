@@ -2,6 +2,8 @@
 body {
     margin: 0;
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     background:
         radial-gradient(circle at top, var(--theme-body-spot-strong, transparent) 0%, transparent 42%),
@@ -9,6 +11,7 @@ body {
     color: var(--text);
 }
 .book-page {
+    flex: 1;
     width: 100%;
     margin: 0;
     padding: 24px clamp(16px, 3vw, 40px) 64px;
@@ -163,12 +166,23 @@ body {
 .book-title-row { display: flex; align-items: flex-end; gap: 8px; }
 .book-title-block h1 {
     margin: 0;
-    color: var(--ui-text);
     font-size: clamp(28px, 3.2vw, 42px);
     font-weight: 800;
     letter-spacing: -0.4px;
     line-height: 1.12;
-    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.55);
+    color: var(--alysum-display-mid, var(--ui-text));
+    background-image: linear-gradient(
+        145deg,
+        var(--alysum-display-highlight, var(--alysum-display-mid, var(--ui-text))),
+        var(--alysum-display-mid, var(--ui-text)) 55%,
+        var(--alysum-display-deep, var(--alysum-display-mid, var(--ui-text)))
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter:
+        drop-shadow(0 2px 12px var(--alysum-display-shadow, rgba(0, 0, 0, 0.5)))
+        drop-shadow(0 0 16px var(--alysum-display-glow, transparent));
 }
 .book-by, .book-meta {
     margin: 8px 0 0;
@@ -285,6 +299,13 @@ body {
     padding: 13px 18px;
     box-shadow: 0 12px 24px -10px color-mix(in srgb, var(--accent) 55%, transparent);
 }
+.has-site-accent .book-hero:not(.is-wide) {
+    background: var(--book-site-accent);
+}
+.has-site-accent .book-cta {
+    background: var(--book-site-accent);
+    color: #fff;
+}
 .book-cta-cap {
     text-align: center;
     font-size: 11.5px;
@@ -379,7 +400,7 @@ body {
 .book-score { font-size: 13px; font-weight: 700; color: var(--accent); }
 .book-reviews-empty { margin: 0; color: var(--muted); font-size: 13px; }
 .book-empty {
-    min-height: 100vh;
+    flex: 1;
     display: grid;
     place-content: center;
     gap: 16px;

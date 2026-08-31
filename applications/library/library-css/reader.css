@@ -175,7 +175,7 @@ html.reader-page body {
 .reader-article {
     width: 100%;
     max-width: 680px;
-    padding: 64px 0 140px;
+    padding: 64px 0 48px;
 }
 
 .reader-eyebrow {
@@ -231,18 +231,25 @@ html.reader-page body {
 }
 
 .reader-pager {
-    position: absolute;
-    bottom: 28px;
-    left: 50%;
-    transform: translateX(-50%);
+    position: relative;
     display: flex;
     align-items: center;
+    justify-content: center;
+    width: fit-content;
+    max-width: 100%;
+    margin: 48px auto 0;
     gap: 4px;
     background: var(--reader-chrome);
     border: 1px solid var(--reader-edge);
     border-radius: 999px;
     padding: 6px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.reader-icon:disabled,
+.reader-picker button:disabled {
+    opacity: 0.35;
+    cursor: default;
 }
 
 .reader-next:not(:disabled) {
@@ -267,9 +274,10 @@ html.reader-page body {
 
 .reader-picker {
     position: absolute;
-    bottom: calc(100% + 10px);
+    top: calc(100% + 10px);
     left: 50%;
     transform: translateX(-50%);
+    z-index: 4;
     min-width: 240px;
     max-height: 280px;
     overflow: auto;
@@ -467,7 +475,8 @@ html.reader-page body {
 .reader-empty[hidden],
 .reader-scrim[hidden],
 .reader-drawer[hidden],
-.reader-picker[hidden] { display: none !important; }
+.reader-picker[hidden],
+.reader-end[hidden] { display: none !important; }
 
 @media (max-width: 760px) {
     .reader-bar { height: 52px; padding: 0 16px; }
@@ -476,24 +485,8 @@ html.reader-page body {
     .reader-bar-rule { display: none; }
     .reader-icon { width: 36px; height: 36px; border-radius: 9px; }
     .reader-scroll { padding: 0 22px; }
-    .reader-article { padding: 28px 0 24px; }
+    .reader-article { padding: 28px 0 32px; }
     .reader-chapter-title { font-size: 25px; }
     .reader-body { margin-top: 28px; font-size: calc(var(--reader-size) * 0.9); }
-    .reader-pager {
-        position: static;
-        transform: none;
-        left: auto;
-        bottom: auto;
-        width: 100%;
-        height: 68px;
-        padding: 0 22px;
-        border-radius: 0;
-        border: 0;
-        border-top: 1px solid var(--reader-line);
-        box-shadow: none;
-        justify-content: space-between;
-        background: var(--reader-bg);
-    }
-    .reader-picker-btn svg { display: none; }
-    .reader-picker { left: 16px; right: 16px; transform: none; min-width: 0; }
+    .reader-pager { margin-top: 32px; }
 }

@@ -36,8 +36,8 @@ function renderNavHtml(active) {
                         </span>
                     </button>
                     <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
+                        <a role="menuitem" href="/library" data-close-pfp-menu>Home</a>
                         <a role="menuitem" href="/overview" data-close-pfp-menu>Profile</a>
-                        <a role="menuitem" href="/settings#profilePanel" data-close-pfp-menu>Profile Info</a>
                         <a role="menuitem" href="/settings" data-close-pfp-menu>Settings</a>
                         <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
                     </div>

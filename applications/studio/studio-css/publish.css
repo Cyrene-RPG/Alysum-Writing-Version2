@@ -441,3 +441,9 @@ h1 {
 .book-look-bg-chip.is-on {
     outline: 2px solid var(--accent, #7c3aed);
 }
+[data-book-title-custom] {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+[data-book-title-custom][hidden] { display: none; }

@@ -1,5 +1,5 @@
-import { bindBookLookPicker, paintBookLookPicker, readBookLookPicker } from "@alysum/site-appearance/js-runtime/book-look-picker.js?v=2";
-import { applyVisitBookLook, applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=8";
+import { bindBookLookPicker, paintBookLookPicker, readBookLookPicker } from "@alysum/site-appearance/js-runtime/book-look-picker.js?v=4";
+import { applyVisitBookLook, applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=9";
 
 function applyPublishLook(look) {
     const page = document.querySelector(".pub-page");

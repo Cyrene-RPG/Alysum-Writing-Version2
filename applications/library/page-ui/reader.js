@@ -1,9 +1,12 @@
 import { supabase } from "@alysum/authentication/client.js";
+import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
 import { fetchPublishedWork } from "@alysum/library/work.js?v=2";
 import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
 import { mountReaderThemes } from "./reader-theme.js?v=6";
+import { mountReaderEnd } from "./reader-end.js?v=4";
 
 const READ_KEY = "alysum:library:read-position";
+const DONE_KEY = "alysum:library:finished-chapters";
 const BOOK_KEY = "alysum:library:bookmarks";
 const PREF_KEY = "alysum:reader:prefs";
 const SIZE_MIN = 80;
@@ -125,8 +128,20 @@ function paintBookmark(on) {
 
 function scrollRatio(el) {
     const max = el.scrollHeight - el.clientHeight;
-    if (max <= 0) return 1;
+    if (max <= 24) return 1;
     return Math.min(1, Math.max(0, el.scrollTop / max));
+}
+
+function readFinished(bookId) {
+    const map = readJson(DONE_KEY, {});
+    const row = map[bookId];
+    return row && typeof row === "object" ? { ...row } : {};
+}
+
+function writeFinished(bookId, done) {
+    const map = readJson(DONE_KEY, {});
+    map[bookId] = done;
+    writeJson(DONE_KEY, map);
 }
 
 function showEmpty(id) {
@@ -154,6 +169,7 @@ async function boot() {
     if (back) back.href = `/book?id=${encodeURIComponent(work.id)}`;
     paintBookmark(isBookmarked(work.id));
     mountReaderThemes(document.getElementById("themeSwatches"), work);
+    const session = await resolveStudioSession(supabase);
 
     const progressMap = readJson(READ_KEY, {});
     const saved = progressMap[work.id] || {};
@@ -161,8 +177,40 @@ async function boot() {
     let index = work.chapters.findIndex((chapter) => chapter.id === fromUrl);
     if (index < 0) index = work.chapters.findIndex((chapter) => chapter.id === saved.chapterId);
     if (index < 0) index = 0;
+    const finished = readFinished(work.id);
 
     const scrollEl = document.getElementById("readerScroll");
+    const DONE = 0.97;
+
+    function markFinished() {
+        const id = work.chapters[index]?.id;
+        if (!id || finished[id]) return;
+        finished[id] = true;
+        writeFinished(work.id, finished);
+    }
+
+    function atEnd() {
+        return scrollRatio(scrollEl) >= DONE;
+    }
+
+    function canOpen(i) {
+        if (i <= index) return true;
+        for (let k = index; k < i; k += 1) {
+            if (!finished[work.chapters[k].id]) return false;
+        }
+        return true;
+    }
+
+    function syncLocks() {
+        const last = index >= work.chapters.length - 1;
+        const unlocked = last || Boolean(finished[work.chapters[index]?.id]) || atEnd();
+        if (unlocked && !last) markFinished();
+        document.getElementById("nextBtn").disabled = last || !unlocked;
+        document.querySelectorAll("#chapterPicker [data-index]").forEach((btn) => {
+            const i = Number(btn.dataset.index);
+            btn.disabled = !canOpen(i);
+        });
+    }
 
     function persist(ratio) {
         const total = work.chapters.length;
@@ -179,6 +227,10 @@ async function boot() {
         url.searchParams.set("id", work.id);
         url.searchParams.set("chapter", work.chapters[index].id);
         history.replaceState(null, "", `${url.pathname}${url.search}`);
+        if (ratio >= DONE) {
+            markFinished();
+            syncLocks();
+        }
     }
 
     function render() {
@@ -193,19 +245,31 @@ async function boot() {
         document.getElementById("pickerLabel").textContent =
             `Chapter ${index + 1} of ${work.chapters.length}`;
         document.getElementById("prevBtn").disabled = index <= 0;
-        document.getElementById("nextBtn").disabled = index >= work.chapters.length - 1;
+        document.getElementById("nextBtn").disabled =
+            index >= work.chapters.length - 1 || !finished[chapter.id];
         document.getElementById("chapterPicker").innerHTML = work.chapters.map((item, i) =>
             `<button type="button" role="option" data-index="${i}" class="${i === index ? "is-on" : ""}">${escapeHtml(item.title)}</button>`
         ).join("");
         scrollEl.scrollTop = 0;
         persist(0);
         setPicker(false);
+        mountReaderEnd({
+            work,
+            chapterId: chapter.id,
+            supabase,
+            session,
+            onLayout() {
+                if (atEnd()) markFinished();
+                syncLocks();
+            },
+        });
     }
 
     document.getElementById("prevBtn").addEventListener("click", () => {
         if (index > 0) { index -= 1; render(); }
     });
     document.getElementById("nextBtn").addEventListener("click", () => {
+        if (document.getElementById("nextBtn").disabled) return;
         if (index < work.chapters.length - 1) { index += 1; render(); }
     });
     document.getElementById("pickerBtn").addEventListener("click", (event) => {
@@ -214,7 +278,7 @@ async function boot() {
     });
     document.getElementById("chapterPicker").addEventListener("click", (event) => {
         const btn = event.target.closest("[data-index]");
-        if (!btn) return;
+        if (!btn || btn.disabled) return;
         index = Number(btn.dataset.index) || 0;
         render();
     });

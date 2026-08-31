@@ -1,8 +1,8 @@
 import { listBodyChapters, withUpdatedWords } from "@alysum/writing-engine/manuscript.js?v=5";
 import { currentChapter, fallbackChapterId } from "./helpers.js?v=41";
-import { mountBookSettings } from "../settings.js?v=4";
-import { mountLibraryPreview } from "../library-preview.js?v=49";
-import { mountPageLookRail } from "../page-look-rail.js?v=15";
+import { mountBookSettings } from "../settings.js?v=5";
+import { mountLibraryPreview } from "../library-preview.js?v=51";
+import { mountPageLookRail } from "../page-look-rail.js?v=17";
 import { confirmAction } from "../prompt.js";
 import { setWelcomeCopy } from "../shell.js?v=2";
 
@@ -55,7 +55,10 @@ export function mountPreviewSession({
         previewPane: document.getElementById("libraryPreviewPane"),
         defaultAuthor,
     });
-    if (new URLSearchParams(window.location.search).get("view") === "preview") {
+    // "settings" opens the settings pane on the left *and* the library preview in
+    // the middle — both surfaces at once, not one instead of the other.
+    const wantView = new URLSearchParams(window.location.search).get("view");
+    if (wantView === "preview" || wantView === "settings") {
         enterPreview();
     }
     mountBookSettings({

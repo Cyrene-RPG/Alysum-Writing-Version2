@@ -15,7 +15,8 @@ import {
     normalizePageBgId,
     normalizePageLook,
     normalizePageLookSaved,
-} from "../publishing/publish-meta.js";
+    normalizeTextColor,
+} from "../publishing/publish-meta.js?v=7";
 
 export const AUTHOR_BIO_MAX_LENGTH = 2000;
 export const AUTHOR_SUPPORT_URL_MAX_LENGTH = 500;
@@ -221,6 +222,10 @@ export function normalizePublishedBookPreview(row) {
         pageBgId: normalizePageBgId(data.pageBgId || data.page_bg_id)
             || (normalizeHexColor(data.pageBg || data.page_bg) ? "custom" : ""),
         pageBg: normalizeHexColor(data.pageBg || data.page_bg),
+        textColor: normalizeTextColor(data.textColor || data.text_color),
+        textColorMain: normalizeHexColor(data.textColorMain || data.text_color_main),
+        textColorAccent: normalizeHexColor(data.textColorAccent || data.text_color_accent),
+        siteAccent: normalizeTextColor(data.siteAccent || data.site_accent),
     };
 }
 

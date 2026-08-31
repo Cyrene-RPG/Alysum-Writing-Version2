@@ -10,8 +10,15 @@ import {
     resolveAccentBodyBg,
     resolveBodyBgColor,
 } from "./body-background.js";
-import { DISPLAY_TEXT_COLORS } from "./display-text-color.js";
-import { applyRootInk, decideTextInk } from "./text-ink.js";
+import {
+    applyDisplayTextColorVars,
+    clearDisplayTextColorVars,
+    DISPLAY_TEXT_COLORS,
+    isDisplayTextColorId,
+    resolveDisplayColorPair,
+} from "./display-text-color.js?v=2";
+import { applyRootInk, decideTextInk, scheduleChromeInk } from "./text-ink.js";
+import { getThemePreview, isGradientThemeId } from "./gradient-theme.js";
 import { applyUiColorVars, clearUiColorVars, resolveUiColorHex } from "./ui-color.js";
 
 const LOOK_VARS = [
@@ -203,9 +210,53 @@ export function applyVisitListingLook(bgEl, pageEl, look) {
     }
 }
 
+export function applyVisitTitleColor(el, look) {
+    if (!el) return;
+    const id = String(look?.textColor || "").trim();
+    if (!id || !isDisplayTextColorId(id)) {
+        clearDisplayTextColorVars(el);
+        return;
+    }
+    if (id === "custom") {
+        const main = hex(look.textColorMain) || "#f59e0b";
+        const accent = hex(look.textColorAccent) || "#fde68a";
+        applyDisplayTextColorVars(main, accent, el);
+        return;
+    }
+    const pair = resolveDisplayColorPair(id);
+    applyDisplayTextColorVars(pair.main, pair.accent, el);
+}
+
+export function applyVisitSiteAccent(el, look) {
+    if (!el) return;
+    const id = String(look?.siteAccent || "").trim();
+    if (!id || !isGradientThemeId(id)) {
+        el.classList.remove("has-site-accent");
+        el.style.removeProperty("--book-site-accent");
+        return;
+    }
+    el.classList.add("has-site-accent");
+    el.style.setProperty("--book-site-accent", getThemePreview(id));
+}
+
+/** Visit-only overlay on one welcome header. Does not set has-site-accent or :root. */
+export function applyVisitWelcomeChrome(bar, look) {
+    if (!bar) return;
+    const id = String(look?.siteAccent || "").trim();
+    if (!id || !isGradientThemeId(id)) {
+        bar.style.removeProperty("--theme-welcome-bar");
+    } else {
+        bar.style.setProperty("--theme-welcome-bar", getThemePreview(id));
+    }
+    scheduleChromeInk(bar.parentNode || document);
+}
+
 export function clearVisitPageLook(el) {
     if (!el) return;
     clearBodyBgVars(el);
     clearVisitBodyInk(el);
     clearLookVars(el);
+    clearDisplayTextColorVars(el);
+    el.classList.remove("has-site-accent");
+    el.style.removeProperty("--book-site-accent");
 }

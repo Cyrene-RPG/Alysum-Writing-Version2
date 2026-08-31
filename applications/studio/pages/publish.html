@@ -33,7 +33,7 @@
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
     <link rel="stylesheet" href="/css/editor/document.css?v=11" />
     <link rel="stylesheet" href="/css/editor/scene-breaks.css?v=1" />
-    <link rel="stylesheet" href="/css/studio/publish.css?v=25" />
+    <link rel="stylesheet" href="/css/studio/publish.css?v=26" />
 </head>
 <body>
     <div class="pub-page">
@@ -84,6 +84,18 @@
                     <div data-book-bg-custom hidden>
                         <input type="color" data-book-bg-color value="#0b1220" />
                     </div>
+                </div>
+                <button type="button" class="pub-look-drop-btn" data-look-drop-btn="title" aria-expanded="false">Title colors</button>
+                <div class="pub-look-drop" data-look-drop="title" hidden>
+                    <div data-book-title-swatches class="book-look-swatches"></div>
+                    <div data-book-title-custom hidden>
+                        <input type="color" data-book-title-main value="#f59e0b" />
+                        <input type="color" data-book-title-accent value="#fde68a" />
+                    </div>
+                </div>
+                <button type="button" class="pub-look-drop-btn" data-look-drop-btn="accent" aria-expanded="false">Site accents</button>
+                <div class="pub-look-drop" data-look-drop="accent" hidden>
+                    <div data-book-accent-swatches class="book-look-swatches"></div>
                 </div>
             </div>
             <p class="pub-hint">Optional. Visitors keep their Appearance unless you set these. Library page only — not chapters.</p>
@@ -159,6 +171,6 @@
         <p class="pub-status" id="pubStatus" role="status"></p>
         <p class="pub-error" id="postError" hidden></p>
     </div>
-    <script type="module" src="/js/studio/publish.js?v=54"></script>
+    <script type="module" src="/js/studio/publish.js?v=56"></script>
 </body>
 </html>

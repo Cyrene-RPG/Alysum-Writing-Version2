@@ -70,6 +70,10 @@ export async function persistShortChapterTakedown(supabase, userId, api, book) {
         pageLookCustom: draft.pageLookCustom,
         pageBgId: draft.pageBgId,
         pageBg: draft.pageBg,
+        textColor: draft.textColor,
+        textColorMain: draft.textColorMain,
+        textColorAccent: draft.textColorAccent,
+        siteAccent: draft.siteAccent,
     });
     const saved = await api.updateBook(book.id, { published_chapter_ids: kept });
     if (saved?._synced === false) return book;
