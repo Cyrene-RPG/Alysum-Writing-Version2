@@ -12,17 +12,28 @@ body {
     width: 100%;
     margin: 0;
     padding: 24px clamp(16px, 3vw, 40px) 64px;
+    overflow-x: auto;
     background: var(--bg, transparent);
     --accent: var(--alysum-ui-raised);
     color: var(--text);
 }
 .book-card {
+    width: 68rem;
+    min-width: 68rem;
+    max-width: 68rem;
+    margin-inline: auto;
+    flex-shrink: 0;
     background: var(--alysum-ui-panel);
     border: 1px solid var(--border);
     border-radius: var(--glass-radius, 16px);
     box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.35);
     overflow: hidden;
     color: var(--ui-text, var(--text));
+}
+.book-card:has(.book-hero.is-wide) {
+    width: 64rem;
+    min-width: 64rem;
+    max-width: 64rem;
 }
 .book-hero {
     position: relative;
@@ -69,7 +80,7 @@ body {
     height: 100%;
     min-height: 0;
     max-height: none;
-    object-fit: contain;
+    object-fit: cover;
     object-position: center;
     display: block;
 }
@@ -120,18 +131,32 @@ body {
 .book-cover {
     position: relative;
     width: min(240px, 32vw);
+    aspect-ratio: 2 / 3;
     flex-shrink: 0;
     border-radius: var(--glass-radius, 18px);
     overflow: hidden;
     box-shadow: 0 26px 44px -14px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.14);
 }
+.book-cover.is-square {
+    aspect-ratio: 1 / 1;
+}
+.book-cover.is-full-cover {
+    aspect-ratio: auto;
+    height: auto;
+}
 .book-cover img {
     width: 100%;
-    height: auto;
+    height: 100%;
     display: block;
-    object-fit: contain;
+    object-fit: cover;
     object-position: center;
-    vertical-align: top;
+}
+.book-cover.is-full-cover img {
+    position: relative;
+    inset: auto;
+    height: auto;
+    max-width: 100%;
+    object-fit: contain;
 }
 .book-hero.is-wide .book-cover { display: none; }
 .book-title-block { padding-bottom: 6px; flex: 1; min-width: 0; }

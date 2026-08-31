@@ -44,7 +44,6 @@ export function mountBookSettings({
     updateBook,
     flushSave,
     onLibraryPreview,
-    onListingLook,
 }) {
     if (!mount) return { refresh() {} };
     const isLocal = session?.mode !== "cloud";
@@ -73,15 +72,6 @@ export function mountBookSettings({
             <p class="s-sub">One .doc file per chapter, packed into a zip.</p>
             <button type="button" class="export-btn" id="exportZipBtn">Download as .zip</button>
             <p class="export-note" id="exportNote"></p>
-        </article>
-        <article class="s-block">
-            <button type="button" class="lib-link" id="listingLookBtn">
-                <span>
-                    <h2>Listing look</h2>
-                    <p class="s-sub" style="margin:6px 0 0">UI colors and page background for the book page.</p>
-                </span>
-                <span aria-hidden="true">›</span>
-            </button>
         </article>
         <article class="s-block">
             <button type="button" class="lib-link" id="libraryPreviewBtn">
@@ -287,7 +277,6 @@ export function mountBookSettings({
         }
     });
 
-    mount.querySelector("#listingLookBtn")?.addEventListener("click", () => onListingLook?.());
     mount.querySelector("#libraryPreviewBtn")?.addEventListener("click", () => onLibraryPreview?.());
 
     collabList.addEventListener("click", async (event) => {

@@ -9,7 +9,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v2.47.0';
+const SW_VERSION = 'v2.48.0';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -112,7 +112,14 @@ self.addEventListener('fetch', (event) => {
 
   if (isHtmlRequest(request)) {
     if (isWorkspaceHtml(url)) {
-      event.respondWith(staleWhileRevalidateHtml(event));
+      const pretty = url.pathname.replace(/\.html$/i, "");
+      if (pretty !== url.pathname && request.mode === "navigate") {
+        const dest = new URL(url.href);
+        dest.pathname = pretty;
+        event.respondWith(Response.redirect(dest.href, 302));
+        return;
+      }
+      event.respondWith(networkFirstHtml(event));
       return;
     }
     event.respondWith(networkFirstHtml(event));

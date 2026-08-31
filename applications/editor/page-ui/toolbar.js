@@ -117,6 +117,7 @@ export function mountToolbar({
     editor.setAutoIndent(indentOn);
     void loadEditorGoogleFontBootstrap();
 
+    const wordcount = mount.querySelector(".writer-wordcount");
     mount.innerHTML = [
         `<button type="button" class="writer-tool" data-indent-toggle aria-pressed="${indentOn ? "true" : "false"}" title="Auto indent" aria-label="Auto indent">Indent</button>`,
         ...ACTIONS.map((action) => (
@@ -128,6 +129,7 @@ export function mountToolbar({
         `<button type="button" class="writer-tool writer-tool--find" data-find-toggle title="Find" aria-label="Find">${SEARCH_ICON}</button>`,
         `<button type="button" class="writer-tool writer-tool--type" data-typewriter title="Typewriter mode" aria-label="Typewriter mode">Type</button>`
     ].join("");
+    if (wordcount) mount.appendChild(wordcount);
 
     function typography() {
         return getChapterTypography?.() || { fontId: DEFAULT_FONT_ID, fontSizePx: String(DEFAULT_FONT_SIZE_PX) };

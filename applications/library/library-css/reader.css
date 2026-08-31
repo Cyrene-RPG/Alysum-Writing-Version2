@@ -31,6 +31,27 @@ html.reader-page[data-reader-space="relaxed"] {
     --reader-leading: 2.1;
     --reader-para-gap: 1.35em;
 }
+html.reader-page[data-reader-theme="tan"] {
+    --reader-accent: #d4a054;
+    --reader-bg: oklch(0.34 0.062 78);
+    --reader-ink: oklch(0.94 0.038 88);
+    --reader-title: oklch(0.97 0.042 90);
+    --reader-muted: oklch(0.74 0.042 82);
+    --reader-soft: oklch(0.82 0.04 84);
+    --reader-line: oklch(0.44 0.048 76 / 0.55);
+    --reader-track: oklch(0.42 0.046 76);
+    --reader-chrome: oklch(0.38 0.055 77);
+    --reader-edge: oklch(0.48 0.05 76);
+    --reader-drawer: oklch(0.30 0.058 77);
+}
+html.reader-page[data-reader-theme="tan"],
+html.reader-page[data-reader-theme="tan"] body {
+    background: var(--reader-bg);
+    color: var(--reader-ink);
+}
+html.reader-page[data-reader-theme="tan"] .reader {
+    background: var(--reader-bg);
+}
 
 html.reader-page,
 html.reader-page body {
@@ -105,6 +126,13 @@ html.reader-page body {
     border: 1px solid transparent;
     color: var(--reader-soft);
     cursor: pointer;
+}
+.reader-icon:focus {
+    outline: none;
+}
+.reader-icon:focus-visible {
+    outline: 2px solid var(--reader-accent);
+    outline-offset: 2px;
 }
 
 .reader-icon.is-on,
@@ -184,21 +212,22 @@ html.reader-page body {
 
 .reader-body p { margin: 0 0 var(--reader-para-gap); }
 .reader-body p:last-child { margin-bottom: 0; }
-
-.reader-body p:first-of-type::first-letter {
-    font-family: "Spectral", Georgia, serif;
-    font-size: 3.6em;
-    font-weight: 600;
-    float: left;
-    line-height: 0.78;
-    padding-right: 10px;
-    padding-top: 8px;
-    color: var(--reader-ink);
+.reader-body p.alysum-indent {
+    text-indent: 1.5em;
 }
-
-html.reader-page[data-reader-face="dyslexic"] .reader-body p:first-of-type::first-letter,
-html.reader-page[data-reader-face="sans"] .reader-body p:first-of-type::first-letter {
-    font-family: inherit;
+.reader-body p.alysum-flush {
+    text-indent: 0;
+}
+.reader-body.is-auto-indent > p:not(.alysum-flush):not(.scene-break):not(.scene-spacer) {
+    text-indent: 1.5em;
+}
+.reader-body p::first-letter {
+    float: none;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+    padding: 0;
+    margin: 0;
 }
 
 .reader-pager {
@@ -216,7 +245,11 @@ html.reader-page[data-reader-face="sans"] .reader-body p:first-of-type::first-le
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
-.reader-next { color: var(--reader-accent); }
+.reader-next:not(:disabled) {
+    color: var(--reader-ink);
+    background: color-mix(in srgb, var(--reader-accent) 22%, transparent);
+    border-color: var(--reader-accent);
+}
 
 .reader-picker-btn {
     display: flex;

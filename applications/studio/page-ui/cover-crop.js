@@ -1,6 +1,6 @@
-import { cropFrameStyle, normalizeCrop } from "@alysum/publishing/cover-upload.js?v=3";
+import { cropFrameStyle, isFullCoverCrop, normalizeCrop } from "@alysum/publishing/cover-upload.js?v=10";
 
-export const CROP_ASPECT = { library: 2 / 3, mini: 2.5, wide: 2.5 };
+export const CROP_ASPECT = { library: 0, mini: 2.5, wide: 0 };
 
 export function placeCrop(el, rect) {
     const crop = normalizeCrop(rect);
@@ -20,7 +20,12 @@ export function applyPreview(el, src, rect) {
         return;
     }
     img.src = src;
-    img.setAttribute("style", cropFrameStyle(rect));
+    const crop = normalizeCrop(rect);
+    if (!crop || isFullCoverCrop(crop)) {
+        img.removeAttribute("style");
+        return;
+    }
+    img.setAttribute("style", cropFrameStyle(crop));
 }
 
 export function moveCrop(start, dx, dy) {
@@ -40,6 +45,34 @@ export function fractionAspect(visualAspect, box) {
 }
 
 export function resizeCrop(handle, start, dx, dy, aspect) {
+    if (!aspect) {
+        let x = start.x;
+        let y = start.y;
+        let w = start.w;
+        let h = start.h;
+        if (handle === "se") {
+            w = Math.max(0.08, start.w + dx);
+            h = Math.max(0.08, start.h + dy);
+        } else if (handle === "sw") {
+            w = Math.max(0.08, start.w - dx);
+            h = Math.max(0.08, start.h + dy);
+            x = start.x + start.w - w;
+        } else if (handle === "ne") {
+            w = Math.max(0.08, start.w + dx);
+            h = Math.max(0.08, start.h - dy);
+            y = start.y + start.h - h;
+        } else if (handle === "nw") {
+            w = Math.max(0.08, start.w - dx);
+            h = Math.max(0.08, start.h - dy);
+            x = start.x + start.w - w;
+            y = start.y + start.h - h;
+        }
+        if (x < 0) { w += x; x = 0; }
+        if (y < 0) { h += y; y = 0; }
+        if (x + w > 1) w = 1 - x;
+        if (y + h > 1) h = 1 - y;
+        return normalizeCrop({ x, y, w, h }) || start;
+    }
     let x = start.x;
     let y = start.y;
     let w = start.w;

@@ -8,15 +8,22 @@ import { genreLabel, matchingGenreKeys, toggleGenreSelection } from "@alysum/pub
 import {
     clearDraftCover,
     defaultCrops,
+    isFullCoverCrop,
+    libraryCardCrop,
+    coverCropForImage,
     loadDraftCover,
     loadDraftCoverFile,
+    normalizeCrop,
+    peekCoverSrc,
+    rememberCover,
     saveDraftCover,
     uploadBookCover,
-} from "@alysum/publishing/cover-upload.js?v=3";
-import { readPublishDraft } from "@alysum/publishing/publish-meta.js?v=4";
-import { isLibraryListed, saveLibraryListing } from "@alysum/publishing/post-work.js?v=3";
-import { bindPageLook, paintPageLook, readPageLook } from "./page-look.js?v=11";
-import { bindWarningPicker } from "./warning-picker.js?v=4";
+} from "@alysum/publishing/cover-upload.js?v=10";
+import { readPublishDraft } from "@alysum/publishing/publish-meta.js?v=5";
+import { fetchLibraryListingId, isLibraryListed, readLocalLibraryListings } from "@alysum/publishing/post-work.js?v=11";
+import { bindPageLook, paintPageLook, readPageLook } from "./page-look.js?v=12";
+import { bindWarningPicker } from "./warning-picker.js?v=5";
+import { paintPostError, runPublishSave } from "./publish-save.js?v=6";
 import {
     CROP_ASPECT,
     applyPreview,
@@ -24,7 +31,7 @@ import {
     moveCrop,
     placeCrop,
     resizeCrop,
-} from "/js/studio/cover-crop.js";
+} from "/js/studio/cover-crop.js?v=9";
 
 function escapeHtml(str) {
     return String(str ?? "")
@@ -69,6 +76,10 @@ function paintPreview(chapter) {
     if (body) {
         const html = String(chapter.content || "").trim();
         body.innerHTML = html || "<p>(This chapter has no text yet.)</p>";
+        const paras = [...body.querySelectorAll(":scope > p")];
+        const hasFlush = paras.some((p) => p.classList.contains("alysum-flush"));
+        const hasIndent = paras.some((p) => p.classList.contains("alysum-indent"));
+        body.classList.toggle("is-auto-indent", hasIndent || !hasFlush);
     }
 }
 
@@ -95,7 +106,8 @@ async function boot() {
     }
     const profile = peekWorkspaceProfile(session);
     const draft = readPublishDraft(book);
-    const listed = isLibraryListed(book);
+    const listed = Boolean(await fetchLibraryListingId(supabase, book.id)) || isLibraryListed(book);
+    const postError = document.getElementById("postError");
     book._author = draft.author || profile?.name || "";
     const heading = document.querySelector(".pub-page h1");
     const sub = document.querySelector(".pub-sub");
@@ -112,26 +124,55 @@ async function boot() {
     );
     const selectedIds = draft.draftChapterIds;
     const hasSelection = selectedIds.length > 0;
-    let coverUrl = draft.cover_url;
+    const listing = readLocalLibraryListings().find((row) => String(row.id) === String(book.id));
+    let coverUrl = draft.cover_url || listing?.data?.coverUrl || listing?.data?.cover_url || "";
     let coverSrc = "";
     let selectedGenres = draft.genres.slice();
     let selectedWarnings = draft.warnings.slice();
     const seeds = defaultCrops();
-    const oldAutoLibrary = draft.coverCrop
-        && draft.coverCrop.h >= 0.98
-        && Math.abs(draft.coverCrop.w - 2 / 3) < 0.04;
+    const savedLib = draft.coverCrop || listing?.data?.coverCrop || listing?.data?.cover_crop;
+    const savedWide = draft.coverWide || listing?.data?.coverWide;
     const crops = {
-        library: (!draft.coverCrop || oldAutoLibrary) ? seeds.coverCrop : draft.coverCrop,
+        library: normalizeCrop(savedLib) || seeds.coverCrop,
         mini: draft.coverMini || seeds.coverMini,
-        wide: draft.coverWide || seeds.coverWide,
+        wide: normalizeCrop(savedWide) || seeds.coverWide,
     };
     let wideOn = draft.coverWideEnabled;
     let activeCrop = "library";
+    let libraryCardSaved = !isFullCoverCrop(crops.library) ? { ...crops.library } : null;
 
     const editor = document.getElementById("coverEditor");
     const stageImg = document.getElementById("coverStageImg");
     const cropFrame = document.getElementById("cropFrame");
     const wideCheck = document.getElementById("coverWideOn");
+
+    function sizedLibraryCrop() {
+        return libraryCardCrop(stageImg?.naturalWidth, stageImg?.naturalHeight);
+    }
+
+    function ensureLibrarySize() {
+        if (!isFullCoverCrop(crops.library)) return;
+        crops.library = libraryCardSaved && !isFullCoverCrop(libraryCardSaved)
+            ? { ...libraryCardSaved }
+            : sizedLibraryCrop();
+        libraryCardSaved = { ...crops.library };
+    }
+
+    function landscapeSquareCrop() {
+        return coverCropForImage(null, stageImg?.naturalWidth, stageImg?.naturalHeight);
+    }
+
+    function useNormalLibraryCrop() {
+        if (!isFullCoverCrop(crops.library)) libraryCardSaved = { ...crops.library };
+        crops.library = landscapeSquareCrop();
+    }
+
+    function libraryAspect() {
+        if (wideOn) return 2 / 3;
+        const imgW = stageImg?.naturalWidth || 0;
+        const imgH = stageImg?.naturalHeight || 0;
+        return imgW > imgH ? 2 / 3 : 0;
+    }
 
     function paintCrops() {
         placeCrop(cropFrame, crops[activeCrop]);
@@ -143,7 +184,11 @@ async function boot() {
         const wrap = document.getElementById("prevWideWrap");
         if (wrap) wrap.hidden = !wideOn;
         if (wideCheck) wideCheck.checked = wideOn;
-        applyPreview(document.getElementById("prevLib"), coverSrc, crops.library);
+        const libPrev = document.getElementById("prevLib");
+        const landscape = (stageImg?.naturalWidth || 0) > (stageImg?.naturalHeight || 0);
+        libPrev?.classList.toggle("is-card", wideOn || landscape);
+        libPrev?.classList.remove("is-square");
+        applyPreview(libPrev, coverSrc, crops.library);
         applyPreview(document.getElementById("prevMini"), coverSrc, crops.mini);
         applyPreview(document.getElementById("prevWide"), coverSrc, crops.wide);
     }
@@ -152,12 +197,33 @@ async function boot() {
         coverSrc = src;
         if (editor) editor.hidden = !src;
         if (stageImg) stageImg.src = src || "";
+        function afterLoad() {
+            const w = stageImg?.naturalWidth || 0;
+            const h = stageImg?.naturalHeight || 0;
+            if (wideOn) {
+                ensureLibrarySize();
+                activeCrop = "library";
+            } else {
+                crops.library = coverCropForImage(null, w, h);
+            }
+            if (w && !draft.coverMini) {
+                const blank = defaultCrops(0, 0).coverMini;
+                const cur = normalizeCrop(crops.mini);
+                if (cur && Math.abs(cur.w - blank.w) < 0.02 && Math.abs(cur.h - blank.h) < 0.02) {
+                    crops.mini = defaultCrops(w, h).coverMini;
+                }
+            }
+            paintCrops();
+        }
+        if (stageImg?.complete && stageImg.naturalWidth) afterLoad();
+        else stageImg?.addEventListener("load", afterLoad, { once: true });
         paintCrops();
     }
 
     function setActiveCrop(key) {
         if (key === "wide" && !wideOn) return;
-        if (!CROP_ASPECT[key]) return;
+        if (!(key in CROP_ASPECT)) return;
+        if (key === "library" && wideOn) ensureLibrarySize();
         activeCrop = key;
         paintCrops();
     }
@@ -192,87 +258,25 @@ async function boot() {
 
     async function save(isPublished) {
         try {
-            const form = { ...readForm(), isPublished };
-            const title = String(form.title || "").trim();
-            if (isPublished) {
-                if (session.mode !== "cloud" || !session.user?.id) {
-                    if (status) status.textContent = "Sign in and save this book to your account before posting.";
-                    return;
-                }
-                if (!form.genres.length || !form.rating || !title) {
-                    if (status) {
-                        status.textContent = !form.genres.length
-                            ? "Pick a genre from the list first. Identity labels now go under Additional tags."
-                            : "Choose a rating and title first.";
-                    }
-                    return;
-                }
-                if (!form.chapterIds.length) {
-                    if (status) status.textContent = "Pick at least one chapter to post.";
-                    return;
-                }
-                const short = form.chapterIds
-                    .map((id) => chapters.find((ch) => String(ch.id) === String(id)))
-                    .filter(Boolean)
-                    .find((ch) => countWordsInHtml(ch.content || "") < 500);
-                if (short) {
-                    const n = countWordsInHtml(short.content || "");
-                    if (status) {
-                        status.textContent =
-                            `Not enough words for chapter “${short.title || "Untitled"}” (${n.toLocaleString()} / 500).`;
-                    }
-                    return;
-                }
-            }
-            if (status) status.textContent = isPublished ? (listed ? "Updating…" : "Posting…") : "Saving…";
-            if (isPublished) {
-                const draftFile = await loadDraftCoverFile(book.id);
-                if (draftFile) {
-                    coverUrl = await uploadBookCover(supabase, book.id, draftFile, session.user.id);
-                    form.coverUrl = coverUrl;
-                    await clearDraftCover(book.id);
-                }
-            }
-            const publishMeta = {
-                author: form.author,
-                synopsis: form.summary,
-                tags: form.tags,
-                warnings: form.warnings,
-                cover_url: form.coverUrl,
-                coverCrop: form.coverCrop,
-                coverMini: form.coverMini,
-                coverWide: form.coverWideEnabled ? form.coverWide : null,
-                coverWideEnabled: form.coverWideEnabled,
-                genre: form.genre,
-                genres: form.genres,
-                rating: form.rating,
-                notesBefore: form.notesBefore,
-                notesAfter: form.notesAfter,
-                complete: form.complete,
-                draftChapterIds: form.chapterIds,
-                pageLook: form.pageLook,
-                pageLookSaved: form.pageLookSaved,
-                pageLookCustom: form.pageLookCustom,
-                pageBgId: form.pageBgId,
-                pageBg: form.pageBg,
-            };
-            if (isPublished) {
-                await saveLibraryListing(supabase, session.user.id, book, form);
-            }
-            const patch = {
-                title: title || book.title || "Untitled",
-                publish_meta: publishMeta,
-            };
-            if (isPublished || !book.is_published) {
-                patch.published_chapter_ids = form.chapterIds;
-            }
-            if (isPublished) patch.is_published = true;
-            await api.updateBook(book.id, patch);
-            window.location.replace(isPublished
-                ? `/book?id=${encodeURIComponent(book.id)}`
-                : "/studio");
+            await runPublishSave({
+                isPublished,
+                listed,
+                session,
+                supabase,
+                api,
+                book,
+                chapters,
+                readForm,
+                postError,
+                status,
+                loadDraftCoverFile,
+                uploadBookCover,
+                clearDraftCover,
+                setCoverUrl(next) { coverUrl = next; },
+            });
         } catch (error) {
-            if (status) status.textContent = error?.message || "Could not save this listing.";
+            if (status) status.textContent = "";
+            paintPostError(postError, error?.message || "Could not save this listing.");
         }
     }
     document.getElementById("saveDraftBtn")?.addEventListener("click", () => { void save(false); });
@@ -329,8 +333,8 @@ async function boot() {
     if (workNotesAfter) workNotesAfter.value = draft.notesAfter || "";
     const extraTags = document.getElementById("extraTags");
     if (extraTags) extraTags.value = draft.tags.join(", ");
-    void loadDraftCover(book.id).then((localSrc) => {
-        const src = localSrc || coverUrl;
+    void loadDraftCover(book.id).then(async (localSrc) => {
+        const src = localSrc || peekCoverSrc(coverUrl) || (coverUrl ? await rememberCover(coverUrl) : "");
         if (src) showEditor(src);
     });
     if (draft.complete) {
@@ -367,7 +371,13 @@ async function boot() {
 
     wideCheck?.addEventListener("change", () => {
         wideOn = Boolean(wideCheck.checked);
-        if (!wideOn && activeCrop === "wide") activeCrop = "library";
+        if (wideOn) {
+            ensureLibrarySize();
+            activeCrop = "library";
+        } else {
+            useNormalLibraryCrop();
+            if (activeCrop === "wide") activeCrop = "library";
+        }
         paintCrops();
     });
 
@@ -397,7 +407,8 @@ async function boot() {
         function move(ev) {
             const dx = (ev.clientX - pointerX) / box.width;
             const dy = (ev.clientY - pointerY) / box.height;
-            const aspect = fractionAspect(CROP_ASPECT[activeCrop], box);
+            const locked = activeCrop === "library" ? libraryAspect() : CROP_ASPECT[activeCrop];
+            const aspect = locked ? fractionAspect(locked, box) : 0;
             crops[activeCrop] = handle
                 ? resizeCrop(handle, start, dx, dy, aspect)
                 : moveCrop(start, dx, dy);
@@ -421,9 +432,14 @@ async function boot() {
         showEditor(localUrl);
         const applyDefaults = () => {
             const fresh = defaultCrops(stageImg?.naturalWidth, stageImg?.naturalHeight);
-            crops.library = fresh.coverCrop;
+            crops.library = wideOn
+                ? libraryCardCrop(stageImg?.naturalWidth, stageImg?.naturalHeight)
+                : coverCropForImage(null, stageImg?.naturalWidth, stageImg?.naturalHeight);
+            if (wideOn) libraryCardSaved = { ...crops.library };
+            else libraryCardSaved = null;
             crops.mini = fresh.coverMini;
             crops.wide = fresh.coverWide;
+            if (wideOn) activeCrop = "library";
             paintCrops();
         };
         if (stageImg?.complete && stageImg.naturalWidth) applyDefaults();

@@ -1,40 +1,25 @@
 import { supabase } from "@alysum/authentication/client.js";
-import { signOutAndGoToHome } from "@alysum/authentication/logout.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=7";
 import {
-    addBodyFolder,
-    addBodyNote,
-    addSectionChapter,
-    applyBodyTree,
     countBookChapters,
     countBookFolders,
     itemKind,
-    lastNote,
-    lastOfKind,
     listBodyChapters,
-    listSectionChapters,
     mergeSectionsByChapterId,
-    noteParentChapterId,
-    parentFolderId,
-    removeSectionChapter,
-    reorderBodyChapters,
-    reorderSectionChapters,
     setChapterContent,
-    setChapterTitle,
     setChapterTypography,
     withUpdatedWords,
 } from "@alysum/writing-engine/manuscript.js?v=5";
 import { countWordsInHtml, countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { createAutosave } from "./autosave.js";
-import { mountDocument } from "./document.js?v=7";
-import { confirmAction, confirmDeleteChapter } from "./prompt.js";
+import { mountDocument } from "./document.js?v=8";
 import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=2";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { recordManuscriptWordGain } from "@alysum/account/manuscript-words.js";
 import { isProbablyOnline, onReconnect } from "@alysum/synchronization-engine/network.js";
-import { mountToolbar } from "./toolbar.js?v=6";
-import { expandTreeItem, markTreeActive, renderOutline, renderTree } from "./tree.js?v=19";
+import { mountToolbar } from "./toolbar.js?v=7";
+import { bindManuscriptNav } from "./page/manuscript-nav.js?v=1";
 import {
     applyChapterTypographyStyles,
     chapterTypography,
@@ -51,12 +36,11 @@ import {
     cleanSections,
 } from "./page/helpers.js?v=41";
 import { createFolderView } from "./page/folder-view.js?v=41";
-import { mountWriterChrome } from "./page/chrome.js?v=44";
+import { mountWriterChrome } from "./page/chrome.js?v=47";
 import { mountTypewriter } from "./page/typewriter.js?v=41";
 import { maybeCreateAutoVersion } from "@alysum/writing-engine/version-api.js";
-import { mountBookSettings } from "./settings.js?v=3";
-import { mountLibraryPreview } from "./library-preview.js?v=32";
-import { mountPageLookRail } from "./page-look-rail.js?v=11";
+import { mountPreviewSession } from "./page/preview-session.js?v=21";
+import { bindPersistHooks } from "./page/persist-hooks.js?v=1";
 
 async function boot() {
     initWorkspaceShell({ lead: "Working On ", accent: "…", subtitle: "Loading…" });
@@ -67,7 +51,7 @@ async function boot() {
 
     const bookId = bookIdFromUrl();
     if (!bookId) {
-        window.location.replace("studio.html");
+        window.location.replace("/studio");
         return;
     }
 
@@ -80,7 +64,7 @@ async function boot() {
         book = await api.getBook(bookId);
     }
     if (!book) {
-        window.location.replace("studio.html");
+        window.location.replace("/studio");
         return;
     }
 
@@ -165,9 +149,8 @@ async function boot() {
     window.__alysumTextInk?.scheduleChromeInk?.();
     paintOfflineStatus();
 
-    let previewUi = null;
-    let lookRail = null;
-    const { setTab, expandMatter, setBookView } = mountWriterChrome({
+    let leavePreview = () => {};
+    const { setTab, expandMatter, setBookView, setPreviewMode } = mountWriterChrome({
         shell,
         treeToggle,
         settingsCollapse: document.getElementById("settingsCollapse"),
@@ -185,10 +168,7 @@ async function boot() {
         settingsBackTop: document.getElementById("settingsBackTop"),
         tree: document.getElementById("chapterTree"),
         onBookViewChange(view) {
-            if (view !== "settings") {
-                previewUi?.hide();
-                lookRail?.close();
-            }
+            if (view !== "settings") leavePreview();
         },
     });
     if (new URLSearchParams(window.location.search).get("view") === "settings") {
@@ -384,277 +364,73 @@ async function boot() {
     });
     typewriter.setFindUi(findUi);
 
-    function showChapter(id, options = {}) {
-        const chapter = currentChapter(book, id);
-        if (!chapter) return;
-        selectedId = chapter.id;
-        const kind = itemKind(chapter);
-        const isFolder = kind === "folder";
-        if (chapterTitle) {
-            chapterTitle.value = chapter.title || "";
-            chapterTitle.setAttribute("aria-label", isFolder ? "Folder name" : kind === "note" ? "Note title" : "Chapter title");
-        }
-        paintFolderView(chapter);
-        if (pageEl) {
-            pageEl.hidden = isFolder;
-            pageEl.contentEditable = isFolder ? "false" : "true";
-            pageEl.setAttribute("aria-hidden", isFolder ? "true" : "false");
-        }
-        if (toolbarMount) toolbarMount.hidden = isFolder;
-        if (isFolder) toolbarApi?.closePopover();
-        if (!isFolder) {
-            editor.setHtml(chapter.content || "");
-            applyChapterTypographyStyles(pageEl, chapter);
-            const fontId = chapterTypography(chapter).fontId;
-            if (fontId) void ensureEditorGoogleFont(fontId);
-        } else if (pageEl) {
-            pageEl.style.removeProperty("font-family");
-            pageEl.style.removeProperty("font-size");
-        }
-        if (!options.keepFind) findUi?.close();
-        paintWordCount(chapterWordsEl, totalWordsEl, book, selectedId);
-        if (options.rebuildTree) drawTree();
-        else paintSelection();
-    }
-
-    function paintSelection() {
-        const mounts = [chapterList, frontList, bodyList, backList];
-        const found = mounts.map((mount) => markTreeActive(mount, selectedId)).some(Boolean);
-        if (!found) drawTree();
-    }
-
-    function saveChapter() {
-        if (selectedKind() !== "folder") applyChapterContent(editor.getHtml());
-        return autosave.flush();
-    }
-
-    function selectItem(id) {
-        if (id === selectedId) return;
-        if (selectedKind() !== "folder") applyChapterContent(editor.getHtml());
-        showChapter(id);
-    }
-
-    async function deleteItem(id, sectionKey) {
-        if (!(await confirmDeleteChapter())) return;
-        const sections = removeSectionChapter(book.sections, sectionKey, id);
-        await persist({ ...book, sections }, true, { allowFewerChapters: true });
-        showChapter(fallbackChapterId(sections, selectedId), { rebuildTree: true });
-    }
-
-    function bindFlat(mount, key, chapters) {
-        renderTree({
-            mount,
-            chapters: chapters || listSectionChapters(book.sections, key),
-            selectedId,
-            onSelect: selectItem,
-            onDelete: (id) => deleteItem(id, key),
-            onReorder: (orderedIds) => {
-                applyChapterContent(editor.getHtml());
-                const sections = key === "body"
-                    ? reorderBodyChapters(book.sections, orderedIds)
-                    : reorderSectionChapters(book.sections, key, orderedIds);
-                void persist({ ...book, sections }, true, { skipClean: true });
-            },
-        });
-    }
-
-    function bindOutline(mount) {
-        renderOutline({
-            mount,
-            items: listSectionChapters(book.sections, "body"),
-            selectedId,
-            showNotes: true,
-            onSelect: selectItem,
-            onDelete: (id) => deleteItem(id, "body"),
-            onAddNote: addNoteToChapter,
-            onReorder: (nodes, noteGroups) => {
-                let sections = applyBodyTree(book.sections, nodes, noteGroups);
-                if (selectedKind() !== "folder") {
-                    sections = setChapterContent(sections, selectedId, editor.getHtml());
-                }
-                void persist({ ...book, sections }, true, { skipClean: true });
-            },
-        });
-    }
-
-    function drawTree() {
-        bindOutline(chapterList);
-        bindFlat(bodyList, "body", listBodyChapters(book.sections));
-        bindFlat(frontList, "front");
-        bindFlat(backList, "back");
-        if (frontEmpty) frontEmpty.hidden = listSectionChapters(book.sections, "front").length > 0;
-        if (backEmpty) backEmpty.hidden = listSectionChapters(book.sections, "back").length > 0;
-    }
-
-    async function addPage(key, tab, folderId) {
-        await saveChapter();
-        const sections = addSectionChapter(book.sections, key, "", folderId);
-        const added = key === "body"
-            ? lastOfKind(sections.body, "chapter", folderId)
-            : sections[key][sections[key].length - 1];
-        await persist({ ...book, sections }, true);
-        if (tab) setTab(tab);
-        if (tab === "book") expandMatter(key);
-        if (added) showChapter(added.id, { rebuildTree: true });
-    }
-
-    async function addNoteToChapter(chapterId) {
-        await saveChapter();
-        const nestUnder = chapterId || noteParentChapterId(book.sections.body, selectedId);
-        const folderId = nestUnder ? "" : parentFolderId(book.sections.body, selectedId);
-        const sections = addBodyNote(book.sections, nestUnder, "", folderId);
-        const added = lastNote(sections.body, nestUnder, folderId);
-        if (nestUnder) expandTreeItem(nestUnder);
-        await persist({ ...book, sections }, true);
-        setTab("chapters");
-        if (added) showChapter(added.id, { rebuildTree: true });
-    }
-
-    folderView?.addEventListener("click", (event) => {
-        const btn = event.target.closest("[data-folder-open]");
-        if (!btn) return;
-        void selectItem(btn.dataset.folderOpen);
-    });
-    treeAdd?.addEventListener("click", () => {
-        addPage("body", "chapters", parentFolderId(book.sections.body, selectedId));
-    });
-    folderAdd?.addEventListener("click", async () => {
-        await saveChapter();
-        const sections = addBodyFolder(book.sections, "");
-        const added = lastOfKind(sections.body, "folder");
-        await persist({ ...book, sections }, true);
-        setTab("chapters");
-        if (added) showChapter(added.id, { rebuildTree: true });
-    });
-    noteAdd?.addEventListener("click", () => addNoteToChapter());
-    frontAdd?.addEventListener("click", () => addPage("front", "book"));
-    bodyAdd?.addEventListener("click", () => addPage("body", "book"));
-    backAdd?.addEventListener("click", () => addPage("back", "book"));
-
-    document.addEventListener("click", async (event) => {
-        const logoutBtn = event.target.closest("[data-logout-btn]");
-        const link = event.target.closest("a[href]");
-        const href = link?.getAttribute("href") || "";
-        let leavingPage = Boolean(logoutBtn);
-        if (!leavingPage && href && !href.startsWith("#")) {
-            try {
-                const url = new URL(href, window.location.href);
-                leavingPage = url.origin !== window.location.origin
-                    || url.pathname !== window.location.pathname
-                    || url.search !== window.location.search;
-            } catch {
-                leavingPage = /\.html(?:[?#]|$)/i.test(href);
-            }
-        }
-        if (!leavingPage) return;
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        await saveChapter();
-        if (logoutBtn) {
-            await signOutAndGoToHome();
-            return;
-        }
-        window.location.href = href;
-    }, true);
-
-    bookTitle?.addEventListener("input", () => {
-        if (closing) return;
-        const title = String(bookTitle.value || "").trim();
-        if (!title) {
-            if (String(book.title || "").trim() && book.title !== "Untitled Book") return;
-            persist({ ...book, title: "Untitled Book" });
-            return;
-        }
-        persist({ ...book, title });
-    });
-    chapterTitle?.addEventListener("input", () => {
-        if (closing) return;
-        persist({
-            ...book,
-            sections: setChapterTitle(book.sections, selectedId, chapterTitle.value),
-        });
-        drawTree();
-    });
-
-    function snapshotAndFlush(tearingDown = false) {
-        if (tearingDown) closing = true;
-        let next = book;
-        const title = String(bookTitle?.value || "").trim();
-        if (title) next = { ...next, title };
-        const heading = String(chapterTitle?.value || "").trim();
-        if (heading) next = { ...next, sections: setChapterTitle(next.sections, selectedId, heading) };
-        if (selectedKind() !== "folder") {
-            const html = editor.getHtml();
-            if (!isBlankHtml(html)) {
-                next = { ...next, sections: setChapterContent(next.sections, selectedId, html) };
-            }
-        }
-        persist(next, true);
-    }
-    document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "hidden") snapshotAndFlush(false);
-    });
-    window.addEventListener("pagehide", () => snapshotAndFlush(true));
-    window.addEventListener("beforeunload", () => snapshotAndFlush(true));
-
-    const persistMeta = (patch) => {
-        persist({ ...book, ...patch });
-        if (bookTitle && patch.title != null) bookTitle.value = patch.title;
-        previewUi?.paint();
-    };
-    previewUi = mountLibraryPreview({
-        pane: document.getElementById("libraryPreviewPane"),
-        writerMain: document.querySelector(".writer-main"),
-        supabase,
-        session,
+    const { showChapter, saveChapter, drawTree } = bindManuscriptNav({
         getBook: () => book,
-        persistMeta,
-        defaultAuthor: profile.name || "",
+        getSelectedId: () => selectedId,
+        setSelectedId: (id) => { selectedId = id; },
+        persist,
+        applyChapterContent,
+        editor,
+        findUi,
+        toolbarApi,
+        paintFolderView,
+        pageEl,
+        toolbarMount,
+        chapterTitle,
+        chapterWordsEl,
+        totalWordsEl,
+        chapterList,
+        frontList,
+        bodyList,
+        backList,
+        frontEmpty,
+        backEmpty,
+        folderView,
+        treeAdd,
+        folderAdd,
+        noteAdd,
+        frontAdd,
+        bodyAdd,
+        backAdd,
+        setTab,
+        expandMatter,
+        autosave,
     });
-    lookRail = mountPageLookRail({
-        rail: document.getElementById("writerRail"),
+
+    bindPersistHooks({
+        getBook: () => book,
+        getSelectedId: () => selectedId,
+        getClosing: () => closing,
+        setClosing: (value) => { closing = value; },
+        persist,
+        saveChapter,
+        selectedKind,
+        editor,
+        bookTitle,
+        chapterTitle,
+        drawTree,
+    });
+
+    const preview = mountPreviewSession({
         shell,
-        getBook: () => book,
-        persistMeta,
-        previewPane: document.getElementById("libraryPreviewPane"),
-        defaultAuthor: profile.name || "",
-    });
-    if (new URLSearchParams(window.location.search).get("view") === "preview") {
-        setBookView("settings");
-        previewUi.show();
-    }
-    mountBookSettings({
-        mount: document.getElementById("settingsScroll"),
         bookId: book.id,
         session,
         supabase,
+        api,
         getBook: () => book,
-        updateBook: (id, patch) => api.updateBook(id, patch),
-        flushSave: () => saveChapter(),
-        confirmRestore: () => confirmAction({
-            title: "Restore this version?",
-            text: "Your current draft will be replaced.",
-            confirmLabel: "Restore",
-        }),
-        async onRestored() {
-            api.stashBook(book.id, { updated: 0 });
-            const next = await api.getBook(book.id);
-            if (!next) return;
-            book = withUpdatedWords({ ...next, _rev: ++bookRev });
-            if (bookTitle) bookTitle.value = book.title || "";
-            const keep = currentChapter(book, selectedId);
-            selectedId = keep?.id || fallbackChapterId(book.sections, listBodyChapters(book.sections)[0]?.id || "");
-            showChapter(selectedId, { rebuildTree: true });
-            setWelcomeCopy({ lead: "Working On ", accent: book.title || "Untitled Book" });
-        },
-        onLibraryPreview() {
-            setBookView("settings");
-            previewUi?.show();
-        },
-        onListingLook() {
-            lookRail?.expand();
-        },
+        setBook: (next) => { book = next; },
+        getSelectedId: () => selectedId,
+        setSelectedId: (id) => { selectedId = id; },
+        persist,
+        saveChapter,
+        showChapter,
+        bookTitle,
+        setPreviewMode,
+        setBookView,
+        defaultAuthor: profile.name || "",
+        bumpBookRev: () => ++bookRev,
     });
+    leavePreview = preview.leavePreview;
 
     showChapter(selectedId);
     paintOfflineStatus();

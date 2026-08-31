@@ -1,8 +1,10 @@
 import { listBodyChapters } from "@alysum/writing-engine/manuscript.js?v=6";
 import { mergePublishMeta, readPublishDraft } from "@alysum/publishing/publish-meta.js";
-import { storePickedCover, wideCropFromMeta } from "./cover.js?v=6";
+import { fetchLiveLibraryListing, isLibraryListed } from "@alysum/publishing/post-work.js?v=8";
+import { supabase } from "@alysum/authentication/client.js";
+import { storePickedCover, wideCropFromMeta } from "./cover.js?v=15";
 import { clearVisitPageLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=8";
-import { bindPreviewBook, paintPreviewBook, previewBookHtml } from "./preview-book.js?v=24";
+import { bindPreviewBook, paintPreviewBook, previewBookHtml } from "./preview-book.js?v=41";
 
 export function readPublishMeta(book) {
     const draft = readPublishDraft(book);
@@ -31,6 +33,7 @@ export function mountLibraryPreview({
     let editingNotes = false;
     let draftUnpublished = [];
     let draftPublished = [];
+    let liveListed = null;
 
     function metaFromBook() {
         const book = getBook();
@@ -64,7 +67,21 @@ export function mountLibraryPreview({
 
     function paint() {
         const { book, meta } = metaFromBook();
-        paintPreviewBook(pane, { book, meta, expanded, editingSynopsis, editingNotes, lookTargets: lookTargets() });
+        paintPreviewBook(pane, {
+            book,
+            meta,
+            expanded,
+            editingSynopsis,
+            editingNotes,
+            lookTargets: lookTargets(),
+            listed: liveListed ?? isLibraryListed(book),
+        });
+    }
+
+    async function refreshListed() {
+        const book = getBook();
+        liveListed = Boolean(await fetchLiveLibraryListing(supabase, book?.id)) || isLibraryListed(book);
+        paint();
     }
 
     function openManage() {
@@ -86,6 +103,7 @@ export function mountLibraryPreview({
         editingSynopsis = false;
         editingNotes = false;
         paint();
+        void refreshListed();
     }
 
     function hide() {

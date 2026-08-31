@@ -2,10 +2,10 @@ import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { initWorkspaceShell } from "/js/studio/shell.js?v=2";
-import { fetchLibraryCatalog } from "@alysum/library/author-profile.js";
-import { readLocalLibraryListings } from "@alysum/publishing/post-work.js";
+import { fetchLibraryCatalog } from "@alysum/library/author-profile.js?v=3";
+import { readLocalLibraryListings } from "@alysum/publishing/post-work.js?v=8";
 import { genreColor, genreDef, genreLabel, matchingGenreKeys, normalizeGenreList } from "@alysum/publishing/genres.js?v=4";
-import { cropFrameStyle, defaultCrops, peekCoverSrc, rememberCovers } from "@alysum/publishing/cover-upload.js?v=3";
+import { cropFrameStyle, defaultCrops, peekCoverSrc, rememberCovers } from "@alysum/publishing/cover-upload.js?v=4";
 
 const READ_KEY = "alysum:library:read-position";
 const NEW_DAYS = 21;
@@ -42,8 +42,28 @@ function writeProgress(map) {
     }
 }
 
+function parseListedMs(value) {
+    if (value == null || value === "") return 0;
+    if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+        return value < 1e12 ? value * 1000 : value;
+    }
+    const raw = String(value).trim();
+    if (!raw) return 0;
+    if (/^\d+(\.\d+)?$/.test(raw)) {
+        const n = Number(raw);
+        if (!Number.isFinite(n) || n <= 0) return 0;
+        return n < 1e12 ? n * 1000 : n;
+    }
+    const parsed = Date.parse(raw);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function listedAtMs(book) {
+    return parseListedMs(book.publishedAt) || parseListedMs(book.createdAt) || parseListedMs(book.updated);
+}
+
 function toCard(book) {
-    const updated = Number(book.updated || book.publishedAt) || 0;
+    const listedAt = listedAtMs(book);
     const progress = readProgress()[book.id];
     const genres = normalizeGenreList(book);
     const status = book.serializationStatus === "complete" ? "Completed" : "Ongoing";
@@ -61,7 +81,7 @@ function toCard(book) {
         status,
         followers: book.followers || 0,
         blurb: book.summary || "",
-        daysAgo: updated ? (Date.now() - updated) / 86400000 : 999,
+        daysAgo: listedAt ? (Date.now() - listedAt) / 86400000 : 999,
         continuing: progress ? { progress: Math.round(Number(progress.progress) || 0) } : null,
     };
 }
@@ -70,18 +90,20 @@ function rowPublished(row) {
     return row?.data?.isPublished !== false;
 }
 
-function mergeCatalog(remote) {
-    const local = readLocalLibraryListings()
+function cardsFromCatalog(remote) {
+    return (remote || []).map((book) => toCard(book));
+}
+
+function cardsFromLocal() {
+    return readLocalLibraryListings()
         .filter((row) => row?.id && rowPublished(row))
         .map((row) => toCard({
             id: row.id,
             ...(row.data || {}),
+            publishedAt: row.data?.publishedAt ?? row.data?.published_at,
+            createdAt: row.created_at ?? row.createdAt ?? row.data?.createdAt,
             publishedChapterCount: row.data?.publishedChapterIds?.length || row.data?.chapterCount,
         }));
-    const byId = new Map();
-    local.forEach((book) => byId.set(book.id, book));
-    remote.forEach((book) => byId.set(book.id, toCard(book)));
-    return [...byId.values()];
 }
 
 const state = { search: "", genreQuery: "", genres: new Set(), sort: "popular" };
@@ -127,8 +149,10 @@ function hasCover(book) {
 
 function sortBooks(list) {
     return [...list].sort((a, b) => {
-        const cover = Number(hasCover(b)) - Number(hasCover(a));
-        if (cover) return cover;
+        if (state.sort === "popular" || state.sort === "rating") {
+            const cover = Number(hasCover(b)) - Number(hasCover(a));
+            if (cover) return cover;
+        }
         const rank = genreRank(a) - genreRank(b);
         return rank || sortTie(a, b);
     });
@@ -393,9 +417,9 @@ async function boot() {
         });
     }
     try {
-        BOOKS = mergeCatalog(await fetchLibraryCatalog(supabase));
+        BOOKS = cardsFromCatalog(await fetchLibraryCatalog(supabase));
     } catch {
-        BOOKS = mergeCatalog([]);
+        BOOKS = cardsFromLocal();
     }
     renderGenreTabs();
     renderMorePanel();

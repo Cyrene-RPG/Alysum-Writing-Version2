@@ -1,10 +1,11 @@
-import { mergePublishMeta, readPublishDraft } from "@alysum/publishing/publish-meta.js";
-import { bindBookLookPicker, paintBookLookPicker } from "@alysum/site-appearance/js-runtime/book-look-picker.js";
+import { DEFAULT_PAGE_LOOK, mergePublishMeta, readPublishDraft } from "@alysum/publishing/publish-meta.js?v=5";
+import { bindBookLookPicker, paintBookLookPicker } from "@alysum/site-appearance/js-runtime/book-look-picker.js?v=2";
 import { applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=8";
 
 function lookHtml() {
     return `
         <div class="writer-look-menu" id="writerLookMenu">
+            <button type="button" class="writer-look-reset" id="railLookReset">Reset look</button>
             <button type="button" class="writer-look-drop-btn" data-look-drop-btn="listing" aria-expanded="false">UI elements</button>
             <div class="writer-look-drop" data-look-drop="listing" hidden>
                 <div data-book-look-swatches class="book-look-swatches"></div>
@@ -50,13 +51,13 @@ function bindDrops(root) {
 
 export function mountPageLookRail({
     rail,
-    shell,
     getBook,
     persistMeta,
     previewPane,
     defaultAuthor = "",
 }) {
-    if (!rail) return { expand() {}, close() {} };
+    if (!rail) return { expand() {}, close() {}, hide() {} };
+    rail.hidden = false;
 
     if (!document.getElementById("writerLookMenu")) {
         rail.insertAdjacentHTML("beforeend", lookHtml());
@@ -72,7 +73,7 @@ export function mountPageLookRail({
     document.getElementById("railLookReset")?.addEventListener("click", (event) => {
         event.stopPropagation();
         const look = {
-            pageLook: "dark",
+            pageLook: DEFAULT_PAGE_LOOK,
             pageLookSaved: null,
             pageLookCustom: "",
             pageBgId: "",
@@ -98,7 +99,7 @@ export function mountPageLookRail({
             : {};
         persistMeta({
             publish_meta: mergePublishMeta(existing, {
-                pageLook: look.pageLook || "dark",
+                pageLook: look.pageLook || DEFAULT_PAGE_LOOK,
                 pageLookSaved: look.pageLookSaved,
                 pageLookCustom: look.pageLookCustom,
                 pageBgId: look.pageBgId,
@@ -112,20 +113,15 @@ export function mountPageLookRail({
     }
 
     function expand() {
-        shell?.classList.remove("is-rail-collapsed");
-        const toggle = document.getElementById("railToggle");
-        if (toggle) {
-            toggle.setAttribute("aria-expanded", "true");
-            toggle.title = "Hide sidebar";
-            toggle.textContent = "›";
-        }
-        try {
-            localStorage.setItem("alysum:editor:rail-collapsed", "0");
-        } catch {
-            /* ignore */
-        }
+        rail.hidden = false;
+        if (menu) menu.hidden = false;
         paintBookLookPicker(menu, metaFromBook().meta);
         applyLook(metaFromBook().meta);
+    }
+
+    function hide() {
+        closeDrops(menu);
+        if (menu) menu.hidden = true;
     }
 
     function close() {
@@ -140,7 +136,7 @@ export function mountPageLookRail({
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") closeDrops(menu);
     });
-    paintBookLookPicker(menu, metaFromBook().meta);
+    hide();
 
-    return { expand, close, toggle: expand };
+    return { expand, close, hide, toggle: expand };
 }

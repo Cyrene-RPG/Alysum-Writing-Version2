@@ -3,6 +3,7 @@
  */
 import { fetchLibraryCatalog, normalizePublishedBookPreview } from "./author-profile.js";
 import { readLocalLibraryListings } from "../publishing/post-work.js";
+import { chapterMeetsPublishLength, publishWordCount } from "../publishing/chapter-length.js";
 import { countWordsInHtml } from "../writing-engine/word-count.js";
 
 function libraryRowData(row) {
@@ -14,7 +15,7 @@ function normalizeChapter(chapter, index) {
     const id = String(chapter?.id || "").trim() || `ch-${index + 1}`;
     const title = String(chapter?.title || `Chapter ${index + 1}`).trim() || `Chapter ${index + 1}`;
     const content = String(chapter?.content || "");
-    const wordCount = Number(chapter?.wordCount) || countWordsInHtml(content);
+    const wordCount = publishWordCount(chapter) ?? countWordsInHtml(content);
     return { id, title, content, wordCount };
 }
 
@@ -36,7 +37,9 @@ export function chaptersFromListingData(data) {
         ordered.push(chapter);
     }
     const list = ordered.length ? ordered : raw;
-    return list.map((chapter, index) => normalizeChapter(chapter, index));
+    return list
+        .filter(chapterMeetsPublishLength)
+        .map((chapter, index) => normalizeChapter(chapter, index));
 }
 
 export function normalizePublishedWork(row) {

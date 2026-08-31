@@ -1,6 +1,7 @@
 /**
  * Story serialization status and chapter progress labels (e.g. 3/18, 3/?, 5 chapters).
  */
+import { chapterMeetsPublishLength } from "./chapter-length.js";
 
 export const SERIALIZATION_COMPLETE = "complete";
 export const SERIALIZATION_IN_PROGRESS = "in_progress";
@@ -51,12 +52,17 @@ function publishedIdsFromData(data) {
 
 function countPublishedChapters(source, chapters, chapterCount) {
     const publishedIds = publishedIdsFromData(source);
+    const byId = new Map(chapters.map((ch) => [String(ch?.id), ch]));
     if (publishedIds !== undefined) {
-        return Math.max(0, publishedIds.length);
+        if (!chapters.length) return Math.max(0, publishedIds.length);
+        return publishedIds.filter((id) => {
+            const ch = byId.get(id);
+            if (!ch) return true;
+            return chapterMeetsPublishLength(ch);
+        }).length;
     }
     if (chapters.length) {
-        // Legacy rows without publishedChapterIds: everything in chapters was live.
-        return chapters.length;
+        return chapters.filter(chapterMeetsPublishLength).length;
     }
     return Math.max(0, chapterCount);
 }

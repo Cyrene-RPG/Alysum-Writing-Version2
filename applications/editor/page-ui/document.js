@@ -23,10 +23,19 @@ export function mountDocument({ pageEl, onInput }) {
 
     let mute = false;
 
+    function stampSavedIndents(root) {
+        root.querySelectorAll(":scope > p").forEach((p) => {
+            if (p.classList.contains("alysum-flush")) return;
+            if (p.classList.contains("scene-break") || p.classList.contains("scene-spacer")) return;
+            p.classList.add("alysum-indent");
+        });
+    }
+
     function htmlForSave() {
         if (!pageEl.isConnected) return "";
         const copy = pageEl.cloneNode(true);
         unwrapFindMarks(copy);
+        if (autoIndentOn()) stampSavedIndents(copy);
         return copy.innerHTML;
     }
 

@@ -179,10 +179,15 @@
 .writer-wordcount {
     flex-shrink: 0;
     margin-left: auto;
-    padding: 6px 12px;
-    border-radius: 8px;
-    background: var(--accent, #6d28d9);
-    color: #fff;
+    min-width: 28px;
+    height: 26px;
+    padding: 0 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    background: transparent;
+    color: inherit;
     font-size: 12px;
     font-weight: 800;
+    white-space: nowrap;
 }

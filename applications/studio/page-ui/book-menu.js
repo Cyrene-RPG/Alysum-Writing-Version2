@@ -1,4 +1,4 @@
-import { isLibraryListed, unlistLibraryListing } from "@alysum/publishing/post-work.js?v=3";
+import { isLibraryListed, unlistLibraryListing } from "@alysum/publishing/post-work.js?v=8";
 
 function bookDisplayTitle(book) {
     return String(book?.title || "").trim() || "Untitled Book";
@@ -200,7 +200,7 @@ export function bindBookMenu({ getBooks, setBooks, paintShelf, api, supabase, se
     document.getElementById("bookMenuSettings")?.addEventListener("click", () => {
         const book = menuBook;
         if (!book) return;
-        window.location.href = `/editor?book=${encodeURIComponent(book.id)}&view=preview`;
+        window.location.href = `/editor?book=${encodeURIComponent(book.id)}&view=settings`;
     });
     document.getElementById("bookMenuPublish")?.addEventListener("click", async () => {
         const book = menuBook;

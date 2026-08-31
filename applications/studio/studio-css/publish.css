@@ -31,6 +31,7 @@ h1 {
 }
 .pub-status {
     min-height: 1.4em;
+    margin: 10px 0 0;
     color: var(--text);
     font-size: 14px;
     line-height: 1.45;
@@ -226,14 +227,51 @@ h1 {
     border-radius: var(--glass-radius, 10px);
     background: var(--alysum-ui-chrome, #141414);
 }
-.pub-prev.is-lib { width: 150px; height: 214px; }
-.pub-prev.is-mini { width: 220px; height: 88px; }
-.pub-prev.is-wide { width: 280px; height: 112px; }
 .pub-prev img {
     display: block;
     position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     max-width: none;
+    object-fit: cover;
 }
+.pub-prev.is-lib {
+    width: 180px;
+    height: auto;
+    min-height: 72px;
+}
+.pub-prev.is-lib img {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+.pub-prev.is-lib.is-square {
+    width: 150px;
+    height: 150px;
+}
+.pub-prev.is-lib.is-square img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.pub-prev.is-lib.is-card {
+    width: 150px;
+    height: 214px;
+}
+.pub-prev.is-lib.is-card img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.pub-prev.is-mini { width: 220px; height: 88px; }
+.pub-prev.is-wide { width: 280px; height: 112px; }
 .pub-chapters {
     margin: 10px 0 16px;
     border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
@@ -318,6 +356,13 @@ h1 {
     border: 0;
     background: var(--alysum-ui-raised, #2a2a2a);
     color: var(--ui-text, var(--text));
+}
+.pub-error {
+    margin: 10px 0 0;
+    color: #ef4444;
+    font-size: 14px;
+    line-height: 1.45;
+    font-weight: 700;
 }
 .pub-look {
     display: flex;

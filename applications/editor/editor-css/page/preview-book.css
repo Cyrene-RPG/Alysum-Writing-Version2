@@ -1,7 +1,35 @@
-.lib-cover-file,
-.lib-preview .lib-cover-file { display: none !important; }
+.lib-preview .lib-cover-file {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+    opacity: 0;
+}
 .lib-preview .book-page {
     padding: 0 0 28px;
+}
+.lib-preview .book-card {
+    width: min(68rem, 100%);
+    min-width: 0;
+    max-width: 68rem;
+    margin-inline: auto;
+}
+.lib-preview .book-card:has(.book-hero.is-wide) {
+    width: min(64rem, 100%);
+    min-width: 0;
+    max-width: 64rem;
+}
+.lib-preview .book-hero.is-wide .book-hero-art img {
+    object-fit: cover;
+    object-position: center;
+}
+.lib-preview .book-hero-top {
+    justify-content: flex-end;
 }
 .lib-preview .book-title-input,
 .lib-preview .book-author-input {
@@ -30,10 +58,26 @@
     font-weight: 600;
 }
 .lib-preview .book-cover {
+    display: block;
     border: 0;
     padding: 0;
     cursor: pointer;
+    pointer-events: auto;
     background: color-mix(in srgb, var(--alysum-ui-chrome, #141414) 55%, transparent);
+}
+.lib-preview .book-cover.has-img.is-full-cover {
+    width: min(280px, 40vw);
+    aspect-ratio: auto;
+    height: auto;
+}
+.lib-preview .book-cover.has-img.is-full-cover img {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    object-fit: contain;
+    object-position: center;
 }
 .lib-preview .book-cover:not(.has-img) {
     min-height: 160px;
@@ -41,6 +85,7 @@
     place-items: center;
 }
 .lib-preview .book-hero-art {
+    display: block;
     border: 0;
     padding: 0;
     margin: 0;
@@ -48,6 +93,7 @@
     min-height: 0;
     background: transparent;
     cursor: pointer;
+    pointer-events: auto;
 }
 .lib-preview .lib-cover-ph {
     font-size: 12px;
@@ -65,10 +111,31 @@
     color: var(--ui-text);
     cursor: pointer;
 }
+.lib-preview .book-hero-end {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
 .lib-preview .book-status {
     border: 0;
-    cursor: pointer;
     font: inherit;
+}
+.lib-preview #libLiveStatus {
+    cursor: default;
+}
+.lib-preview #libCoverChange {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    pointer-events: auto;
+    z-index: 2;
+}
+.lib-preview.is-listed .lib-genre-picker,
+.lib-preview.is-listed .book-toc-hint,
+.lib-preview.is-listed .book-add-ch {
+    display: none !important;
 }
 .lib-preview .book-tag.is-on,
 .lib-preview .book-warn.is-on {

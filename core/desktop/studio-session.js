@@ -22,13 +22,19 @@ export async function resolveStudioSession(supabase) {
   }
 
   // Prefer cached session — getUser() validates with the server and can hang offline.
-  try {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const sessionUser = sessionData.session?.user;
-    if (sessionUser) {
-      return { mode: "cloud", user: sessionUser };
+  // First read after a same-tab navigation can be empty while storage hydrates.
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const sessionUser = sessionData.session?.user;
+      if (sessionUser) {
+        return { mode: "cloud", user: sessionUser };
+      }
+    } catch (_) {}
+    if (attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, 80 * (attempt + 1)));
     }
-  } catch (_) {}
+  }
 
   if (!isProbablyOnline()) {
     return { mode: "none", user: null };

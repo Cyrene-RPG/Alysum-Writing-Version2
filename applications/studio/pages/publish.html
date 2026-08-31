@@ -33,14 +33,13 @@
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
     <link rel="stylesheet" href="/css/editor/document.css?v=11" />
     <link rel="stylesheet" href="/css/editor/scene-breaks.css?v=1" />
-    <link rel="stylesheet" href="/css/studio/publish.css?v=17" />
+    <link rel="stylesheet" href="/css/studio/publish.css?v=25" />
 </head>
 <body>
     <div class="pub-page">
         <h1>Post work</h1>
         <p class="pub-sub">Required fields are marked *. You can save without posting and come back later.</p>
         <p class="pub-note">This listing uses chapters already in your book. Pick a genre — extra labels go in additional tags.</p>
-        <p class="pub-status" id="pubStatus" role="status"></p>
 
         <section class="pub-card">
             <h2>Tags</h2>
@@ -98,7 +97,7 @@
             </div>
             <label for="workCoverFile">Cover</label>
             <input id="workCoverFile" type="file" accept="image/*" />
-            <p class="pub-hint">Pick a frame, then drag it or the corners. Mini is set for you if you leave it.</p>
+            <p class="pub-hint">Whole image for a normal cover. Wide banner also needs a 2:3 Library crop for the shelf — this page will switch you to that frame.</p>
             <div class="pub-checks">
                 <label><input type="checkbox" id="coverWideOn" /> Use a wide banner</label>
             </div>
@@ -157,7 +156,9 @@
             <button type="button" class="pub-ghost" id="saveDraftBtn">Save without posting</button>
             <button type="button" class="pub-primary" id="postBtn">Post work</button>
         </div>
+        <p class="pub-status" id="pubStatus" role="status"></p>
+        <p class="pub-error" id="postError" hidden></p>
     </div>
-    <script type="module" src="/js/studio/publish.js?v=36"></script>
+    <script type="module" src="/js/studio/publish.js?v=54"></script>
 </body>
 </html>

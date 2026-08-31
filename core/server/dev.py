@@ -124,12 +124,15 @@ class Handler(BaseHTTPRequestHandler):
         path = unquote(parsed.path)
         if path.endswith(".html") and "/" not in path[1:]:
             dest = "/" if path in ("/index.html", "/") else path[: -len(".html")]
-            if parsed.query:
-                dest = f"{dest}?{parsed.query}"
-            self.send_response(308)
-            self.send_header("Location", dest)
-            self.end_headers()
-            return
+            # Pretty-URL 308 through the service worker fails the first click
+            # into editor/studio ("connection fails"; reload then works).
+            if dest not in PAGES and dest != "/":
+                if parsed.query:
+                    dest = f"{dest}?{parsed.query}"
+                self.send_response(308)
+                self.send_header("Location", dest)
+                self.end_headers()
+                return
         file_path = public_to_file(self.path)
         try:
             file_path.resolve().relative_to(ROOT)

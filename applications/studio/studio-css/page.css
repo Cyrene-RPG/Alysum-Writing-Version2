@@ -214,11 +214,39 @@ body {
         var(--alysum-ui-chrome, #141414) 78%
     );
 }
+.studio-book.has-cover {
+    background: var(--alysum-ui-chrome, #141414);
+}
+.studio-book-art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    z-index: 0;
+    pointer-events: none;
+}
+.studio-book.has-cover::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.62) 100%);
+    pointer-events: none;
+    z-index: 0;
+}
+.studio-book.has-cover .studio-book-title,
+.studio-book.has-cover .studio-book-meta {
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 1px 10px rgba(0, 0, 0, 0.75);
+}
 .studio-book-gear {
     position: absolute;
     top: 10px;
     right: 10px;
-    z-index: 1;
+    z-index: 3;
+    pointer-events: auto;
     width: 28px;
     height: 28px;
     padding: 0;

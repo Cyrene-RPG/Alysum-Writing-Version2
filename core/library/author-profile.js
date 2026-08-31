@@ -10,6 +10,7 @@ import {
 import { normalizeGenreList, partitionGenresAndTags } from "../publishing/genres.js";
 import { normalizeCrop } from "../publishing/cover-upload.js";
 import {
+    DEFAULT_PAGE_LOOK,
     normalizeHexColor,
     normalizePageBgId,
     normalizePageLook,
@@ -146,6 +147,24 @@ function libraryRowData(row) {
     return Object.keys(data).length ? data : row && typeof row === "object" ? row : {};
 }
 
+/** Epoch ms from JSON numbers, numeric strings, or ISO timestamps. */
+function parseTimeMs(value) {
+    if (value == null || value === "") return 0;
+    if (typeof value === "number" && Number.isFinite(value)) {
+        if (value <= 0) return 0;
+        return value < 1e12 ? value * 1000 : value;
+    }
+    const raw = String(value).trim();
+    if (!raw) return 0;
+    if (/^\d+(\.\d+)?$/.test(raw)) {
+        const n = Number(raw);
+        if (!Number.isFinite(n) || n <= 0) return 0;
+        return n < 1e12 ? n * 1000 : n;
+    }
+    const parsed = Date.parse(raw);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
 /** Compact book card data for author pages and reader end sections. */
 export function normalizePublishedBookPreview(row) {
     const data = libraryRowData(row);
@@ -183,7 +202,8 @@ export function normalizePublishedBookPreview(row) {
         plannedChapterCount: serialization.plannedChapterCount,
         chapterProgressLabel,
         mediaFormat,
-        updated: typeof data.updated === "number" ? data.updated : 0,
+        updated: parseTimeMs(data.updated ?? row?.updated_at ?? row?.updatedAt),
+        createdAt: parseTimeMs(row?.created_at ?? row?.createdAt ?? data.createdAt),
         type: String(data.type || "fiction").trim() || "fiction",
         genre: split.genres[0] || "",
         genres: split.genres,
@@ -192,10 +212,10 @@ export function normalizePublishedBookPreview(row) {
         warnings: Array.isArray(data.warnings) ? data.warnings.map(String) : [],
         followers: Number(data.followers) || 0,
         ratingScore: Number(data.ratingScore ?? data.rating_score) || 0,
-        publishedAt: Number(data.publishedAt ?? data.published_at) || 0,
+        publishedAt: parseTimeMs(data.publishedAt ?? data.published_at),
         notesBefore: String(data.notesBefore || data.notes_before || "").trim(),
         notesAfter: String(data.notesAfter || data.notes_after || "").trim(),
-        pageLook: normalizePageLook(data.pageLook || data.page_look) || "dark",
+        pageLook: normalizePageLook(data.pageLook || data.page_look) || DEFAULT_PAGE_LOOK,
         pageLookSaved: normalizePageLookSaved(data.pageLookSaved || data.page_look_saved),
         pageLookCustom: normalizeHexColor(data.pageLookCustom || data.page_look_custom),
         pageBgId: normalizePageBgId(data.pageBgId || data.page_bg_id)

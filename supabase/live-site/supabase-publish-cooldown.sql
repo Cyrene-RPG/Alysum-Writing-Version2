@@ -1,7 +1,5 @@
--- Run once in Supabase → SQL Editor (safe to re-run).
--- Publish cooldowns: 7-day account age before any publish, 30-day gap between new library listings.
--- Staff can approve requests or directly grant a bypass for either cooldown.
--- Apply after supabase-library-rls.sql and supabase-library-reports.sql (uses is_moderation_staff).
+-- Do not run this against live until you remake cooldowns.
+-- To delete the current wait/bypass system, run supabase-publish-cooldown-off.sql.
 
 -- ---------------------------------------------------------------------------
 -- 1. Track last *new* library listing per author
@@ -11,7 +9,7 @@ ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS last_new_book_published_at timestamptz;
 
 -- ---------------------------------------------------------------------------
--- 2. Staff-reviewed bypass tickets (7-day account age and/or 30-day interval)
+-- 2. Staff-reviewed bypass tickets (3-hour account age)
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS public.publish_approval_requests (
@@ -95,7 +93,6 @@ SET search_path = public
 AS $$
 DECLARE
   v_account_created timestamptz;
-  v_last_new_book timestamptz;
 BEGIN
   IF p_user_id IS NULL OR p_book_id IS NULL OR length(trim(p_book_id)) = 0 THEN
     RETURN false;
@@ -118,25 +115,17 @@ BEGIN
     RETURN false;
   END IF;
 
-  -- Staff-approved / staff-granted ticket clears both 7-day and 30-day waits.
+  -- Staff-approved / staff-granted ticket clears the 3-hour account wait.
   IF public.publish_has_approved_bypass(p_user_id, p_book_id) THEN
     RETURN true;
   END IF;
 
   v_account_created := public.user_account_created_at(p_user_id);
-  IF now() < v_account_created + interval '7 days' THEN
+  IF now() < v_account_created + interval '3 hours' THEN
     RETURN false;
   END IF;
 
-  IF NOT public.publish_is_new_library_listing(p_book_id) THEN
-    RETURN true;
-  END IF;
-
-  SELECT u.last_new_book_published_at INTO v_last_new_book
-  FROM public.users u
-  WHERE u.id = p_user_id;
-
-  RETURN v_last_new_book IS NULL OR now() >= v_last_new_book + interval '30 days';
+  RETURN true;
 END;
 $$;
 
@@ -151,11 +140,8 @@ DECLARE
   v_user_id uuid := auth.uid();
   v_account_created timestamptz;
   v_account_eligible_at timestamptz;
-  v_last_new_book timestamptz;
-  v_interval_eligible_at timestamptz;
   v_is_new_listing boolean;
   v_account_blocked boolean;
-  v_interval_blocked boolean;
   v_pending_request record;
   v_approved_bypass boolean;
   v_allowed boolean;
@@ -178,19 +164,9 @@ BEGIN
 
   v_is_new_listing := public.publish_is_new_library_listing(p_book_id);
   v_account_created := public.user_account_created_at(v_user_id);
-  v_account_eligible_at := v_account_created + interval '7 days';
+  v_account_eligible_at := v_account_created + interval '3 hours';
   v_approved_bypass := public.publish_has_approved_bypass(v_user_id, p_book_id);
   v_account_blocked := now() < v_account_eligible_at AND NOT v_approved_bypass;
-
-  SELECT u.last_new_book_published_at INTO v_last_new_book
-  FROM public.users u
-  WHERE u.id = v_user_id;
-
-  v_interval_eligible_at := COALESCE(v_last_new_book, v_account_created) + interval '30 days';
-  v_interval_blocked := v_is_new_listing
-    AND v_last_new_book IS NOT NULL
-    AND now() < v_interval_eligible_at
-    AND NOT v_approved_bypass;
 
   SELECT par.id, par.status, par.created_at, par.reviewed_at, par.staff_note
   INTO v_pending_request
@@ -209,19 +185,15 @@ BEGIN
     'accountCooldown', jsonb_build_object(
       'active', v_account_blocked,
       'eligibleAt', v_account_eligible_at,
-      'daysRemaining', CASE
-        WHEN v_account_blocked THEN ceil(extract(epoch FROM (v_account_eligible_at - now())) / 86400.0)
+      'hoursRemaining', CASE
+        WHEN v_account_blocked THEN ceil(extract(epoch FROM (v_account_eligible_at - now())) / 3600.0)
         ELSE 0
       END
     ),
     'bookIntervalCooldown', jsonb_build_object(
-      'active', v_interval_blocked,
-      'eligibleAt', CASE WHEN v_last_new_book IS NULL THEN NULL ELSE v_interval_eligible_at END,
-      'daysRemaining', CASE
-        WHEN v_interval_blocked
-          THEN ceil(extract(epoch FROM (v_interval_eligible_at - now())) / 86400.0)
-        ELSE 0
-      END
+      'active', false,
+      'eligibleAt', NULL,
+      'daysRemaining', 0
     ),
     'approvedBypass', v_approved_bypass,
     'pendingRequest', CASE
@@ -250,7 +222,6 @@ AS $$
 DECLARE
   v_user_id uuid := auth.uid();
   v_message text := left(trim(coalesce(p_message, '')), 2000);
-  v_last_new_book timestamptz;
   v_request_id uuid;
 BEGIN
   IF v_user_id IS NULL THEN
@@ -286,17 +257,7 @@ BEGIN
     RAISE EXCEPTION 'You already have a pending approval request for this book';
   END IF;
 
-  SELECT u.last_new_book_published_at INTO v_last_new_book
-  FROM public.users u
-  WHERE u.id = v_user_id;
-
-  IF NOT (
-    now() < public.user_account_created_at(v_user_id) + interval '7 days'
-    OR (
-      v_last_new_book IS NOT NULL
-      AND now() < v_last_new_book + interval '30 days'
-    )
-  ) THEN
+  IF now() >= public.user_account_created_at(v_user_id) + interval '3 hours' THEN
     RAISE EXCEPTION 'You are not currently in a publish cooldown';
   END IF;
 

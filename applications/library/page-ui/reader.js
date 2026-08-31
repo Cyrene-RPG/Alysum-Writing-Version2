@@ -1,7 +1,7 @@
 import { supabase } from "@alysum/authentication/client.js";
-import { fetchPublishedWork } from "@alysum/library/work.js";
+import { fetchPublishedWork } from "@alysum/library/work.js?v=2";
 import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
-import { mountReaderThemes } from "./reader-theme.js?v=4";
+import { mountReaderThemes } from "./reader-theme.js?v=6";
 
 const READ_KEY = "alysum:library:read-position";
 const BOOK_KEY = "alysum:library:bookmarks";
@@ -60,6 +60,14 @@ function chapterHtml(content) {
     if (!raw) return "<p>(This chapter has no text yet.)</p>";
     if (/<[a-z][\s\S]*>/i.test(raw)) return raw;
     return raw.split(/\n{2,}/).map((part) => `<p>${escapeHtml(part).replace(/\n/g, "<br>")}</p>`).join("");
+}
+
+function applyAuthorIndents(root) {
+    if (!root) return;
+    const paras = [...root.querySelectorAll(":scope > p")];
+    const hasFlush = paras.some((p) => p.classList.contains("alysum-flush"));
+    const hasIndent = paras.some((p) => p.classList.contains("alysum-indent"));
+    root.classList.toggle("is-auto-indent", hasIndent || !hasFlush);
 }
 
 function formatWords(n) {
@@ -179,7 +187,9 @@ async function boot() {
         document.getElementById("chapterTitle").textContent = chapter.title;
         document.getElementById("chapterMeta").textContent =
             `${minutesFor(words)} min · ${formatWords(words)}`;
-        document.getElementById("chapterBody").innerHTML = chapterHtml(chapter.content);
+        const body = document.getElementById("chapterBody");
+        body.innerHTML = chapterHtml(chapter.content);
+        applyAuthorIndents(body);
         document.getElementById("pickerLabel").textContent =
             `Chapter ${index + 1} of ${work.chapters.length}`;
         document.getElementById("prevBtn").disabled = index <= 0;

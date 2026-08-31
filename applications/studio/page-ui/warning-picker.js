@@ -1,4 +1,4 @@
-import { CONTENT_WARNINGS } from "@alysum/publishing/publish-meta.js?v=4";
+import { CONTENT_WARNINGS } from "@alysum/publishing/publish-meta.js?v=5";
 
 function escapeHtml(str) {
     return String(str ?? "")

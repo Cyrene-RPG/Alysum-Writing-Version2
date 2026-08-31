@@ -52,6 +52,7 @@ export function normalizeHexColor(value) {
 }
 
 export const PAGE_LOOKS = ["dark", "sepia", "light", "alysum", "saved"];
+export const DEFAULT_PAGE_LOOK = "alysum";
 
 export function normalizePageLook(value) {
     const id = String(value || "").trim();
@@ -103,7 +104,7 @@ export function readPublishDraft(book) {
         notesAfter: String(raw.notesAfter || raw.notes_after || ""),
         complete: Boolean(raw.complete),
         draftChapterIds: draft.length ? draft : posted,
-        pageLook: normalizePageLook(raw.pageLook || raw.page_look) || "dark",
+        pageLook: normalizePageLook(raw.pageLook || raw.page_look) || DEFAULT_PAGE_LOOK,
         pageLookSaved: normalizePageLookSaved(raw.pageLookSaved || raw.page_look_saved),
         pageLookCustom: normalizeHexColor(raw.pageLookCustom || raw.page_look_custom),
         pageBgId: normalizePageBgId(raw.pageBgId || raw.page_bg_id)

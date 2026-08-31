@@ -138,11 +138,11 @@ export function bindBookLookPicker(root, { onChange } = {}) {
     });
     root.querySelector("[data-book-look-reset]")?.addEventListener("click", () => {
         const current = readBookLookPicker(root);
-        emit({ ...current, pageLook: "dark", pageLookSaved: null, pageLookCustom: "" });
+        emit({ ...current, pageLook: "alysum", pageLookSaved: null, pageLookCustom: "" });
     });
     root.querySelector("[data-book-look-all-reset]")?.addEventListener("click", () => {
         emit({
-            pageLook: "dark",
+            pageLook: "alysum",
             pageLookSaved: null,
             pageLookCustom: "",
             pageBgId: "",

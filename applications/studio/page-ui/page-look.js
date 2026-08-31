@@ -1,4 +1,4 @@
-import { bindBookLookPicker, paintBookLookPicker, readBookLookPicker } from "@alysum/site-appearance/js-runtime/book-look-picker.js";
+import { bindBookLookPicker, paintBookLookPicker, readBookLookPicker } from "@alysum/site-appearance/js-runtime/book-look-picker.js?v=2";
 import { applyVisitBookLook, applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=8";
 
 function applyPublishLook(look) {

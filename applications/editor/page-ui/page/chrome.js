@@ -82,6 +82,12 @@ export function mountWriterChrome({
     railToggle?.addEventListener("click", () => {
         setRailCollapsed(!shell?.classList.contains("is-rail-collapsed"));
     });
+    function setPreviewMode(on) {
+        shell?.classList.toggle("is-preview", Boolean(on));
+        const rail = document.getElementById("writerRail");
+        if (rail) rail.hidden = false;
+    }
+    setPreviewMode(false);
 
     function matterCollapsedMap() {
         try {
@@ -163,5 +169,5 @@ export function mountWriterChrome({
     tabSettings?.addEventListener("click", () => setBookView("settings"));
     settingsBackTop?.addEventListener("click", () => setTab("book"));
 
-    return { setTab, expandMatter, setBookView, getBookView: () => bookView };
+    return { setTab, expandMatter, setBookView, getBookView: () => bookView, setPreviewMode };
 }

@@ -30,7 +30,7 @@ async function boot() {
         try {
             const { bookId } = await acceptBookEditorInvite(token);
             if (bookId) {
-                window.location.replace(`editor.html?book=${encodeURIComponent(bookId)}`);
+                window.location.replace(`/editor?book=${encodeURIComponent(bookId)}`);
                 return;
             }
             copy.textContent = "Joined, but the book id was missing.";

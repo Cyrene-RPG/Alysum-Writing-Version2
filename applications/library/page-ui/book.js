@@ -1,7 +1,7 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
-import { fetchPublishedWork } from "@alysum/library/work.js";
-import { cropFrameStyle, peekCoverSrc } from "@alysum/publishing/cover-upload.js?v=3";
+import { fetchPublishedWork } from "@alysum/library/work.js?v=2";
+import { cropFrameStyle, coverCropForImage, isFullCoverCrop, peekCoverSrc } from "@alysum/publishing/cover-upload.js?v=10";
 import { genreLabel } from "@alysum/publishing/genres.js?v=4";
 import { applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=8";
 
@@ -46,7 +46,7 @@ function isOwner(work, session) {
 function coverHtml(url, crop) {
     const src = peekCoverSrc(url);
     if (!src) return "";
-    const style = cropFrameStyle(crop);
+    const style = crop && !isFullCoverCrop(crop) ? cropFrameStyle(crop) : "";
     const attr = style ? ` style="${style}"` : "";
     return `<img src="${escapeHtml(src)}" alt="" decoding="async"${attr} />`;
 }
@@ -159,9 +159,6 @@ async function boot() {
     document.getElementById("bookAuthor").textContent = work.author || "Unknown";
     document.getElementById("bookMeta").textContent =
         `${chapters.length} chapter${chapters.length === 1 ? "" : "s"} published`;
-    const complete = work.serializationStatus === "complete";
-    document.getElementById("bookStatus").innerHTML =
-        `<span class="book-status-dot${complete ? " is-done" : ""}"></span>${complete ? "Complete" : "Ongoing"}`;
 
     const hero = document.getElementById("bookHero");
     const cover = document.getElementById("bookCover");
@@ -171,13 +168,29 @@ async function boot() {
     if (wide) {
         cover.hidden = true;
         cover.innerHTML = "";
-        const img = coverHtml(work.coverUrl, null);
+        const img = coverHtml(work.coverUrl, work.coverWide);
         hero.insertAdjacentHTML("afterbegin", `<div class="book-hero-art">${img}</div>`);
     } else {
-        const img = coverHtml(work.coverUrl, null);
+        const img = coverHtml(work.coverUrl, work.coverCrop);
         cover.hidden = !img;
         cover.innerHTML = img;
         cover.classList.toggle("has-img", Boolean(img));
+        cover.classList.remove("is-square");
+        const pic = cover.querySelector("img");
+        function applyFrame() {
+            const w = pic?.naturalWidth || 0;
+            const h = pic?.naturalHeight || 0;
+            const next = coverCropForImage(work.coverCrop, w, h);
+            if (w > h) {
+                cover.classList.remove("is-full-cover");
+                if (pic) pic.setAttribute("style", cropFrameStyle(next));
+            } else {
+                cover.classList.toggle("is-full-cover", Boolean(pic));
+                pic?.removeAttribute("style");
+            }
+        }
+        if (pic?.complete && pic.naturalWidth) applyFrame();
+        else pic?.addEventListener("load", applyFrame, { once: true });
     }
 
     const pub = publishHref(work.id);

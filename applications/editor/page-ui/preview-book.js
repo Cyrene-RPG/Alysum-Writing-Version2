@@ -1,9 +1,10 @@
 import { listBodyChaptersWithDepth } from "@alysum/writing-engine/manuscript.js?v=6";
 import { genreLabel, matchingGenreKeys, toggleGenreSelection } from "@alysum/publishing/genres.js?v=4";
-import { CONTENT_WARNINGS, RATINGS, toggleContentWarning } from "@alysum/publishing/publish-meta.js?v=4";
-import { isLibraryListed } from "@alysum/publishing/post-work.js?v=3";
+import { CONTENT_WARNINGS, RATINGS, toggleContentWarning } from "@alysum/publishing/publish-meta.js?v=5";
+import { isLibraryListed, readLocalLibraryListings } from "@alysum/publishing/post-work.js?v=8";
 import { applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=8";
-import { paintBookHero, resolvePreviewCoverSrc, wideCropFromMeta } from "./cover.js?v=6";
+import { isFullCoverCrop, libraryCardCrop, coverCropForImage } from "@alysum/publishing/cover-upload.js?v=10";
+import { paintBookHero, resolvePreviewCoverSrc, wideCropFromMeta } from "./cover.js?v=15";
 
 export function previewBookHtml() {
     return `
@@ -13,19 +14,17 @@ export function previewBookHtml() {
                 <p>This is the book page readers see. Edit it here, then publish.</p>
             </div>
             <div class="lib-banner-actions">
-                <a class="lib-back-btn" id="libEditBtn" href="/publish" hidden>Edit</a>
-                <a class="lib-publish-btn" id="libPublishBtn" href="/publish">Continue to publish</a>
+                <a class="lib-back-btn" id="libEditBtn" href="/publish">Edit</a>
             </div>
         </div>
         <div class="book-page">
             <article class="book-card">
                 <header class="book-hero" id="libHero">
                     <div class="book-hero-top">
-                        <span class="book-back">‹ Library</span>
-                        <button type="button" class="book-status" id="libCoverChange">Change cover</button>
+                        <label class="book-status" id="libCoverChange" for="libCoverFile">Change cover</label>
                     </div>
                     <div class="book-hero-bottom">
-                        <button type="button" class="book-cover" id="libCover" aria-label="Upload cover"></button>
+                        <label class="book-cover" id="libCover" for="libCoverFile" aria-label="Upload cover"></label>
                         <div class="book-title-block">
                             <div class="book-title-row">
                                 <input class="book-title-input" id="libTitle" aria-label="Book title" />
@@ -86,8 +85,14 @@ export function previewBookHtml() {
                 </div>
             </article>
         </div>
-        <input type="file" accept="image/*" class="lib-cover-file" id="libCoverFile" hidden />
+        <input type="file" accept="image/*" class="lib-cover-file" id="libCoverFile" />
     `;
+}
+
+function localListingData(book) {
+    const id = String(book?.id || "");
+    if (!id) return null;
+    return readLocalLibraryListings().find((row) => String(row.id) === id)?.data || null;
 }
 
 function escapeHtml(text) {
@@ -108,7 +113,7 @@ export function applyPreviewLook(targets, meta, pageEl) {
     }
 }
 
-export function paintPreviewBook(pane, { book, meta, expanded, editingSynopsis, editingNotes, lookTargets }) {
+export function paintPreviewBook(pane, { book, meta, expanded, editingSynopsis, editingNotes, lookTargets, listed }) {
     const titleEl = pane.querySelector("#libTitle");
     const authorEl = pane.querySelector("#libAuthor");
     const changeEl = pane.querySelector("#libCoverChange");
@@ -126,24 +131,24 @@ export function paintPreviewBook(pane, { book, meta, expanded, editingSynopsis, 
     const notesEdit = pane.querySelector("#libNotesEdit");
     const tocEl = pane.querySelector("#libToc");
     const countEl = pane.querySelector("#libChapterCount");
-    const publishBtn = pane.querySelector("#libPublishBtn");
     const editBtn = pane.querySelector("#libEditBtn");
     const hero = pane.querySelector("#libHero");
     const coverEl = pane.querySelector("#libCover");
-    const listed = isLibraryListed(book);
+    const listedOn = listed == null ? isLibraryListed(book) : Boolean(listed);
+    const listing = listedOn ? localListingData(book) : null;
     const pubHref = book.id ? `/publish?book=${encodeURIComponent(book.id)}` : "/publish";
+    pane.classList.toggle("is-listed", listedOn);
 
     if (titleEl) titleEl.value = book.title || "";
     if (authorEl) authorEl.value = meta.author || "";
     if (editBtn) {
         editBtn.href = pubHref;
-        editBtn.hidden = !listed;
+        editBtn.hidden = false;
+        editBtn.textContent = listedOn ? "Edit" : "Publish";
     }
-    if (publishBtn) {
-        publishBtn.href = pubHref;
-        publishBtn.textContent = listed ? "Update" : "Continue to publish";
+    if (wideCheck) {
+        wideCheck.checked = Boolean(meta.coverWideEnabled);
     }
-    if (wideCheck) wideCheck.checked = Boolean(meta.coverWideEnabled);
     applyPreviewLook(lookTargets || [pane], meta, pane.querySelector(".book-page"));
 
     const ranked = listBodyChaptersWithDepth(book.sections);
@@ -222,8 +227,24 @@ export function paintPreviewBook(pane, { book, meta, expanded, editingSynopsis, 
         if (editingNotes) notesEdit.value = meta.notesAfter || "";
     }
 
-    void resolvePreviewCoverSrc(book.id, meta.cover_url).then((src) => {
-        paintBookHero(hero, coverEl, src, meta);
+    const cta = pane.querySelector("#libCta");
+    if (cta) {
+        const first = published[0]?.chapter;
+        cta.hidden = listedOn && !first;
+        cta.textContent = listedOn && first
+            ? `Start reading — ${first.title || "Chapter 1"} ›`
+            : "Start reading ›";
+    }
+
+    const coverUrl = meta.cover_url || listing?.coverUrl || "";
+    const heroMeta = {
+        ...meta,
+        coverWideEnabled: Boolean(meta.coverWideEnabled),
+    };
+    const paintGen = (pane._previewCoverPaint = (pane._previewCoverPaint || 0) + 1);
+    void resolvePreviewCoverSrc(book.id, coverUrl, listedOn).then((src) => {
+        if (pane._previewCoverPaint !== paintGen) return;
+        paintBookHero(hero, coverEl, src, heroMeta, { allowPlaceholder: !listedOn });
         if (changeEl) changeEl.textContent = src ? "Change cover" : "Add cover";
     });
 }
@@ -234,11 +255,7 @@ export function bindPreviewBook(pane, { saveMeta, paint, metaFromBook, openManag
     const genreSearch = pane.querySelector("#libGenreSearch");
     pane._genreQuery = "";
 
-    const openCoverPicker = () => pane.querySelector("#libCoverFile")?.click();
-    pane.querySelector("#libCover")?.addEventListener("click", openCoverPicker);
-    pane.querySelector("#libCoverChange")?.addEventListener("click", openCoverPicker);
     pane.addEventListener("click", (event) => {
-        if (event.target.closest("#libHeroArt")) openCoverPicker();
         if (event.target.closest("#libManageBtn")) openManage();
     });
     pane.querySelector("#libTitle")?.addEventListener("change", (event) => {
@@ -249,10 +266,17 @@ export function bindPreviewBook(pane, { saveMeta, paint, metaFromBook, openManag
     });
     pane.querySelector("#libWideOn")?.addEventListener("change", (event) => {
         const { meta } = metaFromBook();
-        saveMeta({
-            coverWideEnabled: Boolean(event.target.checked),
+        const on = Boolean(event.target.checked);
+        const img = pane.querySelector(".book-hero-art img, .book-cover img");
+        const patch = {
+            coverWideEnabled: on,
             coverWide: meta.coverWide || wideCropFromMeta(meta),
-        });
+        };
+        if (on && isFullCoverCrop(meta.coverCrop)) {
+            patch.coverCrop = libraryCardCrop(img?.naturalWidth, img?.naturalHeight);
+        }
+        if (!on) patch.coverCrop = coverCropForImage(null, img?.naturalWidth, img?.naturalHeight);
+        saveMeta(patch);
         paint();
     });
     pane.querySelector("#libGenreChips")?.addEventListener("click", (event) => {

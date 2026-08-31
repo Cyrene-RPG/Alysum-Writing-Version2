@@ -4,11 +4,18 @@ import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=8";
 import { createEmptyBook } from "@alysum/writing-engine/manuscript.js";
 import { countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { initWorkspaceShell } from "./shell.js?v=2";
-import { bindBookMenu } from "./book-menu.js?v=2";
+import { bindBookMenu } from "./book-menu.js?v=5";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { manuscriptWordsThisMonth, manuscriptWordsThisWeek, readManuscriptDayTotals } from "@alysum/account/manuscript-words.js";
 import { localDayKey, localMonthStartKey, localWeekStartKey, wordsTypedOnDay } from "@alysum/writing-engine/day-stats.js";
 import { isProbablyOnline, onReconnect } from "@alysum/synchronization-engine/network.js";
+import {
+    cropFrameStyle,
+    loadDraftCover,
+    peekCoverSrc,
+    rememberCovers,
+} from "@alysum/publishing/cover-upload.js?v=4";
+import { markBooksWithLiveListings } from "@alysum/publishing/post-work.js?v=8";
 
 function escapeHtml(str) {
     return String(str ?? "")
@@ -118,14 +125,38 @@ function bookDisplayTitle(book) {
     return String(book?.title || "").trim() || "Untitled Book";
 }
 
+const draftCoverSrc = new Map();
+
+function bookCoverUrl(book) {
+    const meta = book?.publish_meta && typeof book.publish_meta === "object" && !Array.isArray(book.publish_meta)
+        ? book.publish_meta
+        : {};
+    return String(meta.cover_url || meta.coverUrl || "").trim();
+}
+
+function bookCoverSrc(book) {
+    return peekCoverSrc(bookCoverUrl(book)) || draftCoverSrc.get(String(book?.id || "")) || "";
+}
+
+function bookCoverHtml(book) {
+    const src = bookCoverSrc(book);
+    if (!src) return "";
+    const meta = book?.publish_meta && typeof book.publish_meta === "object" ? book.publish_meta : {};
+    const style = cropFrameStyle(meta.coverCrop || meta.cover_crop);
+    const attr = style ? ` style="${style}"` : "";
+    return `<img class="studio-book-art" src="${escapeHtml(src)}" alt="" decoding="async"${attr} />`;
+}
+
 function renderBooks(mount, books) {
     const newCard = `<button type="button" class="studio-new-card" id="newBookCard"><span class="studio-plus" aria-hidden="true">+</span><span>New book</span></button>`;
     mount.innerHTML = newCard + sortBooksByLastWorked(books)
         .map((book, index) => {
             const words = bookWordCount(book);
             const chapters = chapterCount(book);
+            const cover = bookCoverHtml(book);
             return `
-                <a class="studio-book studio-book-${index % 5}" href="editor.html?book=${encodeURIComponent(book.id)}">
+                <a class="studio-book${cover ? " has-cover" : ""} studio-book-${index % 5}" href="/editor?book=${encodeURIComponent(book.id)}">
+                    ${cover}
                     <button type="button" class="studio-book-gear" data-book-gear="${escapeHtml(book.id)}" aria-label="Book options">⚙</button>
                     <h2 class="studio-book-title">${escapeHtml(bookDisplayTitle(book))}</h2>
                     <p class="studio-book-meta">${chapters} chapter${chapters === 1 ? "" : "s"} · ${words.toLocaleString()} words</p>
@@ -159,7 +190,7 @@ function initShelf(shelf, dots, prev, next) {
 
 async function boot() {
     initWorkspaceShell({ lead: "Writing ", accent: "Studio", subtitle: "Open a book and keep writing." });
-    const session = await requireStudioSession(supabase, "studio.html");
+    const session = await requireStudioSession(supabase, "/studio");
     if (!session) return;
     let profile = peekWorkspaceProfile(session);
     initWorkspaceShell({
@@ -193,12 +224,26 @@ async function boot() {
         status.textContent = "";
     }
 
+    async function hydrateCovers() {
+        await rememberCovers(books.map(bookCoverUrl).filter(Boolean));
+        await Promise.all(books.map(async (book) => {
+            const id = String(book.id || "");
+            if (!id || draftCoverSrc.has(id) || peekCoverSrc(bookCoverUrl(book))) return;
+            const src = await loadDraftCover(id);
+            if (src) draftCoverSrc.set(id, src);
+        }));
+        if (!books.some((book) => bookCoverSrc(book))) return;
+        renderBooks(list, books);
+        window.__alysumTextInk?.scheduleChromeInk?.();
+    }
+
     function paintShelf() {
         renderBooks(list, books);
         document.getElementById("shelfCount").textContent = `${books.length} book${books.length === 1 ? "" : "s"}`;
         paintTotals();
         paintStudioStatus();
         window.__alysumTextInk?.scheduleChromeInk?.();
+        void hydrateCovers();
     }
 
     loading?.classList.add("hidden");
@@ -222,8 +267,8 @@ async function boot() {
         });
         paintTotals();
     });
-    void api.listBooks().then((next) => {
-        books = next;
+    void api.listBooks().then(async (next) => {
+        books = await markBooksWithLiveListings(supabase, next);
         paintShelf();
     }).catch(() => {});
     onReconnect(async () => {
@@ -231,7 +276,7 @@ async function boot() {
         if (api.hasPending?.() && status) status.textContent = "Uploading…";
         await api.syncPending();
         try {
-            books = await api.listBooks();
+            books = await markBooksWithLiveListings(supabase, await api.listBooks());
         } catch {
             /* keep cache */
         }

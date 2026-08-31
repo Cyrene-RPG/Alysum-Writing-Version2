@@ -44,8 +44,7 @@
     font-size: 12px;
     color: var(--ui-muted);
 }
-.lib-back-btn,
-.lib-publish-btn {
+.lib-back-btn {
     border: 0;
     border-radius: var(--glass-radius, 10px);
     padding: 8px 12px;
@@ -57,15 +56,9 @@
     text-decoration: none;
     display: inline-flex;
     align-items: center;
-}
-.lib-back-btn {
     background: var(--alysum-ui-raised, #2a2a2a);
     color: var(--ui-text);
     border: 1px solid var(--border);
-}
-.lib-publish-btn {
-    background: var(--accent);
-    color: var(--ui-text);
 }
 .lib-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .lib-tag {

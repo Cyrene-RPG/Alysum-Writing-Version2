@@ -32,8 +32,8 @@
     <title>Writer — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="/css/workspace-nav.css?v=30" />
-    <link rel="stylesheet" href="/css/library/book.css?v=15" />
-    <link rel="stylesheet" href="/css/editor/page.css?v=66" />
+    <link rel="stylesheet" href="/css/library/book.css?v=27" />
+    <link rel="stylesheet" href="/css/editor/page.css?v=87" />
     <link rel="stylesheet" href="/css/editor/document.css?v=11" />
     <link rel="stylesheet" href="/css/editor/editor-fonts.css?v=1" />
     <link rel="stylesheet" href="/css/editor/scene-breaks.css?v=1" />
@@ -145,22 +145,22 @@
                 <input class="writer-book-title" id="bookTitle" aria-label="Book title" />
                 <div class="writer-chapter-bar">
                     <input class="writer-chapter-title" id="chapterTitle" aria-label="Chapter title" />
-                    <div class="writer-wordcount" aria-live="polite">
-                        <span id="chapterWords">0</span> / <span id="totalWords">0</span>
-                    </div>
                 </div>
                 <div class="writer-folder-view" id="folderView" hidden>
                     <p class="writer-folder-meta" id="folderMeta"></p>
                     <ul class="writer-folder-list" id="folderList"></ul>
                 </div>
-                <div class="writer-toolbar" id="writerToolbar" role="toolbar" aria-label="Formatting"></div>
+                <div class="writer-toolbar" id="writerToolbar" role="toolbar" aria-label="Formatting">
+                    <span class="writer-wordcount" aria-live="polite">
+                        <span id="chapterWords">0</span> / <span id="totalWords">0</span>
+                    </span>
+                </div>
                 <div class="writer-page" id="pageEditor" aria-label="Chapter text"></div>
                 </div>
                 <div class="lib-preview hidden" id="libraryPreviewPane"></div>
             </section>
-            <aside class="writer-rail" id="writerRail" aria-label="Listing look">
-                <div class="writer-rail-head writer-look-head">
-                    <button type="button" class="writer-look-reset" id="railLookReset">Reset</button>
+            <aside class="writer-rail" id="writerRail" aria-label="Tools">
+                <div class="writer-rail-head">
                     <p class="writer-rail-title">Listing look</p>
                     <button type="button" class="writer-tree-toggle" id="railToggle" aria-expanded="true" title="Hide sidebar">›</button>
                 </div>
@@ -218,8 +218,8 @@
         </div>
     </div>
     <div class="lib-toast" id="libToast" hidden></div>
-    <script src="/js/pwa-register.js?v=3" defer></script>
+    <script src="/js/pwa-register.js?v=4" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-    <script type="module" src="/js/editor/page.js?v=87"></script>
+    <script type="module" src="/js/editor/page.js?v=113"></script>
 </body>
 </html>

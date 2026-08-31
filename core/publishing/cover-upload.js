@@ -24,10 +24,10 @@ export function normalizeCrop(raw) {
     const w = Number(raw.w);
     const h = Number(raw.h);
     if (![x, y, w, h].every((n) => Number.isFinite(n))) return null;
-    const nx = Math.min(0.98, Math.max(0, x));
-    const ny = Math.min(0.98, Math.max(0, y));
-    const nw = Math.min(1 - nx, Math.max(0.04, w));
-    const nh = Math.min(1 - ny, Math.max(0.04, h));
+    const nw = Math.min(1, Math.max(0.04, w));
+    const nh = Math.min(1, Math.max(0.04, h));
+    const nx = Math.min(1 - nw, Math.max(0, x));
+    const ny = Math.min(1 - nh, Math.max(0, y));
     return { x: nx, y: ny, w: nw, h: nh };
 }
 
@@ -47,21 +47,43 @@ function bandInImage(visualAspect, widthFrac, imgW, imgH) {
     };
 }
 
+export function isFullCoverCrop(crop) {
+    const n = normalizeCrop(crop);
+    if (!n) return true;
+    return n.w >= 0.98 && n.h >= 0.98;
+}
+
+export function coverPaintCrop(crop) {
+    return normalizeCrop(crop) || { x: 0, y: 0, w: 1, h: 1 };
+}
+
+/** 2:3 window for library shelf cards. */
+export function libraryCardCrop(imgW = 0, imgH = 0) {
+    return bandInImage(2 / 3, 1, imgW, imgH);
+}
+
+/** Landscape covers use a 2:3 card. Portrait covers stay full. */
+export function coverCropForImage(crop, imgW, imgH) {
+    if (!(Number(imgW) > Number(imgH))) return { x: 0, y: 0, w: 1, h: 1 };
+    const n = normalizeCrop(crop);
+    if (n && !isFullCoverCrop(n)) {
+        const visual = (n.w * imgW) / (n.h * imgH);
+        if (Math.abs(visual - 2 / 3) < 0.1) return n;
+    }
+    return libraryCardCrop(imgW, imgH);
+}
+
 export function defaultCrops(imgW = 0, imgH = 0) {
     return {
         coverCrop: { x: 0, y: 0, w: 1, h: 1 },
         coverMini: bandInImage(2.5, 0.7, imgW, imgH),
-        coverWide: bandInImage(2.5, 1, imgW, imgH),
+        coverWide: { x: 0, y: 0, w: 1, h: 1 },
     };
-}
-
-function isFullFrameCrop(crop) {
-    return crop.w >= 0.98 && crop.h >= 0.98;
 }
 
 export function cropFrameStyle(rect) {
     const crop = normalizeCrop(rect);
-    if (!crop || isFullFrameCrop(crop)) return "";
+    if (!crop) return "";
     return [
         "position:absolute",
         "max-width:none",

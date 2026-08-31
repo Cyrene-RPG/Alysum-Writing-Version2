@@ -1,12 +1,13 @@
 /**
- * Reader theme circles: Light, Dark, saved Appearance slots, Author.
- * Visit-only; does not write Appearance keys.
+ * Reader theme circles: Light, Dark, Tan, saved Appearance slots, Author.
+ * Visit-only; does not write Appearance keys. Tan exists only in the reader.
  */
 import { getBodyBgPreview } from "@alysum/site-appearance/js-runtime/body-background.js";
 import { getLoadoutPreview, readAppearanceLoadouts } from "@alysum/site-appearance/js-runtime/appearance-loadout.js?v=3";
 import {
     applyVisitListingLook,
     applyVisitLoadout,
+    clearVisitPageLook,
     resolveListingPanelHex,
     resolveVisitBackgroundHex,
 } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=8";
@@ -15,6 +16,7 @@ const THEME_KEY = "alysum:reader:theme-by-book";
 
 const SITE_LIGHT = { label: "Light", bodyBg: "blanc", uiColor: "theme" };
 const SITE_DARK = { label: "Dark", bodyBg: "noir", uiColor: "theme" };
+const TAN_PREVIEW = "oklch(0.34 0.062 78)";
 
 function isDarkOrLight(slot) {
     const label = String(slot?.label || "").trim().toLowerCase();
@@ -56,6 +58,7 @@ export function listReaderThemes(work) {
     const themes = [
         { id: "light", label: "Light", preview: getBodyBgPreview("blanc") },
         { id: "dark", label: "Dark", preview: getBodyBgPreview("noir") },
+        { id: "tan", label: "Tan", preview: TAN_PREVIEW },
     ];
     readAppearanceLoadouts().forEach((slot, index) => {
         if (!slot || isDarkOrLight(slot)) return;
@@ -77,6 +80,12 @@ export function listReaderThemes(work) {
 
 export function applyReaderTheme(themeId, work) {
     const root = document.documentElement;
+    if (themeId === "tan") {
+        clearVisitPageLook(root);
+        root.dataset.readerTheme = "tan";
+        return;
+    }
+    delete root.dataset.readerTheme;
     if (themeId === "light") {
         applyVisitLoadout(root, SITE_LIGHT);
         return;
