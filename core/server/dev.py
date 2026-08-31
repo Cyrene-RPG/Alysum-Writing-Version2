@@ -47,6 +47,7 @@ PAGES = {
     "/signup": "applications/main-site/pages/signup.html",
     "/settings": "applications/main-site/pages/settings.html",
     "/overview": "applications/main-site/pages/overview.html",
+    "/editor-preview": "applications/main-site/pages/editor-preview.html",
     "/reset-password": "applications/main-site/pages/reset-password.html",
     "/privacy-policy": "applications/main-site/pages/privacy-policy.html",
     "/terms-of-service": "applications/main-site/pages/terms-of-service.html",

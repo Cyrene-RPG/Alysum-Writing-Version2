@@ -189,6 +189,10 @@
       "destination": "/applications/main-site/pages/overview.html"
     },
     {
+      "source": "/editor-preview",
+      "destination": "/applications/main-site/pages/editor-preview.html"
+    },
+    {
       "source": "/reset-password",
       "destination": "/applications/main-site/pages/reset-password.html"
     },
