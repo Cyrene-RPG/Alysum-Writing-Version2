@@ -12,10 +12,10 @@ import {
     loadDraftCoverFile,
     saveDraftCover,
     uploadBookCover,
-} from "@alysum/publishing/cover-upload.js?v=2";
+} from "@alysum/publishing/cover-upload.js?v=3";
 import { readPublishDraft } from "@alysum/publishing/publish-meta.js?v=4";
-import { saveLibraryListing } from "@alysum/publishing/post-work.js";
-import { bindPageLook, paintPageLook, readPageLook } from "./page-look.js?v=8";
+import { isLibraryListed, saveLibraryListing } from "@alysum/publishing/post-work.js?v=3";
+import { bindPageLook, paintPageLook, readPageLook } from "./page-look.js?v=11";
 import { bindWarningPicker } from "./warning-picker.js?v=4";
 import {
     CROP_ASPECT,
@@ -95,7 +95,17 @@ async function boot() {
     }
     const profile = peekWorkspaceProfile(session);
     const draft = readPublishDraft(book);
+    const listed = isLibraryListed(book);
     book._author = draft.author || profile?.name || "";
+    const heading = document.querySelector(".pub-page h1");
+    const sub = document.querySelector(".pub-sub");
+    const postBtn = document.getElementById("postBtn");
+    if (listed) {
+        document.title = "Update listing — Alysum";
+        if (heading) heading.textContent = "Update listing";
+        if (sub) sub.textContent = "Required fields are marked *. Update publishes your edits to the live listing.";
+        if (postBtn) postBtn.textContent = "Update";
+    }
     const chapters = listBodyChapters(book.sections);
     const chapterDepth = new Map(
         listBodyChaptersWithDepth(book.sections).map((row) => [String(row.chapter.id), row.depth]),
@@ -190,15 +200,31 @@ async function boot() {
                     return;
                 }
                 if (!form.genres.length || !form.rating || !title) {
-                    if (status) status.textContent = "Choose a genre, rating, and title first.";
+                    if (status) {
+                        status.textContent = !form.genres.length
+                            ? "Pick a genre from the list first. Identity labels now go under Additional tags."
+                            : "Choose a rating and title first.";
+                    }
                     return;
                 }
                 if (!form.chapterIds.length) {
                     if (status) status.textContent = "Pick at least one chapter to post.";
                     return;
                 }
+                const short = form.chapterIds
+                    .map((id) => chapters.find((ch) => String(ch.id) === String(id)))
+                    .filter(Boolean)
+                    .find((ch) => countWordsInHtml(ch.content || "") < 500);
+                if (short) {
+                    const n = countWordsInHtml(short.content || "");
+                    if (status) {
+                        status.textContent =
+                            `Not enough words for chapter “${short.title || "Untitled"}” (${n.toLocaleString()} / 500).`;
+                    }
+                    return;
+                }
             }
-            if (status) status.textContent = isPublished ? "Posting…" : "Saving…";
+            if (status) status.textContent = isPublished ? (listed ? "Updating…" : "Posting…") : "Saving…";
             if (isPublished) {
                 const draftFile = await loadDraftCoverFile(book.id);
                 if (draftFile) {

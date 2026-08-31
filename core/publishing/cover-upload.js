@@ -55,15 +55,19 @@ export function defaultCrops(imgW = 0, imgH = 0) {
     };
 }
 
+function isFullFrameCrop(crop) {
+    return crop.w >= 0.98 && crop.h >= 0.98;
+}
+
 export function cropFrameStyle(rect) {
     const crop = normalizeCrop(rect);
-    if (!crop) return "";
+    if (!crop || isFullFrameCrop(crop)) return "";
     return [
         "position:absolute",
         "max-width:none",
         "right:auto",
         "bottom:auto",
-        "object-fit:fill",
+        "object-fit:cover",
         `width:${100 / crop.w}%`,
         `height:${100 / crop.h}%`,
         `left:${(-100 * crop.x) / crop.w}%`,

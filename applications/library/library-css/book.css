@@ -38,33 +38,38 @@ body {
     position: absolute;
     inset: 0;
     z-index: 0;
+    overflow: hidden;
 }
 .book-hero-art img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    object-position: center;
 }
 .book-hero.is-wide {
     min-height: 0;
     padding: 0;
     display: block;
-    background: none;
+    aspect-ratio: 2.5 / 1;
+    background: var(--alysum-ui-chrome, #141414);
 }
 .book-hero.is-wide .book-hero-art {
-    position: relative;
-    inset: auto;
+    position: absolute;
+    inset: 0;
     display: block;
     width: 100%;
+    height: 100%;
     border: 0;
     padding: 0;
     background: transparent;
+    overflow: hidden;
 }
 .book-hero.is-wide .book-hero-art img {
     width: 100%;
-    height: auto;
-    min-height: 12rem;
-    max-height: 26rem;
-    object-fit: cover;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    object-fit: contain;
     object-position: center;
     display: block;
 }
@@ -113,6 +118,7 @@ body {
     margin-top: 24px;
 }
 .book-cover {
+    position: relative;
     width: min(240px, 32vw);
     flex-shrink: 0;
     border-radius: var(--glass-radius, 18px);
@@ -121,9 +127,11 @@ body {
 }
 .book-cover img {
     width: 100%;
+    height: auto;
     display: block;
-    aspect-ratio: 2 / 3;
-    object-fit: cover;
+    object-fit: contain;
+    object-position: center;
+    vertical-align: top;
 }
 .book-hero.is-wide .book-cover { display: none; }
 .book-title-block { padding-bottom: 6px; flex: 1; min-width: 0; }
@@ -374,7 +382,6 @@ body {
     .book-hero.is-wide { min-height: 0; padding: 0; }
     .book-hero.is-wide .book-hero-top,
     .book-hero.is-wide .book-hero-bottom { padding: 14px 16px 18px; }
-    .book-hero.is-wide .book-hero-art img { min-height: 10rem; max-height: 20rem; }
     .book-cover { width: 110px; }
     .book-title-block h1 { font-size: 22px; }
     .book-hero-bottom { gap: 12px; }

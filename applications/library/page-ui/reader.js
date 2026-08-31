@@ -1,7 +1,7 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { fetchPublishedWork } from "@alysum/library/work.js";
 import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
-import { mountReaderThemes } from "./reader-theme.js?v=3";
+import { mountReaderThemes } from "./reader-theme.js?v=4";
 
 const READ_KEY = "alysum:library:read-position";
 const BOOK_KEY = "alysum:library:bookmarks";

@@ -1,8 +1,9 @@
 import { bindBookLookPicker, paintBookLookPicker, readBookLookPicker } from "@alysum/site-appearance/js-runtime/book-look-picker.js";
-import { applyVisitBookLook, applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=6";
+import { applyVisitBookLook, applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=8";
 
 function applyPublishLook(look) {
-    applyVisitListingLook(document.body, document.body, look);
+    const page = document.querySelector(".pub-page");
+    applyVisitListingLook(document.body, page || document.body, look);
     document.querySelectorAll(".pub-card").forEach((el) => applyVisitBookLook(el, look));
 }
 

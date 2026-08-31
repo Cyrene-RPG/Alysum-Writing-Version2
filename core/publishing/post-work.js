@@ -35,6 +35,13 @@ export function readLocalLibraryListings() {
     return readLocalListings();
 }
 
+export function isLibraryListed(book) {
+    if (book?.is_published || book?.isPublished) return true;
+    const id = String(book?.id || book?.bookId || "");
+    if (!id) return false;
+    return readLocalListings().some((row) => String(row.id) === id && row.data?.isPublished);
+}
+
 export function buildLibraryPayload(book, form) {
     const chapters = listBodyChapters(book?.sections);
     const byId = new Map(chapters.map((ch) => [String(ch.id), ch]));
@@ -99,18 +106,55 @@ function upsertLocal(row) {
     writeLocalListings(rows);
 }
 
+function listingErrorMessage(error) {
+    const msg = String(error?.message || "");
+    const extra = String(error?.details || error?.hint || "");
+    const blob = `${msg} ${extra}`;
+    if (/row-level security|42501|permission denied/i.test(blob)) {
+        return "Could not post this listing. New accounts wait 7 days, and a new book waits 30 days after your last one.";
+    }
+    return msg || "Could not save this listing.";
+}
+
+function eligibilityMessage(row) {
+    if (!row || row.allowed !== false) return "";
+    if (row.accountCooldown?.active) {
+        const days = Number(row.accountCooldown.daysRemaining) || 7;
+        return `New accounts can post after 7 days. About ${days} day${days === 1 ? "" : "s"} left.`;
+    }
+    if (row.bookIntervalCooldown?.active) {
+        const days = Number(row.bookIntervalCooldown.daysRemaining) || 30;
+        return `You can post a new book 30 days after the last one. About ${days} day${days === 1 ? "" : "s"} left.`;
+    }
+    return "This account cannot post that listing right now.";
+}
+
 export async function saveLibraryListing(supabase, userId, book, form) {
     const data = buildLibraryPayload(book, form);
     upsertLocal({ id: book.id, user_id: userId || "", data });
     if (!data.isPublished) return data;
     if (supabase && userId) {
+        const { data: existing } = await supabase
+            .from("library")
+            .select("id")
+            .eq("id", String(book.id))
+            .maybeSingle();
+        const isUpdate = Boolean(existing?.id) || isLibraryListed(book);
+        if (!isUpdate) {
+            const { data: eligibility, error: eligError } = await supabase
+                .rpc("get_publish_eligibility", { p_book_id: String(book.id) });
+            if (!eligError) {
+                const blocked = eligibilityMessage(eligibility);
+                if (blocked) throw new Error(blocked);
+            }
+        }
         const { error } = await supabase.from("library").upsert({
             id: book.id,
             user_id: userId,
             data,
             updated_at: new Date().toISOString(),
         });
-        if (error) throw error;
+        if (error) throw new Error(listingErrorMessage(error));
     }
     return data;
 }

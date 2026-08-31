@@ -1,6 +1,6 @@
 import { mergePublishMeta, readPublishDraft } from "@alysum/publishing/publish-meta.js";
 import { bindBookLookPicker, paintBookLookPicker } from "@alysum/site-appearance/js-runtime/book-look-picker.js";
-import { applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=6";
+import { applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=8";
 
 function lookHtml() {
     return `

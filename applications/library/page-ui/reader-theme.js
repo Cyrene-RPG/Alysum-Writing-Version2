@@ -9,7 +9,7 @@ import {
     applyVisitLoadout,
     resolveListingPanelHex,
     resolveVisitBackgroundHex,
-} from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=6";
+} from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=8";
 
 const THEME_KEY = "alysum:reader:theme-by-book";
 

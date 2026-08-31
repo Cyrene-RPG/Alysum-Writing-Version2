@@ -1,8 +1,8 @@
 import { listBodyChapters } from "@alysum/writing-engine/manuscript.js?v=6";
 import { mergePublishMeta, readPublishDraft } from "@alysum/publishing/publish-meta.js";
-import { storePickedCover, wideCropFromMeta } from "./cover.js?v=3";
-import { clearVisitPageLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=6";
-import { bindPreviewBook, paintPreviewBook, previewBookHtml } from "./preview-book.js?v=19";
+import { storePickedCover, wideCropFromMeta } from "./cover.js?v=6";
+import { clearVisitPageLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=8";
+import { bindPreviewBook, paintPreviewBook, previewBookHtml } from "./preview-book.js?v=24";
 
 export function readPublishMeta(book) {
     const draft = readPublishDraft(book);

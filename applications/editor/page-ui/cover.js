@@ -4,7 +4,7 @@ import {
     loadDraftCover,
     peekCoverSrc,
     saveDraftCover,
-} from "@alysum/publishing/cover-upload.js?v=2";
+} from "@alysum/publishing/cover-upload.js?v=3";
 
 export async function resolvePreviewCoverSrc(bookId, coverUrl) {
     return (await loadDraftCover(bookId)) || peekCoverSrc(coverUrl) || "";
@@ -58,7 +58,7 @@ export function paintBookHero(hero, coverEl, src, meta) {
     }
     coverEl.hidden = false;
     if (src) {
-        coverEl.innerHTML = coverImgHtml(src, meta?.coverCrop);
+        coverEl.innerHTML = coverImgHtml(src, null);
         coverEl.classList.add("has-img");
     } else {
         coverEl.innerHTML = `<span class="lib-cover-ph">Add cover</span>`;

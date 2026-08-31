@@ -5,7 +5,7 @@ import { initWorkspaceShell } from "/js/studio/shell.js?v=2";
 import { fetchLibraryCatalog } from "@alysum/library/author-profile.js";
 import { readLocalLibraryListings } from "@alysum/publishing/post-work.js";
 import { genreColor, genreDef, genreLabel, matchingGenreKeys, normalizeGenreList } from "@alysum/publishing/genres.js?v=4";
-import { cropFrameStyle, defaultCrops, peekCoverSrc, rememberCovers } from "@alysum/publishing/cover-upload.js";
+import { cropFrameStyle, defaultCrops, peekCoverSrc, rememberCovers } from "@alysum/publishing/cover-upload.js?v=3";
 
 const READ_KEY = "alysum:library:read-position";
 const NEW_DAYS = 21;

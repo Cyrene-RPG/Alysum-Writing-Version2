@@ -152,6 +152,12 @@ export function applyVisitPageBackground(el, pageBgId, pageBg) {
     clearVisitBodyInk(el);
 }
 
+/** Page fill only — does not remap --accent / chrome on the element. */
+export function applyVisitPageFill(el, look) {
+    const pageHex = listingPageHex(look);
+    if (el && pageHex) applyPageFill(el, pageHex);
+}
+
 function panelFromLoadout(slot) {
     const id = String(slot?.uiColor || "");
     if (id === "custom") return hex(slot.uiColorCustom);
@@ -171,7 +177,7 @@ export function applyVisitLoadout(el, slot) {
 
 export function applyVisitBookLook(pageEl, look) {
     if (!pageEl) return;
-    const cards = pageEl.querySelectorAll?.(".book-card");
+    const cards = pageEl.querySelectorAll?.(".book-card, .pub-card");
     if (cards?.length) {
         cards.forEach((card) => paintListingLook(card, look));
         return;

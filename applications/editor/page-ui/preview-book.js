@@ -1,8 +1,9 @@
 import { listBodyChaptersWithDepth } from "@alysum/writing-engine/manuscript.js?v=6";
 import { genreLabel, matchingGenreKeys, toggleGenreSelection } from "@alysum/publishing/genres.js?v=4";
 import { CONTENT_WARNINGS, RATINGS, toggleContentWarning } from "@alysum/publishing/publish-meta.js?v=4";
-import { applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=6";
-import { paintBookHero, resolvePreviewCoverSrc, wideCropFromMeta } from "./cover.js?v=3";
+import { isLibraryListed } from "@alysum/publishing/post-work.js?v=3";
+import { applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=8";
+import { paintBookHero, resolvePreviewCoverSrc, wideCropFromMeta } from "./cover.js?v=6";
 
 export function previewBookHtml() {
     return `
@@ -12,6 +13,7 @@ export function previewBookHtml() {
                 <p>This is the book page readers see. Edit it here, then publish.</p>
             </div>
             <div class="lib-banner-actions">
+                <a class="lib-back-btn" id="libEditBtn" href="/publish" hidden>Edit</a>
                 <a class="lib-publish-btn" id="libPublishBtn" href="/publish">Continue to publish</a>
             </div>
         </div>
@@ -125,13 +127,21 @@ export function paintPreviewBook(pane, { book, meta, expanded, editingSynopsis, 
     const tocEl = pane.querySelector("#libToc");
     const countEl = pane.querySelector("#libChapterCount");
     const publishBtn = pane.querySelector("#libPublishBtn");
+    const editBtn = pane.querySelector("#libEditBtn");
     const hero = pane.querySelector("#libHero");
     const coverEl = pane.querySelector("#libCover");
+    const listed = isLibraryListed(book);
+    const pubHref = book.id ? `/publish?book=${encodeURIComponent(book.id)}` : "/publish";
 
     if (titleEl) titleEl.value = book.title || "";
     if (authorEl) authorEl.value = meta.author || "";
-    if (publishBtn && book.id) {
-        publishBtn.href = `/publish?book=${encodeURIComponent(book.id)}`;
+    if (editBtn) {
+        editBtn.href = pubHref;
+        editBtn.hidden = !listed;
+    }
+    if (publishBtn) {
+        publishBtn.href = pubHref;
+        publishBtn.textContent = listed ? "Update" : "Continue to publish";
     }
     if (wideCheck) wideCheck.checked = Boolean(meta.coverWideEnabled);
     applyPreviewLook(lookTargets || [pane], meta, pane.querySelector(".book-page"));

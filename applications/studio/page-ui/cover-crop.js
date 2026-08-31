@@ -1,4 +1,4 @@
-import { cropFrameStyle, normalizeCrop } from "@alysum/publishing/cover-upload.js";
+import { cropFrameStyle, normalizeCrop } from "@alysum/publishing/cover-upload.js?v=3";
 
 export const CROP_ASPECT = { library: 2 / 3, mini: 2.5, wide: 2.5 };
 

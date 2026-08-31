@@ -55,8 +55,8 @@ import { mountWriterChrome } from "./page/chrome.js?v=44";
 import { mountTypewriter } from "./page/typewriter.js?v=41";
 import { maybeCreateAutoVersion } from "@alysum/writing-engine/version-api.js";
 import { mountBookSettings } from "./settings.js?v=3";
-import { mountLibraryPreview } from "./library-preview.js?v=26";
-import { mountPageLookRail } from "./page-look-rail.js?v=10";
+import { mountLibraryPreview } from "./library-preview.js?v=32";
+import { mountPageLookRail } from "./page-look-rail.js?v=11";
 
 async function boot() {
     initWorkspaceShell({ lead: "Working On ", accent: "…", subtitle: "Loading…" });

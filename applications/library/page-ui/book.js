@@ -1,9 +1,9 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
 import { fetchPublishedWork } from "@alysum/library/work.js";
-import { cropFrameStyle, peekCoverSrc } from "@alysum/publishing/cover-upload.js";
+import { cropFrameStyle, peekCoverSrc } from "@alysum/publishing/cover-upload.js?v=3";
 import { genreLabel } from "@alysum/publishing/genres.js?v=4";
-import { applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=6";
+import { applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=8";
 
 const READ_KEY = "alysum:library:read-position";
 
@@ -174,7 +174,7 @@ async function boot() {
         const img = coverHtml(work.coverUrl, null);
         hero.insertAdjacentHTML("afterbegin", `<div class="book-hero-art">${img}</div>`);
     } else {
-        const img = coverHtml(work.coverUrl, work.coverCrop);
+        const img = coverHtml(work.coverUrl, null);
         cover.hidden = !img;
         cover.innerHTML = img;
         cover.classList.toggle("has-img", Boolean(img));

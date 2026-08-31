@@ -12,20 +12,26 @@ body {
     width: min(760px, 100%);
     margin: 0 auto;
     padding: 28px 20px 64px;
+    color: var(--text);
 }
 h1 {
     margin: 0 0 6px;
     font-size: 28px;
-    color: var(--alysum-display-mid, var(--gold, #f5d489));
+    color: var(--text);
 }
-.pub-sub, .pub-note, .pub-hint {
+.pub-sub, .pub-note {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.45;
+}
+.pub-hint {
     color: var(--muted);
     font-size: 14px;
     line-height: 1.45;
 }
 .pub-status {
     min-height: 1.4em;
-    color: var(--alysum-display-mid, var(--gold, #f5d489));
+    color: var(--text);
     font-size: 14px;
     line-height: 1.45;
     font-weight: 700;
@@ -35,11 +41,8 @@ h1 {
     padding: 20px 22px;
     border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
     border-radius: var(--glass-radius, 16px);
-    background: linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--alysum-ui-panel, #111827) 88%, white),
-        var(--alysum-ui-panel, #111827)
-    );
+    background: var(--alysum-ui-panel, #111827);
+    color: var(--ui-text, var(--text));
 }
 .pub-card h2 {
     margin: 0 0 14px;
@@ -53,6 +56,7 @@ h1 {
     margin: 12px 0 6px;
     font-size: 13px;
     font-weight: 700;
+    color: var(--ui-text, var(--text));
 }
 .pub-card input[type="text"],
 .pub-card input[type="url"],
@@ -114,16 +118,16 @@ h1 {
     border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
     border-radius: 999px;
     background: color-mix(in srgb, var(--alysum-ui-chrome, #141414) 55%, transparent);
-    color: var(--text);
+    color: var(--ui-text, var(--text));
     font: inherit;
     font-size: 13px;
     cursor: pointer;
 }
 .pub-genre-chips button.is-on,
 .pub-genres button.is-on {
-    background: var(--accent, #7c3aed);
-    border-color: var(--accent, #7c3aed);
-    color: #fff;
+    background: var(--alysum-ui-raised, #2a2a2a);
+    border-color: var(--border, rgba(255, 255, 255, 0.1));
+    color: var(--ui-text, var(--text));
 }
 .pub-genre-chips button.is-on[data-role]::after,
 .pub-genres button.is-on[data-role]::after {
@@ -240,6 +244,7 @@ h1 {
     cursor: pointer;
     padding: 10px 0;
     font-weight: 700;
+    color: var(--ui-text, var(--text));
 }
 #chapterList {
     display: grid;
@@ -288,7 +293,8 @@ h1 {
     padding: 12px 14px;
     border-radius: var(--glass-radius, 10px);
     border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-    background: color-mix(in srgb, var(--accent, #7c3aed) 12%, var(--alysum-ui-panel, #111827));
+    background: var(--alysum-ui-raised, #2a2a2a);
+    color: var(--ui-text, var(--text));
     font-size: 13px;
 }
 .pub-actions {
@@ -310,8 +316,8 @@ h1 {
 }
 .pub-primary {
     border: 0;
-    background: var(--accent, #7c3aed);
-    color: #fff;
+    background: var(--alysum-ui-raised, #2a2a2a);
+    color: var(--ui-text, var(--text));
 }
 .pub-look {
     display: flex;
