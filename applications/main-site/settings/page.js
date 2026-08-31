@@ -9,7 +9,7 @@ import {
     setSupportLinksDisabled,
 } from "/js/settings/author-page.js";
 import { finishSettingsShell, initLocalSettingsUi, configureDeleteAccountUi } from "/js/settings/shell.js";
-import { wireSettingsSaves } from "/js/settings/saves.js";
+import { wireSettingsSaves, setGoalUi } from "/js/settings/saves.js";
 import { wireBackup } from "/js/settings/backup.js";
 import { bootSettingsSecurity, wireSettingsSecurity } from "/js/settings/security.js";
 import { supabase } from "@alysum/authentication/client.js";
@@ -72,6 +72,8 @@ function fillSettingsFromRow(user, row) {
         username: handle,
         profileImageUrl: data.profileImageUrl
     });
+
+    setGoalUi(data.dailyWordGoal);
 
     const acct = normalizeAccountType(data.accountType);
     state.settingsHomeUrl = homeUrlForUserData({ ...data, accountType: acct });

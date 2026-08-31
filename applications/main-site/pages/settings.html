@@ -64,7 +64,7 @@
 <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
 <link rel="stylesheet" href="/css/settings/page.css?v=6" />
 <link rel="stylesheet" href="/css/settings/appearance.css?v=15" />
-<link rel="stylesheet" href="/css/settings/account.css?v=2" />
+<link rel="stylesheet" href="/css/settings/account.css?v=3" />
 <link rel="stylesheet" href="/css/settings/profile.css?v=4" />
 <link rel="stylesheet" href="/css/settings/backup.css?v=2" />
 <link rel="stylesheet" href="/css/settings/security.css?v=2" />
@@ -286,6 +286,20 @@
             </section>
         </div>
 
+        <section class="profile-box profile-goal-box" id="daily-goal" aria-labelledby="dailyGoalTitle">
+            <h3 class="profile-box-title" id="dailyGoalTitle">Daily word goal</h3>
+            <p class="hint">Words you type toward your book each day (pasted text does not count). Minimum 1,000.</p>
+            <div class="goal-preset-row" id="goalPresetRow" role="radiogroup" aria-label="Daily word goal"></div>
+            <div class="field goal-custom-field">
+                <label for="goalCustomInput">Custom goal</label>
+                <input type="number" id="goalCustomInput" min="1000" max="20000" step="50" inputmode="numeric" />
+            </div>
+            <div class="profile-box-actions">
+                <button type="button" class="btn btn-primary" id="saveGoalBtn">Save goal</button>
+                <span class="save-prompt" id="goalMsg" role="status"></span>
+            </div>
+        </section>
+
         <section class="profile-box profile-account-focus-box" id="account-focus" aria-labelledby="accountFocusTitle">
             <h3 class="profile-box-title" id="accountFocusTitle">Account focus</h3>
             <div class="account-focus-body">
@@ -471,7 +485,7 @@
     </div>
 </div>
 
-<script type="module" src="/js/settings/page.js?v=18"></script>
+<script type="module" src="/js/settings/page.js?v=19"></script>
 
 </body>
 </html>

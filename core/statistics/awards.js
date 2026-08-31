@@ -3,6 +3,9 @@
  * Change numbers here. RPCs and UI must import this — do not hardcode 20 / 3 / 15.
  * null means the reason exists but grants 0 until you put a number in.
  * Past grants reverse using the amount stored on xp_events, not today's table.
+ *
+ * Keep in sync with supabase/live-site/supabase-statistics.sql (public.xp_config
+ * is seeded from these keys). SQL can't import JS — the migration transcribes them.
  */
 
 export const AWARDS = Object.freeze({
@@ -23,7 +26,7 @@ export const AWARDS = Object.freeze({
 
     referral_signup: null,
 
-    writing_sentence: null,
+    writing_sentence: 2,
     writing_milestone_2k: 10,
     writing_milestone_10k: 100,
     writing_milestone_2k_words: 2000,

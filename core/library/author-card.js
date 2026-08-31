@@ -4,23 +4,21 @@
 import { fetchAuthorById, fetchPublishedWorksForAuthor } from "./author-profile.js";
 import { fetchFollowState } from "./author-follow.js";
 import { levelFromXp, xpIntoLevel } from "../statistics/xp-levels.js";
-
-let xpColumnMissing = false;
+import { levelFromRep } from "../statistics/rep-levels.js";
 
 async function fetchAuthorXp(supabase, userId) {
-    if (!supabase || !userId || xpColumnMissing) return 0;
-    const { data, error } = await supabase
-        .from("users")
-        .select("xp")
-        .eq("id", userId)
-        .maybeSingle();
-    if (error) {
-        if (/column|does not exist|schema cache/i.test(String(error.message || error))) {
-            xpColumnMissing = true;
-        }
-        return 0;
+    if (!supabase || !userId) return { xp: 0, rep: 0 };
+    try {
+        const { data, error } = await supabase
+            .from("users")
+            .select("xp, reputation")
+            .eq("id", userId)
+            .maybeSingle();
+        if (error) return { xp: 0, rep: 0 };
+        return { xp: Number(data?.xp) || 0, rep: Number(data?.reputation) || 0 };
+    } catch {
+        return { xp: 0, rep: 0 };
     }
-    return Number(data?.xp) || 0;
 }
 
 export async function fetchReaderAuthorCard(supabase, { ownerUserId, viewerId }) {
@@ -40,7 +38,7 @@ export async function fetchReaderAuthorCard(supabase, { ownerUserId, viewerId })
     } catch {
         fictionCount = 0;
     }
-    const xp = await fetchAuthorXp(supabase, ownerId);
+    const { xp, rep } = await fetchAuthorXp(supabase, ownerId);
     const into = xpIntoLevel(xp);
     const follow = await fetchFollowState(supabase, { authorId: ownerId, viewerId });
     return {
@@ -56,5 +54,7 @@ export async function fetchReaderAuthorCard(supabase, { ownerUserId, viewerId })
         level: levelFromXp(xp),
         xpRatio: into.level > 0 ? into.ratio : 0,
         hasXp: into.level > 0,
+        repLevel: levelFromRep(rep),
+        hasRep: rep > 0,
     };
 }

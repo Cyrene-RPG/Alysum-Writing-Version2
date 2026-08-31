@@ -18,6 +18,8 @@ import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=2";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { recordTypedWords } from "@alysum/account/writing-stats.js";
 import { typedWordDelta } from "@alysum/statistics/typed-input.js";
+import { reviewSentencesForXp } from "@alysum/statistics/sentence-review.js";
+import { markSentencesInRoot } from "/js/statistics-ui/review-highlight.js";
 import { isProbablyOnline, onReconnect } from "@alysum/synchronization-engine/network.js";
 import { mountToolbar } from "./toolbar.js?v=7";
 import { bindManuscriptNav } from "./page/manuscript-nav.js?v=1";
@@ -40,7 +42,7 @@ import { createFolderView } from "./page/folder-view.js?v=41";
 import { mountWriterChrome } from "./page/chrome.js?v=47";
 import { mountTypewriter } from "./page/typewriter.js?v=41";
 import { maybeCreateAutoVersion } from "@alysum/writing-engine/version-api.js";
-import { mountPreviewSession } from "./page/preview-session.js?v=24";
+import { mountPreviewSession } from "./page/preview-session.js?v=23";
 import { bindPersistHooks } from "./page/persist-hooks.js?v=1";
 
 async function boot() {
@@ -308,6 +310,43 @@ async function boot() {
             if (!typed) return;
         }
         persist({ ...book, sections: setChapterContent(book.sections, selectedId, html) }, false, { event });
+        scheduleSentenceReview();
+    }
+
+    // Sentence XP: check what the writer wrote, on idle / save / pagehide.
+    let sentenceReviewTimer = 0;
+    let sentenceReviewBusy = false;
+    function scheduleSentenceReview(delay = 8000) {
+        clearTimeout(sentenceReviewTimer);
+        sentenceReviewTimer = window.setTimeout(() => { void runSentenceReview(); }, delay);
+    }
+    async function runSentenceReview() {
+        if (sentenceReviewBusy || closing) return;
+        sentenceReviewBusy = true;
+        try {
+            const live = { ...currentChapter(book, selectedId), content: editor.getHtml() };
+            const chapters = listBodyChapters(book.sections)
+                .filter((ch) => ch && ch.kind !== "folder")
+                .map((ch) => (ch.id === live.id ? live : ch));
+            await reviewSentencesForXp({
+                chapters,
+                source: "solo",
+                userId: session.user?.id,
+                isLocal: session.mode !== "cloud",
+                supabase,
+                markReviewed: (texts) => {
+                    if (selectedKind() === "folder") return;
+                    const marked = markSentencesInRoot(pageEl, texts);
+                    if (marked) {
+                        persist({ ...book, sections: setChapterContent(book.sections, selectedId, editor.getHtml()) });
+                    }
+                },
+            });
+        } catch {
+            /* try again next idle */
+        } finally {
+            sentenceReviewBusy = false;
+        }
     }
 
     const editor = mountDocument({
@@ -412,6 +451,15 @@ async function boot() {
         chapterTitle,
         drawTree,
     });
+
+    // Review sentences on tab hide / navigate away, and once shortly after load.
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") void runSentenceReview();
+    });
+    if (session.mode === "cloud") {
+        supabase.rpc("finalize_writing_xp_sweep").catch(() => {});
+    }
+    scheduleSentenceReview(12000);
 
     const preview = mountPreviewSession({
         shell,

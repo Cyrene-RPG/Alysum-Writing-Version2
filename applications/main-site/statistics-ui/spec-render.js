@@ -3,6 +3,7 @@
  */
 import { AWARDS } from "@alysum/statistics/awards.js";
 import { XP_THRESHOLDS, metalForLevel, bandStepForLevel } from "@alysum/statistics/xp-levels.js";
+import { REP_THRESHOLDS, gemColorForLevel, gemCutStep } from "@alysum/statistics/rep-levels.js";
 import { WORKED_EXAMPLES, evaluateSentence } from "@alysum/statistics/eligibility.js";
 
 function row(cells) {

@@ -16,6 +16,7 @@ import { countWordsInHtml, countWordsInSections } from "@alysum/writing-engine/w
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { recordTypedWords } from "@alysum/account/writing-stats.js";
 import { typedWordDelta } from "@alysum/statistics/typed-input.js";
+import { reviewSentencesForXp } from "@alysum/statistics/sentence-review.js";
 import { paintChipInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
 import { initWorkspaceShell } from "/js/studio/shell.js?v=2";
 import { createAutosave } from "/js/editor/autosave.js";
@@ -541,8 +542,26 @@ async function boot() {
         paintStage();
     });
 
+    async function sealSentenceXp() {
+        if (demo || !uid) return;
+        try {
+            const bodyChapters = chapters().filter((ch) => ch && ch.kind !== "folder");
+            await reviewSentencesForXp({
+                chapters: bodyChapters,
+                source: "word_wars",
+                roomId,
+                userId: uid,
+                isLocal: session.mode !== "cloud",
+                supabase,
+            });
+        } catch {
+            /* leaving still counts what was written */
+        }
+    }
+
     document.getElementById("leaveBtn")?.addEventListener("click", async () => {
         await autosave.flush?.();
+        await sealSentenceXp();
         try {
             await lobbyApi.leaveWordWarRoom(roomId);
         } catch {
@@ -553,6 +572,7 @@ async function boot() {
 
     finishBtn?.addEventListener("click", async () => {
         await autosave.flush?.();
+        await sealSentenceXp();
         try {
             await lobbyApi.finishWordWar(roomId);
         } catch {

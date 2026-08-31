@@ -189,3 +189,36 @@
 .account-focus-actions .msg.visible {
     display: inline-block;
 }
+/* Daily word goal picker */
+.goal-preset-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 4px 0 14px;
+}
+.goal-preset {
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
+    background: color-mix(in srgb, var(--alysum-ui-chrome, #141414) 70%, transparent);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 7px 14px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+.goal-preset:hover { color: var(--text); border-color: var(--accent, #7c3aed); }
+.goal-preset.is-on {
+    background: var(--accent, #7c3aed);
+    border-color: var(--accent, #7c3aed);
+    color: #fff;
+}
+.goal-custom-field { max-width: 220px; }
+.goal-custom-field input[type="number"] {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--alysum-ui-chrome, #141414) 70%, transparent);
+    color: var(--text);
+    font: inherit;
+}

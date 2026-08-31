@@ -51,7 +51,7 @@
     </table>
     <ul>
         <li><code>null</code> = off (grants 0) until you set a number. <code>writing_sentence</code> starts off.</li>
-        <li>No per-word drip. Words only matter as 2k / 10k milestones on Word Wars sentences that lasted 12 hours.</li>
+        <li>No per-word drip. <code>writing_sentence</code> pays per eligible sentence; the 2k / 10k milestones fire on <code>users.writing_durable_words</code> — sentences that survived their 12-hour provisional window.</li>
         <li>Rep-level lump XP = <code>rep_level_lump_per_level × repLevel</code> (level 1 → 10, level 50 → 500).</li>
     </ul>
 
@@ -103,20 +103,19 @@
 
     <h2>8. Writing stats vs writing XP</h2>
     <ul>
-        <li>Overview today/goal/streak/lifetime words = existing <code>writing_day_totals</code> / <code>users.words</code>. Never grants XP.</li>
-        <li>Writing XP = Word Wars eligible sentences only, plus 2k/10k on durable war-words.</li>
+        <li>Overview today / goal / goal-streak = <code>users.writing_day_totals</code> — only words the writer <strong>typed</strong> (paste, drop, undo/redo excluded). Minimum goal 1,000. Never grants XP.</li>
+        <li>Writing XP = eligible sentences (2 XP each, provisional 12h), from the <strong>solo editor and Word Wars</strong>. 2k / 10k milestones on <code>writing_durable_words</code>.</li>
     </ul>
 
-    <h2>9. Writing XP (Word Wars only)</h2>
-    <p>Word Wars is live writing with other people (timed or host-ended room). The solo book editor grants <strong>zero</strong> writing XP.</p>
+    <h2>9. Writing XP (solo editor + Word Wars)</h2>
+    <p>Every sentence a writer completes is checked. Solo editing runs it on idle / save / pagehide; Word Wars also seals on leave / finish / kick. <code>grant_sentence_xp</code> re-checks structure server-side; pass → <code>writing_sentences</code> row, provisional 12h.</p>
     <ul>
-        <li>Word Wars is synced to your real chapter(s). On leave or finish, scan those chapters — not a separate war buffer. Sentences already wrapped in <code>data-xp-reviewed</code> (highlighted in the editor) are skipped so they are not checked or paid twice. New writing after the highlight is reviewed next time. Paste of 2+ words is still void. Publish must strip these marks so readers do not see the highlight.</li>
-        <li>Seal once per (user, room) when <strong>your</strong> live session ends: the room <code>finished</code>, the room is <code>cancelled</code> after you were active, you <strong>leave</strong>, or you are kicked. Leaving does <strong>not</strong> void that writing — it still goes through eligibility and can grant XP.</li>
-        <li>New typing in the solo editor after you leave still grants nothing. Do not run a second job if the room later finishes (same user+room key).</li>
-        <li>LanguageTool / Layer 3 run on that sealed batch (on leave or on finish), never while typing. Informal lines like <code>hello cheese man how are you doing.</code> do not pass the cheap check. If LanguageTool only finds casing, Layer 3 still judges coherence. Dialogue that passed Layer 1 stays relaxed.</li>
-        <li>1-word paste allowed. 2+ word paste/drop voids the whole sentence.</li>
-        <li>Pass → provisional 12h. Delete or disqualifying edit of <em>that</em> sentence → revoke stored XP. Then FINAL; add word count to <code>writing_durable_words</code>; grant 2k and 10k steps (they stack at 10k).</li>
-        <li>Identity: ~70% similarity, not position, not IDs in published HTML.</li>
+        <li>Synced to your real chapter(s) — not a separate buffer. Sentences already wrapped in <code>data-xp-reviewed</code> are skipped; typing inside a reviewed span re-opens it. Publish strips the marks.</li>
+        <li>Word Wars seals once per (user, room) — <code>war_seals</code>. Leaving does not void what you wrote.</li>
+        <li>Layers 0–2 (paste / uniqueness / char-mash / word-list / verb-glue) run client-side. LanguageTool (Layer 2b) is a batched server proxy — <strong>not wired yet</strong>; until it is, capitalised prose with a real verb (≥4 words) passes locally and the rest is held and re-checked. Layer 3 (AI coherence) deferred.</li>
+        <li>1-word paste allowed. 2+ word paste/drop voids the sentence (and pasted regions don't count toward the goal).</li>
+        <li>Pass → provisional 12h. Delete / rewrite of that sentence inside 12h → <code>revoke_sentences</code> → <code>reverse_xp_for_ref</code>. Then <code>finalize_writing_xp_sweep</code> (pinged from studio/overview/editor load) promotes it to FINAL, adds the word count to <code>writing_durable_words</code>, grants the 2k / 10k steps.</li>
+        <li>Identity: hash of the normalized text (<code>sentenceReviewKey</code>). Editing a sentence = a new sentence. A given sentence pays once, ever (<code>writing_sentences</code> unique <code>(user, sentence_hash)</code>).</li>
     </ul>
     <p>Worked examples (live from <code>eligibility.js</code>):</p>
     <table>

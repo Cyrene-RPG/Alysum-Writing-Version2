@@ -6,11 +6,28 @@ import { updateAuthorBioCount, readSupportLinkDraft } from "/js/settings/author-
 import { supabase } from "@alysum/authentication/client.js";
 import { updateProfileRow } from "@alysum/synchronization-engine/local-adapter.js";
 import { ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "@alysum/account/mode.js";
+import { DAILY_GOAL_PRESETS, clampDailyWordGoal } from "@alysum/writing-engine/day-stats.js";
 import {
     AUTHOR_BIO_MAX_LENGTH,
     supportLinksPayloadFromDraft,
 } from "@alysum/library/author-profile.js";
 import { fillWelcomeBar } from "/js/welcome-bar.js";
+
+let goalPick = 0;
+
+function paintGoalPresets() {
+    if (!els.goalPresetRow) return;
+    els.goalPresetRow.innerHTML = DAILY_GOAL_PRESETS.map((n) =>
+        `<button type="button" class="goal-preset${n === goalPick ? " is-on" : ""}" data-goal="${n}">${n.toLocaleString()}</button>`
+    ).join("");
+}
+
+/** Called by page.js after the user row loads. */
+export function setGoalUi(goal) {
+    goalPick = clampDailyWordGoal(goal);
+    if (els.goalCustomInput) els.goalCustomInput.value = String(goalPick);
+    paintGoalPresets();
+}
 
 async function signedInUser() {
     if (state.settingsSessionUser?.id) return state.settingsSessionUser;
@@ -230,6 +247,45 @@ export function wireSettingsSaves() {
             showMsg(els.avatarMsg, e?.message || "Could not save profile picture.", false);
         } finally {
             els.saveAvatarBtn.disabled = false;
+        }
+    });
+
+    // --- Daily word goal ---
+    els.goalPresetRow?.addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-goal]");
+        if (!btn) return;
+        goalPick = Number(btn.dataset.goal) || goalPick;
+        if (els.goalCustomInput) els.goalCustomInput.value = String(goalPick);
+        paintGoalPresets();
+    });
+    els.goalCustomInput?.addEventListener("input", () => {
+        goalPick = Number(els.goalCustomInput.value) || goalPick;
+        paintGoalPresets();
+    });
+    els.saveGoalBtn?.addEventListener("click", async () => {
+        hideMsg(els.goalMsg);
+        const goal = clampDailyWordGoal(goalPick || els.goalCustomInput?.value);
+        setGoalUi(goal);
+        els.saveGoalBtn.disabled = true;
+        try {
+            if (state.isLocalSettings) {
+                updateProfileRow({ daily_word_goal: goal });
+                showMsg(els.goalMsg, "Saved.", true);
+                return;
+            }
+            const user = await signedInUser();
+            if (!user?.id) {
+                showMsg(els.goalMsg, "Sign in to save.", false);
+                return;
+            }
+            const { error } = await supabase.from("users").update({ daily_word_goal: goal }).eq("id", user.id);
+            if (error) throw error;
+            showMsg(els.goalMsg, "Saved.", true);
+        } catch (e) {
+            console.error(e);
+            showMsg(els.goalMsg, e?.message || "Could not save.", false);
+        } finally {
+            els.saveGoalBtn.disabled = false;
         }
     });
 
