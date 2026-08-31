@@ -94,6 +94,7 @@ body {
     font-size: 14px;
 }
 .studio-goal-top > span:first-child { color: var(--muted); }
+.studio-goal-streak { color: color-mix(in srgb, var(--text) 55%, transparent); font-weight: 600; }
 .studio-goal-pill,
 .studio-shelf-count {
     border: 1px solid var(--border, rgba(255, 255, 255, 0.1));

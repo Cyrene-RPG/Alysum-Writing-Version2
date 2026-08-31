@@ -6,7 +6,7 @@ import { countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { initWorkspaceShell } from "./shell.js?v=2";
 import { bindBookMenu } from "./book-menu.js?v=6";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
-import { getWritingStats, typedWordsThisMonth, typedWordsThisWeek } from "@alysum/account/writing-stats.js";
+import { getWritingStats } from "@alysum/account/writing-stats.js";
 import { localDayKey, localMonthStartKey, localWeekStartKey } from "@alysum/writing-engine/day-stats.js";
 import { isProbablyOnline, onReconnect } from "@alysum/synchronization-engine/network.js";
 import {
@@ -89,18 +89,11 @@ function watchStatPeriods(onPeriodChange) {
 function renderStats(mount, books, profile, userId) {
     const totalWords = books.reduce((total, book) => total + bookWordCount(book), 0);
     const s = getWritingStats(profile || {}, { userId });
-    const level = s.level;
-    const into = s.levelInfo;
-    const xpTile = into.next == null
-        ? `${s.xp.toLocaleString()} XP · max level`
-        : `${into.into.toLocaleString()} / ${into.span.toLocaleString()} XP to L${level + 1}`;
     const stats = [
         { value: totalWords, label: "Total words across all books" },
         { value: s.wordsThisMonth, label: "Words written this month" },
         { value: s.wordsThisWeek, label: "Words written this week" },
         { value: s.streak, label: "Daily login streak" },
-        { value: level, label: xpTile },
-        { value: s.goalStreak, label: "Goal-hit streak (days)" },
     ];
     mount.innerHTML = stats.map((stat) => `
         <div class="studio-stat">
@@ -114,6 +107,12 @@ function renderGoal(goalMount, labelMount, fillMount, profile, userId) {
     if (!s.goal || s.goal <= 0) return;
     labelMount.textContent = `${s.wordsToday.toLocaleString()} / ${s.goal.toLocaleString()}`;
     fillMount.style.width = `${s.goalPct}%`;
+    const streakEl = document.getElementById("studioGoalStreak");
+    if (streakEl) {
+        streakEl.textContent = s.goalStreak > 0
+            ? ` · ${s.goalStreak}-day streak`
+            : "";
+    }
     goalMount.classList.remove("hidden");
 }
 
