@@ -138,7 +138,8 @@ export async function ensureLoginStreakCloud(supabase, userId, profile) {
     }
 
     cacheLoginStreak(userId, next.streak, today);
-    void supabase.rpc("touch_user_presence").catch(() => {});
+    // supabase.rpc() returns a PostgREST builder — thenable, but no .catch.
+    Promise.resolve(supabase.rpc("touch_user_presence")).catch(() => {});
     return { streak: next.streak, lastLogin: next.lastLogin };
 }
 

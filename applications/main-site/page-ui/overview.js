@@ -6,6 +6,7 @@ import { fillWelcomeBar } from "/js/welcome-bar.js";
 import { getProfileRow } from "@alysum/synchronization-engine/local-adapter.js";
 import { mergeUserRow, aboutMeText, supportLinksFromSources } from "/js/settings/helpers.js";
 import { supportLinksList } from "@alysum/library/author-profile.js";
+import { fillProfileStats } from "/js/statistics-ui/profile-stats.js";
 
 function setAvatar(url, label) {
     const wrap = document.getElementById("ovAvatarWrap");
@@ -37,6 +38,11 @@ function fillOverview(data, fallbackLabel, user) {
         bioEl.classList.toggle("is-empty", !bio);
     }
     fillOverviewLinks(data, user);
+    try {
+        fillProfileStats(data, { isSelf: true, supabase });
+    } catch {
+        /* stats block is best-effort */
+    }
     fillWelcomeBar({
         displayName: data.displayName,
         username: handle,

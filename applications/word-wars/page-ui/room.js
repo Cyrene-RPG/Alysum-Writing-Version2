@@ -15,8 +15,8 @@ import {
 import { countWordsInHtml, countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { recordTypedWords } from "@alysum/account/writing-stats.js";
-import { typedWordDelta } from "@alysum/statistics/typed-input.js";
-import { reviewSentencesForXp } from "@alysum/statistics/sentence-review.js";
+import { typedWordDelta, isPasteLikeInput } from "@alysum/statistics/typed-input.js";
+import { reviewSentencesForXp, recordPastedRegion } from "@alysum/statistics/sentence-review.js";
 import { paintChipInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
 import { initWorkspaceShell } from "/js/studio/shell.js?v=2";
 import { createAutosave } from "/js/editor/autosave.js";
@@ -298,6 +298,9 @@ async function boot() {
     function applyHtml(html, event) {
         const chapter = currentChapter();
         if (!chapter) return;
+        if (!demo && uid && isPasteLikeInput(event)) {
+            recordPastedRegion(uid, chapter.content || "", html);
+        }
         const prevWords = countWordsInSections(book.sections);
         book = withUpdatedWords({
             ...book,

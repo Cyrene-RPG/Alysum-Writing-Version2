@@ -1,0 +1,142 @@
+/* XP level borders + reputation gems. Procedural: one metal colour + a 1–5
+   intensity band per level, no bespoke art. Used on /overview and the reader
+   author card. */
+
+:root {
+    --xpb-iron: #9aa3ad;
+    --xpb-bronze: #c8853f;
+    --xpb-silver: #d7dde6;
+    --xpb-gold: #f2c34e;
+    --xpb-platinum: #cfe4ff;
+    --xpb-diamond: #8ff0f7;
+}
+
+.stat-badge,
+.ov-badge .stat-badge {
+    position: relative;
+    display: inline-flex;
+    width: 76px;
+    height: 76px;
+    flex: none;
+}
+.stat-badge-face {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--alysum-ui-chrome, #141414) 80%, transparent);
+    border: 2px solid rgba(255, 255, 255, 0.14);
+}
+.stat-badge-face img { width: 100%; height: 100%; object-fit: cover; }
+.stat-badge-initial {
+    font: 700 1.6rem/1 var(--alysum-display-font, system-ui);
+    color: var(--text, #f6e9dc);
+}
+
+/* the ring */
+.xp-border::before {
+    content: "";
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+    z-index: 0;
+    border: 3px solid var(--xpb-metal, transparent);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4),
+        0 0 calc(4px + var(--xpb-band, 0) * 3px) color-mix(in srgb, var(--xpb-metal, transparent) calc(30% + var(--xpb-band, 0) * 12%), transparent);
+}
+.xp-border--none::before { display: none; }
+.xp-border--iron { --xpb-metal: var(--xpb-iron); }
+.xp-border--bronze { --xpb-metal: var(--xpb-bronze); }
+.xp-border--silver { --xpb-metal: var(--xpb-silver); }
+.xp-border--gold { --xpb-metal: var(--xpb-gold); }
+.xp-border--platinum { --xpb-metal: var(--xpb-platinum); }
+.xp-border--diamond { --xpb-metal: var(--xpb-diamond); }
+.xp-border--step-1 { --xpb-band: 1; }
+.xp-border--step-2 { --xpb-band: 2; }
+.xp-border--step-3 { --xpb-band: 3; }
+.xp-border--step-4 { --xpb-band: 4; }
+.xp-border--step-5 { --xpb-band: 5; }
+
+/* reputation gem at bottom centre */
+.rep-gem {
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    bottom: -7px;
+    width: 14px;
+    height: 14px;
+    transform: translateX(-50%) rotate(45deg);
+    background: var(--rep-gem-color, #6b7280);
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--rep-gem-color, #6b7280) 70%, transparent);
+    opacity: calc(0.4 + var(--rep-gem-cut, 1) * 0.12);
+}
+.rep-gem--none { display: none; }
+.rep-gem--cut-1 { --rep-gem-cut: 1; }
+.rep-gem--cut-2 { --rep-gem-cut: 2; }
+.rep-gem--cut-3 { --rep-gem-cut: 3; }
+.rep-gem--cut-4 { --rep-gem-cut: 4; }
+.rep-gem--cut-5 { --rep-gem-cut: 5; }
+.rep-gem--gray { --rep-gem-color: #9aa3ad; }
+.rep-gem--green { --rep-gem-color: #3fbf6b; }
+.rep-gem--blue { --rep-gem-color: #3b82f6; }
+.rep-gem--purple { --rep-gem-color: #8b5cf6; }
+.rep-gem--yellow { --rep-gem-color: #f2c34e; }
+.rep-gem--orange { --rep-gem-color: #f2923c; }
+.rep-gem--teal { --rep-gem-color: #2dd4bf; }
+.rep-gem--red { --rep-gem-color: #ef4444; }
+.rep-gem--diamond { --rep-gem-color: #8ff0f7; }
+.rep-gem--royal {
+    --rep-gem-color: #a855f7;
+    background: conic-gradient(from 45deg, #ef4444, #f2c34e, #3fbf6b, #3b82f6, #a855f7, #ef4444);
+}
+
+/* /overview placement */
+.ov-hero { position: relative; }
+.ov-badge { position: absolute; left: 0; top: 0; }
+.ov-hero .ov-avatar { visibility: hidden; }  /* the badge replaces the plain avatar */
+
+.ov-wstats { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; }
+.ov-wstat {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.72rem;
+    color: var(--muted, #9ca3af);
+    letter-spacing: 0.02em;
+}
+.ov-wstat strong {
+    font-size: 1.05rem;
+    color: var(--text, #f6e9dc);
+    font-weight: 700;
+}
+
+/* border picker */
+.ov-badge-picker { margin-top: 14px; }
+.ov-border-hint { margin: 0 0 10px; font-size: 0.85rem; color: var(--muted, #9ca3af); }
+.ov-border-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 44px);
+    grid-template-rows: repeat(5, 44px);
+    gap: 12px;
+    justify-content: start;
+}
+.ov-border-cell {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 0;
+    background: color-mix(in srgb, var(--alysum-ui-chrome, #141414) 80%, transparent);
+    color: var(--muted, #9ca3af);
+    font: 700 12px/1 system-ui;
+    cursor: pointer;
+}
+.ov-border-cell span { position: relative; z-index: 1; }
+.ov-border-cell.is-worn { outline: 2px solid var(--accent, #7c3aed); outline-offset: 3px; }
+.ov-border-cell.is-locked { opacity: 0.3; cursor: not-allowed; }
+.ov-border-msg { margin: 10px 0 0; font-size: 0.8rem; color: var(--muted, #9ca3af); }

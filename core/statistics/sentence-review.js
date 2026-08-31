@@ -7,9 +7,12 @@
  * (core/statistics/eligibility.js); passes grant `writing_sentence` XP as
  * provisional (12h) via the grant_sentence_xp RPC and get marked reviewed.
  *
- * LanguageTool (Layer 2b) is not wired yet — until it is, `needs_grammar`
- * sentences that look like clean capitalised prose (real verb, ≥4 words) are
- * passed locally; the rest are held and re-checked next run.
+ * LanguageTool (Layer 2b) runs server-side via POST /api/language-tool for
+ * signed-in writers who are online: `needs_grammar` sentences are batched to the
+ * proxy, which writes the sentence_grammar row grant_sentence_xp checks for. If
+ * the proxy is unreachable (or the writer is local/offline) we fall back to a
+ * lenient local check — clean capitalised prose with a real verb and ≥4 words —
+ * and hold the rest for the next run.
  *
  * No DOM here. The caller passes chapter {id, content} objects and, for the
  * editor, a `markReviewed(texts)` callback that wraps the spans + persists.
@@ -32,10 +35,51 @@ import { hasVerbHint, tokenizeWords } from "./grammar-hints.js";
 import { startsWithCapital } from "./grammar-check.js";
 
 const LOCAL_KEY_PREFIX = "alysum:sentence-xp:";
+const PASTED_KEY_PREFIX = "alysum:pasted-sentences:";
 const MIN_LOCAL_PASS_WORDS = 4;
+const LANGUAGE_TOOL_ENDPOINT = "/api/language-tool";
+const GRAMMAR_BATCH_MAX = 40;
 
 function localKey(userId) {
     return LOCAL_KEY_PREFIX + String(userId || "");
+}
+
+function pastedKey(userId) {
+    return PASTED_KEY_PREFIX + String(userId || "");
+}
+
+function readPastedSet(userId) {
+    try {
+        const raw = JSON.parse(localStorage.getItem(pastedKey(userId)) || "[]");
+        return new Set(Array.isArray(raw) ? raw : []);
+    } catch {
+        return new Set();
+    }
+}
+
+function writePastedSet(userId, set) {
+    try {
+        localStorage.setItem(pastedKey(userId), JSON.stringify([...set].slice(-2000)));
+    } catch {
+        /* ignore */
+    }
+}
+
+/**
+ * Called from the editor when an insertFromPaste / insertFromDrop happens.
+ * The sentences that appear in `nextHtml` but not `prevHtml` are the pasted
+ * ones — remember their hashes so they can never earn sentence XP. A sentence
+ * that is later rewritten gets a new hash and becomes the writer's own words.
+ */
+export function recordPastedRegion(userId, prevHtml, nextHtml) {
+    if (!userId) return;
+    const before = allHashesInHtml(prevHtml);
+    const set = readPastedSet(userId);
+    let changed = false;
+    for (const h of allHashesInHtml(nextHtml)) {
+        if (!before.has(h) && !set.has(h)) { set.add(h); changed = true; }
+    }
+    if (changed) writePastedSet(userId, set);
 }
 
 function readLocalGrants(userId) {
@@ -59,6 +103,51 @@ function writeLocalGrants(userId, hashes) {
 function localGrammarPass(text) {
     const words = tokenizeWords(text);
     return startsWithCapital(text) && hasVerbHint(words) && words.length >= MIN_LOCAL_PASS_WORDS;
+}
+
+async function accessToken(supabase) {
+    try {
+        const { data } = await supabase.auth.getSession();
+        return data?.session?.access_token || "";
+    } catch {
+        return "";
+    }
+}
+
+/**
+ * Batch the `needs_grammar` sentences to the server-side LanguageTool proxy.
+ * Returns a Map<hash, "pass"|"reject"|"needs_ai">. Empty map = proxy unreachable
+ * (caller falls back to the lenient local check).
+ */
+async function runGrammarProxy(supabase, items) {
+    const out = new Map();
+    if (!supabase || !items.length || typeof fetch !== "function") return out;
+    const token = await accessToken(supabase);
+    if (!token) return out;
+    for (let i = 0; i < items.length; i += GRAMMAR_BATCH_MAX) {
+        const batch = items.slice(i, i + GRAMMAR_BATCH_MAX);
+        try {
+            const res = await fetch(LANGUAGE_TOOL_ENDPOINT, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: JSON.stringify({
+                    sentences: batch.map((it) => ({
+                        hash: it.hash,
+                        text: it.text,
+                        isDialogue: it.isDialogue,
+                    })),
+                }),
+            });
+            if (!res.ok) return out;
+            const data = await res.json().catch(() => null);
+            const verdicts = data && typeof data.verdicts === "object" ? data.verdicts : null;
+            if (!verdicts) return out;
+            for (const [hash, verdict] of Object.entries(verdicts)) out.set(hash, verdict);
+        } catch {
+            return out;
+        }
+    }
+    return out;
 }
 
 /** Every sentence hash currently present in a chapter, reviewed or not. */
@@ -91,19 +180,24 @@ export async function reviewSentencesForXp({
         return { granted: 0, marked: 0, revoked: 0 };
     }
 
+    const useProxy = !isLocal && !!supabase
+        && (typeof navigator === "undefined" || navigator.onLine !== false);
+
     const toGrant = [];         // { hash, text, wordCount, source, roomId, chapterId, verdict }
+    const needsGrammar = [];    // { hash, text, isDialogue, wordCount, chapterId }
     const passText = [];        // texts to mark reviewed
     const rejectText = [];      // also marked so we stop re-checking them
     const liveHashes = new Set();
+    const pastedSet = readPastedSet(userId);
 
     for (const chapter of chapters) {
         const html = chapter?.content || "";
         for (const h of allHashesInHtml(html)) liveHashes.add(h);
         for (const s of unreviewedSentencesFromHtml(html)) {
+            if (pastedSet.has(s.key)) { rejectText.push(s.text); continue; } // pasted → never pays
             const result = evaluateSentence({ text: s.text, isDialogue: s.isDialogue });
             const wc = tokenizeWords(s.text).length;
-            if (result.verdict === VERDICT_PASS
-                || (result.verdict === VERDICT_NEEDS_GRAMMAR && localGrammarPass(s.text))) {
+            if (result.verdict === VERDICT_PASS) {
                 toGrant.push({
                     hash: s.key,
                     text: s.text,
@@ -114,10 +208,65 @@ export async function reviewSentencesForXp({
                     verdict: "pass",
                 });
                 passText.push(s.text);
+            } else if (result.verdict === VERDICT_NEEDS_GRAMMAR) {
+                if (useProxy) {
+                    needsGrammar.push({
+                        hash: s.key,
+                        text: s.text,
+                        isDialogue: s.isDialogue,
+                        wordCount: wc,
+                        chapterId: chapter.id,
+                    });
+                } else if (localGrammarPass(s.text)) {
+                    toGrant.push({
+                        hash: s.key,
+                        text: s.text,
+                        wordCount: wc,
+                        source,
+                        roomId: roomId || undefined,
+                        chapterId: chapter.id,
+                        verdict: "pass",
+                    });
+                    passText.push(s.text);
+                }
+                // else: hold, re-check next run.
             } else if (result.verdict === VERDICT_REJECT) {
                 rejectText.push(s.text);
             }
-            // needs_grammar we can't resolve → leave unmarked, re-check next run.
+        }
+    }
+
+    if (needsGrammar.length) {
+        const verdicts = await runGrammarProxy(supabase, needsGrammar);
+        for (const item of needsGrammar) {
+            const v = verdicts.get(item.hash);
+            if (v === "pass") {
+                toGrant.push({
+                    hash: item.hash,
+                    text: item.text,
+                    wordCount: item.wordCount,
+                    source,
+                    roomId: roomId || undefined,
+                    chapterId: item.chapterId,
+                    verdict: "needs_grammar",
+                });
+                passText.push(item.text);
+            } else if (v === "reject") {
+                rejectText.push(item.text);
+            } else if (!v && localGrammarPass(item.text)) {
+                // proxy unreachable → lenient fallback so writing still pays.
+                toGrant.push({
+                    hash: item.hash,
+                    text: item.text,
+                    wordCount: item.wordCount,
+                    source,
+                    roomId: roomId || undefined,
+                    chapterId: item.chapterId,
+                    verdict: "pass",
+                });
+                passText.push(item.text);
+            }
+            // v === "needs_ai" → hold for Layer 3, re-check next run.
         }
     }
 
@@ -164,6 +313,15 @@ export async function reviewSentencesForXp({
     const marks = [...passText, ...rejectText];
     if (marks.length && typeof markReviewed === "function") {
         try { markReviewed(marks); } catch { /* ignore */ }
+    }
+
+    // Prune pasted hashes that are no longer anywhere in the doc.
+    if (pastedSet.size) {
+        let pruned = false;
+        for (const h of [...pastedSet]) {
+            if (!liveHashes.has(h)) { pastedSet.delete(h); pruned = true; }
+        }
+        if (pruned) writePastedSet(userId, pastedSet);
     }
 
     return { granted, marked: marks.length, revoked };

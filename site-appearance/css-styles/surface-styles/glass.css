@@ -97,7 +97,9 @@ html.surface-glass .appearance-mix-controls,
 html.surface-glass .profile-box:not(.profile-danger-box):not(.backup-practice-box),
 html.surface-glass .wd-pfp-dropdown,
 html.surface-glass .settings-nav,
-html.surface-glass .writer-tree {
+html.surface-glass .writer-tree,
+html.surface-glass .reader-pager,
+html.surface-glass .reader-picker {
     background-color: var(--glass-sheet);
     background-image: linear-gradient(
         180deg,

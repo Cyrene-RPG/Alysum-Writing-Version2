@@ -295,17 +295,24 @@ function renderMorePanel() {
     });
 }
 
+const CONTINUE_READING_MAX = 4;
+
+function continueReadingBooks() {
+    return BOOKS.filter((book) => book.continuing).slice(0, CONTINUE_READING_MAX);
+}
+
 function renderContinue() {
     const row = document.getElementById("continueRow");
     const section = document.getElementById("continueSection");
-    const items = BOOKS.filter((book) => book.continuing);
+    const items = continueReadingBooks();
     section.hidden = !items.length;
     row.innerHTML = items.map(cardHtml).join("");
     attachCardHandlers(row);
 }
 
 function renderGrid() {
-    const sorted = sortBooks(BOOKS.filter((book) => statusFilter(book) && searchMatches(book) && genreMatches(book)));
+    const continueIds = new Set(continueReadingBooks().map((book) => book.id));
+    const sorted = sortBooks(BOOKS.filter((book) => !continueIds.has(book.id) && statusFilter(book) && searchMatches(book) && genreMatches(book)));
     const grid = document.getElementById("bookGrid");
     const empty = document.getElementById("emptyState");
     grid.innerHTML = sorted.map(cardHtml).join("");

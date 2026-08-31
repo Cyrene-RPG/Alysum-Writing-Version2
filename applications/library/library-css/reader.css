@@ -239,9 +239,9 @@ html.reader-page body {
     max-width: 100%;
     margin: 48px auto 0;
     gap: 4px;
-    background: var(--reader-chrome);
+    background: color-mix(in srgb, var(--reader-chrome) 78%, transparent);
     border: 1px solid var(--reader-edge);
-    border-radius: 999px;
+    border-radius: var(--glass-radius, 16px);
     padding: 6px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }

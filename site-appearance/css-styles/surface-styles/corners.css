@@ -79,7 +79,11 @@ html[data-corner-style="sharp"] .ww-view-live,
 html[data-corner-style="sharp"] .ww-word-badge,
 html[data-corner-style="sharp"] .ww-share,
 html[data-corner-style="sharp"] .ww-finish,
-html[data-corner-style="sharp"] .ww-chapters button {
+html[data-corner-style="sharp"] .ww-chapters button,
+html[data-corner-style="sharp"] .reader-pager,
+html[data-corner-style="sharp"] .reader-picker,
+html[data-corner-style="sharp"] .reader-picker button,
+html[data-corner-style="sharp"] .reader-icon {
     border-radius: 0;
 }
 

@@ -457,7 +457,8 @@ async function boot() {
         if (document.visibilityState === "hidden") void runSentenceReview();
     });
     if (session.mode === "cloud") {
-        supabase.rpc("finalize_writing_xp_sweep").catch(() => {});
+        // supabase.rpc() returns a PostgREST builder — thenable, but no .catch.
+        Promise.resolve(supabase.rpc("finalize_writing_xp_sweep")).catch(() => {});
     }
     scheduleSentenceReview(12000);
 
@@ -522,10 +523,11 @@ async function boot() {
 }
 
 boot().catch((err) => {
+    console.error(err);
     const loading = document.getElementById("loadingPanel");
     if (loading) {
         loading.classList.remove("hidden");
-        loading.textContent = "Couldn't load writer.";
+        const detail = String((err && err.message) || err || "");
+        loading.innerHTML = `Couldn't load writer.${detail ? ` <span style="opacity:.6">(${detail})</span>` : ""} <a href="/studio">Back to Studio</a>`;
     }
-    console.error(err);
 });

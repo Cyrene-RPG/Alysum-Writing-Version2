@@ -276,7 +276,8 @@ async function boot() {
                 paintTotals();
             }
         }).catch(() => {});
-        supabase.rpc("finalize_writing_xp_sweep").catch(() => {});
+        // supabase.rpc() returns a PostgREST builder — thenable, but no .catch.
+        Promise.resolve(supabase.rpc("finalize_writing_xp_sweep")).catch(() => {});
     }
 
     void loadWorkspaceProfile(supabase, session).then((next) => {
@@ -341,4 +342,11 @@ async function boot() {
     });
 }
 
-boot();
+boot().catch((err) => {
+    console.error(err);
+    const loading = document.getElementById("loadingPanel");
+    if (loading) {
+        loading.classList.remove("hidden");
+        loading.textContent = "Couldn't load Studio. Try reloading.";
+    }
+});
