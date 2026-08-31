@@ -104,8 +104,9 @@ function toCloudPatch(patch) {
     return out;
 }
 
-async function selectVisibleBooks(supabase) {
-    const base = () => supabase.from("books").select("*");
+async function selectVisibleBooks(supabase, userId) {
+    const ownerId = String(userId || "").trim();
+    const base = () => supabase.from("books").select("*").eq("user_id", ownerId);
     let result = await base().order("updated", { ascending: false });
     if (result.error) {
         result = await base().order("updated_at", { ascending: false });
@@ -116,8 +117,10 @@ async function selectVisibleBooks(supabase) {
     return result;
 }
 
-export async function listBooks(supabase, _userId) {
-    const { data, error } = await selectVisibleBooks(supabase);
+export async function listBooks(supabase, userId) {
+    const ownerId = String(userId || "").trim();
+    if (!ownerId) return [];
+    const { data, error } = await selectVisibleBooks(supabase, ownerId);
     if (error) throw error;
     return (data || []).map(fromCloudRow).filter((book) => book && book.id);
 }
