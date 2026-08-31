@@ -14,6 +14,7 @@ function storedTab() {
 export function mountWriterChrome({
     shell,
     treeToggle,
+    settingsCollapse,
     railToggle,
     tabChapters,
     tabBook,
@@ -38,11 +39,12 @@ export function mountWriterChrome({
     }
     function setTreeCollapsed(collapsed) {
         shell?.classList.toggle("is-tree-collapsed", collapsed);
-        if (treeToggle) {
-            treeToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-            treeToggle.title = collapsed ? "Show sidebar" : "Hide sidebar";
-            treeToggle.textContent = collapsed ? "›" : "‹";
-        }
+        [treeToggle, settingsCollapse].forEach((btn) => {
+            if (!btn) return;
+            btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+            btn.title = collapsed ? "Show sidebar" : "Hide sidebar";
+            btn.textContent = collapsed ? "›" : "‹";
+        });
         try {
             localStorage.setItem(TREE_COLLAPSE_KEY, collapsed ? "1" : "0");
         } catch {
@@ -50,9 +52,11 @@ export function mountWriterChrome({
         }
     }
     setTreeCollapsed(treeCollapsed());
-    treeToggle?.addEventListener("click", () => {
+    function toggleTreeCollapsed() {
         setTreeCollapsed(!shell?.classList.contains("is-tree-collapsed"));
-    });
+    }
+    treeToggle?.addEventListener("click", toggleTreeCollapsed);
+    settingsCollapse?.addEventListener("click", toggleTreeCollapsed);
 
     function railCollapsed() {
         try {

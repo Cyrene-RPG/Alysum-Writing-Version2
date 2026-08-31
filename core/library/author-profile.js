@@ -7,6 +7,14 @@ import {
     formatChapterProgress,
     serializationFromBookData,
 } from "../publishing/serialization.js";
+import { normalizeGenreList } from "../publishing/genres.js";
+import { normalizeCrop } from "../publishing/cover-upload.js";
+import {
+    normalizeHexColor,
+    normalizePageBgId,
+    normalizePageLook,
+    normalizePageLookSaved,
+} from "../publishing/publish-meta.js";
 
 export const AUTHOR_BIO_MAX_LENGTH = 2000;
 export const AUTHOR_SUPPORT_URL_MAX_LENGTH = 500;
@@ -156,9 +164,14 @@ export function normalizePublishedBookPreview(row) {
     });
     return {
         id,
+        ownerUserId: String(row?.user_id || row?.userId || data.userId || "").trim(),
         title: String(data.title || "Untitled").trim() || "Untitled",
         author: String(data.author || "Unknown").trim() || "Unknown",
         coverUrl: String(data.coverUrl || data.cover_url || "").trim(),
+        coverCrop: normalizeCrop(data.coverCrop || data.cover_crop),
+        coverMini: normalizeCrop(data.coverMini || data.cover_mini),
+        coverWide: normalizeCrop(data.coverWide || data.cover_wide),
+        coverWideEnabled: Boolean(data.coverWideEnabled ?? data.cover_wide_enabled),
         summary: String(data.summary || "").trim(),
         chapterCount: serialization.chapterCount,
         publishedChapterCount: serialization.publishedCount,
@@ -168,7 +181,32 @@ export function normalizePublishedBookPreview(row) {
         mediaFormat,
         updated: typeof data.updated === "number" ? data.updated : 0,
         type: String(data.type || "fiction").trim() || "fiction",
+        genre: normalizeGenreList(data)[0] || "",
+        genres: normalizeGenreList(data),
+        rating: String(data.rating || "").trim(),
+        tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
+        warnings: Array.isArray(data.warnings) ? data.warnings.map(String) : [],
+        followers: Number(data.followers) || 0,
+        ratingScore: Number(data.ratingScore ?? data.rating_score) || 0,
+        publishedAt: Number(data.publishedAt ?? data.published_at) || 0,
+        notesBefore: String(data.notesBefore || data.notes_before || "").trim(),
+        pageLook: normalizePageLook(data.pageLook || data.page_look),
+        pageLookSaved: normalizePageLookSaved(data.pageLookSaved || data.page_look_saved),
+        pageBgId: normalizePageBgId(data.pageBgId || data.page_bg_id)
+            || (normalizeHexColor(data.pageBg || data.page_bg) ? "custom" : ""),
+        pageBg: normalizeHexColor(data.pageBg || data.page_bg),
     };
+}
+
+export async function fetchLibraryCatalog(supabase) {
+    const { data, error } = await queryLibraryCatalog(supabase, (table) => table.select("*"));
+    if (error && isLibraryCatalogMissingError(error)) {
+        const fallback = await supabase.from("library").select("*");
+        if (fallback.error) throw fallback.error;
+        return (fallback.data || []).map((row) => normalizePublishedBookPreview(row)).filter(Boolean);
+    }
+    if (error) throw error;
+    return (data || []).map((row) => normalizePublishedBookPreview(row)).filter(Boolean);
 }
 
 const AUTHOR_PROFILE_SELECT =

@@ -6,6 +6,8 @@ import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { goToLogin } from "@alysum/desktop/app.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=6";
 import {
+    addBodyChapter,
+    lastOfKind,
     listBodyChapters,
     setChapterContent,
     withUpdatedWords,
@@ -26,7 +28,15 @@ import {
     kickWordWarParticipant,
     meFromLobby,
 } from "@alysum/community/word-wars.js?v=3";
-import { isDemoRoom } from "/js/word-wars/demo.js?v=2";
+import {
+    demoRequested,
+    demoBotCount,
+    demoSession,
+    demoProfile,
+    demoBooksApi,
+    createDemoRoomLobby,
+    mountDemoBanner,
+} from "/js/word-wars/demo.js?v=7";
 
 const POLL_MS = 1500;
 const SHARE_MS = 500;
@@ -81,20 +91,30 @@ function peekHtml(html) {
 
 async function boot() {
     initWorkspaceShell({ lead: "Word ", accent: "Wars", subtitle: "Sprint" });
-    const session = await requireStudioSession(supabase, window.location.pathname + window.location.search);
+
+    const demo = demoRequested();
+    if (demo) mountDemoBanner();
+    const lobbyApi = demo
+        ? createDemoRoomLobby({ bots: demoBotCount() })
+        : { getWordWarLobby, updateWordWarProgress, leaveWordWarRoom, finishWordWar, kickWordWarParticipant };
+
+    const session = demo
+        ? demoSession
+        : await requireStudioSession(supabase, window.location.pathname + window.location.search);
     if (!session) return;
     if (session.mode !== "cloud") {
         goToLogin("word-wars-lobby.html");
         return;
     }
 
-    const roomId = new URLSearchParams(window.location.search).get("room") || "";
+    let roomId = new URLSearchParams(window.location.search).get("room") || "";
+    if (demo && !roomId) roomId = "demo-ww-1";
     if (!roomId) {
         window.location.replace("word-wars-lobby.html");
         return;
     }
 
-    const profile = await loadWorkspaceProfile(supabase, session);
+    const profile = demo ? demoProfile : await loadWorkspaceProfile(supabase, session);
     initWorkspaceShell({
         lead: "Word ",
         accent: "Wars",
@@ -104,11 +124,7 @@ async function boot() {
     });
 
     const uid = session.user.id;
-    if (isDemoRoom(roomId)) {
-        window.location.replace("word-wars-lobby.html");
-        return;
-    }
-    let lobby = await getWordWarLobby({ roomId });
+    let lobby = await lobbyApi.getWordWarLobby({ roomId });
     if (!lobby) {
         window.location.replace("word-wars-lobby.html");
         return;
@@ -129,7 +145,7 @@ async function boot() {
         return;
     }
 
-    const api = createBooksApi(session, supabase);
+    const api = demo ? demoBooksApi() : createBooksApi(session, supabase);
     let book = await api.getBook(bookId);
     if (!book) {
         window.location.replace("studio.html");
@@ -169,7 +185,7 @@ async function boot() {
             return false;
         }
     }
-    function setRailCollapsed(which, collapsed) {
+    function setRailCollapsed(which, collapsed, persist = true) {
         const isTree = which === "tree";
         shell?.classList.toggle(isTree ? "is-tree-collapsed" : "is-rail-collapsed", collapsed);
         const btn = isTree ? treeToggle : railToggle;
@@ -180,19 +196,37 @@ async function boot() {
                 : (isTree ? "Hide chapters" : "Hide others");
             btn.textContent = isTree ? (collapsed ? "›" : "‹") : (collapsed ? "‹" : "›");
         }
+        if (!persist) return;
         try {
             localStorage.setItem(isTree ? TREE_KEY : RAIL_KEY, collapsed ? "1" : "0");
         } catch {
             /* ignore */
         }
     }
+
+    // Below ~860px the room is a single column with the rails as tap-to-open
+    // chips. Force both collapsed while narrow without clobbering the wide-mode
+    // preference; restore it when the viewport grows back.
+    const narrowMq = window.matchMedia("(max-width: 860px)");
+    function syncNarrowRails() {
+        if (narrowMq.matches) {
+            setRailCollapsed("tree", true, false);
+            setRailCollapsed("rail", true, false);
+        } else {
+            setRailCollapsed("tree", storedFlag(TREE_KEY), false);
+            setRailCollapsed("rail", storedFlag(RAIL_KEY), false);
+        }
+    }
+
     setRailCollapsed("tree", storedFlag(TREE_KEY));
     setRailCollapsed("rail", storedFlag(RAIL_KEY));
+    syncNarrowRails();
+    narrowMq.addEventListener("change", syncNarrowRails);
     treeToggle?.addEventListener("click", () => {
-        setRailCollapsed("tree", !shell?.classList.contains("is-tree-collapsed"));
+        setRailCollapsed("tree", !shell?.classList.contains("is-tree-collapsed"), !narrowMq.matches);
     });
     railToggle?.addEventListener("click", () => {
-        setRailCollapsed("rail", !shell?.classList.contains("is-rail-collapsed"));
+        setRailCollapsed("rail", !shell?.classList.contains("is-rail-collapsed"), !narrowMq.matches);
     });
 
     const chapters = () => listBodyChapters(book.sections).filter((ch) => ch && ch.kind !== "folder");
@@ -216,6 +250,31 @@ async function boot() {
         onTypewriter: () => {},
         onFind: () => {},
     });
+    // Word Wars is a sprint, not the full editor — drop Find and Typewriter.
+    toolbarMount
+        .querySelectorAll("[data-find-toggle], [data-typewriter]")
+        .forEach((el) => el.remove());
+
+    // Tab should indent like a normal writer. The shared document.js turns Tab
+    // into a literal "\t" that collapses under white-space:normal; pre-empt it in
+    // the capture phase before the event reaches #pageEditor.
+    document.getElementById("editorPane")?.addEventListener(
+        "keydown",
+        (event) => {
+            if (event.key !== "Tab" || event.altKey || event.ctrlKey || event.metaKey) return;
+            const active = document.activeElement;
+            if (active !== pageEl && !pageEl.contains(active)) return;
+            event.preventDefault();
+            event.stopPropagation();
+            try {
+                // Two em spaces (U+2003) — they render under white-space:normal; a tab/plain space collapses.
+                document.execCommand("insertText", false, "  ");
+            } catch {
+                /* ignore */
+            }
+        },
+        true,
+    );
 
     const autosave = createAutosave({
         delay: 400,
@@ -241,12 +300,14 @@ async function boot() {
             ...book,
             sections: setChapterContent(book.sections, chapter.id, html),
         });
-        recordManuscriptWordGain({
-            userId: uid,
-            supabase,
-            isLocal: false,
-            gained: countWordsInSections(book.sections) - prevWords,
-        });
+        if (!demo) {
+            recordManuscriptWordGain({
+                userId: uid,
+                supabase,
+                isLocal: false,
+                gained: countWordsInSections(book.sections) - prevWords,
+            });
+        }
         autosave.schedule(book);
         paintWords();
         scheduleShare();
@@ -312,7 +373,7 @@ async function boot() {
             payload.liveChapterId = chapter?.id || "";
         }
         try {
-            lobby = await updateWordWarProgress(roomId, payload);
+            lobby = await lobbyApi.updateWordWarProgress(roomId, payload);
             const nextMe = meFromLobby(lobby, uid);
             if (nextMe?.wordsAtStart) wordsAtStart = Number(nextMe.wordsAtStart) || wordsAtStart;
         } catch {
@@ -405,6 +466,32 @@ async function boot() {
         loadChapter();
     });
 
+    let addingChapter = false;
+    document.getElementById("addChapterBtn")?.addEventListener("click", async () => {
+        if (addingChapter) return;
+        addingChapter = true;
+        const addBtn = document.getElementById("addChapterBtn");
+        if (addBtn) addBtn.disabled = true;
+        try {
+            // Commit whatever is in the open chapter before restructuring.
+            await autosave.flush?.();
+            const sections = addBodyChapter(book.sections, "", null);
+            book = withUpdatedWords({ ...book, sections });
+            selectedId = lastOfKind(book.sections.body, "chapter", null)?.id || selectedId;
+            pinnedId = "self";
+            paintChapters();
+            paintTiles();
+            paintStage();
+            loadChapter();
+            // Persist the new chapter now (mirrors the editor's immediate save on add).
+            autosave.schedule(book);
+            await autosave.flush?.();
+        } finally {
+            addingChapter = false;
+            if (addBtn) addBtn.disabled = false;
+        }
+    });
+
     myViewBtn?.addEventListener("click", () => {
         if (shareLocked) return;
         sharing = true;
@@ -441,7 +528,7 @@ async function boot() {
     kickBtn?.addEventListener("click", async () => {
         if (pinnedId === "self" || !meFromLobby(lobby, uid)?.isHost) return;
         try {
-            lobby = await kickWordWarParticipant(roomId, pinnedId);
+            lobby = await lobbyApi.kickWordWarParticipant(roomId, pinnedId);
         } catch {
             return;
         }
@@ -453,21 +540,21 @@ async function boot() {
     document.getElementById("leaveBtn")?.addEventListener("click", async () => {
         await autosave.flush?.();
         try {
-            await leaveWordWarRoom(roomId);
+            await lobbyApi.leaveWordWarRoom(roomId);
         } catch {
             /* leave anyway */
         }
-        window.location.replace("word-wars-lobby.html");
+        window.location.replace(demo ? "word-wars-lobby.html?demo=1" : "word-wars-lobby.html");
     });
 
     finishBtn?.addEventListener("click", async () => {
         await autosave.flush?.();
         try {
-            await finishWordWar(roomId);
+            await lobbyApi.finishWordWar(roomId);
         } catch {
             /* still leave */
         }
-        window.location.replace("word-wars-lobby.html");
+        window.location.replace(demo ? "word-wars-lobby.html?demo=1" : "word-wars-lobby.html");
     });
 
     paintChapters();
@@ -483,9 +570,9 @@ async function boot() {
 
     setInterval(async () => {
         try {
-            const next = await getWordWarLobby({ roomId });
+            const next = await lobbyApi.getWordWarLobby({ roomId });
             if (!next || next.status === "finished" || next.status === "cancelled") {
-                window.location.replace("word-wars-lobby.html");
+                window.location.replace(demo ? "word-wars-lobby.html?demo=1" : "word-wars-lobby.html");
                 return;
             }
             if (next.status === "lobby") {

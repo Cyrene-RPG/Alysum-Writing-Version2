@@ -806,6 +806,13 @@ body.alysum-with-workspace-nav.alysum-tool-editor > .alysum-tool-root {
 }
 
 @media (max-width: 760px) {
+    .wd-nav a[href="/studio"],
+    .wd-nav a[href="/studio.html"],
+    .wd-pfp-dropdown a[href="/studio"],
+    .wd-pfp-dropdown a[href="/studio.html"] {
+        display: none !important;
+    }
+
     body.alysum-with-workspace-nav.alysum-tool-editor > .alysum-tool-root {
         isolation: isolate;
     }

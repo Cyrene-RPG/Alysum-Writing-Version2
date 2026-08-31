@@ -286,21 +286,22 @@ export function resolveBodyBgColor(id) {
     return DEFAULT_BG;
 }
 
-export function applyBodyBgVars(bg, vibrant, top) {
+export function applyBodyBgVars(bg, vibrant, top, el) {
     if (typeof document === "undefined") return;
-    const root = document.documentElement;
+    const root = el || document.documentElement;
     const hex = parseHex(bg);
     if (!hex) return;
-    root.style.setProperty("--bg", bg);
+    const value = rgbToHex(hex.r, hex.g, hex.b);
+    root.style.setProperty("--bg", value);
     root.style.setProperty(
         "--bg-gradient-top",
-        parseHex(top) ? top : computeGradientTop(bg, vibrant)
+        parseHex(top) ? top : computeGradientTop(value, vibrant)
     );
 }
 
-export function clearBodyBgVars() {
+export function clearBodyBgVars(el) {
     if (typeof document === "undefined") return;
-    const root = document.documentElement;
+    const root = el || document.documentElement;
     root.style.removeProperty("--bg");
     root.style.removeProperty("--bg-gradient-top");
 }

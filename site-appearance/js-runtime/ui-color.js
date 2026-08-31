@@ -141,30 +141,30 @@ export function resolveUiColorHex(colorId) {
     return parseHex(row?.color) || DEFAULT_PANEL;
 }
 
-export function applyUiColorVars(hex) {
+export function applyUiColorVars(hex, el) {
     if (typeof document === "undefined") return;
-    const root = document.documentElement;
+    const root = el || document.documentElement;
     const clean = parseHex(hex);
     if (!clean) {
-        clearUiColorVars();
+        clearUiColorVars(root);
         return;
     }
     root.style.setProperty("--alysum-ui-panel", clean);
     root.style.setProperty("--alysum-ui-chrome", darken(clean, 0.22));
     root.style.setProperty("--alysum-ui-raised", lighten(clean, 0.14));
     root.style.setProperty("--panel", clean);
-    applyRootInk(root, clean, "ui");
+    if (root === document.documentElement) applyRootInk(root, clean, "ui");
 }
 
-export function clearUiColorVars() {
+export function clearUiColorVars(el) {
     if (typeof document === "undefined") return;
-    const root = document.documentElement;
+    const root = el || document.documentElement;
     root.style.removeProperty("--alysum-ui-panel");
     root.style.removeProperty("--alysum-ui-chrome");
     root.style.removeProperty("--alysum-ui-raised");
     root.style.removeProperty("--alysum-ui-color");
     root.style.removeProperty("--panel");
-    applyRootInk(root, DEFAULT_PANEL, "ui");
+    if (root === document.documentElement) applyRootInk(root, DEFAULT_PANEL, "ui");
 }
 
 export function applyUiColor(colorId, customHex) {

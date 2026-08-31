@@ -1,0 +1,22 @@
+---
+description: Split any source file that grows past 500 lines
+alwaysApply: true
+---
+
+# File length
+
+If a file you are editing is over **500 lines**, or a change would push it over 500, split it before finishing. Do not leave a 500+ line file and "clean it up later."
+
+## How to split
+
+- Cut out one concern into a sibling file in the same folder.
+- Use kebab-case. Drop a redundant folder prefix (`applications/studio/page-ui/cover-crop.js`, not `studio-cover-crop.js`).
+- Keep `core/` free of `document` / CSS / HTML. Screen glue stays in `applications/`.
+- Applications never import other applications — shared logic goes in `core/`.
+- Bump cache-bust query strings on the HTML/import that loads the new module.
+
+## Examples
+
+- `publish.js` grows past 500 → move crop math/UI into `cover-crop.js`, keep save/post in `publish.js`.
+- `library-preview.js` grows past 500 → move chapter-manage or tag/genre paint into its own module.
+- `page.js` in an app grows past 500 → extract render helpers, leave `boot()` in `page.js`.

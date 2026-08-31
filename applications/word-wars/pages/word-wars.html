@@ -32,12 +32,12 @@
     <meta name="robots" content="noindex, nofollow">
     <title>Word War — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="/css/workspace-nav.css?v=29" />
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=30" />
     <link rel="stylesheet" href="/css/editor/page.css?v=46" />
     <link rel="stylesheet" href="/css/editor/document.css?v=11" />
     <link rel="stylesheet" href="/css/editor/editor-fonts.css?v=1" />
     <link rel="stylesheet" href="/css/editor/scene-breaks.css?v=1" />
-    <link rel="stylesheet" href="/css/word-wars/room.css?v=9" />
+    <link rel="stylesheet" href="/css/word-wars/room.css?v=11" />
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 </head>
 <body class="ww-body">
@@ -51,8 +51,7 @@
                     </span>
                 </button>
                 <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
-                    <a role="menuitem" href="studio.html" data-close-pfp-menu>Studio</a>
-                    <a role="menuitem" href="overview.html" data-close-pfp-menu>Overview</a>
+                    <a role="menuitem" href="overview.html" data-close-pfp-menu>Profile</a>
                     <a role="menuitem" href="settings.html" data-close-pfp-menu>Settings</a>
                     <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
                 </div>
@@ -65,8 +64,9 @@
     </header>
     <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
         <div class="wd-nav">
-            <a href="studio.html">Studio</a>
-            <a href="word-wars-lobby.html" class="is-active">Word Wars</a>
+            <a href="/studio">Studio</a>
+            <a href="/word-wars-lobby" class="is-active">Word Wars</a>
+            <a href="/library">Library</a>
         </div>
     </nav>
 
@@ -77,6 +77,7 @@
                 <p class="ww-label">Chapters</p>
                 <button type="button" class="writer-tree-toggle" id="treeToggle" aria-expanded="true" title="Hide chapters">‹</button>
             </div>
+            <button type="button" class="ww-add-chapter" id="addChapterBtn" title="Add chapter" aria-label="Add chapter">+ Chapter</button>
             <ul id="chapterList"></ul>
         </aside>
         <section class="ww-stage" id="stage">
@@ -108,6 +109,6 @@
             <div class="ww-others-list" id="tileList"></div>
         </aside>
     </div>
-    <script type="module" src="/js/word-wars/room.js?v=14"></script>
+    <script type="module" src="/js/word-wars/room.js?v=19"></script>
 </body>
 </html>

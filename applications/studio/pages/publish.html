@@ -1,0 +1,155 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/",
+        "@alysum/statistics/": "/core/statistics/"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=8" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=10" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=12" />
+    <script src="/site-appearance/js-runtime/body-background-presets-data.js?v=3"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/boot.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow">
+    <title>Publish — Alysum</title>
+    <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
+    <link rel="stylesheet" href="/css/editor/document.css?v=11" />
+    <link rel="stylesheet" href="/css/editor/scene-breaks.css?v=1" />
+    <link rel="stylesheet" href="/css/studio/publish.css?v=12" />
+</head>
+<body>
+    <div class="pub-page">
+        <h1>Post work</h1>
+        <p class="pub-sub">Required fields are marked *. You can save without posting and come back later.</p>
+        <p class="pub-note">This listing uses chapters already in your book. Pick a genre — extra labels go in additional tags.</p>
+        <p class="pub-status" id="pubStatus" role="status"></p>
+
+        <section class="pub-card">
+            <h2>Tags</h2>
+            <label>Genre *</label>
+            <p class="pub-hint">First pick is the main genre; you can add two more as secondary and tertiary.</p>
+            <div class="pub-genre-picker" id="genrePicker">
+                <div class="pub-genre-chips" id="genreChips"></div>
+                <input id="genreSearch" type="search" placeholder="Search genres…" autocomplete="off" />
+                <div class="pub-genre-menu" id="genreMenu" hidden></div>
+            </div>
+            <label>Rating *</label>
+            <div class="pub-pills" id="ratingPicker">
+                <label><input type="radio" name="rating" value="general" /> General Audiences</label>
+                <label><input type="radio" name="rating" value="teen" /> Teen &amp; Up</label>
+                <label><input type="radio" name="rating" value="mature" checked /> Mature</label>
+                <label><input type="radio" name="rating" value="explicit" /> Explicit</label>
+            </div>
+            <label>Content warnings</label>
+            <div class="pub-checks" id="warningPicker"></div>
+            <label for="extraTags">Additional tags</label>
+            <input id="extraTags" type="text" placeholder="Relationships, tropes, a custom genre…" />
+        </section>
+
+        <section class="pub-card">
+            <h2>Work details</h2>
+            <label for="workTitle">Title *</label>
+            <input id="workTitle" type="text" />
+            <div class="pub-look">
+                <p class="pub-look-kicker">Listing theme</p>
+                <div data-book-look-swatches class="book-look-swatches"></div>
+                <button type="button" class="pub-look-reset" data-book-look-reset>Reset</button>
+                <p class="pub-look-kicker">Page background</p>
+                <div data-book-bg-chips class="book-look-bg-chips"></div>
+                <div data-book-bg-custom hidden>
+                    <input type="color" data-book-bg-color value="#0b1220" />
+                </div>
+                <button type="button" class="pub-look-reset" data-book-bg-reset>Reset</button>
+            </div>
+            <p class="pub-hint">Optional. Visitors keep their Appearance unless you set these. Library page only — not chapters.</p>
+            <label for="workSummary">Summary</label>
+            <textarea id="workSummary" placeholder="A few sentences for the library card."></textarea>
+            <label for="workNotes">Beginning notes</label>
+            <textarea id="workNotes" placeholder="Optional notes shown before chapter 1."></textarea>
+            <div class="pub-checks">
+                <label><input type="checkbox" id="workWip" checked /> This is a work in progress</label>
+                <label><input type="checkbox" id="workComplete" /> This work is complete — post all chapters now</label>
+            </div>
+            <label for="workCoverFile">Cover</label>
+            <input id="workCoverFile" type="file" accept="image/*" />
+            <p class="pub-hint">Pick a frame, then drag it or the corners. Mini is set for you if you leave it.</p>
+            <div class="pub-checks">
+                <label><input type="checkbox" id="coverWideOn" /> Use a wide banner</label>
+            </div>
+            <div class="pub-cover-editor" id="coverEditor" hidden>
+                <div class="pub-crop-tabs" id="cropTabs">
+                    <button type="button" data-crop-tab="library" class="is-on">Library</button>
+                    <button type="button" data-crop-tab="mini">Mini</button>
+                    <button type="button" data-crop-tab="wide" hidden>Wide</button>
+                </div>
+                <div class="pub-cover-stage" id="coverStage">
+                    <img id="coverStageImg" alt="" />
+                    <div class="pub-crop-frame" id="cropFrame" aria-label="Crop frame">
+                        <i data-handle="nw"></i>
+                        <i data-handle="ne"></i>
+                        <i data-handle="sw"></i>
+                        <i data-handle="se"></i>
+                    </div>
+                </div>
+                <div class="pub-cover-previews">
+                    <figure data-crop-tab="library">
+                        <div class="pub-prev is-lib" id="prevLib"><img alt="" /></div>
+                        <figcaption>Library</figcaption>
+                    </figure>
+                    <figure data-crop-tab="mini">
+                        <div class="pub-prev is-mini" id="prevMini"><img alt="" /></div>
+                        <figcaption>Mini</figcaption>
+                    </figure>
+                    <figure id="prevWideWrap" data-crop-tab="wide" hidden>
+                        <div class="pub-prev is-wide" id="prevWide"><img alt="" /></div>
+                        <figcaption>Wide</figcaption>
+                    </figure>
+                </div>
+            </div>
+        </section>
+
+        <section class="pub-card">
+            <h2>Manuscript</h2>
+            <p class="pub-hint">Chapters come from your book. Uncheck any you do not want live yet.</p>
+            <details class="pub-chapters" id="chapterDetails">
+                <summary id="chapterSummary">Chapters to post (0)</summary>
+                <div id="chapterList"></div>
+            </details>
+            <label for="chapterSelect">Preview</label>
+            <select id="chapterSelect"></select>
+            <div class="pub-preview">
+                <div class="pub-preview-head">
+                    <span id="previewLabel">Chapter preview</span>
+                    <span id="previewWords"></span>
+                </div>
+                <div class="pub-preview-body writer-page" id="previewBody">Select a chapter.</div>
+            </div>
+        </section>
+
+        <div class="pub-strip" id="previewStrip"></div>
+        <div class="pub-actions">
+            <button type="button" class="pub-ghost" id="saveDraftBtn">Save without posting</button>
+            <button type="button" class="pub-primary" id="postBtn">Post work</button>
+        </div>
+    </div>
+    <script type="module" src="/js/studio/publish.js?v=13"></script>
+</body>
+</html>

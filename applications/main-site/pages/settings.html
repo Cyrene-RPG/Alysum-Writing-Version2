@@ -68,7 +68,7 @@
 <link rel="stylesheet" href="/css/settings/profile.css?v=4" />
 <link rel="stylesheet" href="/css/settings/backup.css?v=2" />
 <link rel="stylesheet" href="/css/settings/security.css?v=2" />
-<link rel="stylesheet" href="/css/workspace-nav.css?v=29" />
+<link rel="stylesheet" href="/css/workspace-nav.css?v=30" />
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 
@@ -84,8 +84,7 @@
                         </span>
                     </button>
                     <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
-                        <a role="menuitem" href="studio.html" data-close-pfp-menu>Studio</a>
-                        <a role="menuitem" href="overview.html" data-close-pfp-menu>Overview</a>
+                        <a role="menuitem" href="overview.html" data-close-pfp-menu>Profile</a>
                         <a role="menuitem" href="settings.html#profilePanel" data-close-pfp-menu>Profile Info</a>
                         <a role="menuitem" href="settings.html" data-close-pfp-menu>Settings</a>
                         <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
@@ -99,11 +98,12 @@
         </header>
         <nav class="wd-nav-wrap ui-bar" aria-label="Workspace" data-active="settings">
             <div class="wd-nav">
-                <a href="studio.html">Studio</a>
-                <a href="word-wars-lobby.html">Word Wars</a>
+                <a href="/studio">Studio</a>
+                <a href="/word-wars-lobby">Word Wars</a>
+                <a href="/library">Library</a>
             </div>
         </nav>
-        <script type="module" src="/js/workspace-nav.js?v=22"></script>
+        <script type="module" src="/js/workspace-nav.js?v=25"></script>
 
     <div class="wrap">
     <div class="panel" id="loadingPanel">
@@ -114,7 +114,7 @@
         <nav class="settings-nav" id="settingsNav" aria-label="Settings sections">
             <p class="settings-nav-heading">Settings</p>
             <div class="settings-nav-list" role="tablist">
-                <a class="settings-nav-page" href="overview.html">Overview</a>
+                <a class="settings-nav-page" href="overview.html">Profile</a>
                 <button type="button" role="tab" id="tab-profile" data-section="profilePanel" aria-controls="profilePanel" aria-selected="true">Profile Info</button>
                 <button type="button" role="tab" id="tab-appearance" data-section="appearancePanel" aria-controls="appearancePanel" aria-selected="false">Appearance</button>
                 <button type="button" role="tab" id="tab-backup" data-section="backupPanel" aria-controls="backupPanel" aria-selected="false">Backup</button>
@@ -225,7 +225,7 @@
 
     <div class="panel hidden settings-tab-panel is-active" id="profilePanel" role="tabpanel" aria-labelledby="tab-profile">
         <h2>Profile Info</h2>
-        <p class="hint profile-intro-hint">Change the photo, display name, and bio people see. Overview is the public preview.</p>
+        <p class="hint profile-intro-hint">Change the photo, display name, and bio people see. Profile is the public preview.</p>
 
         <div class="profile-panel-body">
         <section class="profile-box profile-identity-box" aria-labelledby="profileIdentityTitle">
@@ -252,7 +252,7 @@
 
         <section class="profile-box profile-avatar-box" aria-labelledby="profileAvatarTitle">
             <h3 class="profile-box-title" id="profileAvatarTitle">Profile picture</h3>
-            <p class="hint">Upload an image for your account. This is what others see on Overview.</p>
+            <p class="hint">Upload an image for your account. This is what others see on Profile.</p>
             <div class="profile-avatar-layout">
                 <div class="profile-avatar-preview has-initial" id="profileAvatarPreviewWrap">
                     <img id="profileAvatarPreview" src="/Alysum-3.png" alt="Profile picture preview" />

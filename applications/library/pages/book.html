@@ -1,0 +1,98 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/",
+        "@alysum/statistics/": "/core/statistics/"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=8" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=10" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=12" />
+    <script src="/site-appearance/js-runtime/body-background-presets-data.js?v=3"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/boot.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Book — Alysum</title>
+    <link rel="stylesheet" href="/css/library/book.css?v=6" />
+    <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
+</head>
+<body>
+    <div class="book-page" id="bookPage" hidden>
+        <article class="book-card panel" id="bookCard">
+            <header class="book-hero" id="bookHero">
+                <div class="book-hero-top">
+                    <a class="book-back" href="/library">‹ Library</a>
+                    <span class="book-status" id="bookStatus"></span>
+                </div>
+                <div class="book-hero-bottom">
+                    <div class="book-cover" id="bookCover" hidden></div>
+                    <div class="book-title-block">
+                        <div class="book-title-row">
+                            <h1 id="bookTitle"></h1>
+                            <a class="book-edit" id="editTitle" href="/publish" hidden title="Edit listing">✎</a>
+                        </div>
+                        <p class="book-by">by <span id="bookAuthor"></span></p>
+                        <p class="book-meta" id="bookMeta"></p>
+                    </div>
+                </div>
+            </header>
+            <div class="book-body">
+                <p class="book-label" id="tagsLabel">Genres &amp; tags</p>
+                <div class="book-tags" id="bookTags"></div>
+                <p class="book-label" id="warnsLabel">Content warnings</p>
+                <div class="book-warns" id="bookWarns"></div>
+                <div class="book-row-head">
+                    <p class="book-label">Synopsis</p>
+                    <a class="book-edit" id="editSynopsis" href="/publish" hidden title="Edit listing">✎</a>
+                </div>
+                <div class="book-synopsis-wrap">
+                    <div class="book-synopsis clipped" id="bookSynopsis"></div>
+                    <div class="book-synopsis-fade" id="synopsisFade"></div>
+                </div>
+                <button type="button" class="book-more" id="synopsisMore" hidden>Show more</button>
+                <a class="book-cta" id="readCta" href="/read">Start reading</a>
+                <p class="book-cta-cap" id="readCaption" hidden></p>
+                <div class="book-rule"></div>
+                <div class="book-toc-head">
+                    <div class="book-toc-left">
+                        <p class="book-label">Chapters</p>
+                        <a class="book-add-ch" id="addChapter" href="/publish" hidden>＋ Add</a>
+                    </div>
+                    <span class="book-toc-count" id="chapterCount"></span>
+                </div>
+                <p class="book-toc-hint" id="tocHint" hidden>Manage chapters on the publish page</p>
+                <div id="chapterList"></div>
+                <div class="book-rule"></div>
+                <div class="book-reviews">
+                    <div class="book-row-head">
+                        <p class="book-label">Reviews</p>
+                        <span class="book-score" id="reviewScore" hidden></span>
+                    </div>
+                    <p class="book-reviews-empty" id="reviewsEmpty">No reviews yet</p>
+                </div>
+            </div>
+        </article>
+    </div>
+    <div class="book-empty" id="bookEmpty" hidden>
+        <p>This book isn’t available yet.</p>
+        <a href="/library">Back to Library</a>
+    </div>
+    <script type="module" src="/js/library/book.js?v=4"></script>
+</body>
+</html>

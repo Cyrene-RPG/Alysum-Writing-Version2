@@ -1,0 +1,126 @@
+<!DOCTYPE html><html lang="en" class="reader-page">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/",
+        "@alysum/statistics/": "/core/statistics/"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=8" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=10" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=12" />
+    <script src="/site-appearance/js-runtime/body-background-presets-data.js?v=3"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/boot.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Read — Alysum</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Sora:wght@400;500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" />
+    <link rel="stylesheet" href="/css/library/reader.css?v=2" />
+    <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
+</head>
+<body>
+    <div class="reader" id="readerRoot" hidden>
+        <header class="reader-bar">
+            <a class="reader-back" id="readerBack" href="/library">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+                <span>Book</span>
+            </a>
+            <div class="reader-bar-tools">
+                <span class="reader-pct" id="progressPct">0%</span>
+                <span class="reader-bar-rule" aria-hidden="true"></span>
+                <button type="button" class="reader-icon" id="bookmarkBtn" aria-label="Bookmark this book" aria-pressed="false">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                </button>
+                <button type="button" class="reader-icon reader-aa" id="settingsBtn" aria-label="Reading settings" aria-expanded="false" aria-controls="settingsDrawer">
+                    <span>A</span><span>A</span>
+                </button>
+            </div>
+        </header>
+        <div class="reader-track" aria-hidden="true"><div class="reader-track-fill" id="progressFill"></div></div>
+        <main class="reader-scroll" id="readerScroll">
+            <article class="reader-article">
+                <p class="reader-eyebrow" id="bookTitle"></p>
+                <h1 class="reader-chapter-title" id="chapterTitle"></h1>
+                <p class="reader-meta" id="chapterMeta"></p>
+                <div class="reader-body" id="chapterBody"></div>
+            </article>
+        </main>
+        <footer class="reader-pager">
+            <button type="button" class="reader-icon" id="prevBtn" aria-label="Previous chapter">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+            </button>
+            <button type="button" class="reader-picker-btn" id="pickerBtn" aria-haspopup="listbox" aria-expanded="false" aria-controls="chapterPicker">
+                <span id="pickerLabel">Chapter 1 of 1</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+            </button>
+            <button type="button" class="reader-icon reader-next" id="nextBtn" aria-label="Next chapter">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+            </button>
+            <div class="reader-picker" id="chapterPicker" role="listbox" hidden></div>
+        </footer>
+        <div class="reader-scrim" id="settingsScrim" hidden></div>
+        <aside class="reader-drawer" id="settingsDrawer" hidden>
+            <div class="reader-drawer-head">
+                <h2>Reading settings</h2>
+                <button type="button" class="reader-icon reader-icon-sm" id="settingsClose" aria-label="Close settings">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+                </button>
+            </div>
+            <div class="reader-setting">
+                <p class="reader-setting-label">Text size</p>
+                <div class="reader-size-row">
+                    <button type="button" class="reader-step" id="sizeDown" aria-label="Smaller text">A −</button>
+                    <span class="reader-size-val" id="sizeLabel">100%</span>
+                    <button type="button" class="reader-step" id="sizeUp" aria-label="Larger text">A +</button>
+                </div>
+            </div>
+            <div class="reader-setting">
+                <p class="reader-setting-label">Typeface</p>
+                <div class="reader-pills" id="facePills">
+                    <button type="button" class="reader-pill" data-face="serif">Serif</button>
+                    <button type="button" class="reader-pill" data-face="sans">Sans</button>
+                    <button type="button" class="reader-pill" data-face="dyslexic">Dyslexic-friendly</button>
+                </div>
+            </div>
+            <div class="reader-setting">
+                <p class="reader-setting-label">Theme</p>
+                <div class="reader-swatches" id="themeSwatches">
+                    <button type="button" class="reader-swatch" data-theme="dark" aria-label="Dark"><span></span>Dark</button>
+                    <button type="button" class="reader-swatch" data-theme="sepia" aria-label="Sepia"><span></span>Sepia</button>
+                    <button type="button" class="reader-swatch" data-theme="light" aria-label="Light"><span></span>Light</button>
+                </div>
+            </div>
+            <div class="reader-setting">
+                <p class="reader-setting-label">Line spacing</p>
+                <div class="reader-segs" id="spaceSegs">
+                    <button type="button" class="reader-seg" data-space="compact">Compact</button>
+                    <button type="button" class="reader-seg" data-space="comfortable">Comfortable</button>
+                    <button type="button" class="reader-seg" data-space="relaxed">Relaxed</button>
+                </div>
+            </div>
+        </aside>
+    </div>
+    <div class="reader-empty" id="readerEmpty" hidden>
+        <p>This book isn’t available to read yet.</p>
+        <a id="emptyBack" href="/library">Back to Library</a>
+    </div>
+    <script type="module" src="/js/library/reader.js?v=2"></script>
+</body>
+</html>

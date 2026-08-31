@@ -49,7 +49,7 @@ Every current and future application boots this. Features never pick their own c
 
 ```
 site-appearance/
-  documentation/  map — STRUCTURE, CONVENTIONS, ARCHITECTURE, DOMAIN
+  documentation/  map — STRUCTURE, CONVENTIONS, ARCHITECTURE, DOMAIN, PUBLISHING
   tokens/
   css-styles/     theme.css, gradient-themes/, typography.css, surface-styles/
   js-runtime/     boot.js and the rest of the theme runtime

@@ -9,7 +9,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v2.45.0';
+const SW_VERSION = 'v2.46.0';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -21,7 +21,10 @@ const APP_SHELL = [
   '/signup.html',
   '/overview.html',
   '/studio.html',
+  '/studio',
   '/editor.html',
+  '/editor',
+  '/library',
   '/settings.html',
   '/privacy-policy.html',
   '/terms-of-service.html',
@@ -87,7 +90,7 @@ function isCacheableAsset(url) {
 }
 
 function isWorkspaceHtml(url) {
-  return /\/(?:studio|editor|word-wars|word-wars-lobby)\.html$/i.test(url.pathname);
+  return /\/(?:studio|editor|word-wars|word-wars-lobby|library)(?:\.html)?$/i.test(url.pathname);
 }
 
 self.addEventListener('fetch', (event) => {

@@ -19,6 +19,15 @@ import {
     meFromLobby,
 } from "@alysum/community/word-wars.js?v=3";
 import { paintChipInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
+import {
+    demoRequested,
+    demoBotCount,
+    demoSession,
+    demoProfile,
+    createDemoLobbyApi,
+    mountDemoBanner,
+    DEMO_ROOM_ID,
+} from "/js/word-wars/demo.js?v=7";
 
 const LENGTHS = [5, 10, 15, 20, 25, 30, 45, 0];
 const WAIT_MS = 1500;
@@ -61,14 +70,32 @@ function requireBook(bookId) {
 
 async function boot() {
     initWorkspaceShell({ lead: "Word ", accent: "Wars", subtitle: "Write together." });
-    const session = await requireStudioSession(supabase, "word-wars-lobby.html");
+
+    const demo = demoRequested();
+    if (demo) mountDemoBanner();
+    const lobbyApi = demo
+        ? createDemoLobbyApi({ bots: demoBotCount() })
+        : {
+            createWordWarRoom,
+            joinWordWarRoom,
+            joinWordWarRoomById,
+            listOpenWordWarLobbies,
+            getWordWarLobby,
+            startWordWar,
+            updateWordWarLobby,
+            leaveWordWarRoom,
+        };
+
+    const session = demo
+        ? demoSession
+        : await requireStudioSession(supabase, "word-wars-lobby.html");
     if (!session) return;
     if (session.mode !== "cloud") {
         goToLogin("word-wars-lobby.html");
         return;
     }
 
-    const profile = await loadWorkspaceProfile(supabase, session);
+    const profile = demo ? demoProfile : await loadWorkspaceProfile(supabase, session);
     initWorkspaceShell({
         lead: "Word ",
         accent: "Wars",
@@ -78,12 +105,16 @@ async function boot() {
     });
 
     const uid = session.user.id;
-    const api = createBooksApi(session, supabase);
     let books = [];
-    try {
-        books = await api.listBooks();
-    } catch {
-        books = [];
+    if (demo) {
+        books = [{ id: "demo-book", title: "The Salt Verses" }];
+    } else {
+        const api = createBooksApi(session, supabase);
+        try {
+            books = await api.listBooks();
+        } catch {
+            books = [];
+        }
     }
 
     const loading = document.getElementById("loadingPanel");
@@ -174,7 +205,7 @@ async function boot() {
     async function persistLobby(patch) {
         if (!waiting?.roomId || !waitHost) return;
         try {
-            waiting = await updateWordWarLobby(waiting.roomId, patch);
+            waiting = await lobbyApi.updateWordWarLobby(waiting.roomId, patch);
             if (patch.maxWriters != null && Number(waiting.maxWriters) !== patch.maxWriters) {
                 maxPersistOk = false;
             }
@@ -347,7 +378,7 @@ async function boot() {
 
     async function refreshOpen() {
         try {
-            paintOpen(await listOpenWordWarLobbies());
+            paintOpen(await lobbyApi.listOpenWordWarLobbies());
         } catch {
             paintOpen([]);
         }
@@ -355,6 +386,10 @@ async function boot() {
 
     function goToWar(roomId) {
         if (!roomId) return;
+        if (demo) {
+            window.location.replace("word-wars.html?demo=1");
+            return;
+        }
         window.location.replace(`word-wars.html?room=${encodeURIComponent(roomId)}`);
     }
 
@@ -445,7 +480,7 @@ async function boot() {
     async function pollWaiting() {
         if (!waiting?.roomId) return;
         try {
-            const next = await getWordWarLobby({ roomId: waiting.roomId });
+            const next = await lobbyApi.getWordWarLobby({ roomId: waiting.roomId });
             if (!next || next.status === "finished" || next.status === "cancelled") {
                 exitWaiting();
                 return;
@@ -479,7 +514,7 @@ async function boot() {
         }
         waiting = lobby;
         waitHost = !!meFromLobby(lobby, uid)?.isHost;
-        setRoomUrl(lobby.roomId);
+        if (!demo) setRoomUrl(lobby.roomId);
         createView?.classList.add("is-waiting");
         createView?.classList.toggle("is-guest", !waitHost);
         waitPanel?.classList.remove("hidden");
@@ -515,7 +550,7 @@ async function boot() {
             const chosenMax = maxWriters;
             hostChosenMax = chosenMax;
             maxPersistOk = true;
-            const next = await createWordWarRoom({
+            const next = await lobbyApi.createWordWarRoom({
                 durationMin,
                 maxWriters: chosenMax,
                 bookId,
@@ -536,11 +571,11 @@ async function boot() {
         busy = true;
         showError(beginError, "");
         try {
-            const live = await startWordWar(waiting.roomId);
+            const live = await lobbyApi.startWordWar(waiting.roomId);
             goToWar(live.roomId || waiting.roomId);
         } catch (err) {
             try {
-                const next = await getWordWarLobby({ roomId: waiting.roomId });
+                const next = await lobbyApi.getWordWarLobby({ roomId: waiting.roomId });
                 if (next?.status === "active") {
                     goToWar(next.roomId);
                     return;
@@ -568,7 +603,7 @@ async function boot() {
         if (busy || !waiting?.roomId) return;
         busy = true;
         try {
-            await leaveWordWarRoom(waiting.roomId);
+            await lobbyApi.leaveWordWarRoom(waiting.roomId);
         } catch {
             /* still leave the view */
         } finally {
@@ -603,14 +638,14 @@ async function boot() {
             showError(joinError, "Enter the six-character code.");
             return;
         }
-        void joinWithBook((bookId) => joinWordWarRoom(code, bookId));
+        void joinWithBook((bookId) => lobbyApi.joinWordWarRoom(code, bookId));
     });
 
     openList.addEventListener("click", (event) => {
         const btn = event.target.closest("[data-join-id]");
         if (!btn || btn.disabled) return;
         const roomId = btn.dataset.joinId;
-        void joinWithBook((bookId) => joinWordWarRoomById(roomId, bookId));
+        void joinWithBook((bookId) => lobbyApi.joinWordWarRoomById(roomId, bookId));
     });
 
     document.documentElement.addEventListener("alysum-display-text-color", paintNoteInk);
@@ -619,10 +654,15 @@ async function boot() {
 
     await refreshOpen();
 
+    if (demo) {
+        enterWaiting(await lobbyApi.getWordWarLobby({ roomId: DEMO_ROOM_ID }));
+        return;
+    }
+
     const existingId = roomIdFromUrl();
     if (existingId) {
         try {
-            const next = await getWordWarLobby({ roomId: existingId });
+            const next = await lobbyApi.getWordWarLobby({ roomId: existingId });
             if (next && meFromLobby(next, uid)) enterWaiting(next);
             else setRoomUrl("");
         } catch {

@@ -31,8 +31,8 @@
     <meta name="robots" content="noindex, nofollow">
     <title>Studio — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="/css/workspace-nav.css?v=29" />
-    <link rel="stylesheet" href="/css/studio/page.css?v=8" />
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=30" />
+    <link rel="stylesheet" href="/css/studio/page.css?v=14" />
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 </head>
 <body>
@@ -46,8 +46,7 @@
                     </span>
                 </button>
                 <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
-                    <a role="menuitem" href="studio.html" data-close-pfp-menu>Studio</a>
-                    <a role="menuitem" href="overview.html" data-close-pfp-menu>Overview</a>
+                    <a role="menuitem" href="overview.html" data-close-pfp-menu>Profile</a>
                     <a role="menuitem" href="settings.html" data-close-pfp-menu>Settings</a>
                     <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
                 </div>
@@ -60,8 +59,9 @@
     </header>
     <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
         <div class="wd-nav">
-            <a href="studio.html" class="is-active">Studio</a>
-            <a href="word-wars-lobby.html">Word Wars</a>
+            <a href="/studio" class="is-active">Studio</a>
+            <a href="/word-wars-lobby">Word Wars</a>
+            <a href="/library">Library</a>
         </div>
     </nav>
     <div class="wrap">
@@ -96,7 +96,33 @@
             <div class="studio-stats" id="studioStats" aria-label="Writing statistics"></div>
         </div>
     </div>
+    <div class="studio-gear-pop" id="gearPopover" hidden>
+        <div id="gearMenuPane">
+            <button type="button" id="bookMenuPublish">Publish</button>
+            <button type="button" id="bookMenuTakedown" hidden>Take down</button>
+            <button type="button" class="studio-gear-pop-danger" id="bookMenuDelete">Delete book</button>
+            <button type="button" id="bookMenuSettings">Settings</button>
+        </div>
+        <div id="gearPublishPane" hidden>
+            <p class="studio-gear-pop-copy" id="publishPopCopy"></p>
+            <button type="button" id="publishPopYes">Continue</button>
+            <button type="button" id="publishPopNo">Cancel</button>
+        </div>
+    </div>
+    <div class="confirm-overlay" id="confirmOverlay" hidden>
+        <div class="confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
+            <div class="confirm-icon" aria-hidden="true">?</div>
+            <h2 class="confirm-title" id="confirmTitle">Are you sure?</h2>
+            <p class="confirm-text" id="confirmText"></p>
+            <label class="studio-confirm-label hidden" id="confirmTitleLabel" for="confirmTitleInput">Type the book title</label>
+            <input type="text" class="studio-confirm-input hidden" id="confirmTitleInput" autocomplete="off" />
+            <div class="confirm-actions">
+                <button type="button" class="confirm-no" id="confirmNo">Cancel</button>
+                <button type="button" class="confirm-yes" id="confirmYes" data-confirm-yes>Yes</button>
+            </div>
+        </div>
+    </div>
     <script src="/js/pwa-register.js?v=3" defer></script>
-    <script type="module" src="/js/studio/page.js?v=14"></script>
+    <script type="module" src="/js/studio/page.js?v=20"></script>
 </body>
 </html>

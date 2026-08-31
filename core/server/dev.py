@@ -33,6 +33,26 @@ EXACT = {
     "/discord-logo.png": "applications/main-site/public/discord-logo.png",
 }
 
+PAGES = {
+    "/studio": "applications/studio/pages/studio.html",
+    "/editor": "applications/editor/pages/editor.html",
+    "/book-invite": "applications/editor/pages/book-invite.html",
+    "/word-wars-lobby": "applications/word-wars/pages/word-wars-lobby.html",
+    "/word-wars": "applications/word-wars/pages/word-wars.html",
+    "/library": "applications/library/pages/library.html",
+    "/book": "applications/library/pages/book.html",
+    "/read": "applications/library/pages/read.html",
+    "/publish": "applications/studio/pages/publish.html",
+    "/login": "applications/main-site/pages/login.html",
+    "/signup": "applications/main-site/pages/signup.html",
+    "/settings": "applications/main-site/pages/settings.html",
+    "/overview": "applications/main-site/pages/overview.html",
+    "/reset-password": "applications/main-site/pages/reset-password.html",
+    "/privacy-policy": "applications/main-site/pages/privacy-policy.html",
+    "/terms-of-service": "applications/main-site/pages/terms-of-service.html",
+    "/statistics-spec": "applications/main-site/pages/statistics-spec.html",
+}
+
 
 def public_to_file(url_path: str) -> Path:
     clean = unquote(urlparse(url_path).path)
@@ -50,6 +70,8 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/editor/page-ui" / clean[len("/js/editor/") :]
     if clean.startswith("/js/word-wars/"):
         return ROOT / "applications/word-wars/page-ui" / clean[len("/js/word-wars/") :]
+    if clean.startswith("/js/library/"):
+        return ROOT / "applications/library/page-ui" / clean[len("/js/library/") :]
     if clean.startswith("/js/"):
         name = clean[len("/js/") :]
         if name.startswith("homepage"):
@@ -71,12 +93,16 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/editor/editor-css" / clean[len("/css/editor/") :]
     if clean.startswith("/css/word-wars/"):
         return ROOT / "applications/word-wars/word-wars-css" / clean[len("/css/word-wars/") :]
+    if clean.startswith("/css/library/"):
+        return ROOT / "applications/library/library-css" / clean[len("/css/library/") :]
     if clean.startswith("/css/"):
         return ROOT / "applications/main-site/pages-css" / clean[len("/css/") :]
     if clean.startswith("/assets/"):
         return ROOT / "applications/main-site/assets" / clean[len("/assets/") :]
     if clean.startswith(("/site-appearance/", "/core/")):
         return ROOT / clean[1:]
+    if clean in PAGES:
+        return ROOT / PAGES[clean]
     if clean == "/studio.html":
         return ROOT / "applications/studio/pages/studio.html"
     if clean == "/editor.html":
@@ -94,6 +120,16 @@ def public_to_file(url_path: str) -> Path:
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        parsed = urlparse(self.path)
+        path = unquote(parsed.path)
+        if path.endswith(".html") and "/" not in path[1:]:
+            dest = "/" if path in ("/index.html", "/") else path[: -len(".html")]
+            if parsed.query:
+                dest = f"{dest}?{parsed.query}"
+            self.send_response(308)
+            self.send_header("Location", dest)
+            self.end_headers()
+            return
         file_path = public_to_file(self.path)
         try:
             file_path.resolve().relative_to(ROOT)

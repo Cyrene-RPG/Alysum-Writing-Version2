@@ -32,7 +32,7 @@
     <meta name="robots" content="noindex, nofollow">
     <title>Word Wars — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="/css/workspace-nav.css?v=29" />
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=30" />
     <link rel="stylesheet" href="/css/word-wars/lobby.css?v=22" />
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 </head>
@@ -47,8 +47,7 @@
                     </span>
                 </button>
                 <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
-                    <a role="menuitem" href="studio.html" data-close-pfp-menu>Studio</a>
-                    <a role="menuitem" href="overview.html" data-close-pfp-menu>Overview</a>
+                    <a role="menuitem" href="overview.html" data-close-pfp-menu>Profile</a>
                     <a role="menuitem" href="settings.html" data-close-pfp-menu>Settings</a>
                     <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
                 </div>
@@ -61,8 +60,9 @@
     </header>
     <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
         <div class="wd-nav">
-            <a href="studio.html">Studio</a>
-            <a href="word-wars-lobby.html" class="is-active">Word Wars</a>
+            <a href="/studio">Studio</a>
+            <a href="/word-wars-lobby" class="is-active">Word Wars</a>
+            <a href="/library">Library</a>
         </div>
     </nav>
 
@@ -173,6 +173,6 @@
             </div>
         </div>
     </div>
-    <script type="module" src="/js/word-wars/lobby.js?v=16"></script>
+    <script type="module" src="/js/word-wars/lobby.js?v=21"></script>
 </body>
 </html>

@@ -98,6 +98,8 @@ export function insertBook(payload) {
       back: [],
     },
     publish_meta: payload.publish_meta || payload.publishMeta || {},
+    published_chapter_ids: Array.isArray(payload.published_chapter_ids) ? payload.published_chapter_ids : [],
+    is_published: Boolean(payload.is_published ?? payload.isPublished),
     media_format: payload.media_format || payload.mediaFormat || "novel",
   };
   state.books.unshift(book);

@@ -1,4 +1,8 @@
 {
+  "redirects": [
+    { "source": "/index.html", "destination": "/", "permanent": true },
+    { "source": "/:page.html", "destination": "/:page", "permanent": true }
+  ],
   "rewrites": [
     {
       "source": "/sitemap.xml",
@@ -77,6 +81,10 @@
       "destination": "/applications/word-wars/page-ui/:path*"
     },
     {
+      "source": "/js/library/:path*",
+      "destination": "/applications/library/page-ui/:path*"
+    },
+    {
       "source": "/js/statistics-ui/:path*",
       "destination": "/applications/main-site/statistics-ui/:path*"
     },
@@ -113,6 +121,10 @@
       "destination": "/applications/word-wars/word-wars-css/:path*"
     },
     {
+      "source": "/css/library/:path*",
+      "destination": "/applications/library/library-css/:path*"
+    },
+    {
       "source": "/css/statistics-ui/:path*",
       "destination": "/applications/main-site/statistics-ui/:path*"
     },
@@ -123,6 +135,74 @@
     {
       "source": "/assets/:path*",
       "destination": "/applications/main-site/assets/:path*"
+    },
+    {
+      "source": "/studio",
+      "destination": "/applications/studio/pages/studio.html"
+    },
+    {
+      "source": "/editor",
+      "destination": "/applications/editor/pages/editor.html"
+    },
+    {
+      "source": "/book-invite",
+      "destination": "/applications/editor/pages/book-invite.html"
+    },
+    {
+      "source": "/word-wars-lobby",
+      "destination": "/applications/word-wars/pages/word-wars-lobby.html"
+    },
+    {
+      "source": "/word-wars",
+      "destination": "/applications/word-wars/pages/word-wars.html"
+    },
+    {
+      "source": "/library",
+      "destination": "/applications/library/pages/library.html"
+    },
+    {
+      "source": "/book",
+      "destination": "/applications/library/pages/book.html"
+    },
+    {
+      "source": "/read",
+      "destination": "/applications/library/pages/read.html"
+    },
+    {
+      "source": "/publish",
+      "destination": "/applications/studio/pages/publish.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/applications/main-site/pages/login.html"
+    },
+    {
+      "source": "/signup",
+      "destination": "/applications/main-site/pages/signup.html"
+    },
+    {
+      "source": "/settings",
+      "destination": "/applications/main-site/pages/settings.html"
+    },
+    {
+      "source": "/overview",
+      "destination": "/applications/main-site/pages/overview.html"
+    },
+    {
+      "source": "/reset-password",
+      "destination": "/applications/main-site/pages/reset-password.html"
+    },
+    {
+      "source": "/privacy-policy",
+      "destination": "/applications/main-site/pages/privacy-policy.html"
+    },
+    {
+      "source": "/terms-of-service",
+      "destination": "/applications/main-site/pages/terms-of-service.html"
+    },
+    {
+      "source": "/statistics-spec",
+      "destination": "/applications/main-site/pages/statistics-spec.html"
     },
     {
       "source": "/studio.html",

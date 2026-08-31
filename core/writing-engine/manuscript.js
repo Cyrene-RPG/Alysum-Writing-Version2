@@ -74,6 +74,21 @@ export function listBodyChapters(sections) {
     return walkBookChapters(cloneList(src.body));
 }
 
+export function listBodyChaptersWithDepth(sections) {
+    const src = sections && typeof sections === "object" ? sections : {};
+    const out = [];
+    function walk(list, depth) {
+        if (!Array.isArray(list)) return;
+        for (const item of list) {
+            const kind = itemKind(item);
+            if (kind === "folder") walk(item.children, depth + 1);
+            else if (kind === "chapter") out.push({ chapter: item, depth });
+        }
+    }
+    walk(cloneList(src.body), 0);
+    return out;
+}
+
 function defaultPageTitle(key, count) {
     if (key === "body") return `Chapter ${count}`;
     if (key === "front") return `Front page ${count}`;

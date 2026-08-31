@@ -59,6 +59,7 @@ export function fromCloudRow(row) {
         media_format: String(row.media_format || row.mediaFormat || "novel"),
         publish_meta: meta,
         published_chapter_ids: published,
+        is_published: Boolean(row.is_published ?? row.isPublished),
         created: rowTime(row, ["created", "created_at", "createdAt"]),
         updated: rowTime(row, ["updated", "updated_at", "updatedAt"]),
     };
@@ -96,6 +97,9 @@ function toCloudPatch(patch) {
     if (src.published_chapter_ids != null || src.publishedChapterIds != null) {
         const ids = src.published_chapter_ids || src.publishedChapterIds;
         out.published_chapter_ids = Array.isArray(ids) ? ids : [];
+    }
+    if (src.is_published != null || src.isPublished != null) {
+        out.is_published = Boolean(src.is_published ?? src.isPublished);
     }
     return out;
 }

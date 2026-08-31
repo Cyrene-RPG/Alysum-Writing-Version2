@@ -51,11 +51,11 @@ import {
     cleanSections,
 } from "./page/helpers.js?v=41";
 import { createFolderView } from "./page/folder-view.js?v=41";
-import { mountWriterChrome } from "./page/chrome.js?v=42";
+import { mountWriterChrome } from "./page/chrome.js?v=43";
 import { mountTypewriter } from "./page/typewriter.js?v=41";
 import { maybeCreateAutoVersion } from "@alysum/writing-engine/version-api.js";
 import { mountBookSettings } from "./settings.js?v=2";
-import { mountLibraryPreview } from "./library-preview.js";
+import { mountLibraryPreview } from "./library-preview.js?v=12";
 
 async function boot() {
     initWorkspaceShell({ lead: "Working On ", accent: "…", subtitle: "Loading…" });
@@ -168,6 +168,7 @@ async function boot() {
     const { setTab, expandMatter, setBookView } = mountWriterChrome({
         shell,
         treeToggle,
+        settingsCollapse: document.getElementById("settingsCollapse"),
         railToggle,
         tabChapters,
         tabBook,
@@ -185,6 +186,9 @@ async function boot() {
             if (view !== "settings") previewUi?.hide();
         },
     });
+    if (new URLSearchParams(window.location.search).get("view") === "settings") {
+        setBookView("settings");
+    }
     const paintFolderView = createFolderView({ folderView, folderMeta, folderList });
 
     initWorkspaceShell({
@@ -601,6 +605,10 @@ async function boot() {
         },
         defaultAuthor: profile.name || "",
     });
+    if (new URLSearchParams(window.location.search).get("view") === "preview") {
+        setBookView("settings");
+        previewUi.show();
+    }
     mountBookSettings({
         mount: document.getElementById("settingsScroll"),
         bookId: book.id,

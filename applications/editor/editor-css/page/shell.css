@@ -295,7 +295,6 @@ body {
     font-size: 13px;
     font-weight: 800;
     color: var(--muted);
-    margin-right: 48px;
 }
 .writer-settings-pane {
     display: flex;
@@ -327,10 +326,16 @@ body {
     cursor: pointer;
 }
 .writer-tree.is-settings .writer-tree-head { display: none; }
+.writer-settings-topbar .writer-tree-toggle {
+    margin-left: auto;
+}
 .writer-shell.is-tree-collapsed .writer-settings-topbar,
 .writer-shell.is-tree-collapsed .writer-book-foot,
 .writer-shell.is-tree-collapsed .writer-settings-pane {
     display: none !important;
+}
+.writer-shell.is-tree-collapsed .writer-tree.is-settings .writer-tree-head {
+    display: contents;
 }
 .writer-shell.is-tree-collapsed .writer-tree,
 .writer-shell.is-rail-collapsed .writer-rail {

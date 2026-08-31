@@ -173,4 +173,9 @@
 .writer-invite-error { color: var(--accent); }
 .writer-main.is-preview .writer-main-scroll { display: none; }
 .writer-main.is-preview .lib-preview { display: flex; }
-.writer-main.is-preview { max-width: 46rem; }
+.writer-main.is-preview { max-width: none; }
+.writer-main.is-preview {
+    background:
+        radial-gradient(circle at top, var(--theme-body-spot-strong, transparent) 0%, transparent 42%),
+        linear-gradient(180deg, var(--bg-gradient-top, var(--bg, #0b1220)) 0%, var(--bg, #0b1220) 100%);
+}

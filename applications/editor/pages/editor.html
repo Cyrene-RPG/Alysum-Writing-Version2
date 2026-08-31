@@ -31,8 +31,9 @@
     <meta name="robots" content="noindex, nofollow">
     <title>Writer — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
-    <link rel="stylesheet" href="/css/workspace-nav.css?v=29" />
-    <link rel="stylesheet" href="/css/editor/page.css?v=47" />
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=30" />
+    <link rel="stylesheet" href="/css/library/book.css?v=6" />
+    <link rel="stylesheet" href="/css/editor/page.css?v=57" />
     <link rel="stylesheet" href="/css/editor/document.css?v=11" />
     <link rel="stylesheet" href="/css/editor/editor-fonts.css?v=1" />
     <link rel="stylesheet" href="/css/editor/scene-breaks.css?v=1" />
@@ -49,8 +50,7 @@
                     </span>
                 </button>
                 <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
-                    <a role="menuitem" href="studio.html" data-close-pfp-menu>Studio</a>
-                    <a role="menuitem" href="overview.html" data-close-pfp-menu>Overview</a>
+                    <a role="menuitem" href="overview.html" data-close-pfp-menu>Profile</a>
                     <a role="menuitem" href="settings.html" data-close-pfp-menu>Settings</a>
                     <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
                 </div>
@@ -63,8 +63,9 @@
     </header>
     <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
         <div class="wd-nav">
-            <a href="studio.html">Studio</a>
-            <a href="word-wars-lobby.html">Word Wars</a>
+            <a href="/studio">Studio</a>
+            <a href="/word-wars-lobby">Word Wars</a>
+            <a href="/library">Library</a>
         </div>
     </nav>
     <div class="wrap">
@@ -81,6 +82,7 @@
                 <div class="writer-settings-topbar hidden" id="settingsTopbar">
                     <button type="button" class="writer-settings-back" id="settingsBackTop"><span aria-hidden="true">‹</span> Go back</button>
                     <span class="writer-settings-title">Settings</span>
+                    <button type="button" class="writer-tree-toggle" id="settingsCollapse" aria-expanded="true" title="Hide sidebar">‹</button>
                 </div>
                 <div class="writer-tab-pane" id="chaptersPane">
                     <div class="writer-pane-head writer-pane-head--end">
@@ -216,6 +218,6 @@
     <div class="lib-toast" id="libToast" hidden></div>
     <script src="/js/pwa-register.js?v=3" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-    <script type="module" src="/js/editor/page.js?v=51"></script>
+    <script type="module" src="/js/editor/page.js?v=65"></script>
 </body>
 </html>

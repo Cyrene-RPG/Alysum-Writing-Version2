@@ -139,6 +139,7 @@ function normalizeBook(book) {
         sections: ensureChapterIds(book.sections),
         media_format: book.media_format || book.mediaFormat || "novel",
         words: Number(book.words) || 0,
+        is_published: Boolean(book.is_published),
     };
 }
 
@@ -151,6 +152,7 @@ function cloudWritePayload(book) {
         media_format: src.media_format,
         publish_meta: src.publish_meta || {},
         published_chapter_ids: src.published_chapter_ids || [],
+        is_published: Boolean(src.is_published),
     };
 }
 
