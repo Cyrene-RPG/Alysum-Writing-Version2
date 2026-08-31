@@ -17,7 +17,7 @@
       }
     }
     </script>
-    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=8" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=9" />
     <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
     <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=10" />
     <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=12" />
@@ -29,12 +29,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Book — Alysum</title>
-    <link rel="stylesheet" href="/css/library/book.css?v=6" />
+    <link rel="stylesheet" href="/css/library/book.css?v=13" />
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 </head>
 <body>
     <div class="book-page" id="bookPage" hidden>
-        <article class="book-card panel" id="bookCard">
+        <article class="book-card" id="bookCard">
             <header class="book-hero" id="bookHero">
                 <div class="book-hero-top">
                     <a class="book-back" href="/library">‹ Library</a>
@@ -53,7 +53,9 @@
                 </div>
             </header>
             <div class="book-body">
-                <p class="book-label" id="tagsLabel">Genres &amp; tags</p>
+                <p class="book-label" id="genresLabel">Genres</p>
+                <div class="book-tags" id="bookGenres"></div>
+                <p class="book-label" id="tagsLabel">Tags</p>
                 <div class="book-tags" id="bookTags"></div>
                 <p class="book-label" id="warnsLabel">Content warnings</p>
                 <div class="book-warns" id="bookWarns"></div>
@@ -66,6 +68,10 @@
                     <div class="book-synopsis-fade" id="synopsisFade"></div>
                 </div>
                 <button type="button" class="book-more" id="synopsisMore" hidden>Show more</button>
+                <div id="bookNotesBlock" hidden>
+                    <p class="book-label">Notes</p>
+                    <div class="book-synopsis" id="bookNotes"></div>
+                </div>
                 <a class="book-cta" id="readCta" href="/read">Start reading</a>
                 <p class="book-cta-cap" id="readCaption" hidden></p>
                 <div class="book-rule"></div>
@@ -93,6 +99,6 @@
         <p>This book isn’t available yet.</p>
         <a href="/library">Back to Library</a>
     </div>
-    <script type="module" src="/js/library/book.js?v=4"></script>
+    <script type="module" src="/js/library/book.js?v=13"></script>
 </body>
 </html>

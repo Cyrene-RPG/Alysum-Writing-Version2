@@ -123,6 +123,7 @@ export function mountWriterChrome({
     function setBookView(view) {
         bookView = view === "settings" ? "settings" : "tree";
         const settings = bookView === "settings";
+        shell?.classList.toggle("is-settings", settings);
         tree?.classList.toggle("is-settings", settings);
         if (bookTree) bookTree.classList.toggle("hidden", settings);
         settingsPane?.classList.toggle("hidden", !settings);

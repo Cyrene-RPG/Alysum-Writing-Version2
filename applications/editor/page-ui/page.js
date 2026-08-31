@@ -51,11 +51,12 @@ import {
     cleanSections,
 } from "./page/helpers.js?v=41";
 import { createFolderView } from "./page/folder-view.js?v=41";
-import { mountWriterChrome } from "./page/chrome.js?v=43";
+import { mountWriterChrome } from "./page/chrome.js?v=44";
 import { mountTypewriter } from "./page/typewriter.js?v=41";
 import { maybeCreateAutoVersion } from "@alysum/writing-engine/version-api.js";
-import { mountBookSettings } from "./settings.js?v=2";
-import { mountLibraryPreview } from "./library-preview.js?v=12";
+import { mountBookSettings } from "./settings.js?v=3";
+import { mountLibraryPreview } from "./library-preview.js?v=26";
+import { mountPageLookRail } from "./page-look-rail.js?v=10";
 
 async function boot() {
     initWorkspaceShell({ lead: "Working On ", accent: "…", subtitle: "Loading…" });
@@ -165,6 +166,7 @@ async function boot() {
     paintOfflineStatus();
 
     let previewUi = null;
+    let lookRail = null;
     const { setTab, expandMatter, setBookView } = mountWriterChrome({
         shell,
         treeToggle,
@@ -183,7 +185,10 @@ async function boot() {
         settingsBackTop: document.getElementById("settingsBackTop"),
         tree: document.getElementById("chapterTree"),
         onBookViewChange(view) {
-            if (view !== "settings") previewUi?.hide();
+            if (view !== "settings") {
+                previewUi?.hide();
+                lookRail?.close();
+            }
         },
     });
     if (new URLSearchParams(window.location.search).get("view") === "settings") {
@@ -592,17 +597,26 @@ async function boot() {
     window.addEventListener("pagehide", () => snapshotAndFlush(true));
     window.addEventListener("beforeunload", () => snapshotAndFlush(true));
 
+    const persistMeta = (patch) => {
+        persist({ ...book, ...patch });
+        if (bookTitle && patch.title != null) bookTitle.value = patch.title;
+        previewUi?.paint();
+    };
     previewUi = mountLibraryPreview({
         pane: document.getElementById("libraryPreviewPane"),
         writerMain: document.querySelector(".writer-main"),
         supabase,
         session,
         getBook: () => book,
-        persistMeta: (patch) => {
-            persist({ ...book, ...patch });
-            if (bookTitle && patch.title != null) bookTitle.value = patch.title;
-            previewUi?.paint();
-        },
+        persistMeta,
+        defaultAuthor: profile.name || "",
+    });
+    lookRail = mountPageLookRail({
+        rail: document.getElementById("writerRail"),
+        shell,
+        getBook: () => book,
+        persistMeta,
+        previewPane: document.getElementById("libraryPreviewPane"),
         defaultAuthor: profile.name || "",
     });
     if (new URLSearchParams(window.location.search).get("view") === "preview") {
@@ -636,6 +650,9 @@ async function boot() {
         onLibraryPreview() {
             setBookView("settings");
             previewUi?.show();
+        },
+        onListingLook() {
+            lookRail?.expand();
         },
     });
 

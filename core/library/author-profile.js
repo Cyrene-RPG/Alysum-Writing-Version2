@@ -7,7 +7,7 @@ import {
     formatChapterProgress,
     serializationFromBookData,
 } from "../publishing/serialization.js";
-import { normalizeGenreList } from "../publishing/genres.js";
+import { normalizeGenreList, partitionGenresAndTags } from "../publishing/genres.js";
 import { normalizeCrop } from "../publishing/cover-upload.js";
 import {
     normalizeHexColor,
@@ -162,6 +162,10 @@ export function normalizePublishedBookPreview(row) {
         serializationStatus: serialization.status,
         comic: isComicFormat(mediaFormat),
     });
+    const split = partitionGenresAndTags(
+        normalizeGenreList(data),
+        Array.isArray(data.tags) ? data.tags.map(String) : []
+    );
     return {
         id,
         ownerUserId: String(row?.user_id || row?.userId || data.userId || "").trim(),
@@ -181,17 +185,19 @@ export function normalizePublishedBookPreview(row) {
         mediaFormat,
         updated: typeof data.updated === "number" ? data.updated : 0,
         type: String(data.type || "fiction").trim() || "fiction",
-        genre: normalizeGenreList(data)[0] || "",
-        genres: normalizeGenreList(data),
+        genre: split.genres[0] || "",
+        genres: split.genres,
         rating: String(data.rating || "").trim(),
-        tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
+        tags: split.tags,
         warnings: Array.isArray(data.warnings) ? data.warnings.map(String) : [],
         followers: Number(data.followers) || 0,
         ratingScore: Number(data.ratingScore ?? data.rating_score) || 0,
         publishedAt: Number(data.publishedAt ?? data.published_at) || 0,
         notesBefore: String(data.notesBefore || data.notes_before || "").trim(),
-        pageLook: normalizePageLook(data.pageLook || data.page_look),
+        notesAfter: String(data.notesAfter || data.notes_after || "").trim(),
+        pageLook: normalizePageLook(data.pageLook || data.page_look) || "dark",
         pageLookSaved: normalizePageLookSaved(data.pageLookSaved || data.page_look_saved),
+        pageLookCustom: normalizeHexColor(data.pageLookCustom || data.page_look_custom),
         pageBgId: normalizePageBgId(data.pageBgId || data.page_bg_id)
             || (normalizeHexColor(data.pageBg || data.page_bg) ? "custom" : ""),
         pageBg: normalizeHexColor(data.pageBg || data.page_bg),

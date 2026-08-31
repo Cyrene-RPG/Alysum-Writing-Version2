@@ -1,6 +1,7 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { fetchPublishedWork } from "@alysum/library/work.js";
 import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
+import { mountReaderThemes } from "./reader-theme.js?v=3";
 
 const READ_KEY = "alysum:library:read-position";
 const BOOK_KEY = "alysum:library:bookmarks";
@@ -9,7 +10,6 @@ const SIZE_MIN = 80;
 const SIZE_MAX = 140;
 const SIZE_STEP = 10;
 const FACES = ["serif", "sans", "dyslexic"];
-const THEMES = ["dark", "sepia", "light"];
 const SPACES = ["compact", "comfortable", "relaxed"];
 
 function escapeHtml(str) {
@@ -51,7 +51,6 @@ function readPrefs() {
     return {
         size: Number.isFinite(size) ? Math.min(SIZE_MAX, Math.max(SIZE_MIN, size)) : 100,
         face: FACES.includes(raw.face) ? raw.face : "serif",
-        theme: THEMES.includes(raw.theme) ? raw.theme : "dark",
         spacing: SPACES.includes(raw.spacing) ? raw.spacing : "comfortable",
     };
 }
@@ -73,16 +72,12 @@ function minutesFor(words) {
 
 function applyPrefs(prefs) {
     const root = document.documentElement;
-    root.dataset.readerTheme = prefs.theme;
     root.dataset.readerFace = prefs.face;
     root.dataset.readerSpace = prefs.spacing;
     root.style.setProperty("--reader-size", `${(19 * prefs.size) / 100}px`);
     document.getElementById("sizeLabel").textContent = `${prefs.size}%`;
     document.querySelectorAll("[data-face]").forEach((el) => {
         el.classList.toggle("is-on", el.dataset.face === prefs.face);
-    });
-    document.querySelectorAll("[data-theme]").forEach((el) => {
-        el.classList.toggle("is-on", el.dataset.theme === prefs.theme);
     });
     document.querySelectorAll("[data-space]").forEach((el) => {
         el.classList.toggle("is-on", el.dataset.space === prefs.spacing);
@@ -150,6 +145,7 @@ async function boot() {
     const back = document.getElementById("readerBack");
     if (back) back.href = `/book?id=${encodeURIComponent(work.id)}`;
     paintBookmark(isBookmarked(work.id));
+    mountReaderThemes(document.getElementById("themeSwatches"), work);
 
     const progressMap = readJson(READ_KEY, {});
     const saved = progressMap[work.id] || {};
@@ -234,13 +230,6 @@ async function boot() {
         const face = event.target.closest("[data-face]")?.dataset.face;
         if (!FACES.includes(face)) return;
         prefs.face = face;
-        writeJson(PREF_KEY, prefs);
-        applyPrefs(prefs);
-    });
-    document.getElementById("themeSwatches").addEventListener("click", (event) => {
-        const theme = event.target.closest("[data-theme]")?.dataset.theme;
-        if (!THEMES.includes(theme)) return;
-        prefs.theme = theme;
         writeJson(PREF_KEY, prefs);
         applyPrefs(prefs);
     });

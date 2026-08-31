@@ -1,52 +1,62 @@
 /**
- * Listing theme swatches + Settings-style background chips. Visit-only; callers persist.
+ * Listing theme = Settings UI colors. Page background = Settings page backgrounds.
+ * Visit-only; callers persist.
  */
-import { readAppearanceLoadouts } from "./appearance-loadout.js";
 import { BODY_BG_PRESETS, getBodyBgPreview } from "./body-background.js";
 import { paintChipInk } from "./text-ink.js";
-import {
-    BOOK_LOOK_BUILTINS,
-    resolveVisitBackgroundHex,
-} from "./visit-page-look.js";
+import { UI_COLORS, getUiColorPreview } from "./ui-color.js";
+import { resolveVisitBackgroundHex } from "./visit-page-look.js";
 
-function snapshotFromSlot(slot) {
-    if (!slot) return null;
-    return {
-        label: slot.label || "",
-        gradientTheme: slot.gradientTheme || "",
-        bodyBg: slot.bodyBg || "",
-        bodyBgCustom: slot.bodyBgCustom || "",
-        uiColor: slot.uiColor || "",
-        uiColorCustom: slot.uiColorCustom || "",
-        textColor: slot.textColor || "",
-        textColorMain: slot.textColorMain || "",
-        textColorAccent: slot.textColorAccent || "",
-    };
+const LEGACY_TO_UI = {
+    dark: "default",
+    alysum: "default",
+    light: "ui-porcelain",
+    sepia: "ui-linen",
+};
+
+function selectedLookId(look) {
+    const id = String(look?.pageLook || "");
+    if (id === "saved") return "";
+    return LEGACY_TO_UI[id] || id;
+}
+
+function lookPreview(item, look) {
+    if (item.id === "theme") {
+        return getBodyBgPreview(look?.pageBgId)
+            || resolveVisitBackgroundHex(look?.pageBgId, look?.pageBg)
+            || getUiColorPreview("theme");
+    }
+    if (item.id === "custom" && look?.pageLookCustom) return look.pageLookCustom;
+    return getUiColorPreview(item.id);
+}
+
+function paintChip(btn, preview) {
+    if (!preview) return;
+    btn.style.background = preview;
+    paintChipInk(btn, preview);
 }
 
 function paintSwatches(root, look) {
     const row = root.querySelector("[data-book-look-swatches]");
     if (!row) return;
-    const current = String(look?.pageLook || "");
-    const savedLabel = look?.pageLookSaved?.label || "";
-    const slots = readAppearanceLoadouts().filter(Boolean);
-    const items = [
-        ...BOOK_LOOK_BUILTINS.map((item) => ({ ...item, saved: null })),
-        ...slots.map((slot) => ({
-            id: "saved",
-            label: slot.label || "Saved",
-            saved: snapshotFromSlot(slot),
-        })),
-    ];
-    row.innerHTML = items.map((item) => {
-        const on = item.id === current
-            && (item.id !== "saved" || !savedLabel || item.label === savedLabel);
-        return `<button type="button" class="book-look-swatch${on ? " is-on" : ""}" data-look="${item.id}" data-label="${item.label}">${item.label}</button>`;
-    }).join("");
-    row._saved = items.filter((item) => item.saved).reduce((map, item) => {
-        map[item.label] = item.saved;
-        return map;
-    }, {});
+    const current = selectedLookId(look);
+    row.innerHTML = "";
+    UI_COLORS.forEach((item) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `book-look-swatch${item.id === current ? " is-on" : ""}`;
+        btn.dataset.look = item.id;
+        btn.title = item.hint || item.label;
+        paintChip(btn, lookPreview(item, look));
+        const label = document.createElement("span");
+        label.textContent = item.label;
+        btn.appendChild(label);
+        row.appendChild(btn);
+    });
+    const custom = root.querySelector("[data-book-look-custom]");
+    const color = root.querySelector("[data-book-look-color]");
+    if (custom) custom.hidden = current !== "custom";
+    if (color && look?.pageLookCustom) color.value = look.pageLookCustom;
 }
 
 function paintBgChips(root, look) {
@@ -63,11 +73,7 @@ function paintBgChips(root, look) {
         btn.className = "book-look-bg-chip";
         btn.dataset.bgId = preset.id;
         btn.title = preset.hint || preset.label;
-        const preview = getBodyBgPreview(preset.id);
-        if (preview) {
-            btn.style.background = preview;
-            paintChipInk(btn, preview);
-        }
+        paintChip(btn, getBodyBgPreview(preset.id));
         const label = document.createElement("span");
         label.textContent = preset.label;
         btn.appendChild(label);
@@ -87,10 +93,7 @@ function syncBgChips(root, look) {
     if (custom) custom.hidden = id !== "custom";
     if (color && look?.pageBg) color.value = look.pageBg;
     const customChip = row?.querySelector('[data-bg-id="custom"]');
-    if (customChip && look?.pageBg) {
-        customChip.style.background = look.pageBg;
-        paintChipInk(customChip, look.pageBg);
-    }
+    if (customChip && look?.pageBg) paintChip(customChip, look.pageBg);
 }
 
 export function paintBookLookPicker(root, look) {
@@ -101,13 +104,14 @@ export function paintBookLookPicker(root, look) {
 export function readBookLookPicker(root) {
     const swatch = root.querySelector("[data-book-look-swatches] .is-on");
     const lookId = swatch?.dataset.look || "";
-    const savedMap = root.querySelector("[data-book-look-swatches]")?._saved || {};
+    const lookColor = root.querySelector("[data-book-look-color]");
     const bgChip = root.querySelector("[data-book-bg-chips] .is-on");
     const pageBgId = bgChip?.dataset.bgId || "";
     const color = root.querySelector("[data-book-bg-color]");
     return {
         pageLook: lookId,
-        pageLookSaved: lookId === "saved" ? savedMap[swatch?.dataset.label] || null : null,
+        pageLookSaved: null,
+        pageLookCustom: lookId === "custom" ? (lookColor?.value || "") : "",
         pageBgId,
         pageBg: pageBgId === "custom" ? (color?.value || "") : "",
     };
@@ -121,28 +125,45 @@ export function bindBookLookPicker(root, { onChange } = {}) {
     root.querySelector("[data-book-look-swatches]")?.addEventListener("click", (event) => {
         const btn = event.target.closest("[data-look]");
         if (!btn) return;
+        event.stopPropagation();
         const current = readBookLookPicker(root);
-        const savedMap = root.querySelector("[data-book-look-swatches]")?._saved || {};
         emit({
             ...current,
             pageLook: btn.dataset.look,
-            pageLookSaved: btn.dataset.look === "saved" ? savedMap[btn.dataset.label] || null : null,
+            pageLookSaved: null,
+            pageLookCustom: btn.dataset.look === "custom"
+                ? (root.querySelector("[data-book-look-color]")?.value || current.pageLookCustom || "#111827")
+                : "",
         });
     });
     root.querySelector("[data-book-look-reset]")?.addEventListener("click", () => {
         const current = readBookLookPicker(root);
-        emit({ ...current, pageLook: "", pageLookSaved: null });
+        emit({ ...current, pageLook: "dark", pageLookSaved: null, pageLookCustom: "" });
+    });
+    root.querySelector("[data-book-look-all-reset]")?.addEventListener("click", () => {
+        emit({
+            pageLook: "dark",
+            pageLookSaved: null,
+            pageLookCustom: "",
+            pageBgId: "",
+            pageBg: "",
+        });
+    });
+    root.querySelector("[data-book-look-color]")?.addEventListener("input", (event) => {
+        const current = readBookLookPicker(root);
+        emit({ ...current, pageLook: "custom", pageLookCustom: event.target.value });
     });
     root.querySelector("[data-book-bg-chips]")?.addEventListener("click", (event) => {
         const btn = event.target.closest("[data-bg-id]");
         if (!btn) return;
+        event.stopPropagation();
         const current = readBookLookPicker(root);
         const pageBgId = btn.dataset.bgId;
         emit({
             ...current,
             pageBgId,
             pageBg: pageBgId === "custom"
-                ? (root.querySelector("[data-book-bg-color]")?.value || resolveVisitBackgroundHex("custom", current.pageBg) || "#0b1220")
+                ? (root.querySelector("[data-book-bg-color]")?.value || current.pageBg || "#0b1220")
                 : "",
         });
     });

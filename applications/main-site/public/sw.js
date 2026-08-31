@@ -9,7 +9,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v2.46.0';
+const SW_VERSION = 'v2.47.0';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -90,7 +90,10 @@ function isCacheableAsset(url) {
 }
 
 function isWorkspaceHtml(url) {
-  return /\/(?:studio|editor|word-wars|word-wars-lobby|library)(?:\.html)?$/i.test(url.pathname);
+  // Only the offline-writing surfaces are cache-first. The library and Word Wars
+  // are live/collaborative — serving a stale document (and stale page code) makes
+  // a deploy show up only on the *second* load, so keep them network-first.
+  return /\/(?:studio|editor)(?:\.html)?$/i.test(url.pathname);
 }
 
 self.addEventListener('fetch', (event) => {

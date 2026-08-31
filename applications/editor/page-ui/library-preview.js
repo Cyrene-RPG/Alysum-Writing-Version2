@@ -1,8 +1,8 @@
 import { listBodyChapters } from "@alysum/writing-engine/manuscript.js?v=6";
 import { mergePublishMeta, readPublishDraft } from "@alysum/publishing/publish-meta.js";
 import { storePickedCover, wideCropFromMeta } from "./cover.js?v=3";
-import { clearVisitPageLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js";
-import { bindPreviewBook, paintPreviewBook, previewBookHtml } from "./preview-book.js?v=6";
+import { clearVisitPageLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=6";
+import { bindPreviewBook, paintPreviewBook, previewBookHtml } from "./preview-book.js?v=19";
 
 export function readPublishMeta(book) {
     const draft = readPublishDraft(book);
@@ -28,6 +28,7 @@ export function mountLibraryPreview({
     const toast = document.getElementById("libToast");
     let expanded = false;
     let editingSynopsis = false;
+    let editingNotes = false;
     let draftUnpublished = [];
     let draftPublished = [];
 
@@ -58,12 +59,12 @@ export function mountLibraryPreview({
     }
 
     function lookTargets() {
-        return [pane, writerMain].filter(Boolean);
+        return [pane].filter(Boolean);
     }
 
     function paint() {
         const { book, meta } = metaFromBook();
-        paintPreviewBook(pane, { book, meta, expanded, editingSynopsis, lookTargets: lookTargets() });
+        paintPreviewBook(pane, { book, meta, expanded, editingSynopsis, editingNotes, lookTargets: lookTargets() });
     }
 
     function openManage() {
@@ -83,6 +84,7 @@ export function mountLibraryPreview({
         pane.classList.remove("hidden");
         expanded = false;
         editingSynopsis = false;
+        editingNotes = false;
         paint();
     }
 
@@ -90,6 +92,8 @@ export function mountLibraryPreview({
         writerMain?.classList.remove("is-preview");
         pane.classList.add("hidden");
         lookTargets().forEach((el) => clearVisitPageLook(el));
+        writerMain?.style.removeProperty("--bg");
+        writerMain?.style.removeProperty("--bg-gradient-top");
         clearVisitPageLook(pane.querySelector(".book-page"));
         if (overlay) overlay.hidden = true;
     }
@@ -120,6 +124,17 @@ export function mountLibraryPreview({
             editingSynopsis = false;
         } else {
             editingSynopsis = true;
+        }
+        paint();
+    });
+
+    pane.querySelector("#libNotesEditBtn")?.addEventListener("click", () => {
+        const notesEdit = pane.querySelector("#libNotesEdit");
+        if (editingNotes) {
+            saveMeta({ notesAfter: notesEdit?.value || "" });
+            editingNotes = false;
+        } else {
+            editingNotes = true;
         }
         paint();
     });

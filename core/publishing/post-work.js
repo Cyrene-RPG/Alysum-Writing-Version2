@@ -3,7 +3,7 @@
  */
 import { listBodyChapters } from "../writing-engine/manuscript.js";
 import { countWordsInHtml } from "../writing-engine/word-count.js";
-import { normalizeGenreList } from "./genres.js";
+import { normalizeGenreList, partitionGenresAndTags } from "./genres.js";
 import { normalizeCrop } from "./cover-upload.js";
 import {
     normalizeHexColor,
@@ -52,6 +52,10 @@ export function buildLibraryPayload(book, form) {
         });
     }
     const now = Date.now();
+    const split = partitionGenresAndTags(
+        normalizeGenreList(form),
+        Array.isArray(form.tags) ? form.tags.map(String).filter(Boolean) : []
+    );
     return {
         id: book.id,
         bookId: book.id,
@@ -59,18 +63,20 @@ export function buildLibraryPayload(book, form) {
         author: String(form.author || "").trim() || "Unknown",
         summary: String(form.summary || "").trim(),
         notesBefore: String(form.notesBefore || "").trim(),
-        genre: normalizeGenreList(form)[0] || "",
-        genres: normalizeGenreList(form),
+        notesAfter: String(form.notesAfter || "").trim(),
+        genre: split.genres[0] || "",
+        genres: split.genres,
         rating: String(form.rating || "").trim(),
         warnings: Array.isArray(form.warnings) ? form.warnings.map(String) : [],
-        tags: Array.isArray(form.tags) ? form.tags.map(String).filter(Boolean) : [],
+        tags: split.tags,
         coverUrl: String(form.coverUrl || "").trim(),
         coverCrop: normalizeCrop(form.coverCrop),
         coverMini: normalizeCrop(form.coverMini),
         coverWide: form.coverWideEnabled ? normalizeCrop(form.coverWide) : null,
         coverWideEnabled: Boolean(form.coverWideEnabled),
-        pageLook: normalizePageLook(form.pageLook),
+        pageLook: normalizePageLook(form.pageLook) || "dark",
         pageLookSaved: normalizePageLookSaved(form.pageLookSaved),
+        pageLookCustom: normalizeHexColor(form.pageLookCustom),
         pageBgId: normalizePageBgId(form.pageBgId)
             || (normalizeHexColor(form.pageBg) ? "custom" : ""),
         pageBg: normalizeHexColor(form.pageBg),

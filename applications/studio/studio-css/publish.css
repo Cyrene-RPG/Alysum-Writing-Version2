@@ -319,40 +319,65 @@ h1 {
     gap: 8px;
     margin-top: 12px;
 }
-.pub-look-kicker {
-    margin: 8px 0 0;
-    font-size: 11px;
+.pub-look-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.pub-look-title {
+    margin: 0;
+    font-size: 12px;
     font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
+    color: var(--text);
 }
 .pub-look-reset {
-    align-self: flex-start;
-    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-    border-radius: 8px;
-    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    padding: 4px 8px;
+    background: color-mix(in srgb, var(--text) 12%, transparent);
     color: var(--text);
     font: inherit;
-    font-size: 12px;
-    font-weight: 700;
-    padding: 5px 8px;
+    font-size: 11px;
+    font-weight: 800;
     cursor: pointer;
 }
+.pub-look-drop-btn {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    border-radius: var(--glass-radius, 10px);
+    background: color-mix(in srgb, var(--alysum-ui-chrome, #141414) 45%, transparent);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    text-align: left;
+    cursor: pointer;
+}
+.pub-look-drop-btn[aria-expanded="true"] {
+    outline: 2px solid var(--accent, #7c3aed);
+}
+.pub-look-drop {
+    max-height: 240px;
+    overflow: auto;
+    padding: 10px;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    border-radius: var(--glass-radius, 12px);
+    background: var(--alysum-ui-panel, #111827);
+}
+.pub-look-drop[hidden] { display: none !important; }
 .book-look-swatches,
 .book-look-bg-chips {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
 }
-.book-look-bg-chips {
-    max-height: 160px;
-    overflow: auto;
-}
 .book-look-swatch,
 .book-look-bg-chip {
+    min-width: 4.5rem;
+    min-height: 2.2rem;
     border: 1px solid var(--border, rgba(255, 255, 255, 0.14));
-    border-radius: 999px;
+    border-radius: 10px;
     background: color-mix(in srgb, var(--alysum-ui-chrome, #141414) 45%, transparent);
     color: var(--text);
     font: inherit;
@@ -364,9 +389,4 @@ h1 {
 .book-look-swatch.is-on,
 .book-look-bg-chip.is-on {
     outline: 2px solid var(--accent, #7c3aed);
-}
-.book-look-bg-chip {
-    min-width: 4.5rem;
-    min-height: 2.2rem;
-    border-radius: 10px;
 }

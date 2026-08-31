@@ -2,8 +2,8 @@ import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
 import { fetchPublishedWork } from "@alysum/library/work.js";
 import { cropFrameStyle, peekCoverSrc } from "@alysum/publishing/cover-upload.js";
-import { genreLabel } from "@alysum/publishing/genres.js";
-import { applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js";
+import { genreLabel } from "@alysum/publishing/genres.js?v=4";
+import { applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=6";
 
 const READ_KEY = "alysum:library:read-position";
 
@@ -56,19 +56,25 @@ function showEmpty() {
     document.getElementById("bookEmpty").hidden = false;
 }
 
-function paintTags(work, owner) {
+function paintGenres(work, owner) {
     const genres = work.genres || [];
+    const el = document.getElementById("bookGenres");
+    const label = document.getElementById("genresLabel");
+    const chips = genres.map((key) => `<span class="book-tag">${escapeHtml(genreLabel(key))}</span>`);
+    if (owner) chips.push(`<a class="book-tag add" href="${publishHref(work.id)}">+ Add genre</a>`);
+    el.innerHTML = chips.join("");
+    el.hidden = !chips.length;
+    label.hidden = !chips.length;
+}
+
+function paintTags(work, owner) {
     const tags = work.tags || [];
-    const chips = [
-        ...genres.map((key) => `<span class="book-tag">${escapeHtml(genreLabel(key))}</span>`),
-        ...tags.map((tag) => `<span class="book-tag">${escapeHtml(tag)}</span>`),
-    ];
-    if (owner) {
-        chips.push(`<a class="book-tag add" href="${publishHref(work.id)}">+ Add tag</a>`);
-    }
     const el = document.getElementById("bookTags");
     const label = document.getElementById("tagsLabel");
+    const chips = tags.map((tag) => `<span class="book-tag">${escapeHtml(tag)}</span>`);
+    if (owner) chips.push(`<a class="book-tag add" href="${publishHref(work.id)}">+ Add tag</a>`);
     el.innerHTML = chips.join("");
+    el.hidden = !chips.length;
     label.hidden = !chips.length;
 }
 
@@ -182,6 +188,7 @@ async function boot() {
         el.href = pub;
     });
 
+    paintGenres(work, owner);
     paintTags(work, owner);
     paintWarns(work, owner);
 
@@ -200,6 +207,19 @@ async function boot() {
         more.textContent = open ? "Show more" : "Show less";
         fade.hidden = !open;
     });
+
+    const notesText = String(work.notesAfter || "").trim();
+    const notesBlock = document.getElementById("bookNotesBlock");
+    const notesEl = document.getElementById("bookNotes");
+    if (notesBlock && notesEl) {
+        if (notesText) {
+            notesBlock.hidden = false;
+            notesEl.textContent = notesText;
+        } else {
+            notesBlock.hidden = true;
+            notesEl.textContent = "";
+        }
+    }
 
     const cta = document.getElementById("readCta");
     const cap = document.getElementById("readCaption");

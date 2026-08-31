@@ -86,7 +86,7 @@ html[data-easy-read="1"][data-ui-ink="white"] {
     --border: rgba(28, 25, 23, 0.18);
 }
 
-html[data-ui-tone="light"] .panel,
+html[data-ui-tone="light"] .panel:not(.book-card),
 html[data-ui-tone="light"] .card,
 html[data-ui-tone="light"] .legal-card,
 html[data-ui-tone="light"] .settings-nav,
@@ -110,7 +110,7 @@ body {
         linear-gradient(180deg, var(--bg-gradient-top, var(--bg, #0b1220)) 0%, var(--bg, #0b1220) 100%);
 }
 
-.panel,
+.panel:not(.book-card),
 .card,
 .legal-card,
 .settings-nav,

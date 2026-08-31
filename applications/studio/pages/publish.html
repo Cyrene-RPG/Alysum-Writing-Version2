@@ -33,7 +33,7 @@
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
     <link rel="stylesheet" href="/css/editor/document.css?v=11" />
     <link rel="stylesheet" href="/css/editor/scene-breaks.css?v=1" />
-    <link rel="stylesheet" href="/css/studio/publish.css?v=12" />
+    <link rel="stylesheet" href="/css/studio/publish.css?v=14" />
 </head>
 <body>
     <div class="pub-page">
@@ -54,36 +54,44 @@
             <label>Rating *</label>
             <div class="pub-pills" id="ratingPicker">
                 <label><input type="radio" name="rating" value="general" /> General Audiences</label>
-                <label><input type="radio" name="rating" value="teen" /> Teen &amp; Up</label>
                 <label><input type="radio" name="rating" value="mature" checked /> Mature</label>
                 <label><input type="radio" name="rating" value="explicit" /> Explicit</label>
             </div>
             <label>Content warnings</label>
             <div class="pub-checks" id="warningPicker"></div>
             <label for="extraTags">Additional tags</label>
-            <input id="extraTags" type="text" placeholder="Relationships, tropes, a custom genre…" />
+            <input id="extraTags" type="text" placeholder="Gay, slow burn, found family…" />
         </section>
 
         <section class="pub-card">
             <h2>Work details</h2>
             <label for="workTitle">Title *</label>
             <input id="workTitle" type="text" />
-            <div class="pub-look">
-                <p class="pub-look-kicker">Listing theme</p>
-                <div data-book-look-swatches class="book-look-swatches"></div>
-                <button type="button" class="pub-look-reset" data-book-look-reset>Reset</button>
-                <p class="pub-look-kicker">Page background</p>
-                <div data-book-bg-chips class="book-look-bg-chips"></div>
-                <div data-book-bg-custom hidden>
-                    <input type="color" data-book-bg-color value="#0b1220" />
+            <div class="pub-look" id="pubLook">
+                <div class="pub-look-head">
+                    <button type="button" class="pub-look-reset" data-book-look-all-reset>Reset</button>
+                    <p class="pub-look-title">Listing look</p>
                 </div>
-                <button type="button" class="pub-look-reset" data-book-bg-reset>Reset</button>
+                <button type="button" class="pub-look-drop-btn" data-look-drop-btn="listing" aria-expanded="false">UI elements</button>
+                <div class="pub-look-drop" data-look-drop="listing" hidden>
+                    <div data-book-look-swatches class="book-look-swatches"></div>
+                    <div data-book-look-custom hidden>
+                        <input type="color" data-book-look-color value="#111827" />
+                    </div>
+                </div>
+                <button type="button" class="pub-look-drop-btn" data-look-drop-btn="bg" aria-expanded="false">Page background</button>
+                <div class="pub-look-drop" data-look-drop="bg" hidden>
+                    <div data-book-bg-chips class="book-look-bg-chips"></div>
+                    <div data-book-bg-custom hidden>
+                        <input type="color" data-book-bg-color value="#0b1220" />
+                    </div>
+                </div>
             </div>
             <p class="pub-hint">Optional. Visitors keep their Appearance unless you set these. Library page only — not chapters.</p>
             <label for="workSummary">Summary</label>
             <textarea id="workSummary" placeholder="A few sentences for the library card."></textarea>
-            <label for="workNotes">Beginning notes</label>
-            <textarea id="workNotes" placeholder="Optional notes shown before chapter 1."></textarea>
+            <label for="workNotesAfter">Notes</label>
+            <textarea id="workNotesAfter" placeholder="Optional notes shown under the synopsis."></textarea>
             <div class="pub-checks">
                 <label><input type="checkbox" id="workWip" checked /> This is a work in progress</label>
                 <label><input type="checkbox" id="workComplete" /> This work is complete — post all chapters now</label>
@@ -150,6 +158,6 @@
             <button type="button" class="pub-primary" id="postBtn">Post work</button>
         </div>
     </div>
-    <script type="module" src="/js/studio/publish.js?v=13"></script>
+    <script type="module" src="/js/studio/publish.js?v=31"></script>
 </body>
 </html>

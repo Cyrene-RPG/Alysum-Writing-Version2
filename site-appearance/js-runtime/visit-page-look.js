@@ -1,5 +1,5 @@
 /**
- * Visit-only listing look + page background. Does not write Appearance keys.
+ * Visit-only: author's Settings UI color + page background. Does not write Appearance keys.
  */
 import {
     ACCENT_COMPLEMENT_BG,
@@ -11,24 +11,27 @@ import {
     resolveBodyBgColor,
 } from "./body-background.js";
 import { DISPLAY_TEXT_COLORS } from "./display-text-color.js";
-import { decideTextInk } from "./text-ink.js";
-import { UI_COLORS, applyUiColorVars, clearUiColorVars } from "./ui-color.js";
-
-export const BOOK_LOOK_BUILTINS = [
-    { id: "dark", label: "Dark" },
-    { id: "sepia", label: "Sepia" },
-    { id: "light", label: "Light" },
-    { id: "alysum", label: "Alysum" },
-];
+import { applyRootInk, decideTextInk } from "./text-ink.js";
+import { applyUiColorVars, clearUiColorVars, resolveUiColorHex } from "./ui-color.js";
 
 const LOOK_VARS = [
     "--text",
     "--muted",
     "--border",
-    "--book-title-color",
-    "--book-cta-ink",
-    "--book-hero-ink",
+    "--accent",
+    "--ui-text",
+    "--ui-muted",
+    "--chrome-text",
+    "--chrome-muted",
+    "--alysum-display-mid",
 ];
+
+const LEGACY_TO_UI = {
+    dark: "default",
+    alysum: "default",
+    light: "ui-porcelain",
+    sepia: "ui-linen",
+};
 
 function hex(value) {
     const match = String(value || "").trim().match(/^#?([0-9a-f]{6})$/i);
@@ -57,10 +60,8 @@ function snapshotBgHex(saved) {
 function snapshotPanelHex(saved) {
     const id = String(saved?.uiColor || "");
     if (id === "custom") return hex(saved.uiColorCustom);
-    if (id === "default" || !id) return "#111827";
-    if (id === "theme") return snapshotBgHex(saved) || "#111827";
-    const row = UI_COLORS.find((item) => item.id === id);
-    return hex(row?.color) || "#111827";
+    if (id === "theme") return snapshotBgHex(saved) || resolveUiColorHex("default");
+    return resolveUiColorHex(id);
 }
 
 function snapshotTitleHex(saved) {
@@ -74,54 +75,131 @@ function snapshotTitleHex(saved) {
 function clearLookVars(el) {
     if (!el) return;
     el.removeAttribute("data-book-look");
+    el.removeAttribute("data-ui-ink");
+    el.removeAttribute("data-ui-tone");
     LOOK_VARS.forEach((name) => el.style.removeProperty(name));
     clearUiColorVars(el);
 }
 
-function applySavedLook(pageEl, saved) {
-    const panel = snapshotPanelHex(saved);
-    applyUiColorVars(panel, pageEl);
-    const ink = decideTextInk(panel);
-    pageEl.style.setProperty("--text", ink.hex);
-    pageEl.style.setProperty("--muted", ink.muted);
-    pageEl.style.setProperty("--border", ink.tone === "light" ? "rgba(18, 18, 18, 0.14)" : "rgba(255, 255, 255, 0.12)");
-    const title = snapshotTitleHex(saved) || ink.hex;
-    pageEl.style.setProperty("--book-title-color", title);
-    pageEl.style.setProperty("--book-hero-ink", decideTextInk("#1a1224").hex);
-    const ctaInk = decideTextInk(getComputedStyle(pageEl).getPropertyValue("--accent").trim() || "#7c3aed");
-    pageEl.style.setProperty("--book-cta-ink", ctaInk.hex);
+export function resolveListingPanelHex(look) {
+    const raw = String(look?.pageLook || "") || "default";
+    const id = LEGACY_TO_UI[raw] || raw;
+    if (id === "saved" && look?.pageLookSaved) return snapshotPanelHex(look.pageLookSaved);
+    if (id === "theme") return resolveVisitBackgroundHex(look.pageBgId, look.pageBg) || resolveUiColorHex("default");
+    if (id === "custom") return hex(look.pageLookCustom) || resolveUiColorHex("default");
+    return resolveUiColorHex(id);
+}
+
+function applyPageFill(el, hexValue) {
+    if (!el || !hexValue) return;
+    applyBodyBgVars(hexValue, false, null, el);
+    applyRootInk(el, hexValue, "body");
+}
+
+function applyChrome(el, panelHex, titleHex) {
+    if (!el || !panelHex) return;
+    applyUiColorVars(panelHex, el);
+    applyRootInk(el, panelHex, "ui");
+    const ink = decideTextInk(panelHex);
+    const raised = hex(getComputedStyle(el).getPropertyValue("--alysum-ui-raised")) || panelHex;
+    el.style.setProperty("--chrome-text", ink.hex);
+    el.style.setProperty("--chrome-muted", ink.muted);
+    el.style.setProperty("--border", ink.tone === "light" ? "rgba(18, 18, 18, 0.14)" : "rgba(255, 255, 255, 0.12)");
+    el.style.setProperty("--accent", raised);
+    const title = hex(titleHex);
+    if (title) el.style.setProperty("--alysum-display-mid", title);
+}
+
+function applyPanelInk(el, panelHex, titleHex) {
+    applyChrome(el, panelHex, titleHex);
+    const ink = decideTextInk(panelHex);
+    el.style.setProperty("--text", ink.hex);
+    el.style.setProperty("--muted", ink.muted);
+}
+
+function listingPageHex(look) {
+    return resolveVisitBackgroundHex(look?.pageBgId, look?.pageBg) || resolveListingPanelHex(look);
+}
+
+function paintListingLook(el, look) {
+    if (!el) return;
+    const id = String(look?.pageLook || "") || "default";
+    if (id === "saved" && look.pageLookSaved) {
+        el.setAttribute("data-book-look", "saved");
+        applyPanelInk(el, snapshotPanelHex(look.pageLookSaved), snapshotTitleHex(look.pageLookSaved));
+        return;
+    }
+    el.setAttribute("data-book-look", id);
+    applyPanelInk(el, resolveListingPanelHex({ ...look, pageLook: id }));
+}
+
+function clearVisitBodyInk(el) {
+    if (!el || el === document.documentElement) return;
+    el.style.removeProperty("--text");
+    el.style.removeProperty("--muted");
+    el.removeAttribute("data-body-ink");
+    el.removeAttribute("data-body-bg-tone");
 }
 
 export function applyVisitPageBackground(el, pageBgId, pageBg) {
     if (!el) return;
     const value = resolveVisitBackgroundHex(pageBgId, pageBg);
-    if (value) applyBodyBgVars(value, false, null, el);
-    else clearBodyBgVars(el);
+    if (value) {
+        applyPageFill(el, value);
+        return;
+    }
+    clearBodyBgVars(el);
+    clearVisitBodyInk(el);
+}
+
+function panelFromLoadout(slot) {
+    const id = String(slot?.uiColor || "");
+    if (id === "custom") return hex(slot.uiColorCustom);
+    if (id === "theme" || !id) {
+        return resolveVisitBackgroundHex(slot.bodyBg, slot.bodyBgCustom) || resolveUiColorHex("default");
+    }
+    return resolveUiColorHex(id);
+}
+
+export function applyVisitLoadout(el, slot) {
+    if (!el || !slot) return;
+    const pageHex = resolveVisitBackgroundHex(slot.bodyBg, slot.bodyBgCustom)
+        || panelFromLoadout(slot);
+    applyPageFill(el, pageHex);
+    applyChrome(el, panelFromLoadout(slot), snapshotTitleHex(slot));
 }
 
 export function applyVisitBookLook(pageEl, look) {
     if (!pageEl) return;
-    const id = String(look?.pageLook || "");
-    if (!id) {
-        clearLookVars(pageEl);
+    const cards = pageEl.querySelectorAll?.(".book-card");
+    if (cards?.length) {
+        cards.forEach((card) => paintListingLook(card, look));
         return;
     }
-    pageEl.setAttribute("data-book-look", id);
-    if (id === "saved" && look.pageLookSaved) {
-        applySavedLook(pageEl, look.pageLookSaved);
-        return;
-    }
-    LOOK_VARS.forEach((name) => pageEl.style.removeProperty(name));
-    clearUiColorVars(pageEl);
+    paintListingLook(pageEl, look);
 }
 
 export function applyVisitListingLook(bgEl, pageEl, look) {
-    applyVisitPageBackground(bgEl, look?.pageBgId, look?.pageBg);
-    applyVisitBookLook(pageEl, look);
+    const pageHex = listingPageHex(look);
+    const panelHex = resolveListingPanelHex(look);
+    if (bgEl) {
+        applyPageFill(bgEl, pageHex);
+        if (pageEl && pageEl !== bgEl) applyChrome(bgEl, panelHex);
+    }
+    if (pageEl && pageEl !== bgEl) {
+        applyPageFill(pageEl, pageHex);
+        applyVisitBookLook(pageEl, look);
+        return;
+    }
+    if (pageEl) {
+        applyChrome(pageEl, panelHex);
+        pageEl.setAttribute("data-book-look", String(look?.pageLook || "") || "default");
+    }
 }
 
 export function clearVisitPageLook(el) {
     if (!el) return;
     clearBodyBgVars(el);
+    clearVisitBodyInk(el);
     clearLookVars(el);
 }

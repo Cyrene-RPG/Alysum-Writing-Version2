@@ -2,18 +2,38 @@
  * Shared publish draft on books.publish_meta. Preview and Publish read/write this.
  */
 import { normalizeCrop } from "./cover-upload.js";
-import { normalizeGenreList } from "./genres.js";
+import { normalizeGenreList, partitionGenresAndTags } from "./genres.js";
 
 export const CONTENT_WARNINGS = [
     "Graphic Violence",
     "Explicit Sexual Content",
     "Death",
     "Self-harm",
+    "Abuse",
+    "Explicit",
+    "Mental Health Issue",
+    "Substance Abuse",
+    "Racism",
+    "Homophobia",
+    "Child Abuse",
 ];
+
+export function matchingContentWarnings(query) {
+    const q = String(query || "").trim().toLowerCase();
+    return CONTENT_WARNINGS.filter((item) => !q || item.toLowerCase().includes(q));
+}
+
+export function toggleContentWarning(list, item) {
+    const value = String(item || "").trim();
+    if (!value) return Array.isArray(list) ? list.slice() : [];
+    const current = Array.isArray(list) ? list.map(String) : [];
+    if (current.includes(value)) return current.filter((entry) => entry !== value);
+    if (!CONTENT_WARNINGS.includes(value)) return current;
+    return [...current, value];
+}
 
 export const RATINGS = [
     { id: "general", label: "General Audiences" },
-    { id: "teen", label: "Teen & Up" },
     { id: "mature", label: "Mature" },
     { id: "explicit", label: "Explicit" },
 ];
@@ -35,7 +55,8 @@ export const PAGE_LOOKS = ["dark", "sepia", "light", "alysum", "saved"];
 
 export function normalizePageLook(value) {
     const id = String(value || "").trim();
-    return PAGE_LOOKS.includes(id) ? id : "";
+    if (PAGE_LOOKS.includes(id)) return id;
+    return /^[a-z0-9-]{1,40}$/i.test(id) ? id : "";
 }
 
 export function normalizePageLookSaved(value) {
@@ -64,25 +85,27 @@ export function readPublishDraft(book) {
         : {};
     const posted = asIdList(book?.published_chapter_ids);
     const draft = asIdList(raw.draftChapterIds);
-    const genres = normalizeGenreList(raw);
+    const split = partitionGenresAndTags(normalizeGenreList(raw), asStringList(raw.tags));
     return {
         author: String(raw.author || ""),
         synopsis: String(raw.synopsis || ""),
-        tags: asStringList(raw.tags),
+        tags: split.tags,
         warnings: asStringList(raw.warnings),
         cover_url: String(raw.cover_url || raw.coverUrl || ""),
         coverCrop: normalizeCrop(raw.coverCrop || raw.cover_crop),
         coverMini: normalizeCrop(raw.coverMini || raw.cover_mini),
         coverWide: normalizeCrop(raw.coverWide || raw.cover_wide),
         coverWideEnabled: Boolean(raw.coverWideEnabled ?? raw.cover_wide_enabled),
-        genre: genres[0] || "",
-        genres,
+        genre: split.genres[0] || "",
+        genres: split.genres,
         rating: String(raw.rating || ""),
         notesBefore: String(raw.notesBefore || raw.notes_before || ""),
+        notesAfter: String(raw.notesAfter || raw.notes_after || ""),
         complete: Boolean(raw.complete),
         draftChapterIds: draft.length ? draft : posted,
-        pageLook: normalizePageLook(raw.pageLook || raw.page_look),
+        pageLook: normalizePageLook(raw.pageLook || raw.page_look) || "dark",
         pageLookSaved: normalizePageLookSaved(raw.pageLookSaved || raw.page_look_saved),
+        pageLookCustom: normalizeHexColor(raw.pageLookCustom || raw.page_look_custom),
         pageBgId: normalizePageBgId(raw.pageBgId || raw.page_bg_id)
             || (normalizeHexColor(raw.pageBg || raw.page_bg) ? "custom" : ""),
         pageBg: normalizeHexColor(raw.pageBg || raw.page_bg),

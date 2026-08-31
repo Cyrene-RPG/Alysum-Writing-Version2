@@ -4,7 +4,7 @@ import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=8";
 import { listBodyChapters, listBodyChaptersWithDepth } from "@alysum/writing-engine/manuscript.js?v=6";
 import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
 import { peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
-import { genreLabel, matchingGenreKeys, toggleGenreSelection } from "@alysum/publishing/genres.js";
+import { genreLabel, matchingGenreKeys, toggleGenreSelection } from "@alysum/publishing/genres.js?v=4";
 import {
     clearDraftCover,
     defaultCrops,
@@ -13,9 +13,10 @@ import {
     saveDraftCover,
     uploadBookCover,
 } from "@alysum/publishing/cover-upload.js?v=2";
-import { CONTENT_WARNINGS, readPublishDraft } from "@alysum/publishing/publish-meta.js";
+import { readPublishDraft } from "@alysum/publishing/publish-meta.js?v=4";
 import { saveLibraryListing } from "@alysum/publishing/post-work.js";
-import { bindPageLook, paintPageLook, readPageLook } from "./page-look.js";
+import { bindPageLook, paintPageLook, readPageLook } from "./page-look.js?v=8";
+import { bindWarningPicker } from "./warning-picker.js?v=4";
 import {
     CROP_ASPECT,
     applyPreview,
@@ -35,10 +36,6 @@ function escapeHtml(str) {
 
 function bookIdFromUrl() {
     return new URLSearchParams(window.location.search).get("book") || "";
-}
-
-function checkedValues(root) {
-    return [...(root?.querySelectorAll("input:checked") || [])].map((el) => el.value);
 }
 
 function orderedChapters(list, ids) {
@@ -108,6 +105,7 @@ async function boot() {
     let coverUrl = draft.cover_url;
     let coverSrc = "";
     let selectedGenres = draft.genres.slice();
+    let selectedWarnings = draft.warnings.slice();
     const seeds = defaultCrops();
     const oldAutoLibrary = draft.coverCrop
         && draft.coverCrop.h >= 0.98
@@ -164,11 +162,12 @@ async function boot() {
             title: document.getElementById("workTitle")?.value || book.title,
             author: book._author || "",
             summary: document.getElementById("workSummary")?.value || "",
-            notesBefore: document.getElementById("workNotes")?.value || "",
+            notesBefore: draft.notesBefore || "",
+            notesAfter: document.getElementById("workNotesAfter")?.value || "",
             genre: selectedGenres[0] || "",
             genres: selectedGenres.slice(0, 3),
             rating: document.querySelector("#ratingPicker input:checked")?.value || "",
-            warnings: checkedValues(document.getElementById("warningPicker")),
+            warnings: selectedWarnings.slice(),
             tags,
             coverUrl,
             coverCrop: crops.library,
@@ -222,10 +221,12 @@ async function boot() {
                 genres: form.genres,
                 rating: form.rating,
                 notesBefore: form.notesBefore,
+                notesAfter: form.notesAfter,
                 complete: form.complete,
                 draftChapterIds: form.chapterIds,
                 pageLook: form.pageLook,
                 pageLookSaved: form.pageLookSaved,
+                pageLookCustom: form.pageLookCustom,
                 pageBgId: form.pageBgId,
                 pageBg: form.pageBg,
             };
@@ -287,12 +288,10 @@ async function boot() {
         paintStrip();
     }
 
-    const warningPicker = document.getElementById("warningPicker");
-    if (warningPicker) {
-        warningPicker.innerHTML = CONTENT_WARNINGS.map((item) =>
-            `<label><input type="checkbox" value="${escapeHtml(item)}" /> ${escapeHtml(item)}</label>`
-        ).join("");
-    }
+    bindWarningPicker(document, {
+        getSelected: () => selectedWarnings,
+        setSelected(next) { selectedWarnings = next; },
+    });
 
     paintPageLook(document, draft);
     bindPageLook(document);
@@ -300,8 +299,8 @@ async function boot() {
     if (workTitle) workTitle.value = book.title || "";
     const workSummary = document.getElementById("workSummary");
     if (workSummary) workSummary.value = draft.synopsis || "";
-    const workNotes = document.getElementById("workNotes");
-    if (workNotes) workNotes.value = draft.notesBefore || "";
+    const workNotesAfter = document.getElementById("workNotesAfter");
+    if (workNotesAfter) workNotesAfter.value = draft.notesAfter || "";
     const extraTags = document.getElementById("extraTags");
     if (extraTags) extraTags.value = draft.tags.join(", ");
     void loadDraftCover(book.id).then((localSrc) => {
@@ -316,10 +315,6 @@ async function boot() {
         const radio = document.querySelector(`#ratingPicker input[value="${CSS.escape(String(draft.rating))}"]`);
         if (radio) radio.checked = true;
     }
-    const warningSet = new Set(draft.warnings);
-    document.querySelectorAll("#warningPicker input").forEach((el) => {
-        el.checked = warningSet.has(el.value);
-    });
 
     const picker = document.getElementById("genrePicker");
     const search = document.getElementById("genreSearch");

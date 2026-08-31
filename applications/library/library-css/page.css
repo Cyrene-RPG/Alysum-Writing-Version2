@@ -184,6 +184,7 @@ body {
     margin-bottom: 14px;
     flex-wrap: wrap;
 }
+.lib-shelf-head:has(.lib-shelf-aside) { justify-content: flex-start; }
 .lib-shelf-head h2 {
     margin: 0;
     font-size: 22px;

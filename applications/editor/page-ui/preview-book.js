@@ -1,8 +1,7 @@
 import { listBodyChaptersWithDepth } from "@alysum/writing-engine/manuscript.js?v=6";
-import { genreLabel, matchingGenreKeys, toggleGenreSelection } from "@alysum/publishing/genres.js";
-import { CONTENT_WARNINGS, RATINGS } from "@alysum/publishing/publish-meta.js";
-import { bindBookLookPicker, paintBookLookPicker } from "@alysum/site-appearance/js-runtime/book-look-picker.js";
-import { applyVisitBookLook, applyVisitPageBackground } from "@alysum/site-appearance/js-runtime/visit-page-look.js";
+import { genreLabel, matchingGenreKeys, toggleGenreSelection } from "@alysum/publishing/genres.js?v=4";
+import { CONTENT_WARNINGS, RATINGS, toggleContentWarning } from "@alysum/publishing/publish-meta.js?v=4";
+import { applyVisitListingLook } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=6";
 import { paintBookHero, resolvePreviewCoverSrc, wideCropFromMeta } from "./cover.js?v=3";
 
 export function previewBookHtml() {
@@ -16,23 +15,8 @@ export function previewBookHtml() {
                 <a class="lib-publish-btn" id="libPublishBtn" href="/publish">Continue to publish</a>
             </div>
         </div>
-        <div class="lib-look-panel">
-            <div class="lib-look-block">
-                <p class="lib-look-kicker">Listing theme</p>
-                <div data-book-look-swatches class="book-look-swatches"></div>
-                <button type="button" class="lib-look-reset" data-book-look-reset>Reset</button>
-            </div>
-            <div class="lib-look-block">
-                <p class="lib-look-kicker">Page background</p>
-                <div data-book-bg-chips class="book-look-bg-chips"></div>
-                <div data-book-bg-custom hidden>
-                    <input type="color" data-book-bg-color value="#0b1220" />
-                </div>
-                <button type="button" class="lib-look-reset" data-book-bg-reset>Reset</button>
-            </div>
-        </div>
         <div class="book-page">
-            <article class="book-card panel">
+            <article class="book-card">
                 <header class="book-hero" id="libHero">
                     <div class="book-hero-top">
                         <span class="book-back">‹ Library</span>
@@ -51,12 +35,14 @@ export function previewBookHtml() {
                     </div>
                 </header>
                 <div class="book-body">
-                    <p class="book-label">Genres &amp; tags</p>
-                    <div class="book-tags" id="libTags"></div>
+                    <p class="book-label">Genres</p>
+                    <div class="book-tags" id="libGenreChips"></div>
                     <div class="lib-genre-picker" id="libGenres">
                         <input id="libGenreSearch" type="search" placeholder="Search genres…" autocomplete="off" />
                         <div class="lib-genre-menu" id="libGenreMenu" hidden></div>
                     </div>
+                    <p class="book-label">Tags</p>
+                    <div class="book-tags" id="libTags"></div>
                     <p class="book-label">Rating</p>
                     <div class="book-tags" id="libRating"></div>
                     <p class="book-label">Content warnings</p>
@@ -71,6 +57,14 @@ export function previewBookHtml() {
                         <div class="book-synopsis-fade" id="libSynopsisFade"></div>
                     </div>
                     <button type="button" class="book-more" id="libSynopsisMore">Edit</button>
+                    <div class="book-row-head">
+                        <p class="book-label">Notes</p>
+                        <button type="button" class="book-edit" id="libNotesEditBtn" title="Edit notes">✎</button>
+                    </div>
+                    <div class="book-synopsis-wrap">
+                        <div class="book-synopsis" id="libNotes"></div>
+                        <textarea class="lib-syn-edit hidden" id="libNotesEdit" placeholder="Optional notes under the synopsis."></textarea>
+                    </div>
                     <span class="book-cta" id="libCta">Start reading ›</span>
                     <div class="book-rule"></div>
                     <div class="book-toc-head">
@@ -103,23 +97,31 @@ function escapeHtml(text) {
 }
 
 export function applyPreviewLook(targets, meta, pageEl) {
-    for (const el of targets) applyVisitPageBackground(el, meta?.pageBgId, meta?.pageBg);
-    applyVisitBookLook(pageEl, meta);
+    const bg = targets[0];
+    if (!bg) return;
+    const page = pageEl && bg.contains(pageEl) ? pageEl : bg;
+    applyVisitListingLook(bg, page, meta);
+    for (let i = 1; i < targets.length; i++) {
+        applyVisitListingLook(targets[i], targets[i], meta);
+    }
 }
 
-export function paintPreviewBook(pane, { book, meta, expanded, editingSynopsis, lookTargets }) {
+export function paintPreviewBook(pane, { book, meta, expanded, editingSynopsis, editingNotes, lookTargets }) {
     const titleEl = pane.querySelector("#libTitle");
     const authorEl = pane.querySelector("#libAuthor");
     const changeEl = pane.querySelector("#libCoverChange");
     const metaEl = pane.querySelector("#libMeta");
     const wideCheck = pane.querySelector("#libWideOn");
     const tagsEl = pane.querySelector("#libTags");
+    const genreChips = pane.querySelector("#libGenreChips");
     const genreMenu = pane.querySelector("#libGenreMenu");
     const ratingEl = pane.querySelector("#libRating");
     const warnsEl = pane.querySelector("#libWarns");
     const synopsisEl = pane.querySelector("#libSynopsis");
     const synopsisEdit = pane.querySelector("#libSynopsisEdit");
     const synopsisFade = pane.querySelector("#libSynopsisFade");
+    const notesEl = pane.querySelector("#libNotes");
+    const notesEdit = pane.querySelector("#libNotesEdit");
     const tocEl = pane.querySelector("#libToc");
     const countEl = pane.querySelector("#libChapterCount");
     const publishBtn = pane.querySelector("#libPublishBtn");
@@ -132,7 +134,6 @@ export function paintPreviewBook(pane, { book, meta, expanded, editingSynopsis, 
         publishBtn.href = `/publish?book=${encodeURIComponent(book.id)}`;
     }
     if (wideCheck) wideCheck.checked = Boolean(meta.coverWideEnabled);
-    paintBookLookPicker(pane, meta);
     applyPreviewLook(lookTargets || [pane], meta, pane.querySelector(".book-page"));
 
     const ranked = listBodyChaptersWithDepth(book.sections);
@@ -157,14 +158,16 @@ export function paintPreviewBook(pane, { book, meta, expanded, editingSynopsis, 
             : `<p class="book-reviews-empty">No chapters posted yet.</p>`;
     }
 
-    if (tagsEl) {
-        const genres = (meta.genres || []).map((key, ix) =>
+    if (genreChips) {
+        genreChips.innerHTML = (meta.genres || []).map((key, ix) =>
             `<button type="button" class="book-tag" data-genre="${escapeHtml(key)}" data-role="${ix + 1}">${escapeHtml(genreLabel(key))}</button>`
-        );
+        ).join("");
+    }
+    if (tagsEl) {
         const tags = (meta.tags || []).map((tag) =>
             `<span class="book-tag">${escapeHtml(tag)}<button type="button" data-remove-tag="${escapeHtml(tag)}" aria-label="Remove tag">×</button></span>`
         );
-        tagsEl.innerHTML = [...genres, ...tags].join("") +
+        tagsEl.innerHTML = tags.join("") +
             `<span class="book-tag add"><input id="libTagInput" placeholder="Add tag" /></span>`;
     }
     if (genreMenu) {
@@ -200,6 +203,14 @@ export function paintPreviewBook(pane, { book, meta, expanded, editingSynopsis, 
         synopsisEdit.classList.toggle("hidden", !editingSynopsis);
         if (editingSynopsis) synopsisEdit.value = meta.synopsis || "";
     }
+    if (notesEl) {
+        notesEl.textContent = meta.notesAfter || "No notes yet.";
+        notesEl.classList.toggle("hidden", editingNotes);
+    }
+    if (notesEdit) {
+        notesEdit.classList.toggle("hidden", !editingNotes);
+        if (editingNotes) notesEdit.value = meta.notesAfter || "";
+    }
 
     void resolvePreviewCoverSrc(book.id, meta.cover_url).then((src) => {
         paintBookHero(hero, coverEl, src, meta);
@@ -226,17 +237,6 @@ export function bindPreviewBook(pane, { saveMeta, paint, metaFromBook, openManag
     pane.querySelector("#libAuthor")?.addEventListener("change", (event) => {
         saveMeta({ author: event.target.value });
     });
-    bindBookLookPicker(pane, {
-        onChange(look) {
-            saveMeta({
-                pageLook: look.pageLook,
-                pageLookSaved: look.pageLookSaved,
-                pageBgId: look.pageBgId,
-                pageBg: look.pageBg,
-            });
-            paint();
-        },
-    });
     pane.querySelector("#libWideOn")?.addEventListener("change", (event) => {
         const { meta } = metaFromBook();
         saveMeta({
@@ -245,14 +245,14 @@ export function bindPreviewBook(pane, { saveMeta, paint, metaFromBook, openManag
         });
         paint();
     });
-    pane.querySelector("#libTags")?.addEventListener("click", (event) => {
+    pane.querySelector("#libGenreChips")?.addEventListener("click", (event) => {
         const genreBtn = event.target.closest("[data-genre]");
-        if (genreBtn) {
-            const genres = toggleGenreSelection(metaFromBook().meta.genres, genreBtn.dataset.genre);
-            saveMeta({ genre: genres[0] || "", genres });
-            paint();
-            return;
-        }
+        if (!genreBtn) return;
+        const genres = toggleGenreSelection(metaFromBook().meta.genres, genreBtn.dataset.genre);
+        saveMeta({ genre: genres[0] || "", genres });
+        paint();
+    });
+    pane.querySelector("#libTags")?.addEventListener("click", (event) => {
         const rm = event.target.closest("[data-remove-tag]");
         if (!rm) return;
         saveMeta({ tags: metaFromBook().meta.tags.filter((tag) => tag !== rm.dataset.removeTag) });
@@ -299,10 +299,7 @@ export function bindPreviewBook(pane, { saveMeta, paint, metaFromBook, openManag
         const btn = event.target.closest("[data-preset]");
         if (!btn) return;
         const { meta } = metaFromBook();
-        const next = meta.warnings.includes(btn.dataset.preset)
-            ? meta.warnings.filter((item) => item !== btn.dataset.preset)
-            : [...meta.warnings, btn.dataset.preset];
-        saveMeta({ warnings: next });
+        saveMeta({ warnings: toggleContentWarning(meta.warnings, btn.dataset.preset) });
         paint();
     });
 }

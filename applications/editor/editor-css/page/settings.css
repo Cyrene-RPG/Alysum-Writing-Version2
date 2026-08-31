@@ -171,6 +171,86 @@
     font: inherit;
 }
 .writer-invite-error { color: var(--accent); }
+.writer-look-head {
+    justify-content: space-between;
+    align-items: center;
+}
+.writer-rail-title {
+    margin: 0;
+    flex: 1;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text);
+}
+.writer-look-reset {
+    border: 0;
+    border-radius: 999px;
+    padding: 4px 8px;
+    background: color-mix(in srgb, var(--text) 12%, transparent);
+    color: var(--text);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+}
+.writer-look-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    overflow: auto;
+}
+.writer-shell.is-rail-collapsed .writer-look-menu,
+.writer-shell.is-rail-collapsed .writer-look-reset,
+.writer-shell.is-rail-collapsed .writer-rail-title { display: none; }
+.writer-look-drop-btn {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    border-radius: var(--glass-radius, 10px);
+    background: color-mix(in srgb, var(--alysum-ui-panel, #111827) 70%, transparent);
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: left;
+    cursor: pointer;
+}
+.writer-look-drop-btn[aria-expanded="true"] {
+    outline: 2px solid var(--accent, #7c3aed);
+}
+.writer-look-drop {
+    max-height: min(280px, 40vh);
+    overflow: auto;
+    padding: 8px;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    border-radius: var(--glass-radius, 12px);
+    background: var(--alysum-ui-panel, #111827);
+}
+.writer-look-drop[hidden] { display: none !important; }
+.writer-look-drop .book-look-swatches,
+.writer-look-drop .book-look-bg-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.writer-look-drop .book-look-swatch,
+.writer-look-drop .book-look-bg-chip {
+    min-width: 4.4rem;
+    min-height: 2rem;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.14));
+    border-radius: 10px;
+    color: var(--text);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 8px;
+    cursor: pointer;
+}
+.writer-look-drop .book-look-swatch.is-on,
+.writer-look-drop .book-look-bg-chip.is-on {
+    outline: 2px solid var(--accent, #7c3aed);
+}
 .writer-main.is-preview .writer-main-scroll { display: none; }
 .writer-main.is-preview .lib-preview { display: flex; }
 .writer-main.is-preview { max-width: none; }

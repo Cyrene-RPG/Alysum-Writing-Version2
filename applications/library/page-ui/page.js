@@ -4,7 +4,7 @@ import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/work
 import { initWorkspaceShell } from "/js/studio/shell.js?v=2";
 import { fetchLibraryCatalog } from "@alysum/library/author-profile.js";
 import { readLocalLibraryListings } from "@alysum/publishing/post-work.js";
-import { genreColor, genreDef, genreLabel, matchingGenreKeys, normalizeGenreList } from "@alysum/publishing/genres.js";
+import { genreColor, genreDef, genreLabel, matchingGenreKeys, normalizeGenreList } from "@alysum/publishing/genres.js?v=4";
 import { cropFrameStyle, defaultCrops, peekCoverSrc, rememberCovers } from "@alysum/publishing/cover-upload.js";
 
 const READ_KEY = "alysum:library:read-position";
@@ -91,9 +91,11 @@ function searchMatches(book) {
     if (!state.search) return true;
     const q = state.search.toLowerCase();
     const genreHit = (book.genres || []).some((key) => genreLabel(key).toLowerCase().includes(q));
+    const tagHit = (book.tags || []).some((tag) => String(tag).toLowerCase().includes(q));
     return book.title.toLowerCase().includes(q)
         || book.author.toLowerCase().includes(q)
-        || genreHit;
+        || genreHit
+        || tagHit;
 }
 function genreMatches(book) {
     if (!state.genres.size) return true;
