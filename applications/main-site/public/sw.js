@@ -9,7 +9,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v2.48.0';
+const SW_VERSION = 'v2.49.0';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -32,6 +32,8 @@ const APP_SHELL = [
   '/Alysum-3.png',
   '/css/site-responsive.css',
   '/css/workspace-nav.css',
+  '/js/editor/page.js',
+  '/js/studio/page.js',
   '/site-appearance/css-styles/theme.css',
   '/site-appearance/css-styles/gradient-themes/index.css',
   '/site-appearance/css-styles/typography.css',
@@ -119,7 +121,9 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(Response.redirect(dest.href, 302));
         return;
       }
-      event.respondWith(networkFirstHtml(event));
+      // Studio / Editor: serve the cached shell instantly, refresh in the
+      // background. Lets the writing surfaces open with no / flaky network.
+      event.respondWith(staleWhileRevalidateHtml(event));
       return;
     }
     event.respondWith(networkFirstHtml(event));
@@ -135,10 +139,16 @@ self.addEventListener('fetch', (event) => {
 async function staleWhileRevalidateHtml(event) {
   const cache = await caches.open(SHELL_CACHE);
   const cached = await cache.match(event.request) || await cache.match(new URL(event.request.url).pathname);
-  const network = fetch(event.request, { cache: 'no-store' }).then((fresh) => {
-    if (fresh && fresh.ok) cache.put(event.request, fresh.clone());
-    return fresh;
-  }).catch(() => null);
+  const network = (async () => {
+    try {
+      const preload = event.preloadResponse ? await event.preloadResponse : null;
+      const fresh = preload || await fetch(event.request, { cache: 'no-store' });
+      if (fresh && fresh.ok) cache.put(event.request, fresh.clone());
+      return fresh;
+    } catch (_) {
+      return null;
+    }
+  })();
   if (cached) {
     event.waitUntil(network);
     return cached;
@@ -185,5 +195,15 @@ async function staleWhileRevalidate(request) {
     if (resp && resp.ok) cache.put(request, resp.clone());
     return resp;
   }).catch(() => null);
-  return cached || network || new Response('', { status: 504 });
+  if (cached) {
+    // serve stale immediately, refresh in the background
+    return cached;
+  }
+  const fresh = await network;
+  if (fresh) return fresh;
+  // Offline + exact URL not cached (usually a ?v= bump since the last visit).
+  // Fall back to any cached copy of the same path, then the precached shell copy.
+  const loose = await cache.match(request, { ignoreSearch: true })
+    || await (await caches.open(SHELL_CACHE)).match(request, { ignoreSearch: true });
+  return loose || new Response('', { status: 504 });
 }

@@ -20,7 +20,7 @@ import { reviewSentencesForXp, recordPastedRegion } from "@alysum/statistics/sen
 import { paintChipInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
 import { initWorkspaceShell } from "/js/studio/shell.js?v=2";
 import { createAutosave } from "/js/editor/autosave.js";
-import { mountDocument } from "/js/editor/document.js?v=7";
+import { mountDocument } from "/js/editor/document.js?v=10";
 import { mountToolbar } from "/js/editor/toolbar.js?v=6";
 import {
     getWordWarLobby,

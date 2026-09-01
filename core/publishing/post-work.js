@@ -3,6 +3,7 @@
  */
 import { listBodyChapters } from "../writing-engine/manuscript.js";
 import { countWordsInHtml } from "../writing-engine/word-count.js";
+import { stripReviewMarks } from "../statistics/review-marks.js";
 import { chapterMeetsPublishLength } from "./chapter-length.js";
 import { normalizeGenreList, partitionGenresAndTags } from "./genres.js";
 import { normalizeCrop } from "./cover-upload.js";
@@ -101,11 +102,12 @@ export function buildLibraryPayload(book, form) {
         if (!ch || seen.has(String(ch.id))) continue;
         if (!chapterMeetsPublishLength(ch)) continue;
         seen.add(String(ch.id));
+        const content = stripReviewMarks(String(ch.content || ""));
         posted.push({
             id: ch.id,
             title: ch.title || "Untitled",
-            content: String(ch.content || ""),
-            wordCount: countWordsInHtml(ch.content || ""),
+            content,
+            wordCount: countWordsInHtml(content),
         });
     }
     const now = Date.now();

@@ -42,10 +42,6 @@
 }
 .writer-page img { max-width: 100%; height: auto; }
 
-.writer-page .xp-reviewed,
-.writer-page [data-xp-reviewed] {
-    background: color-mix(in srgb, var(--accent, #a78bfa) 18%, transparent);
-    border-radius: 0.15em;
-    box-decoration-break: clone;
-    -webkit-box-decoration-break: clone;
-}
+/* XP "already scored" is tracked in localStorage now, not in the document.
+   Any legacy [data-xp-reviewed] span left in an old book renders as a plain,
+   style-free inline span and is stripped on the next load / save. */

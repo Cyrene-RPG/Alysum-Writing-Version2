@@ -8,6 +8,7 @@ import {
 } from "./redirect.js";
 import { clearBetaAgeVerifiedLocally } from "../collaboration/beta-safety.js";
 import { revokeBetaMessagingAttestation } from "../collaboration/beta-rooms.js";
+import { clearSessionHint } from "./session-hint.js";
 import {
     clearDesktopLocalHost,
     goToLogin,
@@ -39,6 +40,7 @@ export async function signOutAndGoToHome() {
         }
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
+        clearSessionHint();
         clearBetaAgeVerifiedLocally();
         try {
             await revokeBetaMessagingAttestation();

@@ -4,6 +4,7 @@
 import { isDesktopLocalHost, goToLogin } from "./app.js";
 import { LOCAL_GUEST_USER, LOCAL_GUEST_USER_ID } from "../synchronization-engine/local-adapter.js";
 import { isProbablyOnline } from "../synchronization-engine/network.js";
+import { rememberSessionHint, readSessionHint } from "../authentication/session-hint.js";
 
 export { LOCAL_GUEST_USER, LOCAL_GUEST_USER_ID };
 
@@ -28,6 +29,7 @@ export async function resolveStudioSession(supabase) {
       const { data: sessionData } = await supabase.auth.getSession();
       const sessionUser = sessionData.session?.user;
       if (sessionUser) {
+        rememberSessionHint(sessionUser);
         return { mode: "cloud", user: sessionUser };
       }
     } catch (_) {}
@@ -36,7 +38,14 @@ export async function resolveStudioSession(supabase) {
     }
   }
 
+  // Offline: keep working as the last signed-in user (books come from the local
+  // draft cache; writes queue and flush on reconnect). Only a user who has never
+  // signed in on this device — no hint — gets sent to the login page.
   if (!isProbablyOnline()) {
+    const hint = readSessionHint();
+    if (hint) {
+      return { mode: "cloud", user: { id: hint.id, email: hint.email } };
+    }
     return { mode: "none", user: null };
   }
 
@@ -49,6 +58,7 @@ export async function resolveStudioSession(supabase) {
     ]);
     const cloudUser = data?.user;
     if (cloudUser) {
+      rememberSessionHint(cloudUser);
       return { mode: "cloud", user: cloudUser };
     }
   } catch (_) {}
