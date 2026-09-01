@@ -13,13 +13,12 @@ import {
 } from "@alysum/writing-engine/manuscript.js?v=5";
 import { countWordsInHtml, countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { createAutosave } from "./autosave.js";
-import { mountDocument } from "./document.js?v=8";
+import { mountDocument } from "./document.js?v=10";
 import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=2";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { recordTypedWords } from "@alysum/account/writing-stats.js";
 import { typedWordDelta } from "@alysum/statistics/typed-input.js";
-import { reviewSentencesForXp } from "@alysum/statistics/sentence-review.js";
-import { markSentencesInRoot } from "/js/statistics-ui/review-highlight.js";
+import { reviewSentencesForXp, recordPastedRegion } from "@alysum/statistics/sentence-review.js";
 import { isProbablyOnline, onReconnect } from "@alysum/synchronization-engine/network.js";
 import { mountToolbar } from "./toolbar.js?v=7";
 import { bindManuscriptNav } from "./page/manuscript-nav.js?v=1";
@@ -77,7 +76,31 @@ async function boot() {
         publish_meta: book.publish_meta && typeof book.publish_meta === "object" ? book.publish_meta : {},
         published_chapter_ids: Array.isArray(book.published_chapter_ids) ? book.published_chapter_ids : [],
     });
-    let selectedId = fallbackChapterId(book.sections, listBodyChapters(book.sections)[0]?.id || "");
+    // Remember which chapter the writer had open, per book, across reloads.
+    const LAST_CHAPTER_KEY = `alysum:editor:last-chapter:${bookId}`;
+    function rememberChapter(id) {
+        try {
+            if (id) localStorage.setItem(LAST_CHAPTER_KEY, String(id));
+        } catch {
+            /* ignore */
+        }
+    }
+    function readRememberedChapter() {
+        try {
+            return localStorage.getItem(LAST_CHAPTER_KEY) || "";
+        } catch {
+            return "";
+        }
+    }
+    function setSelectedId(id) {
+        selectedId = id;
+        rememberChapter(id);
+    }
+
+    let selectedId = fallbackChapterId(
+        book.sections,
+        readRememberedChapter() || listBodyChapters(book.sections)[0]?.id || "",
+    );
     initWorkspaceShell({
         lead: "Working On ",
         accent: book.title || "Untitled Book",
@@ -309,6 +332,10 @@ async function boot() {
             const typed = event?.isTrusted && String(event.inputType || "") !== "";
             if (!typed) return;
         }
+        if (event?.inputType === "insertFromPaste" && event.prevHtml != null) {
+            // Pasted sentences never earn XP.
+            recordPastedRegion(session.user?.id, event.prevHtml, html);
+        }
         persist({ ...book, sections: setChapterContent(book.sections, selectedId, html) }, false, { event });
         scheduleSentenceReview();
     }
@@ -334,13 +361,6 @@ async function boot() {
                 userId: session.user?.id,
                 isLocal: session.mode !== "cloud",
                 supabase,
-                markReviewed: (texts) => {
-                    if (selectedKind() === "folder") return;
-                    const marked = markSentencesInRoot(pageEl, texts);
-                    if (marked) {
-                        persist({ ...book, sections: setChapterContent(book.sections, selectedId, editor.getHtml()) });
-                    }
-                },
             });
         } catch {
             /* try again next idle */
@@ -408,7 +428,7 @@ async function boot() {
     const { showChapter, saveChapter, drawTree } = bindManuscriptNav({
         getBook: () => book,
         getSelectedId: () => selectedId,
-        setSelectedId: (id) => { selectedId = id; },
+        setSelectedId,
         persist,
         applyChapterContent,
         editor,
@@ -471,7 +491,7 @@ async function boot() {
         getBook: () => book,
         setBook: (next) => { book = next; },
         getSelectedId: () => selectedId,
-        setSelectedId: (id) => { selectedId = id; },
+        setSelectedId,
         persist,
         saveChapter,
         showChapter,
@@ -496,7 +516,7 @@ async function boot() {
             });
             if (bookTitle) bookTitle.value = book.title || "";
             const keep = currentChapter(book, selectedId);
-            selectedId = keep?.id || fallbackChapterId(book.sections, listBodyChapters(book.sections)[0]?.id || "");
+            setSelectedId(keep?.id || fallbackChapterId(book.sections, listBodyChapters(book.sections)[0]?.id || ""));
             showChapter(selectedId, { rebuildTree: true });
             setWelcomeCopy({ lead: "Working On ", accent: book.title || "Untitled Book" });
         }).catch(() => {});

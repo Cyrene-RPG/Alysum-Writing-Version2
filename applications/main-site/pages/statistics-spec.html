@@ -149,7 +149,7 @@
     <h2>12. Files</h2>
     <ul>
         <li><code>core/statistics/</code> — awards, levels, writing-xp, sentence-split, grammar-hints, grammar-check (LanguageTool), eligibility, engagement-xp</li>
-        <li><code>core/statistics/review-marks.js</code> + <code>statistics-ui/review-highlight.js</code> — already-checked highlight</li>
+        <li><code>core/statistics/review-marks.js</code> — sentence hashing + legacy mark stripping (scored sentences are tracked in <code>localStorage alysum:sentence-seen:&lt;uid&gt;</code>, not in the document)</li>
         <li><code>applications/main-site/statistics-ui/</code> — badge + this spec renderer</li>
         <li>SQL (later): <code>supabase/live-site/supabase-statistics.sql</code></li>
         <li>Import map: <code>@alysum/statistics/</code> → <code>/core/statistics/</code></li>

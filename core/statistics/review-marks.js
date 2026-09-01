@@ -1,7 +1,9 @@
 /**
  * Already-checked writing in a chapter. Word Wars syncs to the same HTML,
  * so we mark reviewed spans and skip them next time.
- * No `document` — wrapping across tags is in statistics-ui/review-highlight.js.
+ * No `document` — pure string helpers. Live scoring tracks sentence hashes in
+ * localStorage (see core/statistics/sentence-review.js); these functions only
+ * hash sentences and strip any legacy [data-xp-reviewed] spans from old books.
  */
 
 import { stripHtmlToText } from "../writing-engine/word-count.js";

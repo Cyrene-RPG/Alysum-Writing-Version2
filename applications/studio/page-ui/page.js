@@ -265,6 +265,8 @@ async function boot() {
         if (event.key && event.key.startsWith("alysum:typed-words:")) paintTotals();
     });
     window.addEventListener("focus", paintTotals);
+    window.addEventListener("offline", paintStudioStatus);
+    window.addEventListener("online", paintStudioStatus);
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") paintTotals();
     });

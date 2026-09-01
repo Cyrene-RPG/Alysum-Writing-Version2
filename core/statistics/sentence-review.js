@@ -2,10 +2,14 @@
  * Turn the sentences a writer just wrote into XP.
  *
  * Runs on save / chapter-switch / idle / pagehide (solo editor) and on seal
- * (Word Wars) — never per keystroke. Sentences already wrapped in
- * [data-xp-reviewed] are skipped; new ones go through the eligibility pipeline
- * (core/statistics/eligibility.js); passes grant `writing_sentence` XP as
- * provisional (12h) via the grant_sentence_xp RPC and get marked reviewed.
+ * (Word Wars) — never per keystroke. A sentence is scored once: after it goes
+ * through the eligibility pipeline (core/statistics/eligibility.js) its hash is
+ * recorded in `alysum:sentence-seen:<uid>` so later scans skip it. Passes grant
+ * `writing_sentence` XP as provisional (12h) via the grant_sentence_xp RPC.
+ *
+ * No DOM is touched — nothing is written into the document. The "already scored"
+ * record is a localStorage hash set, so it can't affect formatting, lists, or
+ * published HTML.
  *
  * LanguageTool (Layer 2b) runs server-side via POST /api/language-tool for
  * signed-in writers who are online: `needs_grammar` sentences are batched to the
@@ -13,9 +17,6 @@
  * the proxy is unreachable (or the writer is local/offline) we fall back to a
  * lenient local check — clean capitalised prose with a real verb and ≥4 words —
  * and hold the rest for the next run.
- *
- * No DOM here. The caller passes chapter {id, content} objects and, for the
- * editor, a `markReviewed(texts)` callback that wraps the spans + persists.
  */
 
 import { stripHtmlToText } from "../writing-engine/word-count.js";
@@ -36,6 +37,8 @@ import { startsWithCapital } from "./grammar-check.js";
 
 const LOCAL_KEY_PREFIX = "alysum:sentence-xp:";
 const PASTED_KEY_PREFIX = "alysum:pasted-sentences:";
+const SEEN_KEY_PREFIX = "alysum:sentence-seen:";
+const SEEN_CAP = 4000;
 const MIN_LOCAL_PASS_WORDS = 4;
 const LANGUAGE_TOOL_ENDPOINT = "/api/language-tool";
 const GRAMMAR_BATCH_MAX = 40;
@@ -46,6 +49,10 @@ function localKey(userId) {
 
 function pastedKey(userId) {
     return PASTED_KEY_PREFIX + String(userId || "");
+}
+
+function seenKey(userId) {
+    return SEEN_KEY_PREFIX + String(userId || "");
 }
 
 function readPastedSet(userId) {
@@ -60,6 +67,30 @@ function readPastedSet(userId) {
 function writePastedSet(userId, set) {
     try {
         localStorage.setItem(pastedKey(userId), JSON.stringify([...set].slice(-2000)));
+    } catch {
+        /* ignore */
+    }
+}
+
+/** { <hash>: "grant" | "reject" | "hold" | "revoke" } — sentences already scored. */
+function readSeen(userId) {
+    try {
+        const raw = JSON.parse(localStorage.getItem(seenKey(userId)) || "{}");
+        return raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    } catch {
+        return {};
+    }
+}
+
+function writeSeen(userId, map) {
+    try {
+        let out = map;
+        const keys = Object.keys(map);
+        if (keys.length > SEEN_CAP) {
+            out = {};
+            for (const k of keys.slice(-SEEN_CAP)) out[k] = map[k];
+        }
+        localStorage.setItem(seenKey(userId), JSON.stringify(out));
     } catch {
         /* ignore */
     }
@@ -150,7 +181,7 @@ async function runGrammarProxy(supabase, items) {
     return out;
 }
 
-/** Every sentence hash currently present in a chapter, reviewed or not. */
+/** Every sentence hash currently present in a chapter. */
 function allHashesInHtml(html) {
     const plain = stripHtmlToText(stripReviewMarks(html));
     return new Set(extractSentencesFromText(plain).map((s) => sentenceReviewKey(s.text)));
@@ -164,8 +195,7 @@ function allHashesInHtml(html) {
  * @param {string} opts.userId
  * @param {boolean} [opts.isLocal]
  * @param {object} [opts.supabase]
- * @param {(texts:string[]) => any} [opts.markReviewed] - wrap + persist the passed sentences
- * @returns {Promise<{ granted:number, marked:number, revoked:number }>}
+ * @returns {Promise<{ granted:number, scored:number, revoked:number }>}
  */
 export async function reviewSentencesForXp({
     chapters = [],
@@ -174,10 +204,9 @@ export async function reviewSentencesForXp({
     userId,
     isLocal = false,
     supabase = null,
-    markReviewed = null,
 } = {}) {
     if (!userId || !Array.isArray(chapters) || !chapters.length) {
-        return { granted: 0, marked: 0, revoked: 0 };
+        return { granted: 0, scored: 0, revoked: 0 };
     }
 
     const useProxy = !isLocal && !!supabase
@@ -185,8 +214,7 @@ export async function reviewSentencesForXp({
 
     const toGrant = [];         // { hash, text, wordCount, source, roomId, chapterId, verdict }
     const needsGrammar = [];    // { hash, text, isDialogue, wordCount, chapterId }
-    const passText = [];        // texts to mark reviewed
-    const rejectText = [];      // also marked so we stop re-checking them
+    const seen = readSeen(userId);       // mutated in place, written once at the end
     const liveHashes = new Set();
     const pastedSet = readPastedSet(userId);
 
@@ -194,44 +222,36 @@ export async function reviewSentencesForXp({
         const html = chapter?.content || "";
         for (const h of allHashesInHtml(html)) liveHashes.add(h);
         for (const s of unreviewedSentencesFromHtml(html)) {
-            if (pastedSet.has(s.key)) { rejectText.push(s.text); continue; } // pasted → never pays
+            if (seen[s.key]) continue;                       // already scored — skip forever
+            if (pastedSet.has(s.key)) { seen[s.key] = "reject"; continue; } // pasted → never pays
             const result = evaluateSentence({ text: s.text, isDialogue: s.isDialogue });
             const wc = tokenizeWords(s.text).length;
             if (result.verdict === VERDICT_PASS) {
                 toGrant.push({
-                    hash: s.key,
-                    text: s.text,
-                    wordCount: wc,
-                    source,
-                    roomId: roomId || undefined,
-                    chapterId: chapter.id,
+                    hash: s.key, text: s.text, wordCount: wc,
+                    source, roomId: roomId || undefined, chapterId: chapter.id,
                     verdict: "pass",
                 });
-                passText.push(s.text);
+                seen[s.key] = "grant";
             } else if (result.verdict === VERDICT_NEEDS_GRAMMAR) {
                 if (useProxy) {
                     needsGrammar.push({
-                        hash: s.key,
-                        text: s.text,
-                        isDialogue: s.isDialogue,
-                        wordCount: wc,
-                        chapterId: chapter.id,
+                        hash: s.key, text: s.text, isDialogue: s.isDialogue,
+                        wordCount: wc, chapterId: chapter.id,
                     });
+                    // seen is set below from the proxy verdict
                 } else if (localGrammarPass(s.text)) {
                     toGrant.push({
-                        hash: s.key,
-                        text: s.text,
-                        wordCount: wc,
-                        source,
-                        roomId: roomId || undefined,
-                        chapterId: chapter.id,
+                        hash: s.key, text: s.text, wordCount: wc,
+                        source, roomId: roomId || undefined, chapterId: chapter.id,
                         verdict: "pass",
                     });
-                    passText.push(s.text);
+                    seen[s.key] = "grant";
+                } else {
+                    seen[s.key] = "hold";
                 }
-                // else: hold, re-check next run.
             } else if (result.verdict === VERDICT_REJECT) {
-                rejectText.push(s.text);
+                seen[s.key] = "reject";
             }
         }
     }
@@ -242,31 +262,23 @@ export async function reviewSentencesForXp({
             const v = verdicts.get(item.hash);
             if (v === "pass") {
                 toGrant.push({
-                    hash: item.hash,
-                    text: item.text,
-                    wordCount: item.wordCount,
-                    source,
-                    roomId: roomId || undefined,
-                    chapterId: item.chapterId,
+                    hash: item.hash, text: item.text, wordCount: item.wordCount,
+                    source, roomId: roomId || undefined, chapterId: item.chapterId,
                     verdict: "needs_grammar",
                 });
-                passText.push(item.text);
+                seen[item.hash] = "grant";
             } else if (v === "reject") {
-                rejectText.push(item.text);
+                seen[item.hash] = "reject";
             } else if (!v && localGrammarPass(item.text)) {
                 // proxy unreachable → lenient fallback so writing still pays.
                 toGrant.push({
-                    hash: item.hash,
-                    text: item.text,
-                    wordCount: item.wordCount,
-                    source,
-                    roomId: roomId || undefined,
-                    chapterId: item.chapterId,
+                    hash: item.hash, text: item.text, wordCount: item.wordCount,
+                    source, roomId: roomId || undefined, chapterId: item.chapterId,
                     verdict: "pass",
                 });
-                passText.push(item.text);
+                seen[item.hash] = "grant";
             }
-            // v === "needs_ai" → hold for Layer 3, re-check next run.
+            // v === "needs_ai" or proxy down + not clean prose → leave unscored, retry next run.
         }
     }
 
@@ -277,9 +289,14 @@ export async function reviewSentencesForXp({
     if (toGrant.length) {
         if (isLocal || !supabase) {
             const next = { ...prevGrants };
-            for (const item of toGrant) next[item.hash] = { ts: Date.now(), words: item.wordCount };
+            let n = 0;
+            for (const item of toGrant) {
+                if (next[item.hash]) continue;             // already granted locally
+                next[item.hash] = { ts: Date.now(), words: item.wordCount };
+                n += 1;
+            }
             writeLocalGrants(userId, next);
-            granted = toGrant.length;
+            granted = n;
         } else {
             try {
                 const { data } = await supabase.rpc("grant_sentence_xp", { p_sentences: toGrant });
@@ -306,14 +323,11 @@ export async function reviewSentencesForXp({
             }
         }
         const next = { ...prevGrants };
-        for (const h of goneHashes) delete next[h];
+        for (const h of goneHashes) { delete next[h]; seen[h] = "revoke"; }
         writeLocalGrants(userId, next);
     }
 
-    const marks = [...passText, ...rejectText];
-    if (marks.length && typeof markReviewed === "function") {
-        try { markReviewed(marks); } catch { /* ignore */ }
-    }
+    writeSeen(userId, seen);
 
     // Prune pasted hashes that are no longer anywhere in the doc.
     if (pastedSet.size) {
@@ -324,5 +338,5 @@ export async function reviewSentencesForXp({
         if (pruned) writePastedSet(userId, pastedSet);
     }
 
-    return { granted, marked: marks.length, revoked };
+    return { granted, scored: Object.keys(seen).length, revoked };
 }
