@@ -11,7 +11,7 @@ import {
 import { finishSettingsShell, initLocalSettingsUi, configureDeleteAccountUi } from "/js/settings/shell.js";
 import { wireSettingsSaves, setGoalUi } from "/js/settings/saves.js";
 import { wireBackup } from "/js/settings/backup.js";
-import { bootSettingsSecurity, wireSettingsSecurity } from "/js/settings/security.js";
+import { bootSettingsSecurity, wireSettingsSecurity } from "/js/settings/security.js?v=3";
 import { supabase } from "@alysum/authentication/client.js";
 import { signOutAndGoToHome } from "@alysum/authentication/logout.js";
 import { goToLogin } from "@alysum/desktop/app.js";

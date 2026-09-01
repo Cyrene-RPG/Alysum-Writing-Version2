@@ -19,7 +19,7 @@ import {
     maskEmail,
     normalizeDeleteCode,
     sendDeleteAccountCode,
-} from "@alysum/authentication/delete-account.js";
+} from "@alysum/authentication/delete-account.js?v=3";
 import {
     clearAuthCallbackFromUrl,
     clearOAuthPending,
@@ -316,7 +316,7 @@ async function sendDeletionCode() {
         return;
     }
     const confirmed = window.confirm(
-        `Send a 6-digit deletion code to ${maskEmail(email)}?\n\n` +
+        `Send an 8-digit deletion code to ${maskEmail(email)}?\n\n` +
             "Anyone with that inbox can use the code to permanently delete this account."
     );
     if (!confirmed) return;
@@ -328,7 +328,7 @@ async function sendDeletionCode() {
         revealDeleteCodeField();
         showMsg(
             els.deleteAccountMsg,
-            `A 6-digit code was sent to ${sent.masked}. Enter it below to delete this account.`,
+            `An 8-digit code was sent to ${sent.masked}. Enter it below to delete this account.`,
             true
         );
     } catch (e) {
@@ -346,8 +346,8 @@ async function confirmDeleteAccount() {
         showMsg(els.deleteAccountMsg, "Request a deletion code first.", false);
         return;
     }
-    if (!/^\d{6}$/.test(digits)) {
-        showMsg(els.deleteAccountMsg, "Enter the 6-digit code from your email.", false);
+    if (!/^\d{8}$/.test(digits)) {
+        showMsg(els.deleteAccountMsg, "Enter the 8-digit code from your email.", false);
         return;
     }
     if (

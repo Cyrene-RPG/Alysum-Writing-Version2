@@ -28,7 +28,7 @@ export function maskEmail(email) {
 }
 
 export function normalizeDeleteCode(raw) {
-    return String(raw || "").replace(/\D/g, "").slice(0, 6);
+    return String(raw || "").replace(/\D/g, "").slice(0, 8);
 }
 
 async function requireSignedInUser() {
@@ -79,7 +79,7 @@ function missingRpcMessage(error, fileName) {
 }
 
 /**
- * Email a 6-digit deletion code to the signed-in account's email only.
+ * Email an 8-digit deletion code to the signed-in account's email only.
  * Uses reauthentication (a code), not a magic sign-in link.
  * The address is never taken from a form field.
  */
@@ -104,13 +104,13 @@ export async function sendDeleteAccountCode() {
 }
 
 /**
- * Verify the emailed 6-digit code, then permanently delete this account.
+ * Verify the emailed 8-digit code, then permanently delete this account.
  * Aborts if the session is not the same user who requested the code.
  */
 export async function deleteOwnAccountWithEmailCode(code, expectedUserId) {
     const digits = normalizeDeleteCode(code);
-    if (!/^\d{6}$/.test(digits)) {
-        throw new Error("Enter the 6-digit code from your email.");
+    if (!/^\d{8}$/.test(digits)) {
+        throw new Error("Enter the 8-digit code from your email.");
     }
 
     const before = await requireSignedInUser();
