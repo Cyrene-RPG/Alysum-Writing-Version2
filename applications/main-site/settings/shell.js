@@ -8,7 +8,7 @@ import {
     renderSupportLinkFields,
     setSupportLinksDisabled,
 } from "/js/settings/author-page.js";
-import { applySecurityPanel, resetDeleteChallenge } from "/js/settings/security.js";
+import { applySecurityPanel, resetDeleteChallenge } from "/js/settings/security.js?v=3";
 import { applyChromeGradient, getStoredGradientThemeId, getThemePreview } from "@alysum/site-appearance/js-runtime/gradient-theme.js";
 import { getProfileRow, LOCAL_GUEST_USER_ID } from "@alysum/synchronization-engine/local-adapter.js";
 import { normalizeAccountType } from "@alysum/account/mode.js";

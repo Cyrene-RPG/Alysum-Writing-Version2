@@ -1,5 +1,5 @@
 -- Run in the Supabase SQL editor.
--- Verifies the 6-digit reauthentication code emailed for account deletion.
+-- Verifies the 8-digit reauthentication code emailed for account deletion.
 -- Does not expose codes to the browser. Clients cannot read this table.
 
 create extension if not exists pgcrypto with schema extensions;
@@ -37,7 +37,7 @@ begin
         raise exception 'not signed in';
     end if;
 
-    if p_code is null or p_code !~ '^\d{6}$' then
+    if p_code is null or p_code !~ '^\d{8}$' then
         return false;
     end if;
 

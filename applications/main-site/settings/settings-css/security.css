@@ -102,11 +102,13 @@
 }
 
 #deleteAccountCode {
-    letter-spacing: 0.35em;
-    font-size: 20px;
+    letter-spacing: 0.12em;
+    font-size: 1.125rem;
     font-weight: 800;
     font-family: ui-monospace, monospace;
-    max-width: 12rem;
+    max-width: min(100%, 22rem);
+    width: 100%;
+    box-sizing: border-box;
 }
 
 #deleteAccountSection .profile-box-actions {
