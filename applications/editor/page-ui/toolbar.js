@@ -15,6 +15,15 @@ import {
 import { SCENE_BREAK_PRESETS, buildSceneBreakHtml } from "./scene-breaks.js";
 
 const INDENT_KEY = "alysum:editor:auto-indent";
+const SPACE_KEY = "alysum:editor:line-spacing";
+const LINE_SPACES = ["book", "compact", "comfortable", "relaxed"];
+const SPACE_LABELS = {
+    book: "Book",
+    compact: "Compact",
+    comfortable: "Comfortable",
+    relaxed: "Relaxed"
+};
+const DEFAULT_LINE_SPACE = "comfortable";
 
 const ACTIONS = [
     { command: "bold", label: "B", title: "Bold" },
@@ -48,6 +57,23 @@ function writeAutoIndent(on) {
     }
 }
 
+function readLineSpacing() {
+    try {
+        const value = localStorage.getItem(SPACE_KEY);
+        return LINE_SPACES.includes(value) ? value : DEFAULT_LINE_SPACE;
+    } catch {
+        return DEFAULT_LINE_SPACE;
+    }
+}
+
+function writeLineSpacing(value) {
+    try {
+        localStorage.setItem(SPACE_KEY, value);
+    } catch {
+        /* ignore */
+    }
+}
+
 function breakPreview(preset) {
     if (preset.type === "rule") {
         return `<hr class="scene-rule writer-break-preview-rule" />`;
@@ -73,6 +99,12 @@ function fontMenuHtml() {
 function sizeMenuHtml() {
     return EDITOR_FONT_SIZES.map((s) => (
         `<button type="button" class="writer-menu-item writer-font-size" data-font-size="${s.px}">${s.px}</button>`
+    )).join("");
+}
+
+function spacingMenuHtml() {
+    return LINE_SPACES.map((value) => (
+        `<button type="button" class="writer-menu-item writer-line-space" data-line-space="${value}">${SPACE_LABELS[value]}</button>`
     )).join("");
 }
 
@@ -106,6 +138,7 @@ function paintActive(mount, typography, activeFontId) {
 export function mountToolbar({
     mount,
     editor,
+    pageEl,
     onTypewriter,
     onFind,
     onTypographyChange,
@@ -115,6 +148,7 @@ export function mountToolbar({
 
     const indentOn = readAutoIndent();
     editor.setAutoIndent(indentOn);
+    if (pageEl) pageEl.dataset.writerSpace = readLineSpacing();
     void loadEditorGoogleFontBootstrap();
 
     const wordcount = mount.querySelector(".writer-wordcount");
@@ -125,6 +159,7 @@ export function mountToolbar({
         )),
         menuBlock("font", "Font", "Font", fontMenuHtml()),
         menuBlock("size", "Size", "Text size", sizeMenuHtml()),
+        menuBlock("spacing", "Spacing", "Line spacing", spacingMenuHtml()),
         menuBlock("breaks", "Breaks", "Scene break", breakMenuHtml()),
         `<button type="button" class="writer-tool writer-tool--find" data-find-toggle title="Find" aria-label="Find">${SEARCH_ICON}</button>`,
         `<button type="button" class="writer-tool writer-tool--type" data-typewriter title="Typewriter mode" aria-label="Typewriter mode">Type</button>`
@@ -133,6 +168,13 @@ export function mountToolbar({
 
     function typography() {
         return getChapterTypography?.() || { fontId: DEFAULT_FONT_ID, fontSizePx: String(DEFAULT_FONT_SIZE_PX) };
+    }
+
+    function paintSpacing() {
+        const current = readLineSpacing();
+        mount.querySelectorAll(".writer-line-space").forEach((btn) => {
+            btn.classList.toggle("is-active", btn.dataset.lineSpace === current);
+        });
     }
 
     function closeMenus() {
@@ -152,6 +194,7 @@ export function mountToolbar({
         if (!panel) return;
         if (id === "font") void ensureAllEditorGoogleFonts();
         paintActive(mount, typography(), editor.activeFontId?.());
+        paintSpacing();
         panel.hidden = false;
         btn?.setAttribute("aria-expanded", "true");
     }
@@ -203,6 +246,17 @@ export function mountToolbar({
             const result = editor.applyFont(fontId);
             if (result?.mode === "chapter") onTypographyChange?.({ fontId });
             paintActive(mount, typography(), result?.fontId || fontId);
+            closeMenus();
+            return;
+        }
+        const spaceBtn = event.target.closest("[data-line-space]");
+        if (spaceBtn) {
+            const value = spaceBtn.dataset.lineSpace;
+            if (LINE_SPACES.includes(value) && pageEl) {
+                writeLineSpacing(value);
+                pageEl.dataset.writerSpace = value;
+                paintSpacing();
+            }
             closeMenus();
             return;
         }
