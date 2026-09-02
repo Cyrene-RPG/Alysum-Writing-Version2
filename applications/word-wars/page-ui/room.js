@@ -4,7 +4,7 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { goToLogin } from "@alysum/desktop/app.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=7";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=10";
 import {
     addBodyChapter,
     lastOfKind,

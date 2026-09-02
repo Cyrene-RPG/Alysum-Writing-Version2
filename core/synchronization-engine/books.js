@@ -9,7 +9,7 @@ import {
     listBooks as listLocalBooks,
     updateBook as updateLocalBook,
 } from "./local-adapter.js";
-import * as cloud from "./cloud-adapter.js";
+import * as cloud from "./cloud-adapter.js?v=2";
 import {
     createEmptyBook,
     ensureChapterIds,
@@ -141,16 +141,6 @@ function normalizeBook(book) {
         words: Number(book.words) || 0,
         is_published: Boolean(book.is_published),
     };
-}
-
-function isForeignOwner(book, ownerId) {
-    const owner = String(book?.user_id || book?.userId || "").trim();
-    if (!owner) return false;
-    return owner !== String(ownerId || "");
-}
-
-function keepOwnBooks(books, ownerId) {
-    return (Array.isArray(books) ? books : []).filter((book) => !isForeignOwner(book, ownerId));
 }
 
 function cloudWritePayload(book) {
@@ -296,16 +286,14 @@ export function createBooksApi(session, supabase) {
             return readCache(userId).some((row) => cacheIsPending(row) || isLocalOnlyId(row.id));
         },
         peekBooks() {
-            return sortByUpdated(keepOwnBooks(readCache(userId), userId)).map(normalizeBook).filter(Boolean);
+            return sortByUpdated(readCache(userId)).map(normalizeBook).filter(Boolean);
         },
         peekBook(id) {
             const cached = readCache(userId).find((row) => row.id === id) || null;
             return cached ? normalizeBook(cached) : null;
         },
         async listBooks() {
-            const stored = readCache(userId);
-            const cached = keepOwnBooks(stored, userId);
-            if (cached.length !== stored.length) writeCache(userId, cached.map(stripRuntime));
+            const cached = readCache(userId);
             if (!isProbablyOnline()) {
                 lastReadFromCache = true;
                 return sortByUpdated(cached).map(normalizeBook).filter(Boolean);
@@ -321,14 +309,12 @@ export function createBooksApi(session, supabase) {
                 });
                 const serverIds = new Set(books.map((book) => book.id));
                 const extras = cached.filter((row) => !serverIds.has(row.id) && (cacheIsPending(row) || isLocalOnlyId(row.id)));
-                const combined = keepOwnBooks(sortByUpdated([...merged.filter(Boolean), ...extras]), userId);
+                const combined = sortByUpdated([...merged.filter(Boolean), ...extras]);
                 writeCache(userId, combined.map(stripRuntime));
                 return combined.map(normalizeBook).filter(Boolean);
             } catch {
                 lastReadFromCache = true;
-                const fallback = keepOwnBooks(readCache(userId), userId);
-                writeCache(userId, fallback.map(stripRuntime));
-                return sortByUpdated(fallback).map(normalizeBook).filter(Boolean);
+                return sortByUpdated(readCache(userId)).map(normalizeBook).filter(Boolean);
             }
         },
         async getBook(id) {
