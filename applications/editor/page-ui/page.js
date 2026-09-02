@@ -20,7 +20,7 @@ import { recordTypedWords } from "@alysum/account/writing-stats.js";
 import { typedWordDelta } from "@alysum/statistics/typed-input.js";
 import { reviewSentencesForXp, recordPastedRegion } from "@alysum/statistics/sentence-review.js";
 import { isProbablyOnline, onReconnect } from "@alysum/synchronization-engine/network.js";
-import { mountToolbar } from "./toolbar.js?v=7";
+import { mountToolbar } from "./toolbar.js?v=8";
 import { bindManuscriptNav } from "./page/manuscript-nav.js?v=1";
 import {
     applyChapterTypographyStyles,

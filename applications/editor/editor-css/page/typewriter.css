@@ -106,7 +106,8 @@ html.is-typewriter .writer-shell.is-tree-collapsed.is-rail-collapsed {
     padding: 0;
 }
 html.is-typewriter .writer-main,
-html.is-typewriter .writer-shell .writer-main {
+html.is-typewriter .writer-shell .writer-main,
+html.is-typewriter .writer-shell:not(.is-tree-collapsed):not(.is-rail-collapsed) .writer-main {
     border: 0;
     border-radius: 0;
     box-shadow: none;
