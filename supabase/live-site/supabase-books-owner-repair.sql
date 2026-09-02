@@ -11,12 +11,13 @@
 -- ---------------------------------------------------------------------------
 -- 1. Every auth account tied to the writer's email
 -- ---------------------------------------------------------------------------
---   Replace the address. If more than one row comes back, the account she logs
---   in with today is the one with the most recent last_sign_in_at.
+--   Replace the address. If more than one row comes back, the top row is the
+--   account she signs in with today (most recent sign-in); an older row with
+--   a NULL / stale last_sign_in_at is the legacy account that owns the books.
 SELECT id, email, created_at, last_sign_in_at
 FROM auth.users
 WHERE lower(email) = lower('REPLACE_WITH_ADMIN_EMAIL')
-ORDER BY created_at;
+ORDER BY last_sign_in_at DESC NULLS LAST, created_at DESC;
 
 -- ---------------------------------------------------------------------------
 -- 2. Who actually owns the manuscripts she wrote

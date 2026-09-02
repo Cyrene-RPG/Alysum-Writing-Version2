@@ -148,7 +148,9 @@ export function mountToolbar({
 
     const indentOn = readAutoIndent();
     editor.setAutoIndent(indentOn);
-    if (pageEl) pageEl.dataset.writerSpace = readLineSpacing();
+    // In-session source of truth — stays correct even where localStorage throws.
+    let currentSpacing = readLineSpacing();
+    if (pageEl) pageEl.dataset.writerSpace = currentSpacing;
     void loadEditorGoogleFontBootstrap();
 
     const wordcount = mount.querySelector(".writer-wordcount");
@@ -171,9 +173,8 @@ export function mountToolbar({
     }
 
     function paintSpacing() {
-        const current = readLineSpacing();
         mount.querySelectorAll(".writer-line-space").forEach((btn) => {
-            btn.classList.toggle("is-active", btn.dataset.lineSpace === current);
+            btn.classList.toggle("is-active", btn.dataset.lineSpace === currentSpacing);
         });
     }
 
@@ -252,9 +253,10 @@ export function mountToolbar({
         const spaceBtn = event.target.closest("[data-line-space]");
         if (spaceBtn) {
             const value = spaceBtn.dataset.lineSpace;
-            if (LINE_SPACES.includes(value) && pageEl) {
+            if (LINE_SPACES.includes(value)) {
+                currentSpacing = value;
                 writeLineSpacing(value);
-                pageEl.dataset.writerSpace = value;
+                if (pageEl) pageEl.dataset.writerSpace = value;
                 paintSpacing();
             }
             closeMenus();

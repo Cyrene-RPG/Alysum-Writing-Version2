@@ -79,3 +79,4 @@ test-output/
 .env*
 !.env.example
 !hosting/env.example
+.DS_Store

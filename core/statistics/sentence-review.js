@@ -72,7 +72,9 @@ function writePastedSet(userId, set) {
     }
 }
 
-/** { <hash>: "grant" | "reject" | "hold" | "revoke" } — sentences already scored. */
+/** { <hash>: "grant" | "reject" | "revoke" } — sentences with a settled outcome.
+    Sentences still awaiting a grammar verdict or a confirmed grant are left out
+    so a later run re-evaluates them. */
 function readSeen(userId) {
     try {
         const raw = JSON.parse(localStorage.getItem(seenKey(userId)) || "{}");
@@ -215,6 +217,7 @@ export async function reviewSentencesForXp({
     const toGrant = [];         // { hash, text, wordCount, source, roomId, chapterId, verdict }
     const needsGrammar = [];    // { hash, text, isDialogue, wordCount, chapterId }
     const seen = readSeen(userId);       // mutated in place, written once at the end
+    const queued = new Set();            // hashes pending this run — dedupes across chapters
     const liveHashes = new Set();
     const pastedSet = readPastedSet(userId);
 
@@ -222,7 +225,7 @@ export async function reviewSentencesForXp({
         const html = chapter?.content || "";
         for (const h of allHashesInHtml(html)) liveHashes.add(h);
         for (const s of unreviewedSentencesFromHtml(html)) {
-            if (seen[s.key]) continue;                       // already scored — skip forever
+            if (seen[s.key] || queued.has(s.key)) continue;  // scored, or already pending this run
             if (pastedSet.has(s.key)) { seen[s.key] = "reject"; continue; } // pasted → never pays
             const result = evaluateSentence({ text: s.text, isDialogue: s.isDialogue });
             const wc = tokenizeWords(s.text).length;
@@ -232,24 +235,24 @@ export async function reviewSentencesForXp({
                     source, roomId: roomId || undefined, chapterId: chapter.id,
                     verdict: "pass",
                 });
-                seen[s.key] = "grant";
+                queued.add(s.key);            // seen="grant" only once the grant is confirmed
             } else if (result.verdict === VERDICT_NEEDS_GRAMMAR) {
                 if (useProxy) {
                     needsGrammar.push({
                         hash: s.key, text: s.text, isDialogue: s.isDialogue,
                         wordCount: wc, chapterId: chapter.id,
                     });
-                    // seen is set below from the proxy verdict
+                    queued.add(s.key);
                 } else if (localGrammarPass(s.text)) {
                     toGrant.push({
                         hash: s.key, text: s.text, wordCount: wc,
                         source, roomId: roomId || undefined, chapterId: chapter.id,
                         verdict: "pass",
                     });
-                    seen[s.key] = "grant";
-                } else {
-                    seen[s.key] = "hold";
+                    queued.add(s.key);
                 }
+                // else: offline and not obviously clean — leave unseen so it is
+                // re-checked (via the proxy) on a later online run.
             } else if (result.verdict === VERDICT_REJECT) {
                 seen[s.key] = "reject";
             }
@@ -266,7 +269,6 @@ export async function reviewSentencesForXp({
                     source, roomId: roomId || undefined, chapterId: item.chapterId,
                     verdict: "needs_grammar",
                 });
-                seen[item.hash] = "grant";
             } else if (v === "reject") {
                 seen[item.hash] = "reject";
             } else if (!v && localGrammarPass(item.text)) {
@@ -276,7 +278,6 @@ export async function reviewSentencesForXp({
                     source, roomId: roomId || undefined, chapterId: item.chapterId,
                     verdict: "pass",
                 });
-                seen[item.hash] = "grant";
             }
             // v === "needs_ai" or proxy down + not clean prose → leave unscored, retry next run.
         }
@@ -284,49 +285,59 @@ export async function reviewSentencesForXp({
 
     let granted = 0;
     let revoked = 0;
-    const prevGrants = readLocalGrants(userId);
+    const nextGrants = { ...readLocalGrants(userId) };
+    let grantsChanged = false;
 
     if (toGrant.length) {
         if (isLocal || !supabase) {
-            const next = { ...prevGrants };
-            let n = 0;
             for (const item of toGrant) {
-                if (next[item.hash]) continue;             // already granted locally
-                next[item.hash] = { ts: Date.now(), words: item.wordCount };
-                n += 1;
+                if (!nextGrants[item.hash]) {
+                    nextGrants[item.hash] = { ts: Date.now(), words: item.wordCount };
+                    granted += 1;
+                }
+                seen[item.hash] = "grant";
             }
-            writeLocalGrants(userId, next);
-            granted = n;
+            grantsChanged = true;
         } else {
             try {
                 const { data } = await supabase.rpc("grant_sentence_xp", { p_sentences: toGrant });
                 const ok = Array.isArray(data?.granted) ? data.granted : [];
+                for (const hash of ok) {
+                    nextGrants[hash] = { ts: Date.now() };
+                    seen[hash] = "grant";        // only what the server actually granted
+                    grantsChanged = true;
+                }
                 granted = ok.length;
-                const next = { ...prevGrants };
-                for (const hash of ok) next[hash] = { ts: Date.now() };
-                writeLocalGrants(userId, next);
+                // Hashes the server didn't confirm keep no `seen` entry, so the
+                // next run re-evaluates and retries them.
             } catch {
+                // Transient failure — nothing marked scored, retry everything next run.
                 granted = 0;
             }
         }
     }
 
     // Revoke provisional grants whose sentence no longer exists in the doc.
-    const goneHashes = Object.keys(prevGrants).filter((h) => !liveHashes.has(h));
+    const goneHashes = Object.keys(nextGrants).filter((h) => !liveHashes.has(h));
     if (goneHashes.length) {
+        let revokeOk = true;
         if (!isLocal && supabase) {
             try {
                 await supabase.rpc("revoke_sentences", { p_hashes: goneHashes });
-                revoked = goneHashes.length;
             } catch {
-                /* keep them for the next pass */
+                // Keep the local grant record so this revoke is retried next pass,
+                // rather than leaving the server-side grant unreconciled.
+                revokeOk = false;
             }
         }
-        const next = { ...prevGrants };
-        for (const h of goneHashes) { delete next[h]; seen[h] = "revoke"; }
-        writeLocalGrants(userId, next);
+        if (revokeOk) {
+            for (const h of goneHashes) { delete nextGrants[h]; seen[h] = "revoke"; }
+            revoked = goneHashes.length;
+            grantsChanged = true;
+        }
     }
 
+    if (grantsChanged) writeLocalGrants(userId, nextGrants);
     writeSeen(userId, seen);
 
     // Prune pasted hashes that are no longer anywhere in the doc.
