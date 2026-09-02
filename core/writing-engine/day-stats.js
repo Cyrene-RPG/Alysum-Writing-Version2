@@ -17,7 +17,7 @@ export function addLocalDays(dayKey, deltaDays) {
 }
 
 export const DEFAULT_DAILY_WORD_GOAL = 2000;
-export const MIN_DAILY_WORD_GOAL = 1000;
+export const MIN_DAILY_WORD_GOAL = 350;
 export const MAX_CUSTOM_DAILY_WORD_GOAL = 20000;
 
 export function clampDailyWordGoal(n) {
@@ -136,7 +136,7 @@ export function computeGoalStreakFromTotals(writingDayTotals, goal, dayKey = loc
     return streak;
 }
 
-/** Preset buttons from 1000 through 5000 words (compact set; 1000 is the floor). */
+/** Preset buttons from the 350-word floor up to 5000 (compact set). */
 export const DAILY_GOAL_PRESETS = [
-    1000, 1250, 1500, 1750, 2000, 2500, 3000, 3500, 4000, 4500, 5000
+    350, 500, 750, 1000, 1500, 2000, 2500, 3000, 4000, 5000
 ];
