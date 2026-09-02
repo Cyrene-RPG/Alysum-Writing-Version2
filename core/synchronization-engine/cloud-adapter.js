@@ -104,9 +104,12 @@ function toCloudPatch(patch) {
     return out;
 }
 
-async function selectVisibleBooks(supabase, userId) {
-    const ownerId = String(userId || "").trim();
-    const base = () => supabase.from("books").select("*").eq("user_id", ownerId);
+async function selectVisibleBooks(supabase) {
+    // Visibility is enforced by RLS on public.books (owner + invited editors +
+    // active collab members). Do not add a client-side user_id filter here — it
+    // drops manuscripts a writer legitimately reaches through book_editors /
+    // collab_memberships, and hides books whose row is owned by a legacy auth id.
+    const base = () => supabase.from("books").select("*");
     let result = await base().order("updated", { ascending: false });
     if (result.error) {
         result = await base().order("updated_at", { ascending: false });
@@ -118,9 +121,8 @@ async function selectVisibleBooks(supabase, userId) {
 }
 
 export async function listBooks(supabase, userId) {
-    const ownerId = String(userId || "").trim();
-    if (!ownerId) return [];
-    const { data, error } = await selectVisibleBooks(supabase, ownerId);
+    if (!String(userId || "").trim()) return [];
+    const { data, error } = await selectVisibleBooks(supabase);
     if (error) throw error;
     return (data || []).map(fromCloudRow).filter((book) => book && book.id);
 }

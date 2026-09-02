@@ -4,7 +4,7 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { goToLogin } from "@alysum/desktop/app.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=9";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=10";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { initWorkspaceShell } from "/js/studio/shell.js?v=2";
 import {
@@ -111,7 +111,7 @@ async function boot() {
     } else {
         const api = createBooksApi(session, supabase);
         try {
-            books = (await api.listBooks()).filter((book) => String(book.user_id || "") === String(uid));
+            books = await api.listBooks();
         } catch {
             books = [];
         }
@@ -154,6 +154,7 @@ async function boot() {
     let waitTimer = 0;
     let hostChosenMax = null;
     let maxPersistOk = true;
+    let readyMark = "";
 
     bookSelect.innerHTML = books.length
         ? books
@@ -411,6 +412,24 @@ async function boot() {
         paintShare();
     }
 
+    // Self-heal: older deployments of `start_word_war` refuse to begin unless every
+    // participant is flagged ready, yet this lobby has no ready control. Once a writer
+    // has a book, flag them ready so Begin works. On an up-to-date DB this is a no-op.
+    async function ensureReadyMark(lobby) {
+        if (!lobby?.roomId || typeof lobbyApi.updateWordWarLobby !== "function") return;
+        const mine = meFromLobby(lobby, uid);
+        if (!mine || mine.isReady || !mine.bookId) return;
+        const tag = `${lobby.roomId}:${mine.bookId}`;
+        if (readyMark === tag) return;
+        readyMark = tag;
+        try {
+            waiting = await lobbyApi.updateWordWarLobby(lobby.roomId, { isReady: true });
+            paintWaiting();
+        } catch {
+            readyMark = "";
+        }
+    }
+
     function paintWaiting() {
         const lobby = waiting;
         if (!lobby) return;
@@ -444,10 +463,11 @@ async function boot() {
         if (beginHint) {
             beginHint.classList.toggle("hidden", false);
             beginHint.textContent = waitHost
-                ? (enough ? "Ready when you are." : "Need 2 writers to start.")
+                ? (enough ? "Start when everyone's in." : "Need 2 writers to start.")
                 : "Waiting for the host to start.";
         }
         paintControlInk();
+        void ensureReadyMark(lobby);
     }
 
     function stopWaitPoll() {
@@ -462,6 +482,7 @@ async function boot() {
         waitHost = false;
         hostChosenMax = null;
         maxPersistOk = true;
+        readyMark = "";
         stopWaitPoll();
         setRoomUrl("");
         createView?.classList.remove("is-waiting", "is-guest");
@@ -579,6 +600,11 @@ async function boot() {
                 if (next?.status === "active") {
                     goToWar(next.roomId);
                     return;
+                }
+                if (next) {
+                    waiting = next;
+                    readyMark = "";
+                    await ensureReadyMark(next);
                 }
             } catch {
                 /* show original error */

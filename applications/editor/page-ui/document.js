@@ -11,7 +11,7 @@ import {
     initSceneBreakEditorBehavior,
     insertSceneBreakAtCursor
 } from "./scene-breaks.js";
-import { unwrapFindMarks } from "./find.js?v=4";
+import { unwrapFindMarks } from "./find.js?v=5";
 import { stripReviewMarks } from "@alysum/statistics/review-marks.js";
 
 export function mountDocument({ pageEl, onInput }) {

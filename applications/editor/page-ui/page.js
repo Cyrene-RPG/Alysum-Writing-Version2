@@ -1,6 +1,6 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=8";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=10";
 import {
     countBookChapters,
     countBookFolders,
@@ -29,7 +29,7 @@ import {
     DEFAULT_FONT_SIZE_PX
 } from "./font-catalog.js";
 import { ensureEditorGoogleFont } from "./editor-google-fonts.js";
-import { mountFind, listSearchPages } from "./find.js?v=4";
+import { mountFind, listSearchPages } from "./find.js?v=5";
 import {
     bookIdFromUrl,
     currentChapter,
@@ -338,6 +338,7 @@ async function boot() {
         }
         persist({ ...book, sections: setChapterContent(book.sections, selectedId, html) }, false, { event });
         scheduleSentenceReview();
+        if (findUi?.isOpen?.()) findUi.refresh();
     }
 
     // Sentence XP: check what the writer wrote, on idle / save / pagehide.
