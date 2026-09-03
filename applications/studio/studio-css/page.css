@@ -115,7 +115,16 @@ body {
     width: 0;
     border-radius: inherit;
     background: var(--accent, #7c3aed);
+    transition: width 0.3s ease, background 0.2s ease;
 }
+/* Track My Writing — no target, no bar */
+.studio-goal--track .studio-goal-track { display: none; }
+.studio-goal--track .studio-goal-pill { font-size: 15px; }
+/* Maintain Your Pace — bar tinted by where today sits in the writer's own range */
+.studio-goal-fill.is-green { background: #4ade80; }
+.studio-goal-fill.is-yellow { background: #facc15; }
+.studio-goal-fill.is-purple { background: var(--accent, #a855f7); }
+.studio-goal--pace .studio-goal-track { min-width: 40px; }
 .studio-section-head {
     display: flex;
     align-items: baseline;

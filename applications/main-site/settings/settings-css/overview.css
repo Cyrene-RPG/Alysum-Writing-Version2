@@ -199,6 +199,38 @@
     color: var(--muted, #9ca3af);
 }
 
+/* Writing card — words today / streak / pace, per the writer's goal mode */
+.ov-writing .ov-wstats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px 22px;
+    margin-top: 4px;
+}
+.ov-wstat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    color: var(--muted, #9ca3af);
+}
+.ov-wstat strong {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text, #f6e9dc);
+}
+.pace-dot {
+    display: inline-block;
+    width: 0.55em;
+    height: 0.55em;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-left: 0.15em;
+}
+.pace-dot--green { background: #4ade80; }
+.pace-dot--yellow { background: #facc15; }
+.pace-dot--purple { background: var(--accent, #a855f7); }
+
 @media (max-width: 640px) {
     .ov-hero {
         grid-template-columns: 1fr;

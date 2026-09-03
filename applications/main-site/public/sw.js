@@ -2,7 +2,7 @@
  * Strategy:
  *   - Workspace HTML (studio/editor): cache-first, then refresh in the background
  *   - Other HTML documents: network-first (fall back to cache, then offline page)
- *   - Same-origin static assets (css/js/fonts/images): stale-while-revalidate
+ *   - Same-origin static assets (css/js/fonts/images): network-first, 4s timeout -> cache
  *   - Cross-origin (Firebase, gstatic, googleapis, etc.): bypass entirely
  *   - On activate: clean up old caches
  *
@@ -131,7 +131,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isCacheableAsset(url)) {
-    event.respondWith(staleWhileRevalidate(request));
+    event.respondWith(networkFirstAsset(event));
     return;
   }
 });
@@ -188,22 +188,34 @@ async function networkFirstHtml(event) {
   }
 }
 
-async function staleWhileRevalidate(request) {
+// Network-first: online users see a deploy on the *first* reload, not the second.
+// A 4s race falls back to cache so a slow/flaky connection never hangs a script tag;
+// offline falls straight through to the cache + precached-shell chain.
+async function networkFirstAsset(event) {
+  const request = event.request;
   const cache = await caches.open(ASSET_CACHE);
-  const cached = await cache.match(request);
-  const network = fetch(request).then((resp) => {
-    if (resp && resp.ok) cache.put(request, resp.clone());
+  // The .then is async and awaits the cache write, so `network` settles only once
+  // the fresh copy is persisted — no lost writes, no waitUntil-after-finish error.
+  const network = fetch(request, { cache: 'no-store' }).then(async (resp) => {
+    if (resp && resp.status === 200) {
+      try { await cache.put(request, resp.clone()); } catch (_) {}
+    }
     return resp;
   }).catch(() => null);
-  if (cached) {
-    // serve stale immediately, refresh in the background
-    return cached;
-  }
-  const fresh = await network;
-  if (fresh) return fresh;
-  // Offline + exact URL not cached (usually a ?v= bump since the last visit).
-  // Fall back to any cached copy of the same path, then the precached shell copy.
-  const loose = await cache.match(request, { ignoreSearch: true })
+
+  const first = await Promise.race([
+    network,
+    new Promise((resolve) => setTimeout(() => resolve('TIMEOUT'), 4000)),
+  ]);
+  if (first && first !== 'TIMEOUT' && first.ok) return first;
+
+  // Timed out or failed: keep the worker alive for the in-flight write, serve cache.
+  event.waitUntil(network);
+  const cached = await cache.match(request)
+    || await cache.match(request, { ignoreSearch: true })
     || await (await caches.open(SHELL_CACHE)).match(request, { ignoreSearch: true });
-  return loose || new Response('', { status: 504 });
+  if (cached) return cached;
+
+  const late = await network;
+  return late || new Response('', { status: 504 });
 }

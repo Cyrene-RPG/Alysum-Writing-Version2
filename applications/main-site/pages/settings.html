@@ -36,7 +36,7 @@
     <link rel="icon" type="image/png" sizes="any" href="/Alysum-3.png">
     <link rel="apple-touch-icon" href="/Alysum-3.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/Alysum-3.png">
-    <script src="/js/pwa-register.js?v=4" defer></script>
+    <script src="/js/pwa-register.js?v=5" defer></script>
     <!-- ALYSUM:PWA:END -->
     <!-- ALYSUM:ANALYTICS:START -->
     <script type="module" src="/js/vercel-analytics.js"></script>
@@ -64,7 +64,7 @@
 <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
 <link rel="stylesheet" href="/css/settings/page.css?v=6" />
 <link rel="stylesheet" href="/css/settings/appearance.css?v=15" />
-<link rel="stylesheet" href="/css/settings/account.css?v=2" />
+<link rel="stylesheet" href="/css/settings/account.css?v=5" />
 <link rel="stylesheet" href="/css/settings/profile.css?v=4" />
 <link rel="stylesheet" href="/css/settings/backup.css?v=2" />
 <link rel="stylesheet" href="/css/settings/security.css?v=4" />
@@ -287,15 +287,42 @@
         </div>
 
         <section class="profile-box profile-goal-box" id="daily-goal" aria-labelledby="dailyGoalTitle">
-            <h3 class="profile-box-title" id="dailyGoalTitle">Daily word goal</h3>
-            <p class="hint">Words you type toward your book each day (pasted text does not count). Minimum 350.</p>
-            <div class="goal-preset-row" id="goalPresetRow" role="radiogroup" aria-label="Daily word goal"></div>
-            <div class="field goal-custom-field">
-                <label for="goalCustomInput">Custom goal</label>
-                <input type="number" id="goalCustomInput" min="350" max="20000" step="50" inputmode="numeric" />
+            <h3 class="profile-box-title" id="dailyGoalTitle">Daily writing</h3>
+            <p class="hint">Choose how you want to relate to a daily goal. Switch any time — your writing is tracked either way.</p>
+            <div id="wordGoalModeGroup" role="radiogroup" aria-label="Daily writing mode">
+                <label class="goal-mode-row">
+                    <input type="radio" name="wordGoalMode" value="track" />
+                    <span class="goal-mode-card">
+                        <span class="goal-mode-name">Track my writing</span>
+                        <span class="goal-mode-note">No target. Just stats to see how much you write each day.</span>
+                    </span>
+                </label>
+                <label class="goal-mode-row">
+                    <input type="radio" name="wordGoalMode" value="goal" />
+                    <span class="goal-mode-card">
+                        <span class="goal-mode-name">Reach a daily goal</span>
+                        <span class="goal-mode-note">Set a daily word target and challenge yourself to reach it.</span>
+                    </span>
+                </label>
+                <label class="goal-mode-row">
+                    <input type="radio" name="wordGoalMode" value="pace" />
+                    <span class="goal-mode-card">
+                        <span class="goal-mode-name">Maintain your pace</span>
+                        <span class="goal-mode-note">Your goal adapts to your recent activity. Stay consistent with your own habits.</span>
+                    </span>
+                </label>
             </div>
+            <div id="goalTargetFields" hidden>
+                <p class="hint">Words added toward your book each day. Deleting words doesn't lower today's count. Minimum 100.</p>
+                <div class="goal-preset-row" id="goalPresetRow" role="radiogroup" aria-label="Daily word goal"></div>
+                <div class="field goal-custom-field">
+                    <label for="goalCustomInput">Custom goal</label>
+                    <input type="number" id="goalCustomInput" min="100" max="20000" step="50" inputmode="numeric" />
+                </div>
+            </div>
+            <p class="hint goal-pace-line" id="goalPaceLine" hidden></p>
             <div class="profile-box-actions">
-                <button type="button" class="btn btn-primary" id="saveGoalBtn">Save goal</button>
+                <button type="button" class="btn btn-primary" id="saveGoalBtn">Save</button>
                 <span class="save-prompt" id="goalMsg" role="status"></span>
             </div>
         </section>
@@ -485,7 +512,7 @@
     </div>
 </div>
 
-<script type="module" src="/js/settings/page.js?v=20"></script>
+<script type="module" src="/js/settings/page.js?v=21"></script>
 
 </body>
 </html>

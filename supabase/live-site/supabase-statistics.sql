@@ -139,6 +139,22 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS border_unlock_max int NOT NULL
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS worn_border int NOT NULL DEFAULT 0;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS rep_color_unlock int NOT NULL DEFAULT 0;
 
+-- Deletions per local day (monotonic, like writing_day_totals). words this week/month
+-- = added - removed; today's number and the goal stay add-only.
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS writing_day_removed jsonb NOT NULL DEFAULT '{}'::jsonb;
+
+-- How the writer relates to a daily goal: 'track' (none), 'goal' (fixed target), 'pace' (adaptive).
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS word_goal_mode text NOT NULL DEFAULT 'goal';
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'users_word_goal_mode_chk'
+  ) THEN
+    ALTER TABLE public.users
+      ADD CONSTRAINT users_word_goal_mode_chk CHECK (word_goal_mode IN ('track', 'goal', 'pace'));
+  END IF;
+END $$;
+
 -- ===========================================================================
 -- 5. Level math (mirrors core/statistics/xp-levels.js + rep-levels.js)
 -- ===========================================================================
@@ -583,6 +599,33 @@ END;
 $$;
 
 -- ===========================================================================
+-- 13b. set_day_removed — words deleted per day (drives week/month, not today). Monotonic.
+-- ===========================================================================
+CREATE OR REPLACE FUNCTION public.set_day_removed(p_day text, p_words int)
+RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_user uuid := auth.uid();
+  v_cur  jsonb;
+  v_have int;
+BEGIN
+  IF v_user IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
+  IF p_day !~ '^\d{4}-\d{2}-\d{2}$' THEN RAISE EXCEPTION 'Bad day key'; END IF;
+
+  SELECT COALESCE(writing_day_removed, '{}'::jsonb) INTO v_cur FROM public.users WHERE id = v_user FOR UPDATE;
+  v_have := COALESCE((v_cur->>p_day)::int, 0);
+
+  UPDATE public.users
+     SET writing_day_removed = v_cur || jsonb_build_object(p_day, GREATEST(v_have, GREATEST(0, COALESCE(p_words, 0)))),
+         updated_at = now()
+   WHERE id = v_user;
+
+  RETURN (SELECT writing_day_removed FROM public.users WHERE id = v_user);
+END;
+$$;
+
+-- ===========================================================================
 -- 14. set_worn_border — cosmetic; only an unlocked level
 -- ===========================================================================
 CREATE OR REPLACE FUNCTION public.set_worn_border(p_level int)
@@ -692,5 +735,10 @@ GRANT EXECUTE ON FUNCTION public.claim_daily_login_xp() TO authenticated;
 REVOKE ALL ON FUNCTION public.set_day_words(text, int) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.set_day_words(text, int) TO authenticated;
 
+REVOKE ALL ON FUNCTION public.set_day_removed(text, int) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.set_day_removed(text, int) TO authenticated;
+
 REVOKE ALL ON FUNCTION public.set_worn_border(int) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.set_worn_border(int) TO authenticated;
+
+NOTIFY pgrst, 'reload schema';

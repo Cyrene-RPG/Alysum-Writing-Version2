@@ -189,6 +189,65 @@
 .account-focus-actions .msg.visible {
     display: inline-block;
 }
+/* Daily writing — full width, aligned with the Account focus box below it */
+.profile-goal-box {
+    grid-column: 1 / -1;
+    justify-self: center;
+    align-self: start;
+    width: min(100%, 36rem);
+}
+
+/* Daily writing — mode picker */
+#wordGoalModeGroup {
+    display: grid;
+    gap: 8px;
+    margin: 4px 0 14px;
+}
+.goal-mode-row {
+    position: relative;
+    display: flex;
+    margin: 0;
+    cursor: pointer;
+}
+.goal-mode-row input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+}
+.goal-mode-card {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    text-transform: none;
+    letter-spacing: normal;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.goal-mode-name { font-weight: 700; font-size: 0.95rem; color: #f8fafc; }
+.goal-mode-note { font-weight: 400; font-size: 0.82rem; color: var(--muted); line-height: 1.45; }
+.goal-mode-row:hover .goal-mode-card { border-color: rgba(255, 255, 255, 0.22); background: rgba(255, 255, 255, 0.07); }
+.goal-mode-row:focus-within .goal-mode-card {
+    outline: 2px solid color-mix(in srgb, var(--purple-bright, #a855f7) 70%, transparent);
+    outline-offset: 3px;
+}
+.goal-mode-row:has(input:checked) .goal-mode-card {
+    border-color: color-mix(in srgb, var(--purple-bright, #a855f7) 55%, transparent);
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+        color-mix(in srgb, var(--theme-accent-soft-bg, rgba(124, 58, 237, 0.18)) 80%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--pink, #f9a8d4) 35%, transparent);
+}
+.goal-pace-line {
+    margin-top: -4px;
+    font-style: italic;
+}
+
 /* Daily word goal picker */
 .goal-preset-row {
     display: flex;

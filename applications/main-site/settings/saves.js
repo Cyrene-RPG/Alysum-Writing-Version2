@@ -6,7 +6,13 @@ import { updateAuthorBioCount, readSupportLinkDraft } from "/js/settings/author-
 import { supabase } from "@alysum/authentication/client.js";
 import { updateProfileRow } from "@alysum/synchronization-engine/local-adapter.js";
 import { ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "@alysum/account/mode.js";
-import { DAILY_GOAL_PRESETS, clampDailyWordGoal } from "@alysum/writing-engine/day-stats.js";
+import {
+    DAILY_GOAL_PRESETS,
+    DEFAULT_WORD_GOAL_MODE,
+    clampDailyWordGoal,
+    computePaceGoal,
+    normalizeWordGoalMode,
+} from "@alysum/writing-engine/day-stats.js";
 import {
     AUTHOR_BIO_MAX_LENGTH,
     supportLinksPayloadFromDraft,
@@ -14,6 +20,8 @@ import {
 import { fillWelcomeBar } from "/js/welcome-bar.js";
 
 let goalPick = 0;
+let goalMode = DEFAULT_WORD_GOAL_MODE;
+let goalDayTotals = {};
 
 function paintGoalPresets() {
     if (!els.goalPresetRow) return;
@@ -22,11 +30,30 @@ function paintGoalPresets() {
     ).join("");
 }
 
-/** Called by page.js after the user row loads. */
-export function setGoalUi(goal) {
+function syncGoalModeUi() {
+    els.wordGoalModeGroup?.querySelectorAll('input[name="wordGoalMode"]').forEach((radio) => {
+        radio.checked = radio.value === goalMode;
+    });
+    if (els.goalTargetFields) els.goalTargetFields.hidden = goalMode !== "goal";
+    if (els.goalPaceLine) {
+        const show = goalMode === "pace";
+        els.goalPaceLine.hidden = !show;
+        if (show) {
+            const pace = computePaceGoal(goalDayTotals);
+            els.goalPaceLine.textContent =
+                `Your current pace: about ${pace.toLocaleString()} words a day — the average of your last seven days. It moves as you write.`;
+        }
+    }
+}
+
+/** Called by page.js / shell.js after the user row loads. */
+export function setGoalUi(mode, goal, dayTotals) {
+    goalMode = normalizeWordGoalMode(mode);
     goalPick = clampDailyWordGoal(goal);
+    if (dayTotals && typeof dayTotals === "object") goalDayTotals = dayTotals;
     if (els.goalCustomInput) els.goalCustomInput.value = String(goalPick);
     paintGoalPresets();
+    syncGoalModeUi();
 }
 
 async function signedInUser() {
@@ -250,7 +277,13 @@ export function wireSettingsSaves() {
         }
     });
 
-    // --- Daily word goal ---
+    // --- Daily writing (mode + goal) ---
+    els.wordGoalModeGroup?.addEventListener("change", (event) => {
+        const input = event.target.closest('input[name="wordGoalMode"]');
+        if (!input) return;
+        goalMode = normalizeWordGoalMode(input.value);
+        syncGoalModeUi();
+    });
     els.goalPresetRow?.addEventListener("click", (event) => {
         const btn = event.target.closest("[data-goal]");
         if (!btn) return;
@@ -265,11 +298,13 @@ export function wireSettingsSaves() {
     els.saveGoalBtn?.addEventListener("click", async () => {
         hideMsg(els.goalMsg);
         const goal = clampDailyWordGoal(goalPick || els.goalCustomInput?.value);
-        setGoalUi(goal);
+        setGoalUi(goalMode, goal, goalDayTotals);
+        const patch = { word_goal_mode: goalMode };
+        if (goalMode === "goal") patch.daily_word_goal = goal;
         els.saveGoalBtn.disabled = true;
         try {
             if (state.isLocalSettings) {
-                updateProfileRow({ daily_word_goal: goal });
+                updateProfileRow(patch);
                 showMsg(els.goalMsg, "Saved.", true);
                 return;
             }
@@ -278,7 +313,7 @@ export function wireSettingsSaves() {
                 showMsg(els.goalMsg, "Sign in to save.", false);
                 return;
             }
-            const { error } = await supabase.from("users").update({ daily_word_goal: goal }).eq("id", user.id);
+            const { error } = await supabase.from("users").update(patch).eq("id", user.id);
             if (error) throw error;
             showMsg(els.goalMsg, "Saved.", true);
         } catch (e) {

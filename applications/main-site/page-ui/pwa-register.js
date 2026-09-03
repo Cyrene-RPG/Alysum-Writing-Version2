@@ -26,6 +26,35 @@
 
   if (!('serviceWorker' in navigator) || !isSecure) return;
 
+  // Local dev: no service worker at all. dev.py serves everything `no-store`, so a
+  // plain reload always shows the latest — the SW's stale-while-revalidate was the
+  // reason changes only appeared on the *second* reload. Tear down any SW left over
+  // from a previous session and drop only the shell/asset caches (not cover images).
+  const isLocalDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  if (isLocalDev) {
+    navigator.serviceWorker.getRegistrations()
+      .then((regs) => Promise.all(regs.map((r) => r.unregister())))
+      .then(() => (window.caches ? caches.keys() : []))
+      .then((keys) => Promise.all(
+        (keys || [])
+          .filter((k) => k.startsWith('alysum-shell') || k.startsWith('alysum-assets'))
+          .map((k) => caches.delete(k))
+      ))
+      .then(() => {
+        // The stale SW still controls THIS page until a navigation. One reload lands
+        // on the clean, SW-free version. `controller` goes null after that reload, so
+        // the check itself ends the loop; the session flag is a belt-and-suspenders.
+        let purged = false;
+        try { purged = sessionStorage.getItem('alysum:pwa:dev-purged') === '1'; } catch (_) {}
+        if (navigator.serviceWorker.controller && !purged) {
+          try { sessionStorage.setItem('alysum:pwa:dev-purged', '1'); } catch (_) {}
+          location.reload();
+        }
+      })
+      .catch(() => {});
+    return;
+  }
+
   let deferredInstallPrompt = null;
 
   window.Alysum = window.Alysum || {};
@@ -83,7 +112,7 @@
   });
 
   window.addEventListener('load', () => {
-    const swScript = new URL('sw.js?v=1.0.77', window.location.href);
+    const swScript = new URL('sw.js?v=1.0.78', window.location.href);
     const swScope = new URL('./', swScript).pathname;
     navigator.serviceWorker.register(swScript.href, { scope: swScope, updateViaCache: 'none' })
       .then((reg) => {

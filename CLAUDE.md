@@ -68,5 +68,5 @@ Consistency over cleverness; spell words out (`authentication` not `auth`, `util
 - JS: camelCase vars, verb-first camelCase functions, booleans as `isX`/`hasX`, `_leadingUnderscore` privates, `CONST_CASE` for individual constants.
 - Storage keys / BroadcastChannel / caches: `alysum:feature:...` namespace. Custom events: `namespace:action`.
 - DB: snake_case plural tables, snake_case columns, verb-first snake_case RPCs. SQL migrations: `supabase-<app>-<thing>.sql`.
-- Import alias (where used): `@alysum/<folder>/`. Some legacy imports carry cache-busting query strings (`./outline.js?v=4`) — keep them consistent when editing that module.
+- Import alias (where used): `@alysum/<folder>/`. Many legacy imports/links carry cache-busting query strings (`./outline.js?v=4`, `page.css?v=30`). These are now **inert** — caching is handled by the network-first service worker (`applications/main-site/public/sw.js`) plus no service worker at all in local dev (`pwa-register.js` bails on `localhost`), so a plain reload always shows the latest. **Don't add new `?v=` and don't bump existing ones**; they'll be removed in a sweep.
 - Anything not covered: extend the closest existing rule, don't invent a new style.

@@ -1,6 +1,6 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=10";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=11";
 import { createEmptyBook } from "@alysum/writing-engine/manuscript.js";
 import { countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { initWorkspaceShell } from "./shell.js?v=2";
@@ -104,16 +104,33 @@ function renderStats(mount, books, profile, userId) {
 
 function renderGoal(goalMount, labelMount, fillMount, profile, userId) {
     const s = getWritingStats(profile || {}, { userId });
-    if (!s.goal || s.goal <= 0) return;
+    const titleEl = document.getElementById("studioGoalTitle");
+    const streakEl = document.getElementById("studioGoalStreak");
+
+    goalMount.classList.remove("hidden", "studio-goal--track", "studio-goal--goal", "studio-goal--pace");
+    goalMount.classList.add(`studio-goal--${s.mode}`);
+    fillMount.classList.remove("is-green", "is-yellow", "is-purple");
+
+    if (s.mode === "track") {
+        if (titleEl) titleEl.textContent = "Today's writing";
+        labelMount.textContent = `${s.wordsToday.toLocaleString()} words`;
+        if (streakEl) streakEl.textContent = s.writeStreak > 0 ? ` · ${s.writeStreak}-day streak` : "";
+        return;
+    }
+
+    if (s.mode === "pace") {
+        if (titleEl) titleEl.textContent = `Your pace · ~${s.paceGoal.toLocaleString()}/day`;
+        labelMount.textContent = `${s.wordsToday.toLocaleString()} today`;
+        fillMount.style.width = `${s.goalPct}%`;
+        fillMount.classList.add(`is-${s.paceState || "green"}`);
+        if (streakEl) streakEl.textContent = s.paceStreak > 0 ? ` · ${s.paceStreak}-day streak` : "";
+        return;
+    }
+
+    if (titleEl) titleEl.textContent = "Word goal today";
     labelMount.textContent = `${s.wordsToday.toLocaleString()} / ${s.goal.toLocaleString()}`;
     fillMount.style.width = `${s.goalPct}%`;
-    const streakEl = document.getElementById("studioGoalStreak");
-    if (streakEl) {
-        streakEl.textContent = s.goalStreak > 0
-            ? ` · ${s.goalStreak}-day streak`
-            : "";
-    }
-    goalMount.classList.remove("hidden");
+    if (streakEl) streakEl.textContent = s.goalStreak > 0 ? ` · ${s.goalStreak}-day streak` : "";
 }
 
 function lastWorkedAt(book) {
@@ -259,10 +276,11 @@ async function boot() {
     initShelf(list, document.getElementById("studioDots"), document.getElementById("prevBtn"), document.getElementById("nextBtn"));
     watchStatPeriods(paintTotals);
 
-    // Live-refresh: the editor / Word Wars tab writes alysum:typed-words:{uid};
-    // also recompute when this tab regains focus.
+    // Live-refresh: the editor / Word Wars tab writes alysum:typed-words:{uid}
+    // and alysum:deleted-words:{uid}; also recompute when this tab regains focus.
     window.addEventListener("storage", (event) => {
-        if (event.key && event.key.startsWith("alysum:typed-words:")) paintTotals();
+        const k = event.key || "";
+        if (k.startsWith("alysum:typed-words:") || k.startsWith("alysum:deleted-words:")) paintTotals();
     });
     window.addEventListener("focus", paintTotals);
     window.addEventListener("offline", paintStudioStatus);

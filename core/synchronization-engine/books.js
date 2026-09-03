@@ -326,6 +326,15 @@ export function createBooksApi(session, supabase) {
             try {
                 const book = await cloudGet(id);
                 lastReadFromCache = false;
+                // Authoritative empty read (the query succeeded, RLS returned no
+                // row) means this book is no longer visible to the writer —
+                // revoked editor/collab access, or deleted. RLS is the source of
+                // truth; drop the stale device copy so it can't be reopened.
+                // Unsynced local-only work is the one thing we keep.
+                if (!book && cached && !cacheIsPending(cached) && !isLocalOnlyId(cached.id)) {
+                    removeCache(userId, id);
+                    return null;
+                }
                 const picked = applyChoice(cached, book);
                 if (!picked.book) {
                     if (cached && !cacheIsPending(cached)) removeCache(userId, id);

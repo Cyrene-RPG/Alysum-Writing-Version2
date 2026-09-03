@@ -73,7 +73,7 @@ function fillSettingsFromRow(user, row) {
         profileImageUrl: data.profileImageUrl
     });
 
-    setGoalUi(data.dailyWordGoal);
+    setGoalUi(data.wordGoalMode, data.dailyWordGoal, data.writingDayTotals);
 
     const acct = normalizeAccountType(data.accountType);
     state.settingsHomeUrl = homeUrlForUserData({ ...data, accountType: acct });

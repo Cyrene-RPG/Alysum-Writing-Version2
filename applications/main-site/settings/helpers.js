@@ -19,6 +19,7 @@ export function mergeUserRow(row) {
         displayName: row.display_name ?? row.displayName,
         accountType: row.account_type ?? row.accountType,
         dailyWordGoal: row.daily_word_goal ?? row.dailyWordGoal,
+        wordGoalMode: row.word_goal_mode ?? row.wordGoalMode,
         writingDayTotals: row.writing_day_totals ?? row.writingDayTotals,
         profileImageUrl: row.profile_image_url ?? row.profileImageUrl ?? "",
         bio: row.bio ?? row.about_me ?? "",
