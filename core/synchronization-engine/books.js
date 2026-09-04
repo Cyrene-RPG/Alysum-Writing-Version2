@@ -9,7 +9,8 @@ import {
     listBooks as listLocalBooks,
     updateBook as updateLocalBook,
 } from "./local-adapter.js";
-import * as cloud from "./cloud-adapter.js?v=2";
+import * as cloud from "./cloud-adapter.js?v=3";
+import { removeLocalListing } from "../publishing/post-work.js";
 import {
     createEmptyBook,
     ensureChapterIds,
@@ -389,13 +390,10 @@ export function createBooksApi(session, supabase) {
             return normalizeBook(optimistic);
         },
         async deleteBook(id) {
+            requireOnline();
+            await cloud.deleteBook(supabase, userId, id);
             removeCache(userId, id);
-            try {
-                requireOnline();
-                await cloud.deleteBook(supabase, userId, id);
-            } catch {
-                /* cache already dropped */
-            }
+            removeLocalListing(id);
         },
         async syncPending() {
             if (!isProbablyOnline()) return { synced: 0, failed: 0 };

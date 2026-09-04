@@ -1,8 +1,6 @@
 * { box-sizing: border-box; }
 :root {
-    --bg: #0b1220;
-    --panel: var(--alysum-ui-panel, #111827);
-    --border: rgba(255, 255, 255, 0.1);
+    --panel: var(--alysum-ui-panel, #1b1e27);
 }
 body {
     margin: 0;
@@ -23,23 +21,20 @@ body {
     padding: 16px clamp(12px, 2vw, 24px) 24px;
 }
 .panel {
-    background: linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--alysum-ui-panel, #111827) 88%, white),
-        var(--alysum-ui-panel, #111827)
-    );
+    background: var(--alysum-ui-panel, #111827);
     border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-    border-radius: var(--glass-radius, 18px);
-    padding: 20px clamp(16px, 3vw, 28px) 28px;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+    border-radius: 14px;
+    padding: 16px clamp(16px, 3vw, 24px) 20px;
+    box-shadow: none;
 }
-.studio-topbar {
-    margin-bottom: 22px;
-}
-.studio-topbar p {
-    margin: 0;
-    color: var(--muted);
-    font-size: 14px;
+/* The Studio shell is chrome-free — content sits on the page, editorial-style. */
+#studioShell.panel {
+    max-width: 1040px;
+    margin: 8px auto 0;
+    padding: 8px 0 24px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
 }
 .hint {
     margin: 0;
@@ -50,52 +45,72 @@ body {
 .studio-stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-    border-radius: var(--glass-radius, 18px);
-    overflow: hidden;
-    background: linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--alysum-ui-raised, #1f2937) 88%, white),
-        var(--alysum-ui-chrome, #141414)
-    );
+    border-top: 1px solid color-mix(in srgb, var(--text) 20%, transparent);
     margin-bottom: 0;
     margin-top: 28px;
 }
 .studio-stat {
-    padding: 22px 20px;
-    text-align: center;
-    border-right: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    padding: 18px 18px 4px;
+    text-align: left;
+    border-left: 1px solid var(--border, rgba(255, 255, 255, 0.1));
 }
-.studio-stat:last-child { border-right: 0; }
+.studio-stat:first-child {
+    border-left: 0;
+    padding-left: 0;
+}
 .studio-stat-num {
     display: block;
-    color: var(--alysum-display-mid, var(--gold, #f5d489));
+    font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    color: var(--text, #f3f1ea);
     font-size: 30px;
-    font-weight: 700;
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: lining-nums tabular-nums;
 }
 .studio-stat-label {
     display: block;
-    margin-top: 4px;
+    margin-top: 8px;
     color: var(--muted);
-    font-size: 12.5px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
 }
 .studio-goal {
-    margin-bottom: 28px;
-    padding: 18px 22px;
-    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-    border-radius: var(--glass-radius, 18px);
-    background: var(--alysum-ui-panel, #111827);
+    margin-bottom: 0;
+    padding: 0;
 }
 .studio-goal-top {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-    font-size: 14px;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 10px;
 }
-.studio-goal-top > span:first-child { color: var(--muted); }
-.studio-goal-streak { color: color-mix(in srgb, var(--text) 55%, transparent); font-weight: 600; }
-.studio-goal-pill,
+.studio-goal-top > span:first-child {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+.studio-goal-streak {
+    display: block;
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 400;
+    color: color-mix(in srgb, var(--text) 45%, transparent);
+}
+.studio-goal-pill {
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: lining-nums tabular-nums;
+}
 .studio-shelf-count {
     border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
     border-radius: 999px;
@@ -105,10 +120,10 @@ body {
     color: var(--text);
 }
 .studio-goal-track {
-    height: 8px;
+    height: 3px;
     overflow: hidden;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--text) 10%, transparent);
+    background: color-mix(in srgb, var(--text) 14%, transparent);
 }
 .studio-goal-fill {
     height: 100%;
@@ -117,9 +132,18 @@ body {
     background: var(--accent, #7c3aed);
     transition: width 0.3s ease, background 0.2s ease;
 }
-/* Track My Writing — no target, no bar */
+/* Track My Writing — no target, no bar: a tight left-aligned stack, not a
+   spread row with an empty band where the progress track would be. */
 .studio-goal--track .studio-goal-track { display: none; }
-.studio-goal--track .studio-goal-pill { font-size: 15px; }
+.studio-goal--track .studio-goal-top {
+    display: block;
+    margin-bottom: 0;
+}
+.studio-goal--track .studio-goal-pill {
+    display: block;
+    margin-top: 4px;
+    font-size: 24px;
+}
 /* Maintain Your Pace — bar tinted by where today sits in the writer's own range */
 .studio-goal-fill.is-green { background: #4ade80; }
 .studio-goal-fill.is-yellow { background: #facc15; }
@@ -129,36 +153,21 @@ body {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    margin-bottom: 18px;
+    gap: 12px;
+    margin: 36px 0 16px;
 }
 .studio-section-head h1 {
     margin: 0;
-    font-size: 24px;
-    color: var(--alysum-display-mid, var(--gold, #f5d489));
-}
-.studio-section-head .hint {
-    margin-top: 3px;
-    font-size: 13.5px;
+    font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    color: var(--text, #fff);
 }
 .studio-shelf-wrap { position: relative; }
-.studio-shelf-nav {
-    position: absolute;
-    top: 50%;
-    z-index: 2;
-    transform: translateY(-50%);
-    width: 38px;
-    height: 38px;
-    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-    border-radius: 50%;
-    color: var(--text);
-    background: color-mix(in srgb, var(--alysum-ui-chrome, #141414) 90%, transparent);
-    font-size: 26px;
-    line-height: 1;
-    cursor: pointer;
-}
-.studio-shelf-nav.prev { left: -6px; }
-.studio-shelf-nav.next { right: -6px; }
-.studio-shelf-nav:disabled { opacity: 0.25; cursor: default; }
+/* Carousel arrows retired for the editorial look — the row scrolls/swipes and the
+   dots below are the affordance. The buttons stay in the DOM for the shelf JS. */
+.studio-shelf-nav { display: none; }
 .studio-list {
     display: grid;
     grid-auto-flow: column;
@@ -178,51 +187,26 @@ body {
     flex-direction: column;
     justify-content: space-between;
     overflow: hidden;
-    padding: 18px 16px 16px;
+    padding: 16px 15px 14px;
     border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-    border-radius: var(--glass-radius, 14px);
-    color: var(--chrome-text, var(--ui-text, var(--text, #fff)));
+    border-radius: 10px;
+    color: var(--text, #fff);
     text-decoration: none;
     scroll-snap-align: start;
-    background: linear-gradient(
-        150deg,
-        color-mix(in srgb, var(--accent, #7c3aed) 42%, var(--alysum-ui-chrome, #141414)),
-        var(--alysum-ui-chrome, #141414) 78%
+    /* No-cover covers lean on the surface tokens, which can run bright in some
+       themes/Gradient mode — mix in a fixed 20% black so they always read as a
+       cover, not a bright tile. */
+    background: color-mix(
+        in srgb,
+        color-mix(in srgb, var(--alysum-ui-raised, #2a2a2a) 45%, var(--alysum-ui-panel, #111827)) 80%,
+        black
     );
-    box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.45);
-    transition: transform 0.18s ease, border-color 0.18s ease;
+    box-shadow: none;
+    transition: transform 0.16s ease, border-color 0.16s ease;
 }
 .studio-book:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
     border-color: color-mix(in srgb, var(--accent, #6d28d9) 55%, transparent);
-}
-.studio-book-1 {
-    background: linear-gradient(
-        150deg,
-        color-mix(in srgb, var(--purple, var(--accent, #7c3aed)) 38%, var(--alysum-ui-chrome, #141414)),
-        var(--alysum-ui-chrome, #141414) 78%
-    );
-}
-.studio-book-2 {
-    background: linear-gradient(
-        150deg,
-        color-mix(in srgb, var(--pink, var(--accent, #ec4899)) 38%, var(--alysum-ui-chrome, #141414)),
-        var(--alysum-ui-chrome, #141414) 78%
-    );
-}
-.studio-book-3 {
-    background: linear-gradient(
-        150deg,
-        color-mix(in srgb, var(--accent-soft, var(--accent, #7c3aed)) 34%, var(--alysum-ui-chrome, #141414)),
-        var(--alysum-ui-chrome, #141414) 78%
-    );
-}
-.studio-book-4 {
-    background: linear-gradient(
-        150deg,
-        color-mix(in srgb, var(--alysum-display-mid, var(--accent, #7c3aed)) 32%, var(--alysum-ui-chrome, #141414)),
-        var(--alysum-ui-chrome, #141414) 78%
-    );
 }
 .studio-book.has-cover {
     background: var(--alysum-ui-chrome, #141414);
@@ -273,16 +257,20 @@ body {
 }
 .studio-book-title {
     margin: 0;
-    padding-right: 36px;
-    font-size: 19px;
-    line-height: 1.2;
-    color: var(--alysum-display-mid, var(--gold, #f5d489));
+    padding-right: 32px;
+    font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.15;
+    color: var(--text, #fff);
 }
+.studio-book.has-cover .studio-book-title { color: #f3f1ea; }
 .studio-book-meta {
     margin: 0;
-    color: var(--chrome-muted, var(--muted));
+    color: var(--muted);
     font-size: 11.5px;
 }
+.studio-book.has-cover .studio-book-meta { color: rgba(255, 255, 255, 0.82); }
 .studio-new-card {
     display: flex;
     height: 250px;
@@ -290,10 +278,10 @@ body {
     align-items: center;
     justify-content: center;
     gap: 10px;
-    border: 1.5px dashed color-mix(in srgb, var(--text) 22%, transparent);
-    border-radius: var(--glass-radius, 14px);
-    color: var(--muted);
-    background: color-mix(in srgb, var(--alysum-ui-chrome, #141414) 55%, transparent);
+    border: 1.5px dashed color-mix(in srgb, var(--text) 40%, transparent);
+    border-radius: 10px;
+    color: var(--text);
+    background: transparent;
     cursor: pointer;
     scroll-snap-align: start;
 }
@@ -339,15 +327,11 @@ body {
     min-width: 188px;
     max-width: min(240px, calc(100vw - 16px));
     padding: 8px;
-    border-radius: 14px;
-    background: linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--alysum-ui-panel, #111827) 88%, white),
-        var(--alysum-ui-panel, #111827)
-    );
+    border-radius: 12px;
+    background: var(--alysum-ui-panel, #111827);
     color: var(--text, #fff);
     border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
 }
 .studio-gear-pop[hidden] { display: none; }
 .studio-gear-pop-copy {
@@ -467,7 +451,14 @@ body {
 }
 @media (max-width: 640px) {
     .studio-stats { grid-template-columns: repeat(2, 1fr); }
-    .studio-stat { border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1)); }
+    .studio-stat:nth-child(odd) {
+        border-left: 0;
+        padding-left: 0;
+    }
+    .studio-stat:nth-child(n+3) {
+        border-top: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+        padding-top: 16px;
+    }
     .studio-list { grid-auto-columns: 150px; }
     .studio-book, .studio-new-card { height: 210px; }
 }

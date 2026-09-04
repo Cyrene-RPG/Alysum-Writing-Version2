@@ -15,6 +15,12 @@ BEGIN
     RAISE EXCEPTION 'not authenticated' USING ERRCODE = '28000';
   END IF;
 
+  -- Catalog first: FKs should cascade, but a listing with a wrong user_id still
+  -- dies when the manuscript owner's account is removed.
+  DELETE FROM public.library
+  WHERE user_id = v_uid
+     OR id IN (SELECT id FROM public.books WHERE user_id = v_uid);
+
   DELETE FROM auth.users WHERE id = v_uid;
 END;
 $$;

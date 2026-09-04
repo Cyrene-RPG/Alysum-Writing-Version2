@@ -90,10 +90,10 @@ function renderStats(mount, books, profile, userId) {
     const totalWords = books.reduce((total, book) => total + bookWordCount(book), 0);
     const s = getWritingStats(profile || {}, { userId });
     const stats = [
-        { value: totalWords, label: "Total words across all books" },
-        { value: s.wordsThisMonth, label: "Words written this month" },
-        { value: s.wordsThisWeek, label: "Words written this week" },
-        { value: s.streak, label: "Daily login streak" },
+        { value: totalWords, label: "Total words" },
+        { value: s.wordsThisMonth, label: "This month" },
+        { value: s.wordsThisWeek, label: "This week" },
+        { value: s.streak, label: "Day streak" },
     ];
     mount.innerHTML = stats.map((stat) => `
         <div class="studio-stat">
@@ -114,7 +114,7 @@ function renderGoal(goalMount, labelMount, fillMount, profile, userId) {
     if (s.mode === "track") {
         if (titleEl) titleEl.textContent = "Today's writing";
         labelMount.textContent = `${s.wordsToday.toLocaleString()} words`;
-        if (streakEl) streakEl.textContent = s.writeStreak > 0 ? ` · ${s.writeStreak}-day streak` : "";
+        if (streakEl) streakEl.textContent = s.writeStreak > 0 ? `${s.writeStreak}-day run` : "";
         return;
     }
 
@@ -123,14 +123,14 @@ function renderGoal(goalMount, labelMount, fillMount, profile, userId) {
         labelMount.textContent = `${s.wordsToday.toLocaleString()} today`;
         fillMount.style.width = `${s.goalPct}%`;
         fillMount.classList.add(`is-${s.paceState || "green"}`);
-        if (streakEl) streakEl.textContent = s.paceStreak > 0 ? ` · ${s.paceStreak}-day streak` : "";
+        if (streakEl) streakEl.textContent = s.paceStreak > 0 ? `${s.paceStreak}-day run` : "";
         return;
     }
 
     if (titleEl) titleEl.textContent = "Word goal today";
     labelMount.textContent = `${s.wordsToday.toLocaleString()} / ${s.goal.toLocaleString()}`;
     fillMount.style.width = `${s.goalPct}%`;
-    if (streakEl) streakEl.textContent = s.goalStreak > 0 ? ` · ${s.goalStreak}-day streak` : "";
+    if (streakEl) streakEl.textContent = s.goalStreak > 0 ? `${s.goalStreak}-day run` : "";
 }
 
 function lastWorkedAt(book) {
