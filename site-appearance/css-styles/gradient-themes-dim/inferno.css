@@ -1,5 +1,5 @@
 /* ——— Inferno (fire: coals → crimson → orange → gold tips) ——— */
-html[data-gradient-theme="inferno"] {
+html[data-gradient-theme="inferno"][data-flat-theme="1"] {
     --purple: #dc2626;
     --purple-dark: #450a0a;
     --purple-bright: #f97316;

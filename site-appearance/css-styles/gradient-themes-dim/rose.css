@@ -1,5 +1,5 @@
 /* ——— Rose & pink ——— */
-html[data-gradient-theme="rose"] {
+html[data-gradient-theme="rose"][data-flat-theme="1"] {
     --purple: #db2777;
     --purple-dark: #9f1239;
     --purple-bright: #f43f5e;

@@ -1,5 +1,5 @@
 /* ——— Honey ——— */
-html[data-gradient-theme="honey"] {
+html[data-gradient-theme="honey"][data-flat-theme="1"] {
     --purple: #d97706;
     --purple-dark: #713f12;
     --purple-bright: #fbbf24;

@@ -1,5 +1,5 @@
 /* ——— Twilight ——— */
-html[data-gradient-theme="twilight"] {
+html[data-gradient-theme="twilight"][data-flat-theme="1"] {
     --purple: #7c3aed;
     --purple-dark: #1e1b4b;
     --purple-bright: #ec4899;

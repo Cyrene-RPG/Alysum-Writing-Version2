@@ -1,5 +1,5 @@
 /* ——— Blanc (light opposite of Noir) ——— */
-html[data-gradient-theme="blanc"] {
+html[data-gradient-theme="blanc"][data-flat-theme="1"] {
     --purple: #a1a1aa;
     --purple-dark: #e4e4e7;
     --purple-bright: #3f3f46;

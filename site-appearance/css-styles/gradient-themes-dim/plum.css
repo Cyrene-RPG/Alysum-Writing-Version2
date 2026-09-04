@@ -1,5 +1,5 @@
 /* ——— Plum (deep berry) ——— */
-html[data-gradient-theme="plum"] {
+html[data-gradient-theme="plum"][data-flat-theme="1"] {
     --purple: #9333ea;
     --purple-dark: #581c87;
     --purple-bright: #c084fc;

@@ -1,5 +1,5 @@
 /* ——— Ember (red / orange) ——— */
-html[data-gradient-theme="ember"] {
+html[data-gradient-theme="ember"][data-flat-theme="1"] {
     --purple: #dc2626;
     --purple-dark: #991b1b;
     --purple-bright: #f97316;

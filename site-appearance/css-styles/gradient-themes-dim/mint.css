@@ -1,5 +1,5 @@
 /* ——— Mint (fresh green) ——— */
-html[data-gradient-theme="mint"] {
+html[data-gradient-theme="mint"][data-flat-theme="1"] {
     --purple: #059669;
     --purple-dark: #064e3b;
     --purple-bright: #34d399;

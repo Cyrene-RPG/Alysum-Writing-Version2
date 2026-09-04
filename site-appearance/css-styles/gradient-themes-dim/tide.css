@@ -1,5 +1,5 @@
 /* ——— Tide pool ——— */
-html[data-gradient-theme="tide"] {
+html[data-gradient-theme="tide"][data-flat-theme="1"] {
     --purple: #0891b2;
     --purple-dark: #164e63;
     --purple-bright: #67e8f9;

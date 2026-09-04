@@ -1,5 +1,8 @@
 /* ——— Arctic (frost, ice blue & mint) ——— */
-html[data-gradient-theme="arctic"] {
+html[data-gradient-theme="arctic"][data-flat-theme="1"] {
+    /* Flat: welcome banner (above) + workspace nav bar, solid instead of gradient */
+    --theme-welcome-bar: #14748f;
+    --theme-nav-bar: #0b4b5c;
     --purple: #0ea5e9;
     --purple-dark: #0c4a6e;
     --purple-bright: #67e8f9;

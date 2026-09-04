@@ -1,5 +1,5 @@
 /* ——— Profile banner (purple → blue → teal welcome bar) ——— */
-html[data-gradient-theme="profilewave"] {
+html[data-gradient-theme="profilewave"][data-flat-theme="1"] {
     --purple: #0084b4;
     --purple-dark: #4b3298;
     --purple-bright: #00a6b2;

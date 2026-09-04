@@ -1,5 +1,5 @@
 /* ——— Forest 2 Gradient (brown → green) ——— */
-html[data-gradient-theme="forest2"] {
+html[data-gradient-theme="forest2"][data-flat-theme="1"] {
     --purple: #2f6f3e;
     --purple-dark: #5f3b1b;
     --purple-bright: #22c55e;

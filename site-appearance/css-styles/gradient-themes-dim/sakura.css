@@ -1,5 +1,5 @@
 /* ——— Sakura (cherry blossom) ——— */
-html[data-gradient-theme="sakura"] {
+html[data-gradient-theme="sakura"][data-flat-theme="1"] {
     --purple: #ec4899;
     --purple-dark: #9d174d;
     --purple-bright: #f9a8d4;

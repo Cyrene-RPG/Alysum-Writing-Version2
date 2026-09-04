@@ -1,5 +1,5 @@
 /* ——— Peach (warm coral) ——— */
-html[data-gradient-theme="peach"] {
+html[data-gradient-theme="peach"][data-flat-theme="1"] {
     --purple: #ea580c;
     --purple-dark: #9a3412;
     --purple-bright: #fb923c;

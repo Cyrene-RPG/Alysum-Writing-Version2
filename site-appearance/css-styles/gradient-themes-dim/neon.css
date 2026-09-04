@@ -1,5 +1,5 @@
 /* ——— Neon (cyber magenta + electric mint) ——— */
-html[data-gradient-theme="neon"] {
+html[data-gradient-theme="neon"][data-flat-theme="1"] {
     --purple: #d946ef;
     --purple-dark: #4a044e;
     --purple-bright: #22c55e;

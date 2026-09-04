@@ -4,7 +4,7 @@
  * "classic" = no attribute (removeItem) — these :root values match the original site.
  */
 
-:root {
+html[data-flat-theme="1"]:not([data-gradient-theme]) {
     --purple: #6d28d9;
     --purple-dark: #5b21b6;
     --purple-bright: #9333ea;

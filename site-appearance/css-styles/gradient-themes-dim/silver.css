@@ -1,5 +1,5 @@
 /* ——— Silver (cool slate) ——— */
-html[data-gradient-theme="silver"] {
+html[data-gradient-theme="silver"][data-flat-theme="1"] {
     --purple: #64748b;
     --purple-dark: #334155;
     --purple-bright: #94a3b8;

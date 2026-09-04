@@ -1,5 +1,5 @@
 /* ——— Sunset (twilight → magenta sky → coral → gold rim) ——— */
-html[data-gradient-theme="sunset"] {
+html[data-gradient-theme="sunset"][data-flat-theme="1"] {
     --purple: #c026d3;
     --purple-dark: #312e81;
     --purple-bright: #fb923c;

@@ -36,6 +36,7 @@ const APP_SHELL = [
   '/js/studio/page.js',
   '/site-appearance/css-styles/theme.css',
   '/site-appearance/css-styles/gradient-themes/index.css',
+  '/site-appearance/css-styles/gradient-themes-dim/index.css',
   '/site-appearance/css-styles/typography.css',
   '/site-appearance/css-styles/surface-styles/index.css',
   '/site-appearance/css-styles/surface-styles/glass.css',

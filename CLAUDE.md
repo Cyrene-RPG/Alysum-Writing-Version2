@@ -38,9 +38,10 @@ Every application page (except the marketing homepage, which intentionally skips
 
 1. `/site-appearance/css-styles/theme.css`
 2. `/site-appearance/css-styles/gradient-themes/index.css`
-3. `/site-appearance/css-styles/typography.css`
-4. `/site-appearance/css-styles/surface-styles/index.css`
-5. `/site-appearance/js-runtime/boot.js`
+3. `/site-appearance/css-styles/gradient-themes-dim/index.css` — flat-color variants, inert unless `data-flat-theme="1"` is set (Settings → Appearance → Gradient)
+4. `/site-appearance/css-styles/typography.css`
+5. `/site-appearance/css-styles/surface-styles/index.css`
+6. `/site-appearance/js-runtime/boot.js`
 
 ### Hosting layout constraints
 

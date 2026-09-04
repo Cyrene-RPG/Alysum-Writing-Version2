@@ -1,5 +1,5 @@
 /* ——— Volcano ——— */
-html[data-gradient-theme="volcano"] {
+html[data-gradient-theme="volcano"][data-flat-theme="1"] {
     --purple: #ea580c;
     --purple-dark: #1c1917;
     --purple-bright: #fbbf24;

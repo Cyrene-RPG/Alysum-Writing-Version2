@@ -1,5 +1,5 @@
 /* ——— Vivid violet (writer dashboard bar) ——— */
-html[data-gradient-theme="vivid"] {
+html[data-gradient-theme="vivid"][data-flat-theme="1"] {
     --purple: #6d28d9;
     --purple-dark: #4c1d95;
     --purple-bright: #7c3aed;

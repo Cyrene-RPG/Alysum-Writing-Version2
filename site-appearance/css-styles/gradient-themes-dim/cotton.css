@@ -1,5 +1,5 @@
 /* ——— Cotton candy ——— */
-html[data-gradient-theme="cotton"] {
+html[data-gradient-theme="cotton"][data-flat-theme="1"] {
     --purple: #f472b6;
     --purple-dark: #831843;
     --purple-bright: #93c5fd;

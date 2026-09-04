@@ -1,5 +1,5 @@
 /* ——— Gold (amber) ——— */
-html[data-gradient-theme="gold"] {
+html[data-gradient-theme="gold"][data-flat-theme="1"] {
     --purple: #d97706;
     --purple-dark: #92400e;
     --purple-bright: #fbbf24;

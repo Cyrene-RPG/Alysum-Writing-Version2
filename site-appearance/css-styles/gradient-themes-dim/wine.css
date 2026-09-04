@@ -1,5 +1,5 @@
 /* ——— Wine (burgundy & rose gold) ——— */
-html[data-gradient-theme="wine"] {
+html[data-gradient-theme="wine"][data-flat-theme="1"] {
     --purple: #9f1239;
     --purple-dark: #450a0a;
     --purple-bright: #e11d48;

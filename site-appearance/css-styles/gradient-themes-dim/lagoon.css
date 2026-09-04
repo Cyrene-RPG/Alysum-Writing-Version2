@@ -1,5 +1,5 @@
 /* ——— Lagoon ——— */
-html[data-gradient-theme="lagoon"] {
+html[data-gradient-theme="lagoon"][data-flat-theme="1"] {
     --purple: #0d9488;
     --purple-dark: #042f2e;
     --purple-bright: #5eead4;

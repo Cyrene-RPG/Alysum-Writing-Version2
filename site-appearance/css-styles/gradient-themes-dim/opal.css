@@ -1,5 +1,5 @@
 /* ——— Opal ——— */
-html[data-gradient-theme="opal"] {
+html[data-gradient-theme="opal"][data-flat-theme="1"] {
     --purple: #a78bfa;
     --purple-dark: #475569;
     --purple-bright: #99f6e4;

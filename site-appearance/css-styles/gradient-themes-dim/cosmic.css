@@ -1,5 +1,5 @@
 /* ——— Cosmic (indigo nebula) ——— */
-html[data-gradient-theme="cosmic"] {
+html[data-gradient-theme="cosmic"][data-flat-theme="1"] {
     --purple: #6366f1;
     --purple-dark: #312e81;
     --purple-bright: #818cf8;

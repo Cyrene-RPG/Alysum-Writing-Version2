@@ -1,5 +1,5 @@
 /* ——— Noir (monochrome, lean black) ——— */
-html[data-gradient-theme="noir"] {
+html[data-gradient-theme="noir"][data-flat-theme="1"] {
     --purple: #27272a;
     --purple-dark: #09090b;
     --purple-bright: #71717a;

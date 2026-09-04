@@ -1,5 +1,5 @@
 /* ——— Lavender (soft lilac) ——— */
-html[data-gradient-theme="lavender"] {
+html[data-gradient-theme="lavender"][data-flat-theme="1"] {
     --purple: #8b5cf6;
     --purple-dark: #5b21b6;
     --purple-bright: #a78bfa;

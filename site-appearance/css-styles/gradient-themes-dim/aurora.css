@@ -1,5 +1,5 @@
 /* ——— Aurora (violet + cyan glow) ——— */
-html[data-gradient-theme="aurora"] {
+html[data-gradient-theme="aurora"][data-flat-theme="1"] {
     --purple: #7c3aed;
     --purple-dark: #4c1d95;
     --purple-bright: #22d3ee;

@@ -1,5 +1,5 @@
 /* ——— Citrus (lime & lemon) ——— */
-html[data-gradient-theme="citrus"] {
+html[data-gradient-theme="citrus"][data-flat-theme="1"] {
     --purple: #65a30d;
     --purple-dark: #365314;
     --purple-bright: #a3e635;

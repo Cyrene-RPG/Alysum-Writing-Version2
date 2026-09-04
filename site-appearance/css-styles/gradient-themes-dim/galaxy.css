@@ -1,5 +1,5 @@
 /* ——— Galaxy ——— */
-html[data-gradient-theme="galaxy"] {
+html[data-gradient-theme="galaxy"][data-flat-theme="1"] {
     --purple: #6366f1;
     --purple-dark: #0f172a;
     --purple-bright: #a78bfa;

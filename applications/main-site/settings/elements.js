@@ -42,6 +42,7 @@ export const els = {
     appearanceEasyRead: document.getElementById("appearanceEasyRead"),
     glassChipRow: document.getElementById("glassChipRow"),
     cornerChipRow: document.getElementById("cornerChipRow"),
+    gradientChipRow: document.getElementById("gradientChipRow"),
     appearanceLoadoutSave: document.getElementById("appearanceLoadoutSave"),
     appearanceLoadoutSlots: document.getElementById("appearanceLoadoutSlots"),
     appearanceLoadoutMsg: document.getElementById("appearanceLoadoutMsg"),

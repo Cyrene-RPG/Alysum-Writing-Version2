@@ -1,5 +1,5 @@
 /* ——— Prism (rainbow sweep) ——— */
-html[data-gradient-theme="prism"] {
+html[data-gradient-theme="prism"][data-flat-theme="1"] {
     --purple: #8b5cf6;
     --purple-dark: #4c1d95;
     --purple-bright: #22d3ee;

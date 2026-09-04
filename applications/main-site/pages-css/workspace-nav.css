@@ -273,8 +273,11 @@
     background:
         linear-gradient(180deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.5)),
         var(
-            --alysum-chrome-gradient,
-            linear-gradient(135deg, var(--purple-dark, #5b21b6), var(--theme-header-mid, #6d28d9), var(--theme-header-end, #db2777))
+            --theme-nav-bar,
+            var(
+                --alysum-chrome-gradient,
+                linear-gradient(135deg, var(--purple-dark, #5b21b6), var(--theme-header-mid, #6d28d9), var(--theme-header-end, #db2777))
+            )
         );
     background-size: cover;
     background-position: center;
@@ -335,12 +338,15 @@
     color: var(--chrome-text, var(--text, #fff));
     border-color: rgba(255, 255, 255, 0.38);
     background: var(
-        --alysum-chrome-gradient,
-        linear-gradient(
-            135deg,
-            var(--purple-dark, #5b21b6),
-            var(--theme-header-mid, #6d28d9),
-            var(--theme-header-end, #db2777)
+        --theme-nav-bar,
+        var(
+            --alysum-chrome-gradient,
+            linear-gradient(
+                135deg,
+                var(--purple-dark, #5b21b6),
+                var(--theme-header-mid, #6d28d9),
+                var(--theme-header-end, #db2777)
+            )
         )
     );
     background-size: cover;

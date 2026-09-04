@@ -1,5 +1,5 @@
 /* ——— Copper (rust & bronze) ——— */
-html[data-gradient-theme="copper"] {
+html[data-gradient-theme="copper"][data-flat-theme="1"] {
     --purple: #b45309;
     --purple-dark: #78350f;
     --purple-bright: #f59e0b;

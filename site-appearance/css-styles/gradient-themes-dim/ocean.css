@@ -1,5 +1,5 @@
 /* ——— Ocean (blue / cyan) ——— */
-html[data-gradient-theme="ocean"] {
+html[data-gradient-theme="ocean"][data-flat-theme="1"] {
     --purple: #0284c7;
     --purple-dark: #0c4a6e;
     --purple-bright: #38bdf8;

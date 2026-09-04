@@ -1,5 +1,5 @@
 /* ——— Blood moon (dark crimson) ——— */
-html[data-gradient-theme="bloodmoon"] {
+html[data-gradient-theme="bloodmoon"][data-flat-theme="1"] {
     --purple: #b91c1c;
     --purple-dark: #450a0a;
     --purple-bright: #ef4444;

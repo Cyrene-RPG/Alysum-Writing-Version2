@@ -1,5 +1,5 @@
 /* ——— Midnight (deep navy & cobalt) ——— */
-html[data-gradient-theme="midnight"] {
+html[data-gradient-theme="midnight"][data-flat-theme="1"] {
     --purple: #2563eb;
     --purple-dark: #0f172a;
     --purple-bright: #38bdf8;

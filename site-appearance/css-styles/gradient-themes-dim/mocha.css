@@ -1,5 +1,5 @@
 /* ——— Mocha (coffee & caramel) ——— */
-html[data-gradient-theme="mocha"] {
+html[data-gradient-theme="mocha"][data-flat-theme="1"] {
     --purple: #a16207;
     --purple-dark: #422006;
     --purple-bright: #d97706;
