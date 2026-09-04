@@ -1,0 +1,42 @@
+/* ——— Lagoon ——— */
+html[data-gradient-theme="lagoon"] {
+    --purple: #0d9488;
+    --purple-dark: #042f2e;
+    --purple-bright: #5eead4;
+    --pink: #67e8f9;
+    --gold: #ccfbf1;
+    --theme-body-spot: rgba(13, 148, 136, 0.22);
+    --theme-body-spot-strong: rgba(94, 234, 212, 0.26);
+    --theme-header-mid: #0f766e;
+    --theme-header-end: #5eead4;
+    --theme-card-a: rgba(13, 148, 136, 0.32);
+    --theme-card-b: rgba(103, 232, 249, 0.18);
+    --theme-hero-bg: linear-gradient(135deg, rgba(4, 47, 46, 0.55), rgba(13, 148, 136, 0.22)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(94, 234, 212, 0.14);
+    --theme-brand-kicker: #99f6e4;
+    --alysum-purple: #0d9488;
+    --alysum-purple-dark: #042f2e;
+    --accent: #0f766e;
+    --accent-hover: #115e59;
+    --accent-soft: #5eead4;
+    --accent-muted: rgba(13, 148, 136, 0.22);
+    --btn-primary-bg: #0d9488;
+    --btn-primary-bg-hover: #0f766e;
+    --link: #5eead4;
+    --nb-top-gradient: linear-gradient(135deg, #042f2e, #0d9488 50%, #5eead4);
+    --nb-float-bg: linear-gradient(145deg, #042f2e 0%, #0c1324 45%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(13, 148, 136, 0.45), rgba(94, 234, 212, 0.18));
+    --vp-r1: rgba(94, 234, 212, 0.22);
+    --vp-r2: rgba(103, 232, 249, 0.14);
+    --vp-hero-bg: linear-gradient(135deg, rgba(4, 47, 46, 0.75), rgba(15, 118, 110, 0.45), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #042f2e;
+    --login-page-bg: linear-gradient(135deg, #042f2e, #0d9488, #5eead4);
+    --ne-header-1: #042f2e;
+    --ne-header-2: #0f766e;
+    --ne-header-3: #14b8a6;
+    --ne-header-4: #5eead4;
+    --ne-body-spot: rgba(94, 234, 212, 0.24);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(4, 47, 46, 0.55), rgba(13, 148, 136, 0.35), rgba(94, 234, 212, 0.2));
+    --theme-prompt-entry-border: rgba(94, 234, 212, 0.38);
+    --theme-prompt-entry-ring: rgba(13, 148, 136, 0.3);
+}

@@ -1,0 +1,42 @@
+/* ——— Blood moon (dark crimson) ——— */
+html[data-gradient-theme="bloodmoon"] {
+    --purple: #b91c1c;
+    --purple-dark: #450a0a;
+    --purple-bright: #ef4444;
+    --pink: #f87171;
+    --gold: #fecaca;
+    --theme-body-spot: rgba(185, 28, 28, 0.22);
+    --theme-body-spot-strong: rgba(239, 68, 68, 0.26);
+    --theme-header-mid: #991b1b;
+    --theme-header-end: #f87171;
+    --theme-card-a: rgba(185, 28, 28, 0.34);
+    --theme-card-b: rgba(248, 113, 113, 0.18);
+    --theme-hero-bg: linear-gradient(135deg, rgba(69, 10, 10, 0.55), rgba(185, 28, 28, 0.22)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(185, 28, 28, 0.18);
+    --theme-brand-kicker: #fecaca;
+    --alysum-purple: #b91c1c;
+    --alysum-purple-dark: #450a0a;
+    --accent: #991b1b;
+    --accent-hover: #7f1d1d;
+    --accent-soft: #ef4444;
+    --accent-muted: rgba(185, 28, 28, 0.22);
+    --btn-primary-bg: #b91c1c;
+    --btn-primary-bg-hover: #991b1b;
+    --link: #f87171;
+    --nb-top-gradient: linear-gradient(135deg, #450a0a, #991b1b 50%, #ef4444);
+    --nb-float-bg: linear-gradient(145deg, #2a0a0a 0%, #1a0505 45%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(185, 28, 28, 0.48), rgba(248, 113, 113, 0.16));
+    --vp-r1: rgba(239, 68, 68, 0.22);
+    --vp-r2: rgba(248, 113, 113, 0.14);
+    --vp-hero-bg: linear-gradient(135deg, rgba(69, 10, 10, 0.78), rgba(153, 27, 27, 0.48), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #450a0a;
+    --login-page-bg: linear-gradient(135deg, #450a0a, #b91c1c, #f87171);
+    --ne-header-1: #450a0a;
+    --ne-header-2: #7f1d1d;
+    --ne-header-3: #b91c1c;
+    --ne-header-4: #f87171;
+    --ne-body-spot: rgba(239, 68, 68, 0.24);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(69, 10, 10, 0.6), rgba(185, 28, 28, 0.38), rgba(248, 113, 113, 0.18));
+    --theme-prompt-entry-border: rgba(248, 113, 113, 0.38);
+    --theme-prompt-entry-ring: rgba(185, 28, 28, 0.32);
+}

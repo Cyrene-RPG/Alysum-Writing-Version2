@@ -1,0 +1,42 @@
+/* ——— Honey ——— */
+html[data-gradient-theme="honey"] {
+    --purple: #d97706;
+    --purple-dark: #713f12;
+    --purple-bright: #fbbf24;
+    --pink: #fde68a;
+    --gold: #fffbeb;
+    --theme-body-spot: rgba(217, 119, 6, 0.22);
+    --theme-body-spot-strong: rgba(251, 191, 36, 0.26);
+    --theme-header-mid: #b45309;
+    --theme-header-end: #fde68a;
+    --theme-card-a: rgba(217, 119, 6, 0.3);
+    --theme-card-b: rgba(253, 230, 138, 0.2);
+    --theme-hero-bg: linear-gradient(135deg, rgba(113, 63, 18, 0.45), rgba(251, 191, 36, 0.18)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(251, 191, 36, 0.14);
+    --theme-brand-kicker: #fef3c7;
+    --alysum-purple: #d97706;
+    --alysum-purple-dark: #713f12;
+    --accent: #b45309;
+    --accent-hover: #92400e;
+    --accent-soft: #fbbf24;
+    --accent-muted: rgba(217, 119, 6, 0.22);
+    --btn-primary-bg: #d97706;
+    --btn-primary-bg-hover: #b45309;
+    --link: #fbbf24;
+    --nb-top-gradient: linear-gradient(135deg, #713f12, #d97706 50%, #fde68a);
+    --nb-float-bg: linear-gradient(145deg, #451a03 0%, #292524 50%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(217, 119, 6, 0.45), rgba(253, 230, 138, 0.2));
+    --vp-r1: rgba(251, 191, 36, 0.22);
+    --vp-r2: rgba(253, 230, 138, 0.14);
+    --vp-hero-bg: linear-gradient(135deg, rgba(113, 63, 18, 0.72), rgba(217, 119, 6, 0.42), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #713f12;
+    --login-page-bg: linear-gradient(135deg, #713f12, #fbbf24, #fffbeb);
+    --ne-header-1: #713f12;
+    --ne-header-2: #b45309;
+    --ne-header-3: #f59e0b;
+    --ne-header-4: #fde68a;
+    --ne-body-spot: rgba(251, 191, 36, 0.24);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(113, 63, 18, 0.55), rgba(217, 119, 6, 0.35), rgba(253, 230, 138, 0.22));
+    --theme-prompt-entry-border: rgba(253, 230, 138, 0.42);
+    --theme-prompt-entry-ring: rgba(217, 119, 6, 0.3);
+}

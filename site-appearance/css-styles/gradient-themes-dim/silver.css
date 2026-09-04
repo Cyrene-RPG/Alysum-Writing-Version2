@@ -1,0 +1,42 @@
+/* ——— Silver (cool slate) ——— */
+html[data-gradient-theme="silver"] {
+    --purple: #64748b;
+    --purple-dark: #334155;
+    --purple-bright: #94a3b8;
+    --pink: #cbd5e1;
+    --gold: #e2e8f0;
+    --theme-body-spot: rgba(148, 163, 184, 0.18);
+    --theme-body-spot-strong: rgba(203, 213, 225, 0.16);
+    --theme-header-mid: #64748b;
+    --theme-header-end: #cbd5e1;
+    --theme-card-a: rgba(148, 163, 184, 0.28);
+    --theme-card-b: rgba(203, 213, 225, 0.12);
+    --theme-hero-bg: linear-gradient(135deg, rgba(100, 116, 139, 0.28), rgba(203, 213, 225, 0.08)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(148, 163, 184, 0.16);
+    --theme-brand-kicker: #cbd5e1;
+    --alysum-purple: #64748b;
+    --alysum-purple-dark: #334155;
+    --accent: #64748b;
+    --accent-hover: #475569;
+    --accent-soft: #94a3b8;
+    --accent-muted: rgba(148, 163, 184, 0.2);
+    --btn-primary-bg: #64748b;
+    --btn-primary-bg-hover: #475569;
+    --link: #94a3b8;
+    --nb-top-gradient: linear-gradient(135deg, #1e293b, #475569 48%, #94a3b8);
+    --nb-float-bg: linear-gradient(145deg, #0f172a 0%, #020617 45%, #020617 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(100, 116, 139, 0.4), rgba(203, 213, 225, 0.1));
+    --vp-r1: rgba(148, 163, 184, 0.18);
+    --vp-r2: rgba(203, 213, 225, 0.1);
+    --vp-hero-bg: linear-gradient(135deg, rgba(51, 65, 85, 0.65), rgba(100, 116, 139, 0.35), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #334155;
+    --login-page-bg: linear-gradient(135deg, #1e293b, #64748b, #cbd5e1);
+    --ne-header-1: #1e293b;
+    --ne-header-2: #475569;
+    --ne-header-3: #64748b;
+    --ne-header-4: #cbd5e1;
+    --ne-body-spot: rgba(148, 163, 184, 0.2);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(100, 116, 139, 0.4), rgba(203, 213, 225, 0.16));
+    --theme-prompt-entry-border: rgba(203, 213, 225, 0.32);
+    --theme-prompt-entry-ring: rgba(148, 163, 184, 0.28);
+}

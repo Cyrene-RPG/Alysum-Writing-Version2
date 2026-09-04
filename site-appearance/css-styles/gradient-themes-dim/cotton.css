@@ -1,0 +1,42 @@
+/* ——— Cotton candy ——— */
+html[data-gradient-theme="cotton"] {
+    --purple: #f472b6;
+    --purple-dark: #831843;
+    --purple-bright: #93c5fd;
+    --pink: #e879f9;
+    --gold: #fce7f3;
+    --theme-body-spot: rgba(244, 114, 182, 0.2);
+    --theme-body-spot-strong: rgba(147, 197, 253, 0.22);
+    --theme-header-mid: #ec4899;
+    --theme-header-end: #93c5fd;
+    --theme-card-a: rgba(244, 114, 182, 0.28);
+    --theme-card-b: rgba(147, 197, 253, 0.2);
+    --theme-hero-bg: linear-gradient(135deg, rgba(249, 168, 212, 0.2), rgba(147, 197, 253, 0.16)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(244, 114, 182, 0.14);
+    --theme-brand-kicker: #fbcfe8;
+    --alysum-purple: #f472b6;
+    --alysum-purple-dark: #831843;
+    --accent: #ec4899;
+    --accent-hover: #db2777;
+    --accent-soft: #93c5fd;
+    --accent-muted: rgba(244, 114, 182, 0.22);
+    --btn-primary-bg: #ec4899;
+    --btn-primary-bg-hover: #db2777;
+    --link: #93c5fd;
+    --nb-top-gradient: linear-gradient(135deg, #f9a8d4, #e879f9 45%, #93c5fd 100%);
+    --nb-float-bg: linear-gradient(145deg, #500724 0%, #1e3a5f 55%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(244, 114, 182, 0.42), rgba(147, 197, 253, 0.22));
+    --vp-r1: rgba(244, 114, 182, 0.22);
+    --vp-r2: rgba(147, 197, 253, 0.16);
+    --vp-hero-bg: linear-gradient(135deg, rgba(131, 24, 67, 0.55), rgba(236, 72, 153, 0.35), rgba(59, 130, 246, 0.3), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #831843;
+    --login-page-bg: linear-gradient(135deg, #f9a8d4, #e879f9, #93c5fd);
+    --ne-header-1: #831843;
+    --ne-header-2: #ec4899;
+    --ne-header-3: #e879f9;
+    --ne-header-4: #93c5fd;
+    --ne-body-spot: rgba(244, 114, 182, 0.22);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(249, 168, 212, 0.45), rgba(232, 121, 249, 0.3), rgba(147, 197, 253, 0.28));
+    --theme-prompt-entry-border: rgba(147, 197, 253, 0.4);
+    --theme-prompt-entry-ring: rgba(244, 114, 182, 0.3);
+}

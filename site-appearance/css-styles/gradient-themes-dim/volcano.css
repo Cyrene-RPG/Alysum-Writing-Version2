@@ -1,0 +1,42 @@
+/* ——— Volcano ——— */
+html[data-gradient-theme="volcano"] {
+    --purple: #ea580c;
+    --purple-dark: #1c1917;
+    --purple-bright: #fbbf24;
+    --pink: #ef4444;
+    --gold: #fef3c7;
+    --theme-body-spot: rgba(234, 88, 12, 0.22);
+    --theme-body-spot-strong: rgba(239, 68, 68, 0.26);
+    --theme-header-mid: #dc2626;
+    --theme-header-end: #fbbf24;
+    --theme-card-a: rgba(239, 68, 68, 0.32);
+    --theme-card-b: rgba(251, 191, 36, 0.2);
+    --theme-hero-bg: radial-gradient(ellipse at 50% 100%, rgba(251, 191, 36, 0.2), transparent 45%), linear-gradient(135deg, rgba(28, 25, 23, 0.8), rgba(185, 28, 28, 0.25)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(234, 88, 12, 0.16);
+    --theme-brand-kicker: #fde68a;
+    --alysum-purple: #ea580c;
+    --alysum-purple-dark: #1c1917;
+    --accent: #dc2626;
+    --accent-hover: #b91c1c;
+    --accent-soft: #fbbf24;
+    --accent-muted: rgba(239, 68, 68, 0.22);
+    --btn-primary-bg: #ea580c;
+    --btn-primary-bg-hover: #c2410c;
+    --link: #fbbf24;
+    --nb-top-gradient: linear-gradient(180deg, #1c1917 0%, #b91c1c 35%, #ea580c 60%, #fbbf24 100%);
+    --nb-float-bg: linear-gradient(145deg, #1c1917 0%, #450a0a 50%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(239, 68, 68, 0.48), rgba(251, 191, 36, 0.22));
+    --vp-r1: rgba(239, 68, 68, 0.24);
+    --vp-r2: rgba(251, 191, 36, 0.16);
+    --vp-hero-bg: radial-gradient(ellipse at 50% 80%, rgba(251, 191, 36, 0.35), transparent 40%), linear-gradient(135deg, rgba(28, 25, 23, 0.85), rgba(185, 28, 28, 0.5), rgba(15, 23, 42, 0.7));
+    --vp-primary-fg: #1c1917;
+    --login-page-bg: linear-gradient(180deg, #1c1917, #b91c1c, #ea580c, #fbbf24);
+    --ne-header-1: #1c1917;
+    --ne-header-2: #991b1b;
+    --ne-header-3: #ea580c;
+    --ne-header-4: #fbbf24;
+    --ne-body-spot: rgba(239, 68, 68, 0.26);
+    --theme-prompt-topbar: linear-gradient(180deg, rgba(28, 25, 23, 0.65), rgba(185, 28, 28, 0.4), rgba(251, 191, 36, 0.22));
+    --theme-prompt-entry-border: rgba(251, 191, 36, 0.4);
+    --theme-prompt-entry-ring: rgba(239, 68, 68, 0.32);
+}

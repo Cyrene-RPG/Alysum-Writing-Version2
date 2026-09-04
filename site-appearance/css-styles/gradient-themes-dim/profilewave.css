@@ -1,0 +1,43 @@
+/* ——— Profile banner (purple → blue → teal welcome bar) ——— */
+html[data-gradient-theme="profilewave"] {
+    --purple: #0084b4;
+    --purple-dark: #4b3298;
+    --purple-bright: #00a6b2;
+    --pink: #00c6c1;
+    --gold: #a5f3fc;
+    --theme-body-spot: rgba(75, 50, 152, 0.22);
+    --theme-body-spot-strong: rgba(0, 166, 178, 0.2);
+    --theme-header-mid: #2d5daa;
+    --theme-header-end: #00c6c1;
+    --theme-welcome-bar: linear-gradient(90deg, #4b3298 0%, #2d5daa 25%, #0084b4 50%, #00a6b2 75%, #00c6c1 100%);
+    --theme-card-a: rgba(45, 93, 170, 0.34);
+    --theme-card-b: rgba(0, 198, 193, 0.18);
+    --theme-hero-bg: linear-gradient(135deg, rgba(75, 50, 152, 0.28), rgba(0, 132, 180, 0.14)), var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(0, 132, 180, 0.16);
+    --theme-brand-kicker: #a5f3fc;
+    --alysum-purple: #0084b4;
+    --alysum-purple-dark: #4b3298;
+    --accent: #2d5daa;
+    --accent-hover: #4b3298;
+    --accent-soft: #00a6b2;
+    --accent-muted: rgba(0, 132, 180, 0.2);
+    --btn-primary-bg: #0084b4;
+    --btn-primary-bg-hover: #2d5daa;
+    --link: #00c6c1;
+    --nb-top-gradient: linear-gradient(90deg, #4b3298, #2d5daa 30%, #0084b4 55%, #00c6c1);
+    --nb-float-bg: linear-gradient(145deg, #1e1b4b 0%, #0c2340 45%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(75, 50, 152, 0.45), rgba(0, 198, 193, 0.16));
+    --vp-r1: rgba(45, 93, 170, 0.22);
+    --vp-r2: rgba(0, 198, 193, 0.12);
+    --vp-hero-bg: linear-gradient(135deg, rgba(75, 50, 152, 0.55), rgba(0, 132, 180, 0.38), rgba(15, 23, 42, 0.65));
+    --vp-primary-fg: #4b3298;
+    --login-page-bg: linear-gradient(135deg, #4b3298, #2d5daa, #00c6c1);
+    --ne-header-1: #4b3298;
+    --ne-header-2: #2d5daa;
+    --ne-header-3: #0084b4;
+    --ne-header-4: #00c6c1;
+    --ne-body-spot: rgba(0, 166, 178, 0.22);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(75, 50, 152, 0.38), rgba(0, 132, 180, 0.22));
+    --theme-prompt-entry-border: rgba(0, 198, 193, 0.35);
+    --theme-prompt-entry-ring: rgba(45, 93, 170, 0.28);
+}

@@ -1,0 +1,43 @@
+/* ——— Inferno (fire: coals → crimson → orange → gold tips) ——— */
+html[data-gradient-theme="inferno"] {
+    --purple: #dc2626;
+    --purple-dark: #450a0a;
+    --purple-bright: #f97316;
+    --pink: #fbbf24;
+    --gold: #fef08a;
+    --theme-body-spot: rgba(220, 38, 38, 0.24);
+    --theme-body-spot-strong: rgba(249, 115, 22, 0.22);
+    --theme-header-mid: #ea580c;
+    --theme-header-end: #facc15;
+    --theme-card-a: rgba(220, 38, 38, 0.38);
+    --theme-card-b: rgba(251, 191, 36, 0.22);
+    --theme-hero-bg: linear-gradient(135deg, rgba(127, 29, 29, 0.45), rgba(234, 88, 12, 0.28), rgba(251, 191, 36, 0.12)),
+        var(--panel, #111827);
+    --theme-accent-soft-bg: rgba(234, 88, 12, 0.18);
+    --theme-brand-kicker: #fecaca;
+    --alysum-purple: #dc2626;
+    --alysum-purple-dark: #7f1d1d;
+    --accent: #dc2626;
+    --accent-hover: #b91c1c;
+    --accent-soft: #f97316;
+    --accent-muted: rgba(220, 38, 38, 0.24);
+    --btn-primary-bg: #dc2626;
+    --btn-primary-bg-hover: #b91c1c;
+    --link: #fb923c;
+    --nb-top-gradient: linear-gradient(135deg, #450a0a, #991b1b 35%, #ea580c 65%, #fbbf24);
+    --nb-float-bg: linear-gradient(145deg, #1c0a0a 0%, #431407 40%, #0b1220 100%);
+    --nb-tree-active-bg: linear-gradient(90deg, rgba(220, 38, 38, 0.5), rgba(251, 191, 36, 0.2));
+    --vp-r1: rgba(249, 115, 22, 0.28);
+    --vp-r2: rgba(250, 204, 21, 0.14);
+    --vp-hero-bg: linear-gradient(135deg, rgba(69, 10, 10, 0.85), rgba(185, 28, 28, 0.5), rgba(234, 88, 12, 0.38), rgba(15, 23, 42, 0.72));
+    --vp-primary-fg: #7f1d1d;
+    --login-page-bg: linear-gradient(135deg, #450a0a, #b91c1c, #ea580c, #fbbf24);
+    --ne-header-1: #450a0a;
+    --ne-header-2: #b91c1c;
+    --ne-header-3: #ea580c;
+    --ne-header-4: #facc15;
+    --ne-body-spot: rgba(251, 146, 60, 0.28);
+    --theme-prompt-topbar: linear-gradient(135deg, rgba(127, 29, 29, 0.55), rgba(234, 88, 12, 0.42), rgba(251, 191, 36, 0.22));
+    --theme-prompt-entry-border: rgba(251, 191, 36, 0.42);
+    --theme-prompt-entry-ring: rgba(220, 38, 38, 0.35);
+}
