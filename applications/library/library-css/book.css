@@ -21,8 +21,7 @@ body {
     color: var(--text);
 }
 .book-card {
-    width: 68rem;
-    min-width: 68rem;
+    width: 100%;
     max-width: 68rem;
     margin-inline: auto;
     flex-shrink: 0;
@@ -34,8 +33,6 @@ body {
     color: var(--ui-text, var(--text));
 }
 .book-card:has(.book-hero.is-wide) {
-    width: 64rem;
-    min-width: 64rem;
     max-width: 64rem;
 }
 .book-hero {
@@ -422,13 +419,17 @@ body {
 .book-synopsis-fade[hidden],
 #bookNotesBlock[hidden] { display: none !important; }
 #bookNotesBlock { margin: 12px 0 4px; }
+@media (min-width: 761px) {
+    .book-hero { min-height: 460px; }
+    .book-hero.is-wide { aspect-ratio: 2.1 / 1; }
+}
 @media (max-width: 760px) {
-    .book-page { padding: 16px 12px 48px; }
+    .book-page { padding: 16px 12px 48px; overflow-x: hidden; }
     .book-hero { padding: 14px 16px 18px; min-height: 220px; }
     .book-hero.is-wide { min-height: 0; padding: 0; }
     .book-hero.is-wide .book-hero-top,
     .book-hero.is-wide .book-hero-bottom { padding: 14px 16px 18px; }
-    .book-cover { width: 110px; }
+    .book-cover { width: 187px; }
     .book-title-block h1 { font-size: 22px; }
     .book-hero-bottom { gap: 12px; }
 }
