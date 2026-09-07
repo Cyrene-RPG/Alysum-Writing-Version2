@@ -88,11 +88,14 @@ body {
     margin-bottom: 10px;
 }
 .studio-goal-top > span:first-child {
-    color: var(--muted);
-    font-size: 11px;
+    font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    color: color-mix(in srgb, var(--text) 45%, transparent);
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.14em;
-    text-transform: uppercase;
+}
+.studio-goal-num {
+    font-size: 15px;
 }
 .studio-goal-streak {
     display: block;
@@ -108,7 +111,7 @@ body {
     font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
     font-size: 19px;
     font-weight: 600;
-    color: var(--text);
+    color: color-mix(in srgb, var(--text) 45%, transparent);
     font-variant-numeric: lining-nums tabular-nums;
 }
 .studio-shelf-count {

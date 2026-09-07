@@ -119,7 +119,7 @@ function renderGoal(goalMount, labelMount, fillMount, profile, userId) {
     }
 
     if (s.mode === "pace") {
-        if (titleEl) titleEl.textContent = `Your pace · ~${s.paceGoal.toLocaleString()}/day`;
+        if (titleEl) titleEl.innerHTML = `Your pace ~<span class="studio-goal-num">${s.paceGoal.toLocaleString()}</span>/day`;
         labelMount.textContent = `${s.wordsToday.toLocaleString()} today`;
         fillMount.style.width = `${s.goalPct}%`;
         fillMount.classList.add(`is-${s.paceState || "green"}`);
