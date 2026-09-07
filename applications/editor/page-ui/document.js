@@ -237,8 +237,33 @@ export function mountDocument({ pageEl, onInput }) {
         emit(event);
     });
 
+    /** Typing a second "-" right after one collapses "--" into an em dash. */
+    function replaceDoubleHyphenWithEmDash() {
+        const sel = window.getSelection();
+        if (!sel || !sel.isCollapsed || !sel.anchorNode) return;
+        const node = sel.anchorNode;
+        if (node.nodeType !== Node.TEXT_NODE) return;
+        const offset = sel.anchorOffset;
+        const text = node.textContent;
+        if (offset < 2 || text.slice(offset - 2, offset) !== "--") return;
+        const before = offset > 2 ? text[offset - 3] : "";
+        if (before === "-" || before === "—") return; // don't chain onto an existing dash run
+        // Mutate the text node's data in place (rather than deleteContents+insertNode) so it
+        // never splits into sibling nodes — a split would put the next keystroke in a fresh
+        // node our single-node "--" check can't see across, letting a spammed run re-trigger.
+        node.textContent = text.slice(0, offset - 2) + "—" + text.slice(offset);
+        const range = document.createRange();
+        range.setStart(node, offset - 1);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+
     pageEl.addEventListener("input", (event) => {
         if (pasting) return; // the paste handler emits its own synthetic event
+        if (event.inputType === "insertText" && event.data === "-") {
+            replaceDoubleHyphenWithEmDash();
+        }
         if (event.inputType === "insertParagraph") {
             const p = paragraphAtCaret();
             if (p) markParagraph(p, autoIndentOn());
