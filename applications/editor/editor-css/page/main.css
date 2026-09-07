@@ -10,6 +10,13 @@
     overflow: hidden;
     position: relative;
 }
+.writer-main.is-more-open {
+    overflow: visible;
+    z-index: 70;
+}
+.writer-main.is-more-open .writer-main-scroll {
+    overflow: visible;
+}
 .writer-main-scroll {
     flex: 1;
     min-height: 0;
@@ -137,7 +144,7 @@
 }
 .writer-toolbar {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 1px;
     padding: 2px 8px;
@@ -148,6 +155,21 @@
     z-index: 4;
     flex-shrink: 0;
     overflow: visible;
+}
+.writer-toolbar-cluster {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 1px;
+    flex: 1;
+    min-width: 0;
+}
+.writer-toolbar-cluster > * {
+    flex-shrink: 0;
+}
+.writer-toolbar-more {
+    position: static;
+    flex-shrink: 0;
 }
 .writer-tool {
     min-width: 28px;

@@ -29,7 +29,81 @@ export function mountWriterChrome({
     settingsBackTop,
     tree,
     onBookViewChange,
+    mobileTreeOpen,
+    mobileRailOpen,
+    backdrop,
 }) {
+    const mobileQuery = window.matchMedia("(max-width: 720px)");
+    let treeDrawerOpen = false;
+    let railDrawerOpen = false;
+    let drawerOpener = null;
+
+    function syncBackdrop() {
+        if (!backdrop) return;
+        backdrop.hidden = !(treeDrawerOpen || railDrawerOpen);
+    }
+    function setTreeDrawerOpen(open, opener) {
+        if (!mobileQuery.matches) return;
+        treeDrawerOpen = open;
+        if (open) railDrawerOpen = false;
+        shell?.classList.toggle("is-tree-drawer-open", treeDrawerOpen);
+        shell?.classList.toggle("is-rail-drawer-open", railDrawerOpen);
+        treeToggle?.setAttribute("aria-expanded", treeDrawerOpen ? "true" : "false");
+        mobileTreeOpen?.setAttribute("aria-expanded", treeDrawerOpen ? "true" : "false");
+        railToggle?.setAttribute("aria-expanded", railDrawerOpen ? "true" : "false");
+        mobileRailOpen?.setAttribute("aria-expanded", railDrawerOpen ? "true" : "false");
+        syncBackdrop();
+        if (treeDrawerOpen) {
+            drawerOpener = opener || mobileTreeOpen;
+            treeToggle?.focus();
+        } else if (!railDrawerOpen) {
+            drawerOpener?.focus();
+            drawerOpener = null;
+        }
+    }
+    function setRailDrawerOpen(open, opener) {
+        if (!mobileQuery.matches) return;
+        railDrawerOpen = open;
+        if (open) treeDrawerOpen = false;
+        shell?.classList.toggle("is-rail-drawer-open", railDrawerOpen);
+        shell?.classList.toggle("is-tree-drawer-open", treeDrawerOpen);
+        railToggle?.setAttribute("aria-expanded", railDrawerOpen ? "true" : "false");
+        mobileRailOpen?.setAttribute("aria-expanded", railDrawerOpen ? "true" : "false");
+        treeToggle?.setAttribute("aria-expanded", treeDrawerOpen ? "true" : "false");
+        mobileTreeOpen?.setAttribute("aria-expanded", treeDrawerOpen ? "true" : "false");
+        syncBackdrop();
+        if (railDrawerOpen) {
+            drawerOpener = opener || mobileRailOpen;
+            railToggle?.focus();
+        } else if (!treeDrawerOpen) {
+            drawerOpener?.focus();
+            drawerOpener = null;
+        }
+    }
+    function closeDrawers() {
+        setTreeDrawerOpen(false);
+        setRailDrawerOpen(false);
+    }
+    mobileTreeOpen?.addEventListener("click", (event) => setTreeDrawerOpen(true, event.currentTarget));
+    mobileRailOpen?.addEventListener("click", (event) => setRailDrawerOpen(true, event.currentTarget));
+    backdrop?.addEventListener("click", (event) => {
+        if (event.target === backdrop) closeDrawers();
+    });
+    window.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") return;
+        if (!mobileQuery.matches) return;
+        if (!treeDrawerOpen && !railDrawerOpen) return;
+        closeDrawers();
+    });
+    tree?.addEventListener("click", (event) => {
+        if (!mobileQuery.matches) return;
+        if (event.target.closest("[data-tree-open]")) setTreeDrawerOpen(false);
+    });
+    mobileQuery.addEventListener("change", (event) => {
+        if (!event.matches) closeDrawers();
+        setTreeCollapsed(treeCollapsed());
+        setRailCollapsed(railCollapsed());
+    });
     function treeCollapsed() {
         try {
             return localStorage.getItem(TREE_COLLAPSE_KEY) === "1";
@@ -38,7 +112,7 @@ export function mountWriterChrome({
         }
     }
     function setTreeCollapsed(collapsed) {
-        shell?.classList.toggle("is-tree-collapsed", collapsed);
+        shell?.classList.toggle("is-tree-collapsed", collapsed && !mobileQuery.matches);
         [treeToggle, settingsCollapse].forEach((btn) => {
             if (!btn) return;
             btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
@@ -53,6 +127,10 @@ export function mountWriterChrome({
     }
     setTreeCollapsed(treeCollapsed());
     function toggleTreeCollapsed() {
+        if (mobileQuery.matches) {
+            setTreeDrawerOpen(false);
+            return;
+        }
         setTreeCollapsed(!shell?.classList.contains("is-tree-collapsed"));
     }
     treeToggle?.addEventListener("click", toggleTreeCollapsed);
@@ -66,7 +144,7 @@ export function mountWriterChrome({
         }
     }
     function setRailCollapsed(collapsed) {
-        shell?.classList.toggle("is-rail-collapsed", collapsed);
+        shell?.classList.toggle("is-rail-collapsed", collapsed && !mobileQuery.matches);
         if (railToggle) {
             railToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
             railToggle.title = collapsed ? "Show sidebar" : "Hide sidebar";
@@ -80,6 +158,10 @@ export function mountWriterChrome({
     }
     setRailCollapsed(railCollapsed());
     railToggle?.addEventListener("click", () => {
+        if (mobileQuery.matches) {
+            setRailDrawerOpen(false);
+            return;
+        }
         setRailCollapsed(!shell?.classList.contains("is-rail-collapsed"));
     });
     function setPreviewMode(on) {
@@ -164,6 +246,8 @@ export function mountWriterChrome({
     }
     setTab(storedTab());
     setBookView("tree");
+    setTreeDrawerOpen(false);
+    setRailDrawerOpen(false);
     tabChapters?.addEventListener("click", () => setTab("chapters"));
     tabBook?.addEventListener("click", () => setTab("book"));
     tabSettings?.addEventListener("click", () => setBookView("settings"));

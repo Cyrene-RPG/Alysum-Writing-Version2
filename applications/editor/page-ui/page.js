@@ -193,6 +193,9 @@ async function boot() {
         tabSettings: document.getElementById("tabSettings"),
         settingsBackTop: document.getElementById("settingsBackTop"),
         tree: document.getElementById("chapterTree"),
+        mobileTreeOpen: document.getElementById("mobileTreeOpen"),
+        mobileRailOpen: document.getElementById("mobileRailOpen"),
+        backdrop: document.getElementById("writerShellBackdrop"),
         onBookViewChange(view) {
             if (view !== "settings") leavePreview();
         },

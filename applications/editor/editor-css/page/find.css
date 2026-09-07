@@ -1,4 +1,5 @@
-.writer-tool--find {
+.writer-tool--find,
+.writer-tool--more {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -6,6 +7,9 @@
 .writer-tool-menu {
     position: relative;
     flex: none;
+}
+.writer-toolbar-more.writer-tool-menu {
+    position: static;
 }
 .writer-tool-dropdown {
     position: absolute;
@@ -44,6 +48,19 @@
 }
 .writer-tool-dropdown--breaks {
     min-width: 220px;
+}
+.writer-tool-dropdown.writer-tool-dropdown--more:not([hidden]) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1px;
+    position: fixed;
+    z-index: 70;
+    width: 340px;
+    min-width: 340px;
+    max-width: 340px;
+    max-height: none;
+    overflow: visible;
 }
 .writer-tool-dropdown[hidden] { display: none !important; }
 .writer-toolbar[hidden] .writer-tool-dropdown { display: none !important; }
