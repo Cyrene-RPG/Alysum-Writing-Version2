@@ -4,7 +4,7 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { goToLogin } from "@alysum/desktop/app.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=10";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=11";
 import {
     addBodyChapter,
     lastOfKind,
@@ -15,7 +15,7 @@ import {
 import { countWordsInHtml, countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { recordTypedWords } from "@alysum/account/writing-stats.js";
-import { typedWordDelta, isPasteLikeInput } from "@alysum/statistics/typed-input.js";
+import { typedWordDelta, countedWordDelta, isPasteLikeInput } from "@alysum/statistics/typed-input.js";
 import { reviewSentencesForXp, recordPastedRegion } from "@alysum/statistics/sentence-review.js";
 import { paintChipInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
 import { initWorkspaceShell } from "/js/studio/shell.js?v=2";
@@ -306,14 +306,17 @@ async function boot() {
             ...book,
             sections: setChapterContent(book.sections, chapter.id, html),
         });
-        const typed = typedWordDelta(prevWords, countWordsInSections(book.sections), event);
-        if (typed > 0) sprintTypedWords += typed;
+        const nextWords = countWordsInSections(book.sections);
+        const typed = typedWordDelta(prevWords, nextWords, event);
+        if (typed > 0) sprintTypedWords += typed; // leaderboard: typed only, paste can't pad it
         if (!demo) {
+            const wordChange = countedWordDelta(prevWords, nextWords, event);
             recordTypedWords({
                 userId: uid,
                 supabase,
                 isLocal: session.mode !== "cloud",
-                typedDelta: typed,
+                added: Math.max(0, wordChange),
+                removed: Math.max(0, -wordChange),
             });
         }
         autosave.schedule(book);

@@ -17,7 +17,9 @@ function fromLocalRow() {
         imageUrl: String(row.profile_image_url || "").trim(),
         streak: row.streak,
         dailyWordGoal: row.daily_word_goal ?? row.dailyWordGoal,
+        wordGoalMode: row.word_goal_mode ?? row.wordGoalMode,
         writingDayTotals: row.writing_day_totals ?? row.writingDayTotals,
+        writingDayRemoved: row.writing_day_removed ?? row.writingDayRemoved,
         xp: row.xp,
         reputation: row.reputation,
         xpLevel: row.xp_level ?? row.xpLevel,
@@ -72,7 +74,7 @@ export async function loadWorkspaceProfile(supabase, session) {
         try {
             const { data: s, error: e } = await supabase
                 .from("users")
-                .select("xp, reputation, xp_level, writing_durable_words, worn_border, border_unlock_max, rep_color_unlock")
+                .select("xp, reputation, xp_level, writing_durable_words, worn_border, border_unlock_max, rep_color_unlock, word_goal_mode, writing_day_removed")
                 .eq("id", session.user.id)
                 .maybeSingle();
             if (!e) stats = s;
@@ -84,7 +86,9 @@ export async function loadWorkspaceProfile(supabase, session) {
             imageUrl: String(data?.profile_image_url || "").trim(),
             streak: data?.streak ?? fallback.streak,
             dailyWordGoal: data?.daily_word_goal ?? fallback.dailyWordGoal,
+            wordGoalMode: stats?.word_goal_mode ?? fallback.wordGoalMode,
             writingDayTotals: data?.writing_day_totals ?? fallback.writingDayTotals,
+            writingDayRemoved: stats?.writing_day_removed ?? fallback.writingDayRemoved,
             xp: stats?.xp ?? fallback.xp ?? 0,
             reputation: stats?.reputation ?? fallback.reputation ?? 0,
             xpLevel: stats?.xp_level ?? fallback.xpLevel ?? 0,

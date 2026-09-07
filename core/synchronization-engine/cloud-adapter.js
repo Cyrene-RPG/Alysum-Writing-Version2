@@ -104,12 +104,9 @@ function toCloudPatch(patch) {
     return out;
 }
 
-async function selectVisibleBooks(supabase) {
-    // Visibility is enforced by RLS on public.books (owner + invited editors +
-    // active collab members). Do not add a client-side user_id filter here — it
-    // drops manuscripts a writer legitimately reaches through book_editors /
-    // collab_memberships, and hides books whose row is owned by a legacy auth id.
-    const base = () => supabase.from("books").select("*");
+async function selectVisibleBooks(supabase, userId) {
+    const ownerId = String(userId || "").trim();
+    const base = () => supabase.from("books").select("*").eq("user_id", ownerId);
     let result = await base().order("updated", { ascending: false });
     if (result.error) {
         result = await base().order("updated_at", { ascending: false });
@@ -122,7 +119,7 @@ async function selectVisibleBooks(supabase) {
 
 export async function listBooks(supabase, userId) {
     if (!String(userId || "").trim()) return [];
-    const { data, error } = await selectVisibleBooks(supabase);
+    const { data, error } = await selectVisibleBooks(supabase, userId);
     if (error) throw error;
     return (data || []).map(fromCloudRow).filter((book) => book && book.id);
 }
@@ -156,6 +153,12 @@ export async function updateBook(supabase, userId, id, patch) {
 }
 
 export async function deleteBook(supabase, userId, id) {
-    const { error } = await supabase.from("books").delete().eq("id", id).eq("user_id", userId);
+    const { data, error } = await supabase
+        .from("books")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId)
+        .select("id");
     if (error) throw error;
+    if (!data?.length) throw new Error("Could not delete this book.");
 }

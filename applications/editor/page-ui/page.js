@@ -1,6 +1,6 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=10";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=11";
 import {
     countBookChapters,
     countBookFolders,
@@ -17,7 +17,7 @@ import { mountDocument } from "./document.js?v=10";
 import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=2";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { recordTypedWords } from "@alysum/account/writing-stats.js";
-import { typedWordDelta } from "@alysum/statistics/typed-input.js";
+import { countedWordDelta } from "@alysum/statistics/typed-input.js";
 import { reviewSentencesForXp, recordPastedRegion } from "@alysum/statistics/sentence-review.js";
 import { isProbablyOnline, onReconnect } from "@alysum/synchronization-engine/network.js";
 import { mountToolbar } from "./toolbar.js?v=8";
@@ -193,6 +193,9 @@ async function boot() {
         tabSettings: document.getElementById("tabSettings"),
         settingsBackTop: document.getElementById("settingsBackTop"),
         tree: document.getElementById("chapterTree"),
+        mobileTreeOpen: document.getElementById("mobileTreeOpen"),
+        mobileRailOpen: document.getElementById("mobileRailOpen"),
+        backdrop: document.getElementById("writerShellBackdrop"),
         onBookViewChange(view) {
             if (view !== "settings") leavePreview();
         },
@@ -290,12 +293,15 @@ async function boot() {
         }
         const prevWords = countWordsInSections(book.sections);
         book = withUpdatedWords(next);
-        // Only credit words the writer actually typed (not paste / undo / programmatic).
+        // Credit any real edit toward the day counter: typing + paste add, deletes
+        // pull down week/month. XP still only flows from typed sentences elsewhere.
+        const wordChange = countedWordDelta(prevWords, countWordsInSections(book.sections), options.event);
         recordTypedWords({
             userId: session.user?.id,
             supabase,
             isLocal: session.mode !== "cloud",
-            typedDelta: typedWordDelta(prevWords, countWordsInSections(book.sections), options.event),
+            added: Math.max(0, wordChange),
+            removed: Math.max(0, -wordChange),
         });
         book._rev = ++bookRev;
         paintWordCount(chapterWordsEl, totalWordsEl, book, selectedId);
@@ -508,7 +514,16 @@ async function boot() {
     paintOfflineStatus();
     if (openedFromCache && session.mode === "cloud") {
         void api.getBook(bookId).then((fresh) => {
-            if (!fresh || book._pending || bookRev > 0) return;
+            if (!fresh) {
+                // Revalidation came back empty: access to this book is gone
+                // (revoked editor/collab, or deleted). The cache is not an access
+                // grant — leave, unless we're holding unsynced local edits.
+                if (!book._pending && bookRev === 0 && isProbablyOnline()) {
+                    window.location.replace("/studio");
+                }
+                return;
+            }
+            if (book._pending || bookRev > 0) return;
             if (Number(fresh.updated || 0) <= Number(book.updated || 0)) return;
             book = withUpdatedWords({
                 ...fresh,

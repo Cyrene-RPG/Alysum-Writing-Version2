@@ -49,6 +49,11 @@ import {
     initCornerStyleOnPage
 } from "@alysum/site-appearance/js-runtime/corner-style.js";
 import {
+    GRADIENT_STYLES,
+    applyGradientStyle,
+    getStoredGradientStyleId
+} from "@alysum/site-appearance/js-runtime/gradient-style.js";
+import {
     applyUiColor,
     getStoredUiColorId,
     initUiColorOnPage
@@ -127,6 +132,29 @@ export function initCornerStylePicker() {
             b.classList.add("active");
         });
         els.cornerChipRow.appendChild(b);
+    });
+}
+
+export function initGradientStylePicker() {
+    if (!els.gradientChipRow || els.gradientChipRow.dataset.ready === "1") return;
+    els.gradientChipRow.dataset.ready = "1";
+    els.gradientChipRow.innerHTML = "";
+    const cur = getStoredGradientStyleId();
+    GRADIENT_STYLES.forEach((style) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "theme-chip" + (style.id === cur ? " active" : "");
+        b.dataset.gradientStyle = style.id;
+        b.textContent = style.label;
+        b.title = style.hint || "";
+        b.addEventListener("click", () => {
+            applyGradientStyle(style.id);
+            els.gradientChipRow.querySelectorAll(".theme-chip").forEach((x) => {
+                x.classList.remove("active");
+            });
+            b.classList.add("active");
+        });
+        els.gradientChipRow.appendChild(b);
     });
 }
 
@@ -254,6 +282,7 @@ export function initAppearancePickers() {
         bindEasyReadControl();
         initSurfaceStylePicker();
         initCornerStylePicker();
+        initGradientStylePicker();
         initThemePicker();
         initBodyBgPicker();
         initUiColorPicker();

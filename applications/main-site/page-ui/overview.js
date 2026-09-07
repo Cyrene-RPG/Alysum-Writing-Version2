@@ -6,7 +6,7 @@ import { fillWelcomeBar } from "/js/welcome-bar.js";
 import { getProfileRow } from "@alysum/synchronization-engine/local-adapter.js";
 import { mergeUserRow, aboutMeText, supportLinksFromSources } from "/js/settings/helpers.js";
 import { supportLinksList } from "@alysum/library/author-profile.js";
-import { fillProfileStats } from "/js/statistics-ui/profile-stats.js";
+import { fillProfileStats } from "/js/statistics-ui/profile-stats.js?v=1";
 
 function setAvatar(url, label) {
     const wrap = document.getElementById("ovAvatarWrap");

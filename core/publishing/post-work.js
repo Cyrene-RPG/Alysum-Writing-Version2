@@ -162,6 +162,20 @@ function upsertLocal(row) {
     writeLocalListings(rows);
 }
 
+export function removeLocalListing(id) {
+    const bookId = String(id || "");
+    if (!bookId) return;
+    writeLocalListings(readLocalListings().filter((row) => String(row.id) !== bookId));
+}
+
+function listingOwnerId(book, sessionUserId) {
+    const sessionId = String(sessionUserId || "").trim();
+    const manuscriptOwner = String(book?.user_id || book?.userId || "").trim();
+    if (!manuscriptOwner && !sessionId) return "";
+    if (manuscriptOwner && sessionId && manuscriptOwner !== sessionId) return "";
+    return manuscriptOwner || sessionId;
+}
+
 function listingErrorMessage(error, isUpdate = false) {
     const msg = String(error?.message || "");
     const extra = String(error?.details || error?.hint || "");
@@ -174,12 +188,16 @@ function listingErrorMessage(error, isUpdate = false) {
 }
 
 export async function saveLibraryListing(supabase, userId, book, form) {
+    const ownerId = listingOwnerId(book, userId);
+    if (!ownerId) {
+        throw new Error("Only the manuscript owner can publish this listing.");
+    }
     const data = buildLibraryPayload(book, form);
     if (!data.isPublished) {
-        upsertLocal({ id: book.id, user_id: userId || "", data });
+        upsertLocal({ id: book.id, user_id: ownerId, data });
         return data;
     }
-    if (supabase && userId) {
+    if (supabase && ownerId) {
         const bookId = String(book.id);
         const existingId = await fetchLibraryListingId(supabase, bookId);
         const isUpdate = Boolean(existingId) || isLibraryListed(book);
@@ -187,22 +205,22 @@ export async function saveLibraryListing(supabase, userId, book, form) {
         if (isUpdate) {
             const { error } = await supabase
                 .from("library")
-                .update({ data, user_id: userId, updated_at: updatedAt })
+                .update({ data, user_id: ownerId, updated_at: updatedAt })
                 .eq("id", bookId);
             if (error) throw new Error(listingErrorMessage(error, true));
         } else {
             const { error } = await supabase.from("library").upsert({
                 id: bookId,
-                user_id: userId,
+                user_id: ownerId,
                 data,
                 updated_at: updatedAt,
             });
             if (error) throw new Error(listingErrorMessage(error, false));
         }
-        upsertLocal({ id: book.id, user_id: userId, data });
+        upsertLocal({ id: book.id, user_id: ownerId, data });
         return data;
     }
-    upsertLocal({ id: book.id, user_id: userId || "", data });
+    upsertLocal({ id: book.id, user_id: ownerId, data });
     return data;
 }
 

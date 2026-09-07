@@ -49,7 +49,9 @@ export function fillProfileStats(data = {}, { isSelf = false, supabase = null } 
         reputation: rep,
         streak: data.streak,
         dailyWordGoal: data.daily_word_goal ?? data.dailyWordGoal,
+        wordGoalMode: data.word_goal_mode ?? data.wordGoalMode,
         writingDayTotals: data.writing_day_totals ?? data.writingDayTotals,
+        writingDayRemoved: data.writing_day_removed ?? data.writingDayRemoved,
         writingDurableWords: data.writing_durable_words ?? data.writingDurableWords,
     }, { userId: data.id });
 
@@ -65,15 +67,27 @@ export function fillProfileStats(data = {}, { isSelf = false, supabase = null } 
     const badgeMount = document.getElementById("ovBadge");
     if (badgeMount) badgeMount.innerHTML = badgeHtml(data.profile_image_url ?? data.profileImageUrl, data.display_name || data.username, level, repLevel);
 
-    // writing stats row (today / goal / streak / durable words)
+    // writing stats row — shape depends on the writer's chosen goal mode
     const wrow = document.getElementById("ovWritingStats");
     if (wrow) {
-        wrow.innerHTML = [
-            [`${s.wordsToday.toLocaleString()} / ${s.goal.toLocaleString()}`, "Words today"],
-            [String(s.goalStreak), "Goal streak"],
-            [String(s.streak), "Login streak"],
-            [s.durableWords.toLocaleString(), "Durable words"],
-        ].map(([v, l]) => `<span class="ov-wstat"><strong>${v}</strong>${l}</span>`).join("");
+        const cells = [];
+        if (s.mode === "goal") {
+            cells.push([`${s.wordsToday.toLocaleString()} / ${s.goal.toLocaleString()}`, "Words today"]);
+            cells.push([String(s.goalStreak), "Goal streak"]);
+        } else if (s.mode === "pace") {
+            const dot = s.paceState ? ` <span class="pace-dot pace-dot--${s.paceState}"></span>` : "";
+            cells.push([`${s.wordsToday.toLocaleString()}${dot}`, "Words today"]);
+            cells.push([`~${s.paceGoal.toLocaleString()}`, "Your pace"]);
+            cells.push([String(s.paceStreak), "Consistency"]);
+        } else {
+            cells.push([s.wordsToday.toLocaleString(), "Words today"]);
+            cells.push([String(s.writeStreak), "Writing streak"]);
+        }
+        cells.push([String(s.streak), "Login streak"]);
+        cells.push([s.durableWords.toLocaleString(), "Durable words"]);
+        wrow.innerHTML = cells
+            .map(([v, l]) => `<span class="ov-wstat"><strong>${v}</strong>${l}</span>`).join("");
+        document.getElementById("ovWritingBlock")?.removeAttribute("hidden");
     }
 
     const picker = document.getElementById("ovBadgePicker");

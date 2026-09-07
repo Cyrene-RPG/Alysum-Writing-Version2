@@ -19,6 +19,7 @@
     </script>
     <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=9" />
     <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes-dim/index.css" />
     <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=7" />
     <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=11" />
     <script src="/site-appearance/js-runtime/body-background-presets-data.js?v=3"></script>
@@ -143,9 +144,15 @@
             <section class="writer-main">
                 <div class="writer-main-scroll" id="writerWritePane">
                 <span class="writer-status" id="saveStatus" role="status" hidden></span>
-                <input class="writer-book-title" id="bookTitle" aria-label="Book title" />
-                <div class="writer-chapter-bar">
-                    <input class="writer-chapter-title" id="chapterTitle" aria-label="Chapter title" />
+                <div class="writer-mobile-titlebar" id="writerMobileTitlebar">
+                    <button type="button" class="writer-mobile-trigger" id="mobileTreeOpen" aria-label="Open chapters" aria-controls="chapterTree" aria-expanded="false">☰</button>
+                    <div class="writer-title-stack">
+                        <input class="writer-book-title" id="bookTitle" aria-label="Book title" />
+                        <div class="writer-chapter-bar">
+                            <input class="writer-chapter-title" id="chapterTitle" aria-label="Chapter title" />
+                        </div>
+                    </div>
+                    <button type="button" class="writer-mobile-trigger" id="mobileRailOpen" aria-label="Open listing look" aria-controls="writerRail" aria-expanded="false">☰</button>
                 </div>
                 <div class="writer-folder-view" id="folderView" hidden>
                     <p class="writer-folder-meta" id="folderMeta"></p>
@@ -166,6 +173,7 @@
                     <button type="button" class="writer-tree-toggle" id="railToggle" aria-expanded="true" title="Hide sidebar">›</button>
                 </div>
             </aside>
+            <div class="writer-shell-backdrop" id="writerShellBackdrop" hidden aria-hidden="true"></div>
         </div>
     </div>
     <button type="button" class="writer-typewriter-exit" id="typewriterExit" hidden aria-label="Leave typewriter mode">×</button>
@@ -219,8 +227,8 @@
         </div>
     </div>
     <div class="lib-toast" id="libToast" hidden></div>
-    <script src="/js/pwa-register.js?v=4" defer></script>
+    <script src="/js/pwa-register.js?v=5" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-    <script type="module" src="/js/editor/page.js?v=122"></script>
+    <script type="module" src="/js/editor/page.js?v=123"></script>
 </body>
 </html>

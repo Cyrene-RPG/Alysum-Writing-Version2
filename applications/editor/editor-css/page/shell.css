@@ -369,3 +369,119 @@ body {
     margin: 0;
     border-radius: 10px;
 }
+.writer-mobile-trigger {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    background: var(--alysum-ui-raised, #2a2a2a);
+    color: var(--text, #fff);
+    font: inherit;
+    font-size: 18px;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.writer-shell-backdrop {
+    display: none;
+}
+html.is-typewriter .writer-shell-backdrop {
+    display: none !important;
+}
+@media (max-width: 720px) {
+    .writer-shell {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        gap: 0;
+        padding: 0;
+    }
+    .writer-main {
+        width: 100%;
+        max-width: none;
+        height: 100%;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    .writer-tree,
+    .writer-rail {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        width: min(86vw, 320px);
+        max-width: 320px;
+        height: auto;
+        max-height: none;
+        z-index: 70;
+        border-radius: 0;
+        box-shadow: none;
+        transition: transform 0.25s ease;
+    }
+    .writer-tree {
+        left: 0;
+        transform: translateX(-100%);
+    }
+    .writer-rail {
+        right: 0;
+        transform: translateX(100%);
+    }
+    .writer-shell.is-tree-drawer-open .writer-tree {
+        transform: translateX(0);
+    }
+    .writer-shell.is-rail-drawer-open .writer-rail {
+        transform: translateX(0);
+    }
+    .writer-mobile-titlebar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 12px;
+        border-bottom: 1px solid var(--border);
+    }
+    .writer-title-stack {
+        flex: 1;
+        min-width: 0;
+    }
+    .writer-title-stack .writer-book-title,
+    .writer-title-stack .writer-chapter-title {
+        text-align: center;
+    }
+    .writer-title-stack .writer-chapter-bar {
+        justify-content: center;
+        border-bottom: 0;
+    }
+    .writer-mobile-trigger {
+        display: inline-flex;
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+    }
+    .writer-shell-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 65;
+        background: rgba(15, 23, 42, 0.55);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+    }
+    .writer-shell.is-tree-drawer-open .writer-shell-backdrop,
+    .writer-shell.is-rail-drawer-open .writer-shell-backdrop {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    #treeToggle,
+    #railToggle,
+    .writer-tab,
+    .writer-mobile-trigger {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+@media (max-width: 720px) and (prefers-reduced-motion: reduce) {
+    .writer-tree,
+    .writer-rail,
+    .writer-shell-backdrop {
+        transition: none;
+    }
+}

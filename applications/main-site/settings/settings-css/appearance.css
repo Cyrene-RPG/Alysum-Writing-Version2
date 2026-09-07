@@ -119,6 +119,11 @@
     max-width: 220px;
 }
 
+.appearance-tab-panel .appearance-grid--gradient {
+    grid-template-columns: repeat(2, minmax(96px, 140px));
+    max-width: 300px;
+}
+
 .appearance-tab-panel .corner-chip--round {
     border-radius: 50%;
     aspect-ratio: 1;
@@ -249,12 +254,16 @@
 }
 
 .appearance-subhead {
-    margin: 0 0 6px;
+    margin: 22px 0 6px;
     font-size: 14px;
     font-weight: 900;
     color: var(--ui-text, var(--text, #fff));
     letter-spacing: 0.05em;
     text-transform: uppercase;
+}
+
+.appearance-subhead:first-child {
+    margin-top: 0;
 }
 
 .appearance-mix-controls {

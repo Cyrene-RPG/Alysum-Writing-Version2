@@ -13,6 +13,7 @@ import {
     loadEditorGoogleFontBootstrap
 } from "./editor-google-fonts.js";
 import { SCENE_BREAK_PRESETS, buildSceneBreakHtml } from "./scene-breaks.js";
+import { bindToolbarOverflow, placeMorePanel } from "./toolbar-overflow.js";
 
 const INDENT_KEY = "alysum:editor:auto-indent";
 const SPACE_KEY = "alysum:editor:line-spacing";
@@ -40,6 +41,7 @@ const ACTIONS = [
 ];
 
 const SEARCH_ICON = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.2 10.2 L14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+const MORE_ICON = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="3.5" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="12.5" r="1.4" fill="currentColor"/></svg>`;
 
 function readAutoIndent() {
     try {
@@ -155,6 +157,7 @@ export function mountToolbar({
 
     const wordcount = mount.querySelector(".writer-wordcount");
     mount.innerHTML = [
+        `<div class="writer-toolbar-cluster">`,
         `<button type="button" class="writer-tool" data-indent-toggle aria-pressed="${indentOn ? "true" : "false"}" title="Auto indent" aria-label="Auto indent">Indent</button>`,
         ...ACTIONS.map((action) => (
             `<button type="button" class="writer-tool" data-command="${action.command}" data-value="${action.value || ""}" title="${action.title}" aria-label="${action.title}">${action.label}</button>`
@@ -164,9 +167,15 @@ export function mountToolbar({
         menuBlock("spacing", "Spacing", "Line spacing", spacingMenuHtml()),
         menuBlock("breaks", "Breaks", "Scene break", breakMenuHtml()),
         `<button type="button" class="writer-tool writer-tool--find" data-find-toggle title="Find" aria-label="Find">${SEARCH_ICON}</button>`,
-        `<button type="button" class="writer-tool writer-tool--type" data-typewriter title="Typewriter mode" aria-label="Typewriter mode">Type</button>`
+        `<button type="button" class="writer-tool writer-tool--type" data-typewriter title="Typewriter mode" aria-label="Typewriter mode">Type</button>`,
+        `</div>`,
+        `<div class="writer-tool-menu writer-toolbar-more" data-menu="more" hidden>`,
+        `<button type="button" class="writer-tool writer-tool--more" data-menu-toggle="more" aria-expanded="false" aria-haspopup="true" title="More" aria-label="More">${MORE_ICON}</button>`,
+        `<div class="writer-tool-dropdown writer-tool-dropdown--more" hidden></div>`,
+        `</div>`
     ].join("");
     if (wordcount) mount.appendChild(wordcount);
+    bindToolbarOverflow(mount);
 
     function typography() {
         return getChapterTypography?.() || { fontId: DEFAULT_FONT_ID, fontSizePx: String(DEFAULT_FONT_SIZE_PX) };
@@ -178,26 +187,38 @@ export function mountToolbar({
         });
     }
 
-    function closeMenus() {
+    function setMoreOpen(open) {
+        mount.closest(".writer-main")?.classList.toggle("is-more-open", open);
+    }
+
+    function closeMenus({ keepMore = false } = {}) {
         mount.querySelectorAll(".writer-tool-dropdown").forEach((el) => {
+            if (keepMore && el.classList.contains("writer-tool-dropdown--more")) return;
             el.hidden = true;
         });
         mount.querySelectorAll("[data-menu-toggle]").forEach((btn) => {
+            if (keepMore && btn.dataset.menuToggle === "more") return;
             btn.setAttribute("aria-expanded", "false");
         });
+        if (!keepMore) setMoreOpen(false);
     }
 
     function openMenu(id) {
-        closeMenus();
         const wrap = mount.querySelector(`[data-menu="${id}"]`);
-        const panel = wrap?.querySelector(".writer-tool-dropdown");
+        const panel = wrap?.querySelector(":scope > .writer-tool-dropdown");
         const btn = wrap?.querySelector("[data-menu-toggle]");
         if (!panel) return;
+        const keepMore = id !== "more" && !!wrap.closest(".writer-tool-dropdown--more");
+        closeMenus({ keepMore });
         if (id === "font") void ensureAllEditorGoogleFonts();
         paintActive(mount, typography(), editor.activeFontId?.());
         paintSpacing();
         panel.hidden = false;
         btn?.setAttribute("aria-expanded", "true");
+        if (id === "more") {
+            setMoreOpen(true);
+            placeMorePanel(btn, panel);
+        }
     }
 
     mount.addEventListener("mousedown", (event) => {
@@ -227,7 +248,7 @@ export function mountToolbar({
         const menuBtn = event.target.closest("[data-menu-toggle]");
         if (menuBtn) {
             const id = menuBtn.dataset.menuToggle;
-            const panel = mount.querySelector(`[data-menu="${id}"] .writer-tool-dropdown`);
+            const panel = mount.querySelector(`[data-menu="${id}"]`)?.querySelector(":scope > .writer-tool-dropdown");
             if (panel && !panel.hidden) closeMenus();
             else openMenu(id);
             return;

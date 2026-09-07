@@ -9,6 +9,7 @@ import {
     setSupportLinksDisabled,
 } from "/js/settings/author-page.js";
 import { applySecurityPanel, resetDeleteChallenge } from "/js/settings/security.js?v=3";
+import { setGoalUi } from "/js/settings/saves.js";
 import { applyChromeGradient, getStoredGradientThemeId, getThemePreview } from "@alysum/site-appearance/js-runtime/gradient-theme.js";
 import { getProfileRow, LOCAL_GUEST_USER_ID } from "@alysum/synchronization-engine/local-adapter.js";
 import { normalizeAccountType } from "@alysum/account/mode.js";
@@ -58,6 +59,8 @@ export function initLocalSettingsUi() {
     document.querySelectorAll('input[name="settingsAccountType"]').forEach((r) => {
         r.checked = r.value === acct;
     });
+
+    setGoalUi(profile.word_goal_mode, profile.daily_word_goal, profile.writing_day_totals);
 
     finishSettingsShell();
     applySecurityPanel(null, { local: true, username: "guest" });

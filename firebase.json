@@ -151,6 +151,7 @@
       { "source": "/js/editor/sortable/plugins/swap.js", "destination": "/applications/editor/page-ui/sortable/plugins/swap.js" },
       { "source": "/js/editor/sortable/plugins/multi-drag.js", "destination": "/applications/editor/page-ui/sortable/plugins/multi-drag.js" },
       { "source": "/js/editor/toolbar.js", "destination": "/applications/editor/page-ui/toolbar.js" },
+      { "source": "/js/editor/toolbar-overflow.js", "destination": "/applications/editor/page-ui/toolbar-overflow.js" },
       { "source": "/js/editor/document.js", "destination": "/applications/editor/page-ui/document.js" },
       { "source": "/js/word-wars/lobby.js", "destination": "/applications/word-wars/page-ui/lobby.js" },
       { "source": "/js/word-wars/demo.js", "destination": "/applications/word-wars/page-ui/demo.js" },

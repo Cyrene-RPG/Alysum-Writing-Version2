@@ -1,0 +1,8 @@
+/* PDF dark mode: keep readable accents on top of themed light vars */
+html[data-gradient-theme] body.dark {
+    --accent: color-mix(in srgb, var(--accent-soft) 85%, white);
+    --accent-hover: color-mix(in srgb, var(--accent-soft) 70%, white);
+    --btn-primary-bg: var(--accent-soft);
+    --btn-primary-bg-hover: var(--accent);
+    --link: color-mix(in srgb, var(--accent-soft) 80%, white);
+}

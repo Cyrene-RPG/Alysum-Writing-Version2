@@ -19,6 +19,7 @@
     </script>
     <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=6" />
     <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes-dim/index.css" />
     <link rel="stylesheet" href="/site-appearance/css-styles/typography.css" />
     <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css" />
     <script src="/site-appearance/js-runtime/body-background-presets-data.js?v=3"></script>
@@ -32,7 +33,7 @@
     <title>Profile — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="/css/settings/page.css" />
-    <link rel="stylesheet" href="/css/settings/overview.css?v=4" />
+    <link rel="stylesheet" href="/css/settings/overview.css?v=5" />
     <link rel="stylesheet" href="/css/workspace-nav.css?v=30" />
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js" defer></script>
 </head>
@@ -105,6 +106,10 @@
                 </div>
             </header>
             <div id="ovBooks">
+            <section class="ov-block ov-writing" id="ovWritingBlock" aria-labelledby="ovWritingTitle" hidden>
+                <h2 class="ov-heading" id="ovWritingTitle">Writing</h2>
+                <div class="ov-wstats" id="ovWritingStats"></div>
+            </section>
             <div class="ov-about-row">
                 <section class="ov-block" aria-labelledby="ovAboutTitle">
                     <h2 class="ov-heading" id="ovAboutTitle">About me</h2>
@@ -129,6 +134,6 @@
         </div>
         </div>
     </div>
-    <script type="module" src="/js/overview.js?v=6"></script>
+    <script type="module" src="/js/overview.js?v=7"></script>
 </body>
 </html>

@@ -208,6 +208,7 @@
                 "alysum-display-text-color-accent",
                 "alysum-surface-style",
                 "alysum-corner-style",
+                "alysum-gradient-style",
                 "alysum-appearance-mix",
                 "alysum-body-bg",
                 "alysum-body-bg-custom",
@@ -225,6 +226,7 @@
             root.removeAttribute("data-ui-color");
             root.removeAttribute("data-surface-style");
             root.removeAttribute("data-corner-style");
+            root.removeAttribute("data-flat-theme");
             root.removeAttribute("data-display-text-style");
             root.removeAttribute("data-display-text-color");
             root.removeAttribute("data-easy-read");
@@ -273,6 +275,12 @@
             root.setAttribute("data-corner-style", "sharp");
         } else {
             root.removeAttribute("data-corner-style");
+        }
+
+        if (localStorage.getItem("alysum-gradient-style") === "flat") {
+            root.setAttribute("data-flat-theme", "1");
+        } else {
+            root.removeAttribute("data-flat-theme");
         }
 
         var bodyBgPresets = window.__ALYSUM_BODY_BG_PRESET_COLORS || {};

@@ -38,11 +38,25 @@ export function isTypedInput(event) {
 /**
  * Word-count delta to credit as typed. Zero when the change was a paste / undo /
  * redo / drop / format / programmatic edit, or when it removed words.
+ * Still gates the Word Wars sprint leaderboard (pasting can't pad it).
  */
 export function typedWordDelta(prevWordCount, nextWordCount, event) {
     if (!isTypedInput(event)) return 0;
     const delta = Number(nextWordCount) - Number(prevWordCount);
     return Number.isFinite(delta) && delta > 0 ? Math.round(delta) : 0;
+}
+
+/**
+ * Net word-count change to credit toward the daily/period counter: any real
+ * trusted InputEvent — typing, paste, drop, delete, cut, undo/redo. Programmatic
+ * emits (setHtml, formatting, the Tab handler) carry no inputType and return 0.
+ * May be negative (a deletion).
+ */
+export function countedWordDelta(prevWordCount, nextWordCount, event) {
+    if (!event || typeof event !== "object" || event.isTrusted === false) return 0;
+    if (typeof event.inputType !== "string" || !event.inputType) return 0;
+    const delta = Number(nextWordCount) - Number(prevWordCount);
+    return Number.isFinite(delta) ? Math.round(delta) : 0;
 }
 
 /** inputTypes that drop non-typed content into the page — used to wrap paste regions. */

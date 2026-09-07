@@ -43,7 +43,7 @@ begin
 
     select u.email, u.reauthentication_token, u.reauthentication_sent_at
     into v_email, v_stored, v_sent_at
-    from auth.users as u
+    from auth.users as uimage.png
     where u.id = v_uid;
 
     if v_email is null or v_email = '' or v_stored is null or v_stored = '' or v_sent_at is null then

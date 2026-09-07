@@ -83,8 +83,8 @@ CREATE INDEX IF NOT EXISTS books_firebase_uid_idx ON public.books (firebase_uid)
 -- public.library — published catalog (JSON payload mirrors legacy Firestore)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.library (
-  id text PRIMARY KEY,
-  user_id uuid REFERENCES auth.users (id) ON DELETE SET NULL,
+  id text PRIMARY KEY REFERENCES public.books (id) ON DELETE CASCADE,
+  user_id uuid REFERENCES auth.users (id) ON DELETE CASCADE,
   data jsonb NOT NULL DEFAULT '{}'::jsonb,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
