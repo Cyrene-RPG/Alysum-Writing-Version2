@@ -43,7 +43,13 @@ function ensureLayer() {
       <div class="waypoint-stage" id="waypoint-burst"></div>
       <div class="waypoint-stage" id="waypoint-matrix">
         <canvas id="waypoint-tunnel"></canvas>
-        <div id="waypoint-loading-label">Entering Waypoint</div>
+        <div id="waypoint-loading-label">
+          <div class="waypoint-loading-title">Entering Waypoint</div>
+          <div class="waypoint-skip-hint">
+            <span class="waypoint-skip-hint-desk">space to skip</span>
+            <span class="waypoint-skip-hint-hand">double tap to quit</span>
+          </div>
+        </div>
         <div id="waypoint-loading-bar"><div id="waypoint-loading-fill"></div></div>
       </div>
       <div class="waypoint-stage" id="waypoint-rings"></div>
@@ -107,9 +113,7 @@ function showStage(id) {
 function isSkipKey(event) {
     if (event.repeat) return false;
     if (event.metaKey || event.ctrlKey || event.altKey) return false;
-    const key = event.key || "";
-    if (/^F\d{1,2}$/.test(key)) return false;
-    return true;
+    return event.code === "Space" || event.key === " ";
 }
 
 function later(ms) {
@@ -341,16 +345,32 @@ export async function playWaypointEntry(opts = {}) {
     if (playing) return;
     playing = true;
     skipCtl = new AbortController();
-    const onKey = (event) => {
-        if (!isSkipKey(event)) return;
-        event.preventDefault();
+    const skipNow = () => {
         if (skipCtl.signal.aborted) return;
         skipCtl.abort();
         stopWaypointAudio();
     };
+    const onKey = (event) => {
+        if (!isSkipKey(event)) return;
+        event.preventDefault();
+        skipNow();
+    };
+    let lastTapAt = 0;
+    const onTouchEnd = (event) => {
+        if (event.touches.length) return;
+        const now = performance.now();
+        if (now - lastTapAt < 420) {
+            event.preventDefault();
+            lastTapAt = 0;
+            skipNow();
+            return;
+        }
+        lastTapAt = now;
+    };
     window.addEventListener("keydown", onKey, true);
     loadCss();
     const seq = ensureLayer();
+    seq.addEventListener("touchend", onTouchEnd, { passive: false });
     const burst = document.getElementById("waypoint-burst");
     const rings = document.getElementById("waypoint-rings");
     const canvas = document.getElementById("waypoint-tunnel");
@@ -439,6 +459,7 @@ export async function playWaypointEntry(opts = {}) {
         abortShatter();
     } finally {
         window.removeEventListener("keydown", onKey, true);
+        seq.removeEventListener("touchend", onTouchEnd);
         skipCtl = null;
         playing = false;
     }

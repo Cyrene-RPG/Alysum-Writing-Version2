@@ -1,4 +1,4 @@
-const START_UP = "/applications/roadmap/sounds/start-up";
+const START_UP = "/site-appearance/sounds/waypoint-entry";
 const CLICK_R = `${START_UP}/ClickR.wav`;
 const LINK_START = `${START_UP}/LinkStart.wav`;
 const CHECK_1 = `${START_UP}/Check1.wav`;

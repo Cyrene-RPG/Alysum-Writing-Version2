@@ -62,7 +62,9 @@ function startScramble(el) {
     setTimeout(loop, 1500);
 }
 
-export function initRoadmapLink() {
+const WAYPOINT_HREF = "https://waypoint.spacemeadow.com/";
+
+export function initRoadmapLink({ openRoadmap } = {}) {
     if (document.querySelector(".wd-welcome-bar .glitch-corner")) return;
     const bar = document.querySelector(".wd-welcome-bar");
     if (!bar) return;
@@ -92,7 +94,7 @@ export function initRoadmapLink() {
     row.className = "glitch-row";
     const a = document.createElement("a");
     a.className = "glitch-btn";
-    a.href = "/roadmap";
+    a.href = WAYPOINT_HREF;
     a.innerHTML = "<strong>RoadMap</strong> / Bugs";
     a.addEventListener("click", (event) => {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -100,10 +102,8 @@ export function initRoadmapLink() {
         playClickR();
         const fromBar = document.querySelector(".wd-welcome-bar")?.dataset.waypointUser;
         void playWaypointEntry({ traveler: traveler || fromBar || "guest_user" }).then(() => {
-            try { sessionStorage.setItem("alysum:waypoint:enter", "1"); } catch { /* ignore */ }
-            document.documentElement.style.background = "#000";
-            document.body.style.background = "#000";
-            location.href = "/roadmap";
+            if (typeof openRoadmap === "function") return openRoadmap();
+            window.location.href = WAYPOINT_HREF;
         });
     });
     row.append(toggle, a);

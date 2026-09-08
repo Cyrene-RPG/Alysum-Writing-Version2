@@ -62,7 +62,7 @@ PAGES = {
     "/privacy-policy": "applications/main-site/pages/privacy-policy.html",
     "/terms-of-service": "applications/main-site/pages/terms-of-service.html",
     "/statistics-spec": "applications/main-site/pages/statistics-spec.html",
-    "/roadmap": "applications/roadmap/pages/roadmap.html",
+    "/roadmap": "applications/main-site/pages/roadmap-handoff.html",
 }
 
 
@@ -84,8 +84,6 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/word-wars/page-ui" / clean[len("/js/word-wars/") :]
     if clean.startswith("/js/library/"):
         return ROOT / "applications/library/page-ui" / clean[len("/js/library/") :]
-    if clean.startswith("/js/roadmap/"):
-        return ROOT / "applications/roadmap/page-ui" / clean[len("/js/roadmap/") :]
     if clean.startswith("/js/statistics-ui/"):
         return ROOT / "applications/main-site/statistics-ui" / clean[len("/js/statistics-ui/") :]
     if clean.startswith("/js/"):
@@ -111,8 +109,6 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/word-wars/word-wars-css" / clean[len("/css/word-wars/") :]
     if clean.startswith("/css/library/"):
         return ROOT / "applications/library/library-css" / clean[len("/css/library/") :]
-    if clean.startswith("/css/roadmap/"):
-        return ROOT / "applications/roadmap/roadmap-css" / clean[len("/css/roadmap/") :]
     if clean.startswith("/css/statistics-ui/"):
         return ROOT / "applications/main-site/statistics-ui" / clean[len("/css/statistics-ui/") :]
     if clean.startswith("/css/"):
@@ -134,7 +130,7 @@ def public_to_file(url_path: str) -> Path:
     if clean == "/word-wars.html":
         return ROOT / "applications/word-wars/pages/word-wars.html"
     if clean == "/roadmap.html":
-        return ROOT / "applications/roadmap/pages/roadmap.html"
+        return ROOT / "applications/main-site/pages/roadmap-handoff.html"
     if clean.endswith(".html") and "/" not in clean[1:]:
         return ROOT / "applications/main-site/pages" / clean[1:]
     return ROOT / clean[1:]

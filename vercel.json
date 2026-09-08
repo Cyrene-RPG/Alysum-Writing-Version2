@@ -85,10 +85,6 @@
       "destination": "/applications/library/page-ui/:path*"
     },
     {
-      "source": "/js/roadmap/:path*",
-      "destination": "/applications/roadmap/page-ui/:path*"
-    },
-    {
       "source": "/js/statistics-ui/:path*",
       "destination": "/applications/main-site/statistics-ui/:path*"
     },
@@ -129,10 +125,6 @@
       "destination": "/applications/library/library-css/:path*"
     },
     {
-      "source": "/css/roadmap/:path*",
-      "destination": "/applications/roadmap/roadmap-css/:path*"
-    },
-    {
       "source": "/css/statistics-ui/:path*",
       "destination": "/applications/main-site/statistics-ui/:path*"
     },
@@ -170,7 +162,7 @@
     },
     {
       "source": "/roadmap",
-      "destination": "/applications/roadmap/pages/roadmap.html"
+      "destination": "/applications/main-site/pages/roadmap-handoff.html"
     },
     {
       "source": "/book",
@@ -238,7 +230,7 @@
     },
     {
       "source": "/roadmap.html",
-      "destination": "/applications/roadmap/pages/roadmap.html"
+      "destination": "/applications/main-site/pages/roadmap-handoff.html"
     },
     {
       "source": "/:page.html",

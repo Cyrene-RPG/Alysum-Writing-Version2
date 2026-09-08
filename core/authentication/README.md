@@ -10,5 +10,6 @@ Who the user *is* lives in `core/account/`. Desktop vs local guest lives in `cor
 | session.js | Wire current session + sign-in changes |
 | redirect.js | OAuth return URLs |
 | logout.js | Sign out and go home |
+| open-roadmap.js | Hand the session to waypoint.spacemeadow.com |
 | delete-account.js | Remove the signed-in account |
 | presence.js | Online presence stub |

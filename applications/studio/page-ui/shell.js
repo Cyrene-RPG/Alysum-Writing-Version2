@@ -2,6 +2,7 @@
  * Welcome bar + logout for studio/editor. Do not import main-site modules.
  */
 import { wireLogoutButtons } from "@alysum/authentication/logout.js";
+import { openRoadmap } from "@alysum/authentication/open-roadmap.js";
 import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/appearance-loadout-menu.js?v=8";
 
 function closeWelcomePfpMenu() {
@@ -92,7 +93,7 @@ export function setWelcomeInitial(name) {
 export function initWorkspaceShell({ lead, accent, title, subtitle, name, imageUrl } = {}) {
     wireLogoutButtons(document);
     wirePfpMenu();
-    initAppearanceLoadoutMenu();
+    initAppearanceLoadoutMenu({ openRoadmap });
     if (lead != null || accent != null || title != null || subtitle != null) {
         setWelcomeCopy({
             lead: lead ?? "",

@@ -82,7 +82,7 @@ export function refreshAppearanceLoadoutMenu() {
     if (panel) renderItems(panel);
 }
 
-export function initAppearanceLoadoutMenu() {
+export function initAppearanceLoadoutMenu(opts = {}) {
     const nav = document.querySelector(".wd-nav");
     if (!nav) return;
     const menu = ensureMenu(nav);
@@ -91,7 +91,7 @@ export function initAppearanceLoadoutMenu() {
         if (existing) existing.textContent = "Themes";
         refreshAppearanceLoadoutMenu();
         scheduleChromeInk();
-        initRoadmapLink();
+        initRoadmapLink(opts);
         return;
     }
     menu.dataset.ready = "1";
@@ -115,5 +115,5 @@ export function initAppearanceLoadoutMenu() {
         if (e.key === "alysum-appearance-loadouts") refreshAppearanceLoadoutMenu();
     });
     scheduleChromeInk();
-    initRoadmapLink();
+    initRoadmapLink(opts);
 }
