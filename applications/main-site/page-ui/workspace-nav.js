@@ -1,6 +1,7 @@
 import { wireLogoutButtons } from "@alysum/authentication/logout.js";
 import { initWelcomePfpMenu } from "/js/welcome-bar.js";
 import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/appearance-loadout-menu.js";
+>>>>>>> b3a7337 (Roadmap 0.1)
 
 function navHref(page) {
     return page;

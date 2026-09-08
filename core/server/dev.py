@@ -23,6 +23,15 @@ TYPES = {
     ".svg": "image/svg+xml",
     ".woff2": "font/woff2",
     ".txt": "text/plain; charset=utf-8",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".mp4": "video/mp4",
+    ".mov": "video/quicktime",
+    ".wav": "audio/wav",
+    ".aac": "audio/aac",
+>>>>>>> b3a7337 (Roadmap 0.1)
 }
 
 EXACT = {

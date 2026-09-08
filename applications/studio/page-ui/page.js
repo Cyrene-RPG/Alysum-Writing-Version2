@@ -4,6 +4,7 @@ import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=11";
 import { createEmptyBook } from "@alysum/writing-engine/manuscript.js";
 import { countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { initWorkspaceShell } from "./shell.js?v=2";
+>>>>>>> b3a7337 (Roadmap 0.1)
 import { bindBookMenu } from "./book-menu.js?v=6";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { getWritingStats } from "@alysum/account/writing-stats.js";

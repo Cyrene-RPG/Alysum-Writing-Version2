@@ -15,6 +15,7 @@ import { countWordsInHtml, countWordsInSections } from "@alysum/writing-engine/w
 import { createAutosave } from "./autosave.js";
 import { mountDocument } from "./document.js?v=10";
 import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=2";
+>>>>>>> b3a7337 (Roadmap 0.1)
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { recordTypedWords } from "@alysum/account/writing-stats.js";
 import { countedWordDelta } from "@alysum/statistics/typed-input.js";

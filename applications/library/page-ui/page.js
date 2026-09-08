@@ -2,6 +2,7 @@ import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { initWorkspaceShell } from "/js/studio/shell.js?v=2";
+>>>>>>> b3a7337 (Roadmap 0.1)
 import { fetchLibraryCatalog } from "@alysum/library/author-profile.js?v=3";
 import { readLocalLibraryListings } from "@alysum/publishing/post-work.js?v=8";
 import { genreColor, genreDef, genreLabel, matchingGenreKeys, normalizeGenreList } from "@alysum/publishing/genres.js?v=4";

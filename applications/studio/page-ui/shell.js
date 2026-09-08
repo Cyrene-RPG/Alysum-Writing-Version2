@@ -3,6 +3,7 @@
  */
 import { wireLogoutButtons } from "@alysum/authentication/logout.js";
 import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/appearance-loadout-menu.js";
+>>>>>>> b3a7337 (Roadmap 0.1)
 
 function closeWelcomePfpMenu() {
     const menu = document.getElementById("welcomePfpMenu");

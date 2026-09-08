@@ -7,6 +7,7 @@ import {
     readAppearanceLoadouts
 } from "./appearance-loadout.js?v=3";
 import { scheduleChromeInk } from "./text-ink.js";
+>>>>>>> b3a7337 (Roadmap 0.1)
 
 function closeMenu(menu) {
     if (!menu) return;
