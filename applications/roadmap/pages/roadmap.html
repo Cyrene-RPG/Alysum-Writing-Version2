@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/",
+        "@alysum/statistics/": "/core/statistics/",
+        "@alysum/community/": "/core/community/",
+        "@alysum/roadmap/": "/core/roadmap/"
+      }
+    }
+    </script>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="/roadmap">
+    <title>WAYPOINT :: SYSTEM STATUS</title>
+    <link rel="stylesheet" href="/css/roadmap/page.css?v=8">
+    <link rel="stylesheet" href="/css/roadmap/nav-buttons.css?v=1">
+    <link rel="stylesheet" href="/css/roadmap/return-btn.css?v=2">
+    <link rel="stylesheet" href="/css/roadmap/ledger.css">
+    <link rel="stylesheet" href="/css/roadmap/forms.css">
+    <script src="/js/pwa-register.js" defer></script>
+    <script type="module" src="/js/vercel-analytics.js"></script>
+</head>
+<body>
+
+<canvas id="rain"></canvas>
+<div class="scanlines"></div>
+
+<div class="glitch-corner">
+  <a class="return-btn" href="/library">Return</a>
+</div>
+
+<div class="frame">
+  <header>
+    <div class="brand-row">
+      <h1>WAYPOINT<span id="whisperLine" class="whisper-line"></span><span class="cursor"></span></h1>
+      <span class="path">/var/log/system_status — preview build</span>
+    </div>
+    <nav>
+      <button class="active" data-page="roadmap" data-label="[ roadmap.log ]">[ roadmap.log ]</button>
+      <button data-page="suggestions" data-label="[ suggest_feature ]">[ suggest_feature ]</button>
+      <button data-page="bugs" data-label="[ bugs.log ]">[ bugs.log ]</button>
+      <button data-page="report" data-label="[ file_report ]">[ file_report ]</button>
+    </nav>
+  </header>
+
+  <section id="roadmap" class="page active">
+    <div class="page-head">
+      <h2>trace --status</h2>
+      <p>Compiled from <span id="enchantLine" class="enchant-line"></span></p>
+    </div>
+
+    <div class="route">
+      <div class="zone">
+        <div class="zone-head"><h3>Planned</h3><span class="zone-count" id="plannedCount">[0]</span></div>
+        <div id="plannedZone"></div>
+      </div>
+      <div class="zone">
+        <div class="zone-head"><h3>In Progress</h3><span class="zone-count" id="progressCount">[0]</span></div>
+        <div id="progressZone"></div>
+      </div>
+      <div class="zone">
+        <div class="zone-head"><h3>Done</h3><span class="zone-count" id="doneCount">[0]</span></div>
+        <div id="doneZone"></div>
+      </div>
+    </div>
+
+    <div class="lock-note">edit data/roadmap.json → git push → status updates live</div>
+  </section>
+
+  <section id="suggestions" class="page">
+    <div class="page-head">
+      <h2>suggest --feature</h2>
+      <p>Pitch something we haven't built yet. Top-upvoted suggestions get pulled onto the roadmap.</p>
+    </div>
+
+    <div class="toolbar">
+      <div class="filters" id="suggestFilters">
+        <button class="active" data-filter="top">TOP</button>
+        <button data-filter="newest">NEWEST</button>
+      </div>
+      <button class="new-report" id="suggestToggle" type="button">
+        + suggest_feature <span class="quota-pill" id="suggestQuotaPill">0/1 used today</span>
+      </button>
+    </div>
+
+    <div class="suggest-panel" id="suggestPanel">
+      <div class="field">
+        <label for="suggestTitle">Feature title</label>
+        <input type="text" id="suggestTitle" placeholder="What should we build?">
+        <div class="field-error" id="suggestTitleError">Title is required.</div>
+      </div>
+      <div class="field">
+        <label for="suggestBody">Why it matters</label>
+        <textarea id="suggestBody" placeholder="What problem would this solve for you?"></textarea>
+      </div>
+      <div class="suggest-actions">
+        <button class="submit-btn" id="suggestSubmit" type="button">submit_suggestion</button>
+        <button class="cancel-link" id="suggestCancel" type="button">cancel</button>
+      </div>
+      <div class="field-error" id="suggestSubmitError"></div>
+    </div>
+
+    <div class="suggest-limit-note" id="suggestLimitNote">
+      limit reached — 1 suggestion per user per day. Resets at midnight, filed as user:you.
+    </div>
+
+    <div class="ledger" id="suggestionLedger"></div>
+  </section>
+
+  <section id="bugs" class="page">
+    <div class="page-head">
+      <h2>grep --bugs</h2>
+      <p>Found a break in the system? Authenticate to file a report. Read access is open to all.</p>
+    </div>
+
+    <div class="toolbar">
+      <div class="filters" id="bugFilters">
+        <button class="active" data-filter="all">ALL</button>
+        <button data-filter="open">OPEN</button>
+        <button data-filter="ack">ACK</button>
+        <button data-filter="fixed">FIXED</button>
+        <button data-filter="top">TOP</button>
+      </div>
+      <button class="new-report" id="bugsFileReport" type="button">+ file_report</button>
+    </div>
+
+    <div class="ledger" id="bugLedger"></div>
+  </section>
+
+  <section id="report" class="page">
+    <div class="page-head">
+      <h2>file_report --new</h2>
+      <p id="reportAuthLine">Authenticated as user:you. Submissions are capped at 3 per rolling hour to keep the log readable.</p>
+    </div>
+
+    <div id="reportFrame">
+      <div class="quota">
+        <span>rate_limit: <span class="quota-count" id="quotaText">0 / 3 used this hour</span></span>
+        <div class="quota-bar" id="quotaBar">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <div class="blocked-note">
+        LIMIT REACHED — 3/3 reports filed this hour. Resets in <span id="resetTimer">41 min</span>. Try again then, or edit an existing report instead.
+      </div>
+
+      <div class="form-wrap">
+        <div class="field">
+          <label for="reportTitle">Title</label>
+          <input type="text" id="reportTitle" placeholder="Short, specific summary of the bug">
+          <div class="field-error" id="reportTitleError"></div>
+        </div>
+        <div class="field">
+          <label for="reportBody">Description</label>
+          <textarea id="reportBody" placeholder="What happened? What did you expect? Steps to reproduce, browser/device if relevant."></textarea>
+        </div>
+        <div class="field">
+          <label for="reportSeverity">Severity</label>
+          <select id="reportSeverity">
+            <option value="minor">Minor — cosmetic, doesn't block anything</option>
+            <option value="normal" selected>Normal — annoying but has a workaround</option>
+            <option value="major">Major — blocks a core action</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Attachments</label>
+          <div class="dropzone" id="dropzone">
+            <div class="dz-title">drop files or click to browse</div>
+            <div class="dz-sub">images (png/jpg/gif) or video (mp4/mov) — up to 5 files, 25MB each</div>
+            <input type="file" id="fileInput" multiple accept="image/*,video/*">
+          </div>
+          <div class="attachments" id="attachments"></div>
+        </div>
+        <div class="field-hint">Filed as user:you · duplicate titles will be flagged before submit</div>
+        <div class="field-error" id="reportSubmitError"></div>
+
+        <div class="form-actions">
+          <button class="submit-btn" id="reportSubmit" type="button">submit_report</button>
+          <button class="cancel-link" id="reportCancel" type="button">cancel</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script type="module" src="/js/roadmap/page.js?v=10"></script>
+</body>
+</html>

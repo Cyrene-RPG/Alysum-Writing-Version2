@@ -1,0 +1,89 @@
+nav button{
+  position:relative;
+  overflow:hidden;
+  background:none;
+  border:none;
+  font-family:'Share Tech Mono', monospace;
+  font-size:13px;
+  letter-spacing:1px;
+  color:var(--green-dim);
+  padding:6px 18px 6px 0;
+  margin-right:10px;
+  cursor:pointer;
+  text-transform:uppercase;
+  transition:color 0.15s ease, text-shadow 0.15s ease;
+}
+nav button.active{
+  color:var(--green-bright);
+  text-shadow:0 0 6px rgba(63,243,90,0.6);
+}
+nav button:hover{
+  color:var(--green-bright);
+  text-shadow:0 0 4px rgba(63,243,90,0.5), 0 0 10px rgba(63,243,90,0.3);
+}
+nav button.active:hover{
+  text-shadow:0 0 6px rgba(63,243,90,0.8), 0 0 14px rgba(63,243,90,0.4);
+}
+
+nav button::before, nav button::after{
+  content:attr(data-label);
+  position:absolute;
+  top:0; left:0; right:0; bottom:0;
+  display:flex;
+  align-items:center;
+  padding:6px 18px 6px 0;
+  opacity:0;
+  pointer-events:none;
+}
+nav button::before{ color:#00FFF7; mix-blend-mode:screen; }
+nav button::after{ color:#FF2D6B; mix-blend-mode:screen; }
+
+nav button.glitching{
+  animation:click-jitter 0.5s steps(2, end) 1;
+}
+nav button.glitching::before{ animation:click-slice-1 0.5s steps(2,end) 1; }
+nav button.glitching::after{ animation:click-slice-2 0.5s steps(2,end) 1; }
+
+@keyframes click-jitter{
+  0%{ transform:translate(0,0); }
+  10%{ transform:translate(-2px,1px); }
+  20%{ transform:translate(2px,-1px); }
+  30%{ transform:translate(-1px,-1px); }
+  40%{ transform:translate(1px,1px); }
+  50%{ transform:translate(-2px,0); }
+  60%{ transform:translate(2px,1px); }
+  70%{ transform:translate(-1px,1px); }
+  80%{ transform:translate(1px,-1px); }
+  100%{ transform:translate(0,0); }
+}
+@keyframes click-slice-1{
+  0%{ opacity:0; clip-path:inset(0 0 0 0); }
+  8%{ opacity:0.9; clip-path:inset(10% 0 60% 0); transform:translate(-4px,0); }
+  18%{ opacity:0.9; clip-path:inset(55% 0 5% 0); transform:translate(3px,0); }
+  28%{ opacity:0; }
+  45%{ opacity:0.85; clip-path:inset(70% 0 10% 0); transform:translate(4px,0); }
+  55%{ opacity:0; }
+  70%{ opacity:0.8; clip-path:inset(5% 0 80% 0); transform:translate(-3px,0); }
+  82%{ opacity:0; }
+  100%{ opacity:0; }
+}
+@keyframes click-slice-2{
+  0%{ opacity:0; clip-path:inset(0 0 0 0); }
+  6%{ opacity:0.9; clip-path:inset(35% 0 40% 0); transform:translate(4px,0); }
+  16%{ opacity:0.9; clip-path:inset(75% 0 5% 0); transform:translate(-3px,0); }
+  26%{ opacity:0; }
+  50%{ opacity:0.85; clip-path:inset(15% 0 65% 0); transform:translate(-4px,0); }
+  60%{ opacity:0; }
+  75%{ opacity:0.9; clip-path:inset(50% 0 20% 0); transform:translate(3px,0); }
+  85%{ opacity:0; }
+  100%{ opacity:0; }
+}
+
+@media (max-width:720px){
+  nav button{
+    margin-right:4px;
+  }
+  nav button::before, nav button::after{
+    padding:4px 3px 4px 0;
+  }
+}

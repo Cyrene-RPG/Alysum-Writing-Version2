@@ -4,8 +4,12 @@ import { mountBookSettings } from "../settings.js?v=5";
 import { mountLibraryPreview } from "../library-preview.js?v=51";
 import { mountPageLookRail } from "../page-look-rail.js?v=17";
 import { confirmAction } from "../prompt.js";
+<<<<<<< HEAD
 import { setWelcomeCopy } from "../shell.js?v=2";
 >>>>>>> b3a7337 (Roadmap 0.1)
+=======
+import { setWelcomeCopy } from "../shell.js?v=9";
+>>>>>>> 8891da4 (Roadmap 0.1)
 
 export function mountPreviewSession({
     shell,

@@ -7,7 +7,11 @@ import {
     readAppearanceLoadouts
 } from "./appearance-loadout.js?v=3";
 import { scheduleChromeInk } from "./text-ink.js";
+<<<<<<< HEAD
 >>>>>>> b3a7337 (Roadmap 0.1)
+=======
+import { initRoadmapLink } from "./roadmap-link.js?v=8";
+>>>>>>> 8891da4 (Roadmap 0.1)
 
 function closeMenu(menu) {
     if (!menu) return;
@@ -91,6 +95,7 @@ export function initAppearanceLoadoutMenu() {
         if (existing) existing.textContent = "Themes";
         refreshAppearanceLoadoutMenu();
         scheduleChromeInk();
+        initRoadmapLink();
         return;
     }
     menu.dataset.ready = "1";
@@ -114,4 +119,5 @@ export function initAppearanceLoadoutMenu() {
         if (e.key === "alysum-appearance-loadouts") refreshAppearanceLoadoutMenu();
     });
     scheduleChromeInk();
+    initRoadmapLink();
 }
