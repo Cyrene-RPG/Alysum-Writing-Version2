@@ -3,12 +3,7 @@ import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=11";
 import { createEmptyBook } from "@alysum/writing-engine/manuscript.js";
 import { countWordsInSections } from "@alysum/writing-engine/word-count.js";
-<<<<<<< HEAD
-import { initWorkspaceShell } from "./shell.js?v=2";
->>>>>>> b3a7337 (Roadmap 0.1)
-=======
 import { initWorkspaceShell } from "./shell.js?v=9";
->>>>>>> 8891da4 (Roadmap 0.1)
 import { bindBookMenu } from "./book-menu.js?v=6";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { getWritingStats } from "@alysum/account/writing-stats.js";
@@ -112,13 +107,43 @@ function renderGoal(goalMount, labelMount, fillMount, profile, userId) {
     const titleEl = document.getElementById("studioGoalTitle");
     const streakEl = document.getElementById("studioGoalStreak");
 
-    goalMount.classList.remove("hidden", "studio-goal--track", "studio-goal--goal", "studio-goal--pace");
-    goalMount.classList.add(`studio-goal--${s.mode}`);
+    goalMount.classList.remove("hidden", "studio-goal--track", "studio-goal--goal", "studio-goal--pace", "has-goal-bar", "is-celebrating");
     fillMount.classList.remove("is-green", "is-yellow", "is-purple");
 
+    // Feature switched off in Settings: keep counting silently, just hide the bar.
+    if (!s.enabled) {
+        goalMount.classList.add("hidden");
+        return;
+    }
+
+    goalMount.classList.add(`studio-goal--${s.mode}`);
+
     if (s.mode === "track") {
-        if (titleEl) titleEl.textContent = "Today's writing";
-        labelMount.textContent = `${s.wordsToday.toLocaleString()} words`;
+        const cp = s.checkpoint;
+        const hasTargets = !!(cp && cp.list.length);
+        const target = hasTargets ? cp.next : null;   // rolling goal post; null once all reached
+        const reached = hasTargets && target == null;
+
+        if (titleEl) titleEl.textContent = hasTargets ? "Word goal today" : "Today's writing";
+
+        if (!hasTargets) {
+            labelMount.textContent = `${s.wordsToday.toLocaleString()} words`;
+        } else if (s.goalHidden) {
+            // Hidden — no bar. Plain count until reached, then a celebratory line.
+            goalMount.classList.toggle("is-celebrating", reached);
+            labelMount.textContent = reached
+                ? `🎉 Goal reached · ${s.wordsToday.toLocaleString()} words`
+                : `${s.wordsToday.toLocaleString()} words`;
+        } else {
+            // Shown — one bar exactly like Writers Challenge, target rolls to the next mark.
+            goalMount.classList.add("has-goal-bar");
+            fillMount.style.width = reached
+                ? "100%"
+                : `${Math.min(100, Math.round((s.wordsToday / target) * 100))}%`;
+            labelMount.textContent = reached
+                ? `${s.wordsToday.toLocaleString()} · done`
+                : `${s.wordsToday.toLocaleString()} / ${target.toLocaleString()}`;
+        }
         if (streakEl) streakEl.textContent = s.writeStreak > 0 ? `${s.writeStreak}-day run` : "";
         return;
     }

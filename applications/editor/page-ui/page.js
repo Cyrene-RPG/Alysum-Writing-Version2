@@ -14,14 +14,9 @@ import {
 import { countWordsInHtml, countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { createAutosave } from "./autosave.js";
 import { mountDocument } from "./document.js?v=10";
-<<<<<<< HEAD
-import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=2";
->>>>>>> b3a7337 (Roadmap 0.1)
-=======
 import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=9";
->>>>>>> 8891da4 (Roadmap 0.1)
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
-import { recordTypedWords } from "@alysum/account/writing-stats.js";
+import { recordTypedWords, getWritingStats } from "@alysum/account/writing-stats.js";
 import { countedWordDelta } from "@alysum/statistics/typed-input.js";
 import { reviewSentencesForXp, recordPastedRegion } from "@alysum/statistics/sentence-review.js";
 import { isProbablyOnline, onReconnect } from "@alysum/synchronization-engine/network.js";
@@ -226,7 +221,48 @@ async function boot() {
             name: profile.name,
             imageUrl: profile.imageUrl,
         });
+        primeGoalMilestones();
     });
+
+    // Daily Goal (track) mode set to "hidden": no Studio bar, so celebrate each
+    // checkpoint/goal with a toast here as it's crossed while writing.
+    const goalToastEl = document.getElementById("libToast");
+    let lastGoalHit = 0;
+    let goalMilestonesPrimed = false;
+    function goalStatsNow() {
+        return getWritingStats(profile || {}, { userId: session.user?.id });
+    }
+    function primeGoalMilestones() {
+        lastGoalHit = goalStatsNow().checkpoint?.hit || 0;
+        goalMilestonesPrimed = true;
+    }
+    function showGoalToast(text) {
+        if (!goalToastEl) return;
+        goalToastEl.textContent = text;
+        goalToastEl.hidden = false;
+        clearTimeout(showGoalToast._t);
+        showGoalToast._t = setTimeout(() => { goalToastEl.hidden = true; }, 2600);
+    }
+    function checkGoalMilestones() {
+        // Cheap pre-check so the hot path skips getWritingStats for everyone else.
+        const mode = profile?.wordGoalMode ?? profile?.word_goal_mode;
+        const hidden = profile?.writingGoalHidden ?? profile?.writing_goal_hidden;
+        if (mode !== "track" || !hidden) return;
+        const s = goalStatsNow();
+        const cp = s.checkpoint;
+        if (!s.enabled || s.mode !== "track" || !s.goalHidden || !cp || !cp.list.length) {
+            lastGoalHit = cp?.hit || 0;
+            return;
+        }
+        if (!goalMilestonesPrimed) { lastGoalHit = cp.hit; goalMilestonesPrimed = true; return; }
+        if (cp.hit > lastGoalHit) {
+            const crossed = cp.list[cp.hit - 1];
+            showGoalToast(cp.next == null
+                ? `🎉 Goal reached — ${s.wordsToday.toLocaleString()} words today`
+                : `🎉 ${crossed.toLocaleString()} words — checkpoint reached`);
+        }
+        lastGoalHit = cp.hit;
+    }
     if (bookTitle) bookTitle.value = book.title || "";
 
     let bookRev = 0;
@@ -308,6 +344,7 @@ async function boot() {
             added: Math.max(0, wordChange),
             removed: Math.max(0, -wordChange),
         });
+        if (wordChange > 0) checkGoalMilestones();
         book._rev = ++bookRev;
         paintWordCount(chapterWordsEl, totalWordsEl, book, selectedId);
         if (itemKind(currentChapter(book, selectedId)) === "folder") {

@@ -104,12 +104,7 @@
                 <a href="/library">Library</a>
             </div>
         </nav>
-<<<<<<< HEAD
-        <script type="module" src="/js/workspace-nav.js?v=27"></script>
->>>>>>> b3a7337 (Roadmap 0.1)
-=======
         <script type="module" src="/js/workspace-nav.js?v=34"></script>
->>>>>>> 8891da4 (Roadmap 0.1)
 
     <div class="wrap">
     <div class="panel" id="loadingPanel">
@@ -296,40 +291,70 @@
         </div>
 
         <section class="profile-box profile-goal-box" id="daily-goal" aria-labelledby="dailyGoalTitle">
-            <h3 class="profile-box-title" id="dailyGoalTitle">Daily writing</h3>
-            <p class="hint">Choose how you want to relate to a daily goal. Switch any time — your writing is tracked either way.</p>
-            <div id="wordGoalModeGroup" role="radiogroup" aria-label="Daily writing mode">
-                <label class="goal-mode-row">
-                    <input type="radio" name="wordGoalMode" value="track" />
-                    <span class="goal-mode-card">
-                        <span class="goal-mode-name">Track my writing</span>
-                        <span class="goal-mode-note">No target. Just stats to see how much you write each day.</span>
-                    </span>
-                </label>
-                <label class="goal-mode-row">
-                    <input type="radio" name="wordGoalMode" value="goal" />
-                    <span class="goal-mode-card">
-                        <span class="goal-mode-name">Reach a daily goal</span>
-                        <span class="goal-mode-note">Set a daily word target and challenge yourself to reach it.</span>
-                    </span>
-                </label>
-                <label class="goal-mode-row">
-                    <input type="radio" name="wordGoalMode" value="pace" />
-                    <span class="goal-mode-card">
-                        <span class="goal-mode-name">Maintain your pace</span>
-                        <span class="goal-mode-note">Your goal adapts to your recent activity. Stay consistent with your own habits.</span>
-                    </span>
+            <div class="daily-writing-head">
+                <h3 class="profile-box-title" id="dailyGoalTitle">Daily writing</h3>
+                <label class="daily-writing-switch">
+                    <input type="checkbox" id="dailyWritingToggle" />
+                    <span class="daily-writing-switch-track" aria-hidden="true"></span>
+                    <span class="daily-writing-switch-label">On</span>
                 </label>
             </div>
-            <div id="goalTargetFields" hidden>
-                <p class="hint">Words added toward your book each day. Deleting words doesn't lower today's count. Minimum 100.</p>
-                <div class="goal-preset-row" id="goalPresetRow" role="radiogroup" aria-label="Daily word goal"></div>
-                <div class="field goal-custom-field">
-                    <label for="goalCustomInput">Custom goal</label>
-                    <input type="number" id="goalCustomInput" min="100" max="20000" step="50" inputmode="numeric" />
+            <p class="hint">Keep a rhythm with your writing, or switch it off. Your words are still counted either way.</p>
+            <div id="dailyWritingBody">
+                <div id="wordGoalModeGroup" role="radiogroup" aria-label="Daily writing mode">
+                    <label class="goal-mode-row">
+                        <input type="radio" name="wordGoalMode" value="track" />
+                        <span class="goal-mode-card">
+                            <span class="goal-mode-name">Daily Goal</span>
+                            <span class="goal-mode-note">Write daily, see how much you write, add goals/checkpoints if you wish.</span>
+                        </span>
+                    </label>
+                    <label class="goal-mode-row">
+                        <input type="radio" name="wordGoalMode" value="goal" />
+                        <span class="goal-mode-card">
+                            <span class="goal-mode-name">Writers Challenge</span>
+                            <span class="goal-mode-note">Write over 100+ words to challenge yourself toward a new top best.</span>
+                        </span>
+                    </label>
+                    <label class="goal-mode-row">
+                        <input type="radio" name="wordGoalMode" value="pace" />
+                        <span class="goal-mode-card">
+                            <span class="goal-mode-name">Maintain your pace</span>
+                            <span class="goal-mode-note">Your goal adapts to your recent activity. Stay consistent with your own habits.</span>
+                        </span>
+                    </label>
                 </div>
+                <div id="goalTargetFields" hidden>
+                    <p class="hint">Words added toward your book each day. Deleting words doesn't lower today's count. Aim for 100 or more.</p>
+                    <input type="range" id="goalSlider" min="100" max="5000" step="50" list="goalNotches" aria-label="Daily word goal" />
+                    <datalist id="goalNotches"></datalist>
+                    <div class="goal-notch-row" id="goalNotchRow"></div>
+                    <div class="field goal-custom-field">
+                        <label for="goalCustomInput">Custom Challenge</label>
+                        <input type="number" id="goalCustomInput" min="100" max="20000" step="50" inputmode="numeric" />
+                    </div>
+                </div>
+                <div id="sprintCheckpointFields" hidden>
+                    <p class="hint">Any number smaller than your goal is a checkpoint.</p>
+                    <div class="goal-checkpoint-fields">
+                        <div class="field goal-custom-field goal-target-field">
+                            <label for="dailyGoalInput">Goal</label>
+                            <input type="number" id="dailyGoalInput" min="1" max="20000" step="50" inputmode="numeric" placeholder="e.g. 1000" />
+                        </div>
+                        <div class="field goal-custom-field goal-checkpoints-field">
+                            <label for="checkpointsInput">Checkpoints (optional)</label>
+                            <input type="text" id="checkpointsInput" inputmode="numeric" placeholder="e.g. 200, 500" />
+                        </div>
+                    </div>
+                    <div class="checkpoints-preview" id="checkpointsPreview"></div>
+                    <div class="goal-visibility-row" id="goalVisibilityRow" role="radiogroup" aria-label="Goal visibility">
+                        <button type="button" class="goal-visibility-btn" data-goal-visibility="show">Show Goal</button>
+                        <button type="button" class="goal-visibility-btn" data-goal-visibility="hide">Hide Goal</button>
+                    </div>
+                    <p class="hint" id="goalVisibilityHint"></p>
+                </div>
+                <p class="hint goal-pace-line" id="goalPaceLine" hidden></p>
             </div>
-            <p class="hint goal-pace-line" id="goalPaceLine" hidden></p>
             <div class="profile-box-actions">
                 <button type="button" class="btn btn-primary" id="saveGoalBtn">Save</button>
                 <span class="save-prompt" id="goalMsg" role="status"></span>

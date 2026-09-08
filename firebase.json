@@ -81,9 +81,6 @@
       { "source": "/css/library/reader-author.css", "destination": "/applications/library/library-css/reader-author.css" },
       { "source": "/css/library/reader-comments.css", "destination": "/applications/library/library-css/reader-comments.css" },
       { "source": "/css/library/book.css", "destination": "/applications/library/library-css/book.css" },
-<<<<<<< HEAD
->>>>>>> b3a7337 (Roadmap 0.1)
-=======
       { "source": "/js/roadmap/page.js", "destination": "/applications/roadmap/page-ui/page.js" },
       { "source": "/js/roadmap/tabs.js", "destination": "/applications/roadmap/page-ui/tabs.js" },
       { "source": "/js/roadmap/rain.js", "destination": "/applications/roadmap/page-ui/rain.js" },
@@ -98,7 +95,6 @@
       { "source": "/css/roadmap/return-btn.css", "destination": "/applications/roadmap/roadmap-css/return-btn.css" },
       { "source": "/css/roadmap/ledger.css", "destination": "/applications/roadmap/roadmap-css/ledger.css" },
       { "source": "/css/roadmap/forms.css", "destination": "/applications/roadmap/roadmap-css/forms.css" },
->>>>>>> 8891da4 (Roadmap 0.1)
       { "source": "/js/studio/cover-crop.js", "destination": "/applications/studio/page-ui/cover-crop.js" },
       { "source": "/js/studio/page-look.js", "destination": "/applications/studio/page-ui/page-look.js" },
       { "source": "/js/studio/warning-picker.js", "destination": "/applications/studio/page-ui/warning-picker.js" },

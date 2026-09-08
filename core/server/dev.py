@@ -31,12 +31,8 @@ TYPES = {
     ".webp": "image/webp",
     ".mp4": "video/mp4",
     ".mov": "video/quicktime",
-<<<<<<< HEAD
     ".wav": "audio/wav",
     ".aac": "audio/aac",
->>>>>>> b3a7337 (Roadmap 0.1)
-=======
->>>>>>> 8891da4 (Roadmap 0.1)
 }
 
 EXACT = {
