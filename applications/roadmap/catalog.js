@@ -24,7 +24,9 @@ export function relativeLabel(iso) {
 }
 
 export function authorLabel(username) {
-    return `user:${username || "anon"}`;
+    const handle = String(username || "").trim();
+    if (handle.toLowerCase() === "anonymous") return "anonymous";
+    return `user:${handle || "anon"}`;
 }
 
 function indexByStub(rows) {
@@ -53,7 +55,7 @@ function fileUrls(kind, row) {
     });
 }
 
-function mergeKind(kind, committed, pending, voteMap, myVotes, replyCounts) {
+function mergeKind(kind, committed, pending, voteMap, myVotes, replyCounts, downMap, myDowns) {
     const byStub = indexByStub(committed);
     for (const row of pending || []) {
         const stub = Number(row.stub);
@@ -76,7 +78,9 @@ function mergeKind(kind, committed, pending, voteMap, myVotes, replyCounts) {
             files: fileUrls(kind === "bug" ? "bugs" : "suggestions", row),
             votes: voteMap.get(key) || 0,
             voted: myVotes.has(key),
-            replyCount: kind === "bug" ? replyCounts.get(stub) || 0 : 0,
+            downs: downMap.get(key) || 0,
+            downVoted: myDowns.has(key),
+            replyCount: replyCounts.get(stub) || 0,
             relative: relativeLabel(row.createdAt),
             author: authorLabel(row.authorUsername),
         };
@@ -90,17 +94,21 @@ export async function loadCatalog({
     pendingSuggestions = [],
     voteMap = new Map(),
     myVotes = new Set(),
+    downMap = new Map(),
+    myDowns = new Set(),
     replyCounts = new Map(),
 } = {}) {
     const items = (ROADMAP_ITEMS || []).filter((item) => ZONES.has(item.zone));
-    const bugs = mergeKind("bug", bugReports, pendingBugs, voteMap, myVotes, replyCounts);
+    const bugs = mergeKind("bug", bugReports, pendingBugs, voteMap, myVotes, replyCounts, downMap, myDowns);
     const suggestions = mergeKind(
         "suggestion",
         featureSuggestions,
         pendingSuggestions,
         voteMap,
         myVotes,
-        replyCounts
+        replyCounts,
+        downMap,
+        myDowns
     ).filter((row) => row.status !== "promoted");
     return { items, bugs, suggestions };
 }

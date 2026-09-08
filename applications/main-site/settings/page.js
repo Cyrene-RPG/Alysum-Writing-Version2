@@ -17,7 +17,7 @@ import { signOutAndGoToHome } from "@alysum/authentication/logout.js";
 import { goToLogin } from "@alysum/desktop/app.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
 import { permanentHandleFromUserData } from "@alysum/account/profile-display.js";
-import { fillWelcomeBar } from "/js/welcome-bar.js";
+import { fillWelcomeBar } from "/js/welcome-bar.js?v=2";
 import { AUTHOR_BIO_MAX_LENGTH } from "@alysum/library/author-profile.js";
 import { normalizeAccountType, homeUrlForUserData } from "@alysum/account/mode.js";
 
@@ -73,7 +73,14 @@ function fillSettingsFromRow(user, row) {
         profileImageUrl: data.profileImageUrl
     });
 
-    setGoalUi(data.wordGoalMode, data.dailyWordGoal, data.writingDayTotals);
+    setGoalUi(
+        data.wordGoalMode,
+        data.dailyWordGoal,
+        data.writingDayTotals,
+        data.dailyWritingEnabled,
+        data.writingCheckpoints,
+        data.writingGoalHidden,
+    );
 
     const acct = normalizeAccountType(data.accountType);
     state.settingsHomeUrl = homeUrlForUserData({ ...data, accountType: acct });

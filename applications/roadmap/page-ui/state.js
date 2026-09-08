@@ -3,6 +3,8 @@ export const state = {
     catalog: { items: [], bugs: [], suggestions: [] },
     voteMap: new Map(),
     myVotes: new Set(),
+    downMap: new Map(),
+    myDowns: new Set(),
     bugFilter: "all",
     suggestFilter: "top",
 };

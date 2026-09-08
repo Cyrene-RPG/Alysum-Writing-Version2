@@ -248,31 +248,88 @@
     font-style: italic;
 }
 
-/* Daily word goal picker */
-.goal-preset-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 4px 0 14px;
-}
-.goal-preset {
-    border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
-    background: color-mix(in srgb, var(--alysum-ui-chrome, #141414) 70%, transparent);
-    color: var(--muted);
-    border-radius: 999px;
-    padding: 7px 14px;
-    font: inherit;
-    font-size: 13px;
+/* Challenge Goal — slider + notches */
+#goalSlider {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
+    max-width: 360px;
+    height: 20px;
+    margin: 10px 0 2px;
+    background: transparent;
     cursor: pointer;
 }
-.goal-preset:hover { color: var(--text); border-color: var(--accent, #7c3aed); }
-.goal-preset.is-on {
-    background: var(--accent, #7c3aed);
-    border-color: var(--accent, #7c3aed);
-    color: #fff;
+#goalSlider:focus { outline: none; }
+#goalSlider::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text) 18%, transparent);
 }
+#goalSlider::-moz-range-track {
+    height: 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text) 18%, transparent);
+}
+#goalSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    margin-top: -6px;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: var(--accent, #7c3aed);
+    border: 2px solid var(--alysum-ui-chrome, #141414);
+    cursor: pointer;
+}
+#goalSlider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    background: var(--accent, #7c3aed);
+    border: 2px solid var(--alysum-ui-chrome, #141414);
+    cursor: pointer;
+}
+#goalSlider:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #a855f7) 45%, transparent);
+}
+.goal-notch-row {
+    position: relative;
+    height: 16px;
+    max-width: 360px;
+    margin: 4px 0 18px;
+}
+.goal-notch {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 11px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.goal-notch:first-child { transform: translateX(0); }
+.goal-notch:last-child { transform: translateX(-100%); }
+.goal-notch:hover { color: var(--text); }
+.goal-notch.is-on { color: var(--accent, #a855f7); font-weight: 700; }
+
+/* Daily Goal — goal box beside checkpoints box */
+.goal-checkpoint-fields {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin: 4px 0 0;
+}
+.goal-target-field { max-width: 120px; }
+.goal-checkpoints-field { flex: 1; min-width: 200px; max-width: 320px; }
+
 .goal-custom-field { max-width: 220px; }
-.goal-custom-field input[type="number"] {
+.goal-custom-field input[type="number"],
+.goal-custom-field input[type="text"] {
     width: 100%;
     padding: 9px 12px;
     border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
@@ -280,4 +337,108 @@
     background: color-mix(in srgb, var(--alysum-ui-chrome, #141414) 70%, transparent);
     color: var(--text);
     font: inherit;
+}
+
+/* Daily writing — master on/off switch */
+.daily-writing-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.daily-writing-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+.daily-writing-switch input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+}
+.daily-writing-switch-track {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text) 20%, transparent);
+    transition: background 0.15s ease;
+}
+.daily-writing-switch-track::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: #fff;
+    transition: transform 0.15s ease;
+}
+.daily-writing-switch input:checked + .daily-writing-switch-track {
+    background: var(--accent, #7c3aed);
+}
+.daily-writing-switch input:checked + .daily-writing-switch-track::after {
+    transform: translateX(20px);
+}
+.daily-writing-switch input:focus-visible + .daily-writing-switch-track {
+    outline: 2px solid color-mix(in srgb, var(--purple-bright, #a855f7) 70%, transparent);
+    outline-offset: 3px;
+}
+.daily-writing-switch-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+#dailyWritingBody.is-disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* Daily Goal checkpoints */
+#sprintCheckpointFields { margin: 4px 0 10px; }
+.checkpoints-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+.checkpoint-chip {
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+}
+.goal-visibility-row {
+    display: inline-flex;
+    gap: 0;
+    margin: 12px 0 4px;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
+    border-radius: 999px;
+    overflow: hidden;
+}
+.goal-visibility-btn {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 16px;
+    cursor: pointer;
+}
+.goal-visibility-btn + .goal-visibility-btn {
+    border-left: 1px solid var(--border, rgba(255, 255, 255, 0.16));
+}
+.goal-visibility-btn:hover { color: var(--text); }
+.goal-visibility-btn.is-on {
+    background: var(--accent, #7c3aed);
+    color: #fff;
 }

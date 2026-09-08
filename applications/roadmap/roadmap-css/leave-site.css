@@ -1,0 +1,125 @@
+#leave-red-flash{
+  position:fixed;
+  inset:0;
+  z-index:4050;
+  background:radial-gradient(circle, rgba(255,60,60,0.55) 0%, rgba(255,20,20,0.15) 55%, rgba(0,0,0,0) 80%);
+  opacity:0;
+  pointer-events:none;
+}
+#leave-red-flash.hit{animation:leave-red-hit 0.4s ease-out;}
+@keyframes leave-red-hit{
+  0%{opacity:0;}
+  25%{opacity:1;}
+  100%{opacity:0;}
+}
+
+#leave-shard-burst{
+  position:fixed;
+  inset:0;
+  z-index:4040;
+  display:none;
+  pointer-events:none;
+}
+#leave-shard-burst.active{display:block;}
+#leave-shard-burst .dshard{
+  position:absolute;
+  overflow:hidden;
+  background:#000;
+  border:1px solid rgba(182,255,192,0.18);
+  box-shadow:0 0 8px rgba(63,243,90,0.12);
+  transition:transform 1.35s cubic-bezier(.16,.84,.44,1), opacity 1.35s ease;
+}
+#leave-shard-burst .dshard-inner{
+  position:absolute;
+  overflow:hidden;
+}
+#leave-shard-burst .dshard.gone{opacity:0;}
+
+.leave-page-clone{
+  position:relative;
+  width:100vw;
+  height:100vh;
+  background:#000;
+  overflow:hidden;
+}
+.leave-page-clone .leave-rain-shot{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  opacity:0.45;
+  pointer-events:none;
+}
+.leave-page-clone .scanlines,
+.leave-page-clone .glitch-corner,
+.leave-page-clone .roadmap-lewstar{
+  position:absolute;
+}
+.leave-page-clone .glitch-corner{
+  top:14px;
+  right:14px;
+  left:auto;
+  bottom:auto;
+}
+.leave-page-clone .roadmap-lewstar{
+  left:14px;
+  bottom:12px;
+  top:auto;
+  right:auto;
+}
+.leave-page-clone .leave-page-scroll .roadmap-lewstar{display:none;}
+@media (max-width:720px){
+  .leave-page-clone .glitch-corner{
+    position:static;
+    margin:0 0 18px 0;
+    text-align:right;
+  }
+}
+
+#leave-exit-rain{
+  position:fixed;
+  inset:0;
+  z-index:4020;
+  background:#000;
+  display:none;
+}
+#leave-exit-rain.is-on{display:block;}
+
+#leave-exit-label{
+  position:fixed;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  z-index:4060;
+  color:#ff5b5b;
+  font-family:'Share Tech Mono', monospace;
+  font-size:26px;
+  letter-spacing:6px;
+  text-transform:uppercase;
+  text-shadow:0 0 14px rgba(255,60,60,0.7);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 0.4s ease;
+}
+#leave-exit-label.show{opacity:1;}
+
+#leave-final-black{
+  position:fixed;
+  inset:0;
+  z-index:4070;
+  background:#000;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 0.7s ease;
+}
+#leave-final-black.on{opacity:1;}
+
+html.is-leaving{
+  background:#000;
+  overflow:hidden;
+}
+html.is-leaving body{
+  background:#000;
+  pointer-events:none;
+  overflow:hidden;
+}

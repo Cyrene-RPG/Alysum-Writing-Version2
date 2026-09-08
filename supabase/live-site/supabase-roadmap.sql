@@ -117,7 +117,7 @@ CREATE POLICY "roadmap_votes_delete_own" ON public.roadmap_votes
   USING (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------------
--- Replies on bugs
+-- Replies on bugs and suggestions (shared stub sequence)
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS public.roadmap_replies (

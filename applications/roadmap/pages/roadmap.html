@@ -26,11 +26,26 @@
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="/roadmap">
     <title>WAYPOINT :: SYSTEM STATUS</title>
-    <link rel="stylesheet" href="/css/roadmap/page.css?v=8">
-    <link rel="stylesheet" href="/css/roadmap/nav-buttons.css?v=1">
+    <script>
+      document.documentElement.style.background = "#000";
+      try {
+        if (sessionStorage.getItem("alysum:waypoint:enter") === "1") {
+          document.documentElement.classList.add("from-waypoint");
+          sessionStorage.removeItem("alysum:waypoint:enter");
+        }
+      } catch (e) {}
+    </script>
+    <style>html,body{background:#000;scrollbar-width:none;}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0;}</style>
+    <link rel="stylesheet" href="/css/roadmap/page.css?v=17">
+    <link rel="stylesheet" href="/css/roadmap/nav-buttons.css?v=6">
+    <link rel="stylesheet" href="/css/roadmap/sound-toggle.css?v=4">
     <link rel="stylesheet" href="/css/roadmap/return-btn.css?v=2">
-    <link rel="stylesheet" href="/css/roadmap/ledger.css">
-    <link rel="stylesheet" href="/css/roadmap/forms.css">
+    <link rel="stylesheet" href="/css/roadmap/leave-site.css?v=1">
+    <link rel="stylesheet" href="/css/roadmap/ledger.css?v=4">
+    <link rel="stylesheet" href="/css/roadmap/replies.css?v=1">
+    <link rel="stylesheet" href="/css/roadmap/forms.css?v=4">
+    <link rel="stylesheet" href="/css/roadmap/suggest-button.css?v=3">
+    <link rel="stylesheet" href="/css/roadmap/report-buttons.css?v=1">
     <script src="/js/pwa-register.js" defer></script>
     <script type="module" src="/js/vercel-analytics.js"></script>
 </head>
@@ -50,10 +65,22 @@
       <span class="path">/var/log/system_status — preview build</span>
     </div>
     <nav>
-      <button class="active" data-page="roadmap" data-label="[ roadmap.log ]">[ roadmap.log ]</button>
-      <button data-page="suggestions" data-label="[ suggest_feature ]">[ suggest_feature ]</button>
-      <button data-page="bugs" data-label="[ bugs.log ]">[ bugs.log ]</button>
-      <button data-page="report" data-label="[ file_report ]">[ file_report ]</button>
+      <div class="nav-cluster">
+        <button type="button" class="nav-more" id="navMore" aria-label="Menu" aria-expanded="false" aria-haspopup="true" aria-controls="navPages">
+          <span class="nav-more-label">[ menu ]</span>
+          <span class="nav-more-caret" aria-hidden="true">▾</span>
+        </button>
+        <div class="nav-pages" id="navPages">
+          <button class="active" data-page="roadmap" data-label="[ roadmap.log ]" data-label-tight="[roadmap.log]"><span class="nav-wide">[ roadmap.log ]</span><span class="nav-tight">[roadmap.log]</span></button>
+          <button data-page="suggestions" data-label="[ suggest_feature ]" data-label-tight="[suggest_feature]"><span class="nav-wide">[ suggest_feature ]</span><span class="nav-tight">[suggest_feature]</span></button>
+          <button data-page="bugs" data-label="[ bugs.log ]" data-label-tight="[bugs.log]"><span class="nav-wide">[ bugs.log ]</span><span class="nav-tight">[bugs.log]</span></button>
+          <button data-page="report" data-label="[ file_report ]" data-label-tight="[file_report]"><span class="nav-wide">[ file_report ]</span><span class="nav-tight">[file_report]</span></button>
+        </div>
+      </div>
+      <div class="sound-toggles">
+        <button type="button" class="sound-toggle" id="musicToggle" aria-label="Background music" aria-pressed="true">M</button>
+        <button type="button" class="sound-toggle" id="soundToggle" aria-label="Typing sounds" aria-pressed="true">S</button>
+      </div>
     </nav>
   </header>
 
@@ -92,8 +119,8 @@
         <button class="active" data-filter="top">TOP</button>
         <button data-filter="newest">NEWEST</button>
       </div>
-      <button class="new-report" id="suggestToggle" type="button">
-        + suggest_feature <span class="quota-pill" id="suggestQuotaPill">0/1 used today</span>
+      <button class="feature-btn fragile-hover" id="suggestToggle" type="button">
+        + Suggest_Feature <span class="quota-pill" id="suggestQuotaPill">0/1 used today</span>
       </button>
     </div>
 
@@ -108,7 +135,7 @@
         <textarea id="suggestBody" placeholder="What problem would this solve for you?"></textarea>
       </div>
       <div class="suggest-actions">
-        <button class="submit-btn" id="suggestSubmit" type="button">submit_suggestion</button>
+        <button class="submit-btn fragile-hover" id="suggestSubmit" type="button">submit_suggestion</button>
         <button class="cancel-link" id="suggestCancel" type="button">cancel</button>
       </div>
       <div class="field-error" id="suggestSubmitError"></div>
@@ -190,14 +217,25 @@
         <div class="field-error" id="reportSubmitError"></div>
 
         <div class="form-actions">
-          <button class="submit-btn" id="reportSubmit" type="button">submit_report</button>
+          <button class="submit-btn report-heal-btn" id="reportSubmit" type="button">
+            <span class="report-heal-frag report-heal-frag1"></span>
+            <span class="report-heal-frag report-heal-frag2"></span>
+            <span class="report-heal-frag report-heal-frag3"></span>
+            <span class="report-heal-label">submit_report</span>
+          </button>
+          <label class="anon-check" for="reportAnonymous">
+            <input type="checkbox" id="reportAnonymous">
+            <span>anonymous</span>
+          </label>
           <button class="cancel-link" id="reportCancel" type="button">cancel</button>
         </div>
       </div>
     </div>
   </section>
+
+  <img class="roadmap-lewstar" src="/assets/lewstar-mark.png" alt="LewStar" width="69" height="88" />
 </div>
 
-<script type="module" src="/js/roadmap/page.js?v=10"></script>
+<script type="module" src="/js/roadmap/page.js?v=66"></script>
 </body>
 </html>

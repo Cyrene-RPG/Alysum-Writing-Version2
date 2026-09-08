@@ -19,12 +19,14 @@
 import { getProfileRow, updateProfileRow } from "../synchronization-engine/local-adapter.js";
 import {
     applyWritingDayDelta,
+    checkpointProgress,
     clampDailyWordGoal,
     computeGoalStreakFromTotals,
     computePaceGoal,
     computePaceStreak,
     computeWriteStreak,
     localDayKey,
+    normalizeCheckpoints,
     normalizeWordGoalMode,
     normalizeWritingDayTotals,
     paceState,
@@ -164,10 +166,15 @@ export function getWritingStats(profile = {}, { userId } = {}) {
     const today = localDayKey();
 
     const mode = normalizeWordGoalMode(profile.wordGoalMode ?? profile.word_goal_mode);
+    const enabled = (profile.dailyWritingEnabled ?? profile.daily_writing_enabled) !== false;
     const wordsToday = netRange((m) => wordsTypedOnDay(m, today), added, removed);
     const fixedGoal = clampDailyWordGoal(profile.dailyWordGoal ?? profile.daily_word_goal);
     const paceGoal = computePaceGoal(added, today);
     const goal = mode === "goal" ? fixedGoal : mode === "pace" ? paceGoal : 0;
+    const checkpoints = normalizeCheckpoints(profile.writingCheckpoints ?? profile.writing_checkpoints);
+    // Daily Goal (track) mode only: hide the Studio bar and celebrate with a
+    // popup as each milestone is reached instead.
+    const goalHidden = !!(profile.writingGoalHidden ?? profile.writing_goal_hidden);
 
     const xp = Math.max(0, Math.floor(Number(profile.xp) || 0));
     const rep = Math.max(0, Math.floor(Number(profile.reputation) || 0));
@@ -175,10 +182,14 @@ export function getWritingStats(profile = {}, { userId } = {}) {
 
     return {
         mode,
+        enabled,
         wordsToday,
         goal,
         goalPct: goal > 0 ? Math.min(100, Math.round((wordsToday / goal) * 100)) : 0,
         goalMet: goal > 0 && wordsToday >= goal,
+        checkpoints,
+        checkpoint: mode === "track" ? checkpointProgress(wordsToday, checkpoints) : null,
+        goalHidden,
         paceGoal,
         paceState: mode === "pace" ? paceState(wordsToday, paceGoal) : null,
         goalStreak: computeGoalStreakFromTotals(added, fixedGoal),

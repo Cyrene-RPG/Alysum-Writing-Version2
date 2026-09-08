@@ -1,5 +1,17 @@
+import { playClickR } from "./waypoint-entry-audio.js";
+import { playWaypointEntry } from "./waypoint-entry.js?v=15";
+
 const COLLAPSE_KEY = "alysum:roadmap-link:collapsed";
 const GLITCH_CHARS = "!<>-_\\/[]{}=+*^?#%$@01";
+
+let traveler = "";
+
+export function setWaypointTraveler(raw) {
+    const name = String(raw || "").replace(/^@/, "").trim();
+    traveler = name;
+    const bar = document.querySelector(".wd-welcome-bar");
+    if (bar && name) bar.dataset.waypointUser = name;
+}
 
 function readCollapsed() {
     try {
@@ -58,7 +70,7 @@ export function initRoadmapLink() {
     if (!document.querySelector("link[data-roadmap-link-css]")) {
         const sheet = document.createElement("link");
         sheet.rel = "stylesheet";
-        sheet.href = "/site-appearance/css-styles/roadmap-link.css?v=8";
+        sheet.href = "/site-appearance/css-styles/roadmap-link.css?v=9";
         sheet.setAttribute("data-roadmap-link-css", "");
         document.head.appendChild(sheet);
     }
@@ -81,13 +93,23 @@ export function initRoadmapLink() {
     const a = document.createElement("a");
     a.className = "glitch-btn";
     a.href = "/roadmap";
-    a.target = "_blank";
-    a.rel = "noopener";
     a.innerHTML = "<strong>RoadMap</strong> / Bugs";
+    a.addEventListener("click", (event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        playClickR();
+        const fromBar = document.querySelector(".wd-welcome-bar")?.dataset.waypointUser;
+        void playWaypointEntry({ traveler: traveler || fromBar || "guest_user" }).then(() => {
+            try { sessionStorage.setItem("alysum:waypoint:enter", "1"); } catch { /* ignore */ }
+            document.documentElement.style.background = "#000";
+            document.body.style.background = "#000";
+            location.href = "/roadmap";
+        });
+    });
     row.append(toggle, a);
     const tag = document.createElement("div");
     tag.className = "tag-line";
-    tag.textContent = "// external link";
+    tag.textContent = "// enter waypoint";
 
     corner.append(row, tag);
     bar.appendChild(corner);

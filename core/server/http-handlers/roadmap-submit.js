@@ -155,7 +155,7 @@ module.exports = async function handler(req, res) {
         String((Array.isArray(profile.data) ? profile.data[0] : profile.data)?.username || "").trim() ||
         "user";
 
-    const quotaOpen = kind === "report" && username.replace(/^@/, "").toLowerCase() === "lewstar";
+    const quotaOpen = username.replace(/^@/, "").toLowerCase() === "lewstar";
     const quotaName = kind === "report" ? "roadmap_report_quota" : "roadmap_suggestion_quota";
     const quota = quotaOpen ? { ok: true, data: { used: 0, limit: 9999 } } : await rpc(token, quotaName);
     if (quota.ok && Number(quota.data?.used) >= Number(quota.data?.limit)) {
@@ -184,12 +184,13 @@ module.exports = async function handler(req, res) {
 
     const createdAt = new Date().toISOString();
     const folder = folderName(stub, title);
+    const publicName = body.anonymous ? "anonymous" : username;
     const row = {
         stub,
         title,
         body: bodyText,
         author_id: userId,
-        author_username: username,
+        author_username: publicName,
         folder_name: folder,
         files: files.map((f) => ({ name: f.name, staging_path: f.stagingPath })),
         created_at: createdAt,
@@ -231,8 +232,8 @@ module.exports = async function handler(req, res) {
                 body: bodyText,
                 severity,
                 status: kind === "report" ? "open" : "under-review",
-                authorUsername: username,
-                authorUserId: userId,
+                authorUsername: publicName,
+                authorUserId: body.anonymous ? "" : userId,
                 createdAt,
                 files,
             },

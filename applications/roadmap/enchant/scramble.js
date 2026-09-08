@@ -4,7 +4,7 @@ const GLYPHS = [
     "⚍", "⍊", "‖", "⨅",
 ];
 const LENGTH = 22;
-const TICK_MS = 180;
+const TICK_MS = 70;
 
 function rollLine() {
     let line = "";

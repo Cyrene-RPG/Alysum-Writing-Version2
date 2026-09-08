@@ -2,10 +2,21 @@ import { supabase } from "@alysum/authentication/client.js";
 import { fetchReplies, postReply } from "@alysum/roadmap/replies.js";
 import { relativeLabel, authorLabel } from "/applications/roadmap/catalog.js";
 import { loginHref, state } from "./state.js";
+import { makeAnonCheck } from "./anon-check.js";
+import { playUiSound } from "./ui-sounds.js?v=13";
 
 export function replyLabel(count) {
     const n = Number(count) || 0;
     return n === 1 ? "1 reply" : `${n} replies`;
+}
+
+export function setReplyTrigger(el, count) {
+    if (!el) return;
+    const n = Number(count) || 0;
+    const text = replyLabel(n);
+    el.dataset.count = String(n);
+    el.dataset.label = text;
+    el.textContent = text;
 }
 
 function paintReply(row) {
@@ -22,7 +33,7 @@ function paintReply(row) {
     return line;
 }
 
-async function fillThread(thread, stub) {
+async function fillThread(thread, { kind, stub }) {
     thread.replaceChildren();
     const rows = await fetchReplies(supabase, stub);
     rows.forEach((row) => thread.appendChild(paintReply(row)));
@@ -30,7 +41,7 @@ async function fillThread(thread, stub) {
         const hint = document.createElement("div");
         hint.className = "field-hint";
         const a = document.createElement("a");
-        a.href = loginHref("bugs");
+        a.href = loginHref(kind === "bug" ? "bugs" : "suggestions");
         a.textContent = "Authenticate to reply";
         a.style.color = "var(--green-bright)";
         hint.appendChild(a);
@@ -42,38 +53,39 @@ async function fillThread(thread, stub) {
     const area = document.createElement("textarea");
     area.placeholder = "Add a reply";
     const actions = document.createElement("div");
-    actions.className = "suggest-actions";
+    actions.className = "reply-actions";
     const submit = document.createElement("button");
     submit.type = "button";
     submit.className = "submit-btn";
     submit.textContent = "submit_reply";
+    const anon = makeAnonCheck();
     submit.addEventListener("click", async () => {
         try {
             await postReply(supabase, {
                 stub,
                 userId: state.user.userId,
-                username: state.user.username,
+                username: anon.input.checked ? "anonymous" : state.user.username,
                 body: area.value,
             });
+            playUiSound("commentsSucceed");
             area.value = "";
+            anon.input.checked = false;
             const entry = thread.closest(".entry");
             const label = entry?.querySelector(".reply-count");
             const next = (Number(label?.dataset.count || 0) + 1);
-            if (label) {
-                label.dataset.count = String(next);
-                label.textContent = replyLabel(next);
-            }
-            await fillThread(thread, stub);
+            setReplyTrigger(label, next);
+            await fillThread(thread, { kind, stub });
         } catch (err) {
+            playUiSound("commentsFail");
             const error = document.createElement("div");
             error.className = "field-error show";
             error.textContent = err.message || "Could not reply.";
             thread.appendChild(error);
         }
     });
-    actions.appendChild(submit);
-    field.append(area, actions);
-    thread.appendChild(field);
+    actions.append(submit, anon.label);
+    field.append(area);
+    thread.append(field, actions);
 }
 
 export function bindReplyThread(entry, row) {
@@ -83,10 +95,13 @@ export function bindReplyThread(entry, row) {
     const trigger = entry.querySelector(".reply-count");
     trigger?.addEventListener("click", async () => {
         const open = entry.classList.contains("is-open");
-        document.querySelectorAll("#bugLedger .entry.is-open").forEach((el) => {
+        entry.closest(".ledger")?.querySelectorAll(".entry.is-open").forEach((el) => {
             if (el !== entry) el.classList.remove("is-open");
         });
         entry.classList.toggle("is-open", !open);
-        if (!open) await fillThread(thread, row.stub);
+        if (!open) {
+            playUiSound("commentsOpen");
+            await fillThread(thread, { kind: row.kind, stub: row.stub });
+        }
     });
 }

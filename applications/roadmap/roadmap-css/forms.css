@@ -89,7 +89,7 @@
   margin-bottom:8px;
 }
 .field label::before{content:"> ";}
-.field input, .field textarea, .field select{
+.field input:not([type=checkbox]), .field textarea, .field select{
   width:100%;
   background:#000;
   border:1px solid var(--line);
@@ -168,7 +168,58 @@
   cursor:pointer;
 }
 
-.form-actions{display:flex; justify-content:space-between; align-items:center; margin-top:24px;}
+.form-actions{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:16px;
+  margin-top:24px;
+}
+.form-actions .cancel-link{margin-left:auto;}
+.reply-actions{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:16px;
+  margin-top:18px;
+}
+.anon-check{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  font-family:'Share Tech Mono', monospace;
+  font-size:11.5px;
+  letter-spacing:0.4px;
+  text-transform:uppercase;
+  color:var(--green-dim);
+  cursor:pointer;
+  user-select:none;
+}
+.field .anon-check{
+  display:inline-flex;
+  margin-bottom:0;
+}
+.field .anon-check::before{content:none;}
+.form-actions .anon-check{gap:8px;}
+.reply-actions .anon-check{gap:12px;}
+.anon-check input{
+  appearance:none;
+  flex:0 0 14px;
+  width:14px;
+  height:14px;
+  margin:0;
+  padding:0;
+  border:1px solid var(--line);
+  background:#000;
+  cursor:pointer;
+}
+.anon-check input:checked{
+  border-color:var(--green);
+  background:var(--green);
+  box-shadow:inset 0 0 0 2px #000;
+}
+.anon-check:hover{color:var(--green);}
+.anon-check:hover input{border-color:var(--green);}
 .submit-btn{
   background:var(--green);
   color:#000;

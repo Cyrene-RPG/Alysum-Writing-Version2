@@ -16,7 +16,7 @@ export function addLocalDays(dayKey, deltaDays) {
     return localDayKey(dt);
 }
 
-export const DEFAULT_DAILY_WORD_GOAL = 2000;
+export const DEFAULT_DAILY_WORD_GOAL = 1000;
 export const MIN_DAILY_WORD_GOAL = 100;
 export const MAX_CUSTOM_DAILY_WORD_GOAL = 20000;
 
@@ -36,6 +36,34 @@ export const DEFAULT_WORD_GOAL_MODE = "goal";
 export function normalizeWordGoalMode(value) {
     const s = String(value || "").trim().toLowerCase();
     return WORD_GOAL_MODES.includes(s) ? s : DEFAULT_WORD_GOAL_MODE;
+}
+
+// ---- sprint checkpoints (mode: track) -----------------------------------
+// Optional word-count milestones for the day. Visual only — Studio shows
+// progress toward the next one and a dot per checkpoint.
+export const MAX_CHECKPOINTS = 6;
+
+/** Any input (array, comma/space string already split) -> sorted unique positive
+ *  ints. No upper limit on the value — a checkpoint can be any positive number. */
+export function normalizeCheckpoints(raw) {
+    const arr = Array.isArray(raw) ? raw : [];
+    const clean = [...new Set(
+        arr
+            .map((n) => Math.round(Number(n)))
+            .filter((n) => Number.isFinite(n) && n > 0)
+    )].sort((a, b) => a - b);
+    return clean.slice(0, MAX_CHECKPOINTS);
+}
+
+/** Progress through the day's checkpoints given today's word count. */
+export function checkpointProgress(wordsToday, checkpoints) {
+    const list = normalizeCheckpoints(checkpoints);
+    const w = Math.max(0, Number(wordsToday) || 0);
+    const hit = list.filter((c) => w >= c).length;
+    const next = list.find((c) => w < c) ?? null;
+    const prev = hit > 0 ? list[hit - 1] : 0;
+    const pct = next == null ? 100 : Math.round(((w - prev) / (next - prev)) * 100);
+    return { list, hit, next, pct: Math.max(0, Math.min(100, pct)) };
 }
 
 // ---- adaptive pace (mode 3) ----------------------------------------------

@@ -1,3 +1,5 @@
+/* bug_stub holds the shared roadmap stub — bugs and suggestions. */
+
 export async function fetchReplyCounts(supabase) {
     const counts = new Map();
     const { data, error } = await supabase.from("roadmap_replies").select("bug_stub");

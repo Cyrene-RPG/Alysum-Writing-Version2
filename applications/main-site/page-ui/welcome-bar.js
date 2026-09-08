@@ -1,5 +1,6 @@
 import { publicDisplayNameFromUserData } from "@alysum/account/profile-display.js";
 import { pickWelcomeLine } from "/js/welcome-lines.js";
+import { setWaypointTraveler } from "@alysum/site-appearance/js-runtime/roadmap-link.js?v=12";
 
 function fillWelcomeAvatar(imageUrl, name) {
     const img = document.getElementById("welcomePfpImg");
@@ -98,5 +99,7 @@ export function fillWelcomeBar(data = {}, options = {}) {
     }
 
     fillWelcomeAvatar(data.profileImageUrl ?? data.profile_image_url, name);
+    const handle = String(data.username || data.handle || "").replace(/^@/, "").trim();
+    if (handle) setWaypointTraveler(handle);
     initWelcomePfpMenu();
 }

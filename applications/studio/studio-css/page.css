@@ -123,10 +123,11 @@ body {
     color: var(--text);
 }
 .studio-goal-track {
-    height: 3px;
+    height: 9px;
     overflow: hidden;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--text) 14%, transparent);
+    background: color-mix(in srgb, var(--text) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
 }
 .studio-goal-fill {
     height: 100%;
@@ -147,6 +148,29 @@ body {
     margin-top: 4px;
     font-size: 24px;
 }
+/* Daily Goal with a target, shown — render exactly like the Challenge Goal card:
+   one progress bar toward the next mark, no dots. */
+.studio-goal--track.has-goal-bar .studio-goal-track { display: block; }
+.studio-goal--track.has-goal-bar .studio-goal-top {
+    display: flex;
+    margin-bottom: 10px;
+}
+.studio-goal--track.has-goal-bar .studio-goal-pill {
+    display: inline;
+    margin-top: 0;
+    font-size: 19px;
+}
+/* Daily Goal set to "hidden" — the card only lights up once the goal is reached. */
+.studio-goal.is-celebrating .studio-goal-pill { color: var(--accent, #a855f7); }
+.studio-goal.is-celebrating .studio-goal-top > span:first-child {
+    color: color-mix(in srgb, var(--accent, #a855f7) 70%, var(--text));
+}
+@keyframes studioGoalPop {
+    0% { transform: scale(0.96); opacity: 0.4; }
+    60% { transform: scale(1.02); }
+    100% { transform: scale(1); opacity: 1; }
+}
+.studio-goal.is-celebrating .studio-goal-pill { animation: studioGoalPop 0.4s ease both; }
 /* Maintain Your Pace — bar tinted by where today sits in the writer's own range */
 .studio-goal-fill.is-green { background: #4ade80; }
 .studio-goal-fill.is-yellow { background: #facc15; }

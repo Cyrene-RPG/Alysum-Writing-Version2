@@ -1,6 +1,14 @@
-export function isReportQuotaOpen(username) {
+export function isRoadmapStaff(username) {
     const handle = String(username || "").trim().replace(/^@/, "").toLowerCase();
     return handle === "lewstar";
+}
+
+export function isRoadmapQuotaOpen(username) {
+    return isRoadmapStaff(username);
+}
+
+export function isReportQuotaOpen(username) {
+    return isRoadmapQuotaOpen(username);
 }
 
 function asQuota(row) {

@@ -144,6 +144,7 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS rep_color_unlock int NOT NULL 
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS writing_day_removed jsonb NOT NULL DEFAULT '{}'::jsonb;
 
 -- How the writer relates to a daily goal: 'track' (none), 'goal' (fixed target), 'pace' (adaptive).
+-- UI labels these Sprint / Challenge Goal / Maintain your pace; the stored values are unchanged.
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS word_goal_mode text NOT NULL DEFAULT 'goal';
 DO $$
 BEGIN
@@ -154,6 +155,17 @@ BEGIN
       ADD CONSTRAINT users_word_goal_mode_chk CHECK (word_goal_mode IN ('track', 'goal', 'pace'));
   END IF;
 END $$;
+
+-- Master on/off for the whole Daily Writing feature. Off = keep recording
+-- writing_day_totals silently, but hide the tracker on Studio / Overview.
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS daily_writing_enabled boolean NOT NULL DEFAULT true;
+
+-- Daily Goal (track) mode word-count milestones for the day, e.g. [200, 500, 1000].
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS writing_checkpoints jsonb NOT NULL DEFAULT '[]'::jsonb;
+
+-- Daily Goal (track) mode: true = hide the Studio bar, just pop a celebration as
+-- each milestone is reached. false = show the progress bar.
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS writing_goal_hidden boolean NOT NULL DEFAULT false;
 
 -- ===========================================================================
 -- 5. Level math (mirrors core/statistics/xp-levels.js + rep-levels.js)

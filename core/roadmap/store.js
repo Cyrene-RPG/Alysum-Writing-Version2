@@ -1,4 +1,4 @@
-import { isReportQuotaOpen } from "./quotas.js";
+import { isRoadmapQuotaOpen } from "./quotas.js";
 import { folderName } from "./slug.js";
 
 function schemaMissingMessage(err) {
@@ -26,9 +26,24 @@ function rowToPending(row) {
 }
 
 export async function currentRoadmapUser(supabase) {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) throw error;
-    const session = data?.session;
+    let session = (await supabase.auth.getSession()).data?.session ?? null;
+    if (!session?.access_token) {
+        try {
+            const { data } = await supabase.auth.refreshSession();
+            if (data?.session?.access_token) session = data.session;
+        } catch {
+            /* keep whatever we have */
+        }
+    }
+    if (!session?.user?.id || !session.access_token) {
+        const { data } = await supabase.auth.getUser();
+        if (data?.user?.id) {
+            session = (await supabase.auth.getSession()).data?.session ?? session;
+            if (!session?.user && data.user) {
+                session = { user: data.user, access_token: session?.access_token || "" };
+            }
+        }
+    }
     const userId = session?.user?.id;
     if (!userId) return null;
     const { data: profile } = await supabase
@@ -72,7 +87,7 @@ async function insertFiling(supabase, user, payload) {
     const bodyText = String(payload.body || "").trim();
     const table = kind === "report" ? "roadmap_reports" : "roadmap_suggestions";
 
-    if (!(kind === "report" && isReportQuotaOpen(user.username))) {
+    if (!isRoadmapQuotaOpen(user.username)) {
         const rpcName = kind === "report" ? "roadmap_report_quota" : "roadmap_suggestion_quota";
         const { data: quota } = await supabase.rpc(rpcName);
         if (quota && Number(quota.used) >= Number(quota.limit)) {
@@ -96,7 +111,7 @@ async function insertFiling(supabase, user, payload) {
         title,
         body: bodyText,
         author_id: user.userId,
-        author_username: user.username,
+        author_username: payload.anonymous ? "anonymous" : user.username,
         folder_name: folder,
         files: (payload.files || []).map((file) => ({
             name: file.name,
@@ -141,6 +156,7 @@ async function postSubmit(supabase, user, payload) {
         return insertFiling(supabase, user, payload);
     }
     if (!res.ok) {
+        if (res.status === 401) return insertFiling(supabase, user, payload);
         throw new Error(body.error || `Could not submit. (${res.status})`);
     }
     return {
@@ -152,12 +168,32 @@ async function postSubmit(supabase, user, payload) {
 
 export async function submitReport(supabase, payload) {
     const user = await currentRoadmapUser(supabase);
-    if (!user?.accessToken) throw new Error("Sign in to submit.");
+    if (!user?.userId) throw new Error("Sign in to submit.");
     return postSubmit(supabase, user, { kind: "report", ...payload });
 }
 
 export async function submitSuggestion(supabase, payload) {
     const user = await currentRoadmapUser(supabase);
-    if (!user?.accessToken) throw new Error("Sign in to submit.");
+    if (!user?.userId) throw new Error("Sign in to submit.");
     return postSubmit(supabase, user, { kind: "suggestion", ...payload });
+}
+
+export async function deleteRoadmapFiling(supabase, kind, stub) {
+    const user = await currentRoadmapUser(supabase);
+    if (!user?.accessToken) throw new Error("Sign in to delete.");
+    const { error } = await supabase.rpc("roadmap_delete_filing", {
+        p_kind: kind === "bug" ? "bug" : "suggestion",
+        p_stub: Number(stub),
+    });
+    if (error) {
+        const msg = String(error.message || "");
+        if (/PGRST202|schema cache/i.test(msg)) {
+            throw new Error(
+                "Delete is not on the live database yet. Run supabase/live-site/supabase-roadmap-delete-filing.sql in the Supabase SQL Editor."
+            );
+        }
+        if (/not_allowed/i.test(msg)) throw new Error("Only LewStar can delete filings.");
+        if (/not_authenticated/i.test(msg)) throw new Error("Sign in to delete.");
+        throw new Error(schemaMissingMessage(error) || msg || "Could not delete.");
+    }
 }

@@ -1,0 +1,396 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
+
+#waypoint-entry{
+  position:fixed;
+  inset:0;
+  z-index:4000;
+  overflow:hidden;
+  opacity:0;
+  pointer-events:none;
+  background:#fff;
+  transition:opacity 0.3s ease, background-color 0.6s ease;
+  font-family:'Share Tech Mono', monospace;
+}
+html.waypoint-lock,
+html.waypoint-lock body,
+html:has(#waypoint-entry.is-on),
+html:has(#waypoint-entry.is-on) body{
+  overflow:hidden !important;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+}
+#waypoint-entry.is-on{opacity:1; pointer-events:all;}
+#waypoint-entry.to-black{background:#000;}
+#waypoint-entry.is-fast .waypoint-ray-shape{animation-duration:0.55s;}
+#waypoint-entry.is-fast .waypoint-ring-slot{
+  transition:transform 0.28s cubic-bezier(.16,.84,.44,1), opacity 0.18s ease;
+}
+#waypoint-entry.is-fast .waypoint-ring-slot.out{
+  transition:transform 0.22s ease-in;
+}
+
+#waypoint-entry .waypoint-stage{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 0.35s ease;
+}
+#waypoint-entry .waypoint-stage.is-on{opacity:1;}
+
+#waypoint-burst{overflow:hidden;}
+#waypoint-entry .waypoint-ray{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:1px;
+  height:0;
+  transform-origin:top center;
+}
+#waypoint-entry .waypoint-ray-shape{
+  position:absolute;
+  top:0;
+  left:50%;
+  width:26px;
+  height:0;
+  transform:translateX(-50%);
+  clip-path:polygon(50% 100%, 0% 0%, 100% 0%);
+  animation:waypoint-ray-grow 0.9s cubic-bezier(.15,.8,.3,1) forwards;
+}
+@keyframes waypoint-ray-grow{
+  0%{height:0; opacity:0.9;}
+  70%{opacity:1;}
+  100%{height:var(--len); opacity:0;}
+}
+
+#waypoint-rings{overflow:hidden;}
+#waypoint-entry .waypoint-ring-slot{
+  position:absolute;
+  right:8%;
+  width:150px;
+  height:150px;
+  opacity:0;
+  transition:transform 0.7s cubic-bezier(.16,.84,.44,1), opacity 0.35s ease;
+}
+#waypoint-entry .waypoint-ring-slot.in{opacity:1;}
+#waypoint-entry .waypoint-ring-slot.out{
+  opacity:1;
+  transition:transform 0.4s ease-in;
+}
+#waypoint-entry .waypoint-ring{
+  position:relative;
+  width:100%;
+  height:100%;
+  border-radius:50%;
+  border:2px solid var(--ringColor, #4fb8e8);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  animation:waypoint-ring-spin 6s linear infinite;
+  transition:border-color 0.6s ease;
+}
+#waypoint-entry .waypoint-ring::before{
+  content:"";
+  position:absolute;
+  inset:10px;
+  border-radius:50%;
+  border:1px solid var(--ringColor, #4fb8e8);
+  opacity:0.7;
+  transition:border-color 0.6s ease;
+}
+#waypoint-entry .waypoint-ring::after{
+  content:"";
+  position:absolute;
+  inset:22px;
+  border-radius:50%;
+  border:3px solid var(--ringColor, #4fb8e8);
+  opacity:0.55;
+  transition:border-color 0.6s ease;
+}
+@keyframes waypoint-ring-spin{
+  from{transform:rotate(0deg);}
+  to{transform:rotate(360deg);}
+}
+#waypoint-entry .waypoint-ring-label{
+  position:relative;
+  z-index:2;
+  background:rgba(255,255,255,0.85);
+  color:var(--ringColor, #2f7fae);
+  font-size:13px;
+  letter-spacing:1.5px;
+  padding:4px 14px;
+  border-radius:2px;
+  text-transform:uppercase;
+  transition:color 0.6s ease;
+}
+
+#waypoint-lang{position:relative;}
+#waypoint-entry .waypoint-lang-wrap{
+  position:relative;
+  width:min(720px, 88vw);
+  min-height:150px;
+  margin-top:12vh;
+}
+#waypoint-entry .waypoint-lang-bar{
+  position:absolute;
+  color:#fff;
+  font-size:26px;
+  letter-spacing:3px;
+  border-radius:10px;
+  padding:18px 56px;
+  box-shadow:0 6px 16px rgba(0,0,0,0.22);
+  min-width:320px;
+  box-sizing:border-box;
+}
+#waypoint-entry .waypoint-lang-title{
+  top:0;
+  left:0;
+  width:360px;
+  background:#4a90e6;
+  z-index:1;
+  transform:translateX(-28px);
+  opacity:0;
+  transition:transform 0.32s cubic-bezier(.16,.84,.44,1), opacity 0.28s ease;
+}
+#waypoint-lang.is-on .waypoint-lang-title{
+  transform:translateX(0);
+  opacity:1;
+}
+#waypoint-entry .waypoint-lang-menu{
+  position:absolute;
+  top:42px;
+  left:280px;
+  width:400px;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+}
+#waypoint-entry .waypoint-lang-option{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  color:#fff;
+  font-size:24px;
+  letter-spacing:3px;
+  border-radius:10px;
+  padding:0 48px;
+  height:0;
+  margin:0;
+  opacity:0;
+  overflow:hidden;
+  background:#2a5fa8;
+  box-shadow:0 6px 16px rgba(0,0,0,0.22);
+  transform:translateY(-10px);
+  box-sizing:border-box;
+  transition:height 0.2s ease, opacity 0.16s ease, padding 0.2s ease, margin 0.2s ease, background 0.18s ease, transform 0.2s ease, filter 0.18s ease;
+}
+#waypoint-entry .waypoint-lang-option:nth-child(1){transition-delay:0.02s;}
+#waypoint-entry .waypoint-lang-option:nth-child(2){transition-delay:0.07s;}
+#waypoint-entry .waypoint-lang-option:nth-child(3){transition-delay:0.12s;}
+#waypoint-entry .waypoint-lang-option:nth-child(4){transition-delay:0.17s;}
+#waypoint-lang.is-on .waypoint-lang-menu.is-open .waypoint-lang-option{
+  height:56px;
+  margin-bottom:8px;
+  padding:14px 48px;
+  opacity:0.42;
+  transform:translateY(0);
+}
+#waypoint-lang.is-on .waypoint-lang-menu.is-open .waypoint-lang-option.is-focus{
+  opacity:1;
+  background:linear-gradient(to right, #2f6fc2 0%, #2f6fc2 14%, #5bc8e8 14%, #5bc8e8 100%);
+}
+#waypoint-entry .waypoint-lang-option .arrow{
+  color:#fff;
+  font-size:16px;
+  opacity:0;
+  transform:translateX(-8px);
+  transition:opacity 0.12s ease, transform 0.12s ease;
+}
+#waypoint-entry .waypoint-lang-option.is-focus .arrow,
+#waypoint-entry .waypoint-lang-option.is-pick .arrow{
+  opacity:1;
+  transform:translateX(0);
+}
+#waypoint-lang.is-on .waypoint-lang-menu.is-locked .waypoint-lang-option{
+  height:0;
+  margin:0;
+  padding:0 48px;
+  opacity:0;
+  transform:translateY(-6px);
+  transition-delay:0s;
+}
+#waypoint-lang.is-on .waypoint-lang-menu.is-locked .waypoint-lang-option.is-pick{
+  height:62px;
+  margin:0;
+  padding:18px 56px;
+  opacity:1;
+  transform:translateY(0);
+  background:linear-gradient(to right, #2f6fc2 0%, #2f6fc2 14%, #5bc8e8 14%, #5bc8e8 100%);
+  animation:waypoint-lang-lock 0.32s ease-out;
+}
+@keyframes waypoint-lang-lock{
+  0%{filter:brightness(1.55);}
+  100%{filter:brightness(1);}
+}
+@media (max-width: 700px){
+  #waypoint-entry .waypoint-lang-title{
+    width:min(280px, 72vw);
+    min-width:0;
+    padding:16px 28px;
+    font-size:22px;
+  }
+  #waypoint-entry .waypoint-lang-menu{
+    left:min(150px, 26vw);
+    width:min(360px, 70vw);
+  }
+}
+
+#waypoint-entry .waypoint-panel{
+  background:#3f8fd0;
+  color:#fff;
+  border-radius:10px;
+  padding:26px 30px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.3);
+  min-width:340px;
+  transition:background 0.4s ease;
+}
+#waypoint-entry .waypoint-panel.is-ok{
+  background:#3fb06a;
+  box-shadow:0 0 26px rgba(63,231,120,0.6);
+}
+#waypoint-entry .waypoint-panel-title{font-size:22px; letter-spacing:1px; margin-bottom:16px;}
+#waypoint-entry .waypoint-panel-label{font-size:12px; opacity:0.85; margin:10px 0 4px;}
+#waypoint-entry .waypoint-panel-field{
+  display:inline-block;
+  min-width:22px;
+  background:rgba(255,255,255,0.9);
+  color:#333;
+  border-radius:3px;
+  padding:8px 10px;
+  font-size:13px;
+  letter-spacing:2px;
+}
+#waypoint-entry .waypoint-panel-prompt{font-size:14px; line-height:1.6; margin-bottom:18px;}
+#waypoint-entry .waypoint-panel-choices{display:flex; gap:14px; justify-content:center;}
+#waypoint-entry .waypoint-panel-choice{
+  background:#8fe0e6;
+  color:#0a4a55;
+  border-radius:16px;
+  padding:8px 26px;
+  font-size:13px;
+  letter-spacing:1px;
+}
+#waypoint-entry .waypoint-panel-choice.is-dim{background:rgba(255,255,255,0.3); color:rgba(255,255,255,0.8);}
+#waypoint-entry .waypoint-type-cursor{
+  display:inline-block;
+  width:8px;
+  height:14px;
+  background:#fff;
+  margin-left:2px;
+  vertical-align:-2px;
+  animation:waypoint-type-blink 0.9s steps(1) infinite;
+}
+@keyframes waypoint-type-blink{50%{opacity:0;}}
+#waypoint-entry .waypoint-typed{
+  display:inline-block;
+  animation:waypoint-char-pop 0.18s ease-out;
+}
+@keyframes waypoint-char-pop{
+  0%{transform:scale(1.8); opacity:0;}
+  100%{transform:scale(1); opacity:1;}
+}
+
+#waypoint-matrix{background:#000;}
+#waypoint-tunnel{position:absolute; inset:0;}
+#waypoint-loading-label{
+  position:absolute;
+  left:50%;
+  top:56%;
+  transform:translate(-50%,-50%);
+  z-index:3;
+  color:#f2f2f2;
+  font-size:20px;
+  letter-spacing:6px;
+  text-transform:uppercase;
+  text-shadow:0 0 10px rgba(255,255,255,0.6);
+}
+#waypoint-loading-bar{
+  position:absolute;
+  left:50%;
+  top:64%;
+  transform:translateX(-50%);
+  z-index:3;
+  width:260px;
+  height:2px;
+  background:#333;
+}
+#waypoint-loading-fill{
+  height:100%;
+  width:0%;
+  background:#f2f2f2;
+  box-shadow:0 0 8px rgba(255,255,255,0.7);
+}
+
+#waypoint-entry:has(#waypoint-welcome.is-on){
+  background:#06140a;
+}
+#waypoint-entry .waypoint-welcome{
+  font-family:'VT323', monospace;
+  font-size:44px;
+  letter-spacing:2px;
+  color:#B6FFC0;
+  text-align:center;
+  text-shadow:0 0 8px rgba(63,243,90,0.45);
+}
+#waypoint-entry .waypoint-scramble{
+  color:#3FF35A;
+  display:inline-block;
+  min-width:5ch;
+}
+
+#waypoint-glass{
+  position:fixed;
+  inset:0;
+  z-index:4020;
+  display:none;
+  pointer-events:none;
+}
+#waypoint-glass.is-on{display:block;}
+#waypoint-glass .shard{
+  position:absolute;
+  overflow:hidden;
+  background:linear-gradient(155deg, rgba(198,255,210,0.78) 0%, rgba(46,120,62,0.7) 48%, rgba(8,28,12,0.82) 100%);
+  border:1px solid rgba(182,255,192,0.42);
+  box-shadow:inset 0 0 18px rgba(63,243,90,0.22), inset 0 1px 0 rgba(182,255,192,0.28), 0 0 10px rgba(63,243,90,0.16);
+  transition:transform 0.8s cubic-bezier(.5,0,.85,1), opacity 0.8s ease;
+}
+#waypoint-glass .shard-inner{
+  position:absolute;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+#waypoint-glass .shard.fall{
+  transform:translateY(115vh) rotate(var(--rot,25deg));
+  opacity:0;
+}
+#waypoint-glass .shard.crack{
+  animation:waypoint-crack-flash 0.35s ease-out;
+}
+@keyframes waypoint-crack-flash{
+  0%{border-color:rgba(182,255,192,0.4); box-shadow:inset 0 0 14px rgba(63,243,90,0.2);}
+  40%{border-color:#B6FFC0; box-shadow:inset 0 0 24px rgba(182,255,192,0.55), 0 0 14px rgba(63,243,90,0.55);}
+  100%{border-color:rgba(182,255,192,0.4); box-shadow:inset 0 0 14px rgba(63,243,90,0.2);}
+}
+
+#waypoint-rain{
+  position:fixed;
+  inset:0;
+  z-index:4010;
+  background:#000;
+  display:none;
+}
+#waypoint-rain.is-on{display:block;}

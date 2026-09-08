@@ -1,3 +1,6 @@
+import { bindNavCompact, syncNavMore } from "./nav-compact.js";
+import { glitchFileReport, resetReportHeal } from "./report-effects.js";
+
 const PAGE_IDS = new Set(["roadmap", "suggestions", "bugs", "report"]);
 
 function flashTab(button) {
@@ -16,6 +19,8 @@ export function showPage(id) {
     document.querySelectorAll("nav button[data-page]").forEach((button) => {
         button.classList.toggle("active", button.dataset.page === pageId);
     });
+    syncNavMore();
+    if (pageId === "report") resetReportHeal();
     const next = `#${pageId}`;
     if (location.hash !== next) {
         history.replaceState(null, "", next);
@@ -36,7 +41,9 @@ export function bindTabs() {
     });
 
     document.getElementById("bugsFileReport")?.addEventListener("click", () => {
-        showPage("report");
+        const btn = document.getElementById("bugsFileReport");
+        glitchFileReport(btn);
+        setTimeout(() => showPage("report"), 480);
     });
     document.getElementById("reportCancel")?.addEventListener("click", () => {
         showPage("bugs");
@@ -47,4 +54,5 @@ export function bindTabs() {
 
     window.addEventListener("hashchange", () => showPage(currentPage()));
     showPage(currentPage());
+    bindNavCompact();
 }

@@ -1,11 +1,57 @@
 import { padStub } from "@alysum/roadmap/slug.js";
 import { loginHref, state } from "./state.js";
-import { toggleVote } from "@alysum/roadmap/votes.js";
+import { toggleDownvote, toggleVote } from "@alysum/roadmap/votes.js?v=4";
 import { supabase } from "@alysum/authentication/client.js";
-import { bindReplyThread, replyLabel } from "./replies.js";
+import { bindReplyThread, setReplyTrigger } from "./replies.js?v=6";
+import { bindFilingDelete } from "./filing-delete.js";
 
 function voteKey(kind, stub) {
     return `${kind}:${stub}`;
+}
+
+function asCount(n) {
+    const value = Number(n);
+    return Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+}
+
+function writeCount(button, n) {
+    const el = button?.querySelector(".count");
+    if (el) el.textContent = String(asCount(n));
+}
+
+function paintPair(side, row, key) {
+    const up = side?.querySelector(".upvote");
+    const down = side?.querySelector(".downvote");
+    up?.classList.toggle("voted", Boolean(row.voted));
+    down?.classList.toggle("voted", Boolean(row.downVoted));
+    writeCount(up, row.votes);
+    writeCount(down, row.downs);
+    state.voteMap.set(key, row.votes);
+    state.downMap.set(key, row.downs);
+}
+
+function flipUp(row, key, on) {
+    row.votes = asCount(row.votes);
+    if (on && !row.voted) {
+        row.votes += 1;
+        state.myVotes.add(key);
+    } else if (!on && row.voted) {
+        row.votes = Math.max(0, row.votes - 1);
+        state.myVotes.delete(key);
+    }
+    row.voted = on;
+}
+
+function flipDown(row, key, on) {
+    row.downs = asCount(row.downs);
+    if (on && !row.downVoted) {
+        row.downs += 1;
+        state.myDowns.add(key);
+    } else if (!on && row.downVoted) {
+        row.downs = Math.max(0, row.downs - 1);
+        state.myDowns.delete(key);
+    }
+    row.downVoted = on;
 }
 
 async function onUpvote(button, row) {
@@ -14,25 +60,38 @@ async function onUpvote(button, row) {
         return;
     }
     const key = voteKey(row.kind, row.stub);
-    const was = state.myVotes.has(key);
+    const was = row.voted;
+    const hadDown = row.downVoted;
+    flipUp(row, key, !was);
+    if (!was && hadDown) flipDown(row, key, false);
+    paintPair(button.parentElement, row, key);
     try {
-        const nowVoted = await toggleVote(supabase, state.user.userId, row.kind, row.stub, was);
-        const countEl = button.querySelector(".count");
-        let count = Number(countEl?.textContent || 0);
-        if (nowVoted && !was) {
-            count += 1;
-            state.myVotes.add(key);
-            button.classList.add("voted");
-        } else if (!nowVoted && was) {
-            count = Math.max(0, count - 1);
-            state.myVotes.delete(key);
-            button.classList.remove("voted");
-        }
-        if (countEl) countEl.textContent = String(count);
-        state.voteMap.set(key, count);
-        row.votes = count;
-        row.voted = nowVoted;
+        await toggleVote(supabase, state.user.userId, row.kind, row.stub, was);
     } catch (err) {
+        flipUp(row, key, was);
+        if (!was && hadDown) flipDown(row, key, true);
+        paintPair(button.parentElement, row, key);
+        console.error(err);
+    }
+}
+
+async function onDownvote(button, row) {
+    if (!state.user) {
+        location.href = loginHref(row.kind === "bug" ? "bugs" : "suggestions");
+        return;
+    }
+    const key = voteKey(row.kind, row.stub);
+    const was = row.downVoted;
+    const hadUp = row.voted;
+    flipDown(row, key, !was);
+    if (!was && hadUp) flipUp(row, key, false);
+    paintPair(button.parentElement, row, key);
+    try {
+        await toggleDownvote(supabase, state.user.userId, row.kind, row.stub, was);
+    } catch (err) {
+        flipDown(row, key, was);
+        if (!was && hadUp) flipUp(row, key, true);
+        paintPair(button.parentElement, row, key);
         console.error(err);
     }
 }
@@ -74,7 +133,7 @@ export function paintRoadmap(items) {
     }
 }
 
-function paintEntry(row, { withReplies }) {
+function paintEntry(row) {
     const entry = document.createElement("div");
     entry.className = "entry";
     entry.dataset.stub = String(row.stub);
@@ -96,16 +155,14 @@ function paintEntry(row, { withReplies }) {
     author.className = "author";
     author.textContent = row.author;
     meta.appendChild(author);
-    if (withReplies) {
-        const replies = document.createElement("span");
-        replies.className = "reply-count";
-        replies.dataset.count = String(row.replyCount || 0);
-        replies.textContent = replyLabel(row.replyCount);
-        meta.appendChild(replies);
-    }
+    const replies = document.createElement("span");
+    replies.className = "reply-count replies";
+    setReplyTrigger(replies, row.replyCount);
+    meta.appendChild(replies);
     const when = document.createElement("span");
     when.textContent = row.relative || "";
     meta.append(when);
+    bindFilingDelete(meta, row);
     body.append(h4, p, meta);
 
     const side = document.createElement("div");
@@ -125,13 +182,24 @@ function paintEntry(row, { withReplies }) {
     upvote.append("▲ ");
     const count = document.createElement("span");
     count.className = "count";
-    count.textContent = String(row.votes || 0);
+    count.textContent = String(asCount(row.votes));
     upvote.appendChild(count);
     upvote.addEventListener("click", () => onUpvote(upvote, row));
     side.append(tag, upvote);
+    const downvote = document.createElement("button");
+    downvote.type = "button";
+    downvote.className = "downvote";
+    if (row.downVoted) downvote.classList.add("voted");
+    downvote.append("▼ ");
+    const downCount = document.createElement("span");
+    downCount.className = "count";
+    downCount.textContent = String(asCount(row.downs));
+    downvote.appendChild(downCount);
+    downvote.addEventListener("click", () => onDownvote(downvote, row));
+    side.append(downvote);
 
     entry.append(stub, body, side);
-    if (withReplies) bindReplyThread(entry, row);
+    bindReplyThread(entry, row);
     return entry;
 }
 
@@ -139,12 +207,12 @@ export function paintBugs(rows) {
     const ledger = document.getElementById("bugLedger");
     if (!ledger) return;
     ledger.replaceChildren();
-    rows.forEach((row) => ledger.appendChild(paintEntry(row, { withReplies: true })));
+    rows.forEach((row) => ledger.appendChild(paintEntry(row)));
 }
 
 export function paintSuggestions(rows) {
     const ledger = document.getElementById("suggestionLedger");
     if (!ledger) return;
     ledger.replaceChildren();
-    rows.forEach((row) => ledger.appendChild(paintEntry(row, { withReplies: false })));
+    rows.forEach((row) => ledger.appendChild(paintEntry(row)));
 }

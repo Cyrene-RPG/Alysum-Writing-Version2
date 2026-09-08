@@ -37,6 +37,10 @@ Account plus studio stats.
 - `id`, `username`, `display_name`
 - `account_type` — `author` | `reader` | `both`
 - `daily_word_goal`, `writing_day_totals`, `streak`
+- `word_goal_mode` — `track` | `goal` | `pace` (UI: Daily Goal / Writers Challenge / Maintain your pace)
+- `daily_writing_enabled` — master on/off; off still records `writing_day_totals`, just hides the tracker
+- `writing_checkpoints` — Daily Goal mode day milestones, sorted int array e.g. `[200, 500, 1000]` (1 = a goal, 2+ = checkpoints)
+- `writing_goal_hidden` — Daily Goal mode: true hides the Studio bar and pops a celebration on reach; false shows the bar
 
 ## Encyclopedia blob
 

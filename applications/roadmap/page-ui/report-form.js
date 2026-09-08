@@ -1,10 +1,12 @@
 import { supabase } from "@alysum/authentication/client.js";
-import { submitReport } from "@alysum/roadmap/store.js?v=3";
+import { submitReport } from "@alysum/roadmap/store.js?v=9";
 import { isReportQuotaOpen } from "@alysum/roadmap/quotas.js";
 import { isAttachmentBucketMissing, uploadStagingAttachment } from "@alysum/roadmap/upload.js";
 import { loginHref, state } from "./state.js";
 import { showPage } from "./tabs.js";
 import { bindDropzone, chosenFiles, clearFiles } from "./attachments.js";
+import { playUiSound } from "./ui-sounds.js?v=13";
+import { healReportSubmit, resetReportHeal } from "./report-effects.js";
 
 function showError(id, message) {
     const el = document.getElementById(id);
@@ -20,6 +22,17 @@ function minutesUntil(iso) {
     return `${mins} min`;
 }
 
+function restoreLimitNote() {
+    const note = document.querySelector("#reportFrame .blocked-note");
+    if (!note || note.querySelector("#resetTimer")) return;
+    note.replaceChildren();
+    note.append("LIMIT REACHED — 3/3 reports filed this hour. Resets in ");
+    const timer = document.createElement("span");
+    timer.id = "resetTimer";
+    note.append(timer);
+    note.append(". Try again then, or edit an existing report instead.");
+}
+
 function paintQuota(quota) {
     const used = Number(quota?.used) || 0;
     const limit = Number(quota?.limit) || 3;
@@ -27,9 +40,10 @@ function paintQuota(quota) {
     const bar = document.getElementById("quotaBar");
     const frame = document.getElementById("reportFrame");
     const timer = document.getElementById("resetTimer");
+    frame?.classList.remove("quota-blocked");
     if (isReportQuotaOpen(state.user?.username) || limit >= 9999) {
         if (text) text.textContent = "no cooldown";
-        frame?.classList.remove("quota-blocked");
+        restoreLimitNote();
         return;
     }
     if (text) text.textContent = `${used} / 3 used this hour`;
@@ -45,6 +59,15 @@ function paintQuota(quota) {
         frame?.classList.add("quota-blocked");
         if (timer) timer.textContent = minutesUntil(quota.resetAt);
     }
+}
+
+function paintReportHint() {
+    const hint = document.querySelector("#report .field-hint");
+    if (!hint || !state.user) return;
+    const asAnon = document.getElementById("reportAnonymous")?.checked;
+    hint.textContent = asAnon
+        ? "Filed as anonymous · duplicate titles will be flagged before submit"
+        : `Filed as user:${state.user.username} · duplicate titles will be flagged before submit`;
 }
 
 function lockGuest() {
@@ -64,14 +87,14 @@ function lockGuest() {
 
 export function bindReportForm({ quota }) {
     const line = document.getElementById("reportAuthLine");
-    const hint = document.querySelector("#report .field-hint");
     if (state.user) {
+        restoreLimitNote();
         if (line) {
             line.textContent = isReportQuotaOpen(state.user.username)
                 ? `Authenticated as user:${state.user.username}. Report cooldown is off for this account.`
                 : `Authenticated as user:${state.user.username}. Submissions are capped at 3 per rolling hour to keep the log readable.`;
         }
-        if (hint) hint.textContent = `Filed as user:${state.user.username} · duplicate titles will be flagged before submit`;
+        paintReportHint();
         paintQuota(quota || { used: 0, limit: 3 });
     } else {
         if (line) {
@@ -93,6 +116,7 @@ export function bindReportForm({ quota }) {
         return;
     }
     if (submit) submit.dataset.wired = "1";
+    document.getElementById("reportAnonymous")?.addEventListener("change", paintReportHint);
     bindDropzone((message) => showError("reportSubmitError", message));
 
     submit?.addEventListener("click", async () => {
@@ -106,18 +130,24 @@ export function bindReportForm({ quota }) {
         showError("reportTitleError", "");
         showError("reportSubmitError", "");
         if (!title) {
+            resetReportHeal(submit);
             showError("reportTitleError", "Title is required.");
+            playUiSound("error");
             return;
         }
         if (!body) {
+            resetReportHeal(submit);
             showError("reportSubmitError", "Description is required.");
+            playUiSound("error");
             return;
         }
         const dup = state.catalog.bugs.some(
             (row) => String(row.title || "").toLowerCase() === title.toLowerCase()
         );
         if (dup) {
+            resetReportHeal(submit);
             showError("reportTitleError", "duplicate title — edit the existing report instead");
+            playUiSound("error");
             return;
         }
         try {
@@ -130,14 +160,20 @@ export function bindReportForm({ quota }) {
                     if (!isAttachmentBucketMissing(err)) throw err;
                 }
             }
+            const asAnon = Boolean(document.getElementById("reportAnonymous")?.checked);
             const result = await submitReport(supabase, {
                 title,
                 body,
                 severity,
                 files: uploaded,
+                anonymous: asAnon,
             });
+            playUiSound("report");
             document.getElementById("reportTitle").value = "";
             document.getElementById("reportBody").value = "";
+            const anonBox = document.getElementById("reportAnonymous");
+            if (anonBox) anonBox.checked = false;
+            paintReportHint();
             clearFiles();
             state.catalog.bugs.unshift({
                 stub: result.stub,
@@ -146,21 +182,26 @@ export function bindReportForm({ quota }) {
                 body,
                 severity,
                 status: "open",
-                authorUsername: state.user.username,
-                author: `user:${state.user.username}`,
+                authorUsername: asAnon ? "anonymous" : state.user.username,
+                author: asAnon ? "anonymous" : `user:${state.user.username}`,
                 createdAt: new Date().toISOString(),
                 relative: "just now",
                 votes: 0,
                 voted: false,
+                downs: 0,
+                downVoted: false,
                 replyCount: 0,
                 files: uploaded,
             });
+            await healReportSubmit(submit);
             showPage("bugs");
             window.dispatchEvent(new Event("roadmap:refresh-lists"));
         } catch (err) {
             if (String(err.message || "").includes("LIMIT REACHED")) {
                 document.getElementById("reportFrame")?.classList.add("quota-blocked");
             }
+            resetReportHeal(submit);
+            playUiSound("error");
             showError("reportSubmitError", err.message || "Could not submit.");
         }
     });

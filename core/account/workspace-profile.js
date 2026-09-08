@@ -14,10 +14,14 @@ function fromLocalRow() {
     const row = getProfileRow() || {};
     return {
         name: row.display_name || row.username || "Guest",
+        username: String(row.username || "").trim() || "guest",
         imageUrl: String(row.profile_image_url || "").trim(),
         streak: row.streak,
         dailyWordGoal: row.daily_word_goal ?? row.dailyWordGoal,
         wordGoalMode: row.word_goal_mode ?? row.wordGoalMode,
+        dailyWritingEnabled: row.daily_writing_enabled ?? row.dailyWritingEnabled,
+        writingCheckpoints: row.writing_checkpoints ?? row.writingCheckpoints,
+        writingGoalHidden: row.writing_goal_hidden ?? row.writingGoalHidden,
         writingDayTotals: row.writing_day_totals ?? row.writingDayTotals,
         writingDayRemoved: row.writing_day_removed ?? row.writingDayRemoved,
         xp: row.xp,
@@ -51,16 +55,17 @@ function writeProfileCache(userId, profile) {
 }
 
 export function peekWorkspaceProfile(session) {
-    if (!session || session.mode === "none") return { name: "A", imageUrl: "" };
+    if (!session || session.mode === "none") return { name: "A", username: "", imageUrl: "" };
     if (session.mode === "local") return fromLocalRow();
     return readProfileCache(session.user?.id) || {
         name: session.user?.email || "A",
+        username: "",
         imageUrl: "",
     };
 }
 
 export async function loadWorkspaceProfile(supabase, session) {
-    if (!session || session.mode === "none") return { name: "A", imageUrl: "" };
+    if (!session || session.mode === "none") return { name: "A", username: "", imageUrl: "" };
     if (session.mode === "local") return fromLocalRow();
     const fallback = peekWorkspaceProfile(session);
     try {
@@ -81,12 +86,29 @@ export async function loadWorkspaceProfile(supabase, session) {
         } catch {
             /* not migrated yet */
         }
+        // Daily-writing toggle + checkpoints land even later — keep them in their
+        // own tolerant select so a missing migration can't blank the stats above.
+        let dailyWriting = null;
+        try {
+            const { data: d, error: e } = await supabase
+                .from("users")
+                .select("daily_writing_enabled, writing_checkpoints, writing_goal_hidden")
+                .eq("id", session.user.id)
+                .maybeSingle();
+            if (!e) dailyWriting = d;
+        } catch {
+            /* not migrated yet */
+        }
         const profile = {
             name: data?.display_name || data?.username || session.user?.email || fallback.name || "A",
+            username: String(data?.username || fallback.username || "").trim(),
             imageUrl: String(data?.profile_image_url || "").trim(),
             streak: data?.streak ?? fallback.streak,
             dailyWordGoal: data?.daily_word_goal ?? fallback.dailyWordGoal,
             wordGoalMode: stats?.word_goal_mode ?? fallback.wordGoalMode,
+            dailyWritingEnabled: dailyWriting?.daily_writing_enabled ?? fallback.dailyWritingEnabled,
+            writingCheckpoints: dailyWriting?.writing_checkpoints ?? fallback.writingCheckpoints,
+            writingGoalHidden: dailyWriting?.writing_goal_hidden ?? fallback.writingGoalHidden,
             writingDayTotals: data?.writing_day_totals ?? fallback.writingDayTotals,
             writingDayRemoved: stats?.writing_day_removed ?? fallback.writingDayRemoved,
             xp: stats?.xp ?? fallback.xp ?? 0,
