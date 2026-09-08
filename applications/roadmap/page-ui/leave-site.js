@@ -13,6 +13,32 @@ const VOLUME = 0.52;
 
 let leaving = false;
 
+function isSkipKey(event) {
+    if (event.repeat) return false;
+    if (event.metaKey || event.ctrlKey || event.altKey) return false;
+    const key = event.key || "";
+    if (/^F\d{1,2}$/.test(key)) return false;
+    return true;
+}
+
+function hushClip(audio) {
+    if (!audio) return;
+    try {
+        audio.pause();
+        audio.removeAttribute("src");
+        audio.load();
+    } catch {
+        /* ignore */
+    }
+}
+
+function jumpLeave(href, clips) {
+    clips.forEach(hushClip);
+    document.documentElement.style.background = "#000";
+    document.body.style.background = "#000";
+    location.href = href;
+}
+
 function playClip(url, volume = VOLUME) {
     const audio = new Audio(url);
     audio.preload = "auto";
@@ -56,11 +82,21 @@ async function leaveTo(href) {
 
     const sting = playClip(LEAVE2);
     const site = playClip(LEAVE_SITE);
+    let skipped = false;
+    const onKey = (event) => {
+        if (!isSkipKey(event)) return;
+        event.preventDefault();
+        skipped = true;
+        window.removeEventListener("keydown", onKey, true);
+        jumpLeave(href, [sting, site]);
+    };
+    window.addEventListener("keydown", onKey, true);
     void armClip(site);
     const stingDone = waitEnded(sting);
     void sting.play().catch(() => {});
     const snapshot = prepareLeaveSnapshot();
     await stingDone;
+    if (skipped) return;
 
     site.dataset.live = "1";
     site.volume = VOLUME;
@@ -68,7 +104,9 @@ async function leaveTo(href) {
     const siteDone = waitEnded(site);
     void site.play().catch(() => {});
     await Promise.all([playLeaveFx(await snapshot), siteDone]);
+    if (skipped) return;
 
+    window.removeEventListener("keydown", onKey, true);
     document.documentElement.style.background = "#000";
     document.body.style.background = "#000";
     location.href = href;

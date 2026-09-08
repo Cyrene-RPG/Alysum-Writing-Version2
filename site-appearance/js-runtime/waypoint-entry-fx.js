@@ -96,6 +96,16 @@ export function stopFinalRain(canvas) {
     canvas?.classList.remove("is-on");
 }
 
+let shatterGen = 0;
+
+export function abortShatter() {
+    shatterGen += 1;
+    stopFinalRain(document.getElementById("waypoint-rain"));
+    const overlay = document.getElementById("waypoint-glass");
+    overlay?.classList.remove("is-on");
+    overlay?.replaceChildren();
+}
+
 function buildShatter(overlay, welcome) {
     overlay.replaceChildren();
     const cols = 6;
@@ -145,22 +155,37 @@ export function shatterAndReveal({
     hold = 1800,
     fade = 200,
 }) {
+    const mine = ++shatterGen;
+    const still = () => mine === shatterGen;
     return new Promise((resolve) => {
+        if (!still()) {
+            resolve();
+            return;
+        }
         buildShatter(overlay, welcome);
         overlay.classList.add("is-on");
         overlay.querySelectorAll(".shard").forEach((shard) => shard.classList.add("crack"));
         setTimeout(() => {
+            if (!still()) {
+                resolve();
+                return;
+            }
             seq.classList.add("to-black");
             welcome.style.transition = "opacity 0.25s ease";
             welcome.style.opacity = "0";
             startFinalRain(rain, rainCtx);
             setTimeout(() => {
+                if (!still()) return;
                 overlay.querySelectorAll(".shard").forEach((shard) => {
                     shard.classList.remove("crack");
                     shard.classList.add("fall");
                 });
             }, fallAfter);
             setTimeout(() => {
+                if (!still()) {
+                    resolve();
+                    return;
+                }
                 overlay.classList.remove("is-on");
                 welcome.style.opacity = "";
                 welcome.style.transition = "";

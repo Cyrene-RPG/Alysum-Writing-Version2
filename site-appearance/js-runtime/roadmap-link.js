@@ -1,5 +1,5 @@
-import { playClickR } from "./waypoint-entry-audio.js";
-import { playWaypointEntry } from "./waypoint-entry.js?v=15";
+import { playClickR } from "./waypoint-entry-audio.js?v=2";
+import { playWaypointEntry } from "./waypoint-entry.js?v=18";
 
 const COLLAPSE_KEY = "alysum:roadmap-link:collapsed";
 const GLITCH_CHARS = "!<>-_\\/[]{}=+*^?#%$@01";

@@ -46,6 +46,7 @@
     <link rel="stylesheet" href="/css/roadmap/forms.css?v=4">
     <link rel="stylesheet" href="/css/roadmap/suggest-button.css?v=3">
     <link rel="stylesheet" href="/css/roadmap/report-buttons.css?v=1">
+    <link rel="stylesheet" href="/css/roadmap/chat.css?v=3">
     <script src="/js/pwa-register.js" defer></script>
     <script type="module" src="/js/vercel-analytics.js"></script>
 </head>
@@ -75,6 +76,7 @@
           <button data-page="suggestions" data-label="[ suggest_feature ]" data-label-tight="[suggest_feature]"><span class="nav-wide">[ suggest_feature ]</span><span class="nav-tight">[suggest_feature]</span></button>
           <button data-page="bugs" data-label="[ bugs.log ]" data-label-tight="[bugs.log]"><span class="nav-wide">[ bugs.log ]</span><span class="nav-tight">[bugs.log]</span></button>
           <button data-page="report" data-label="[ file_report ]" data-label-tight="[file_report]"><span class="nav-wide">[ file_report ]</span><span class="nav-tight">[file_report]</span></button>
+          <button data-page="chat" data-label="[ chat ]" data-label-tight="[chat]"><span class="nav-wide">[ chat ]</span><span class="nav-tight">[chat]</span></button>
         </div>
       </div>
       <div class="sound-toggles">
@@ -233,9 +235,47 @@
     </div>
   </section>
 
+  <section id="chat" class="page">
+    <div class="page-head chat-head">
+      <h2>chat --join</h2>
+      <p class="chat-room-title" id="chatRoomTitle"><span class="dot"></span> #general — 4 online</p>
+    </div>
+    <div class="chat-body">
+      <aside class="chat-aside">
+        <div class="chat-channel-list" id="chatChannelList"></div>
+        <button class="group-btn" id="chatGroupBtn" type="button">+ New Group</button>
+        <div class="pending-invites" id="chatPending"></div>
+        <button class="create-group-btn" id="chatCreateGroup" type="button">Create Group</button>
+        <div class="online-head">
+          <h3>Online — 4</h3>
+          <label class="chat-anon">
+            <input type="checkbox" id="chatAnon">
+            anon
+          </label>
+        </div>
+        <button type="button" class="user-item" data-user="you"><span class="dot"></span><span id="chatSelfName">you</span></button>
+        <button type="button" class="user-item" data-user="marcusk"><span class="dot"></span>marcusk</button>
+        <button type="button" class="user-item" data-user="lena_p"><span class="dot"></span>lena_p</button>
+        <button type="button" class="user-item" data-user="priya.s"><span class="dot"></span>priya.s</button>
+        <h3 style="margin-top:20px;">Away — 2</h3>
+        <button type="button" class="user-item away" data-user="davidr"><span class="dot"></span><span class="scramble-name" data-len="6"></span></button>
+        <button type="button" class="user-item away" data-user="zeke_1st"><span class="dot"></span><span class="scramble-name" data-len="8"></span></button>
+      </aside>
+      <div class="chat-col">
+        <div class="chat-log" id="chatLog"></div>
+        <div class="chat-typing" id="chatTyping"></div>
+        <div class="chat-input-bar">
+          <input id="chatMsg" type="text" placeholder="type a message..." autocomplete="off">
+          <button class="send-btn" id="chatSend" type="button">Send</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <img class="roadmap-lewstar" src="/assets/lewstar-mark.png" alt="LewStar" width="69" height="88" />
 </div>
+<div id="chatToastStack"></div>
 
-<script type="module" src="/js/roadmap/page.js?v=66"></script>
+<script type="module" src="/js/roadmap/page.js?v=72"></script>
 </body>
 </html>

@@ -6,15 +6,41 @@ const CHECK_2 = `${START_UP}/Check2.wav`;
 const ENDING = `${START_UP}/EndingSound.wav`;
 const VOLUME = 0.45;
 
+const live = new Set();
+const waiters = new Map();
+
+function finishClip(audio) {
+    if (!live.has(audio) && !waiters.has(audio)) return;
+    live.delete(audio);
+    const resolve = waiters.get(audio);
+    waiters.delete(audio);
+    resolve?.();
+}
+
 function playClip(url, volume = VOLUME) {
     const audio = new Audio(url);
     audio.volume = volume;
     const done = new Promise((resolve) => {
-        audio.addEventListener("ended", resolve, { once: true });
-        audio.addEventListener("error", resolve, { once: true });
+        waiters.set(audio, resolve);
+        audio.addEventListener("ended", () => finishClip(audio), { once: true });
+        audio.addEventListener("error", () => finishClip(audio), { once: true });
     });
-    void audio.play().catch(() => {});
+    live.add(audio);
+    void audio.play().catch(() => finishClip(audio));
     return done;
+}
+
+export function stopWaypointAudio() {
+    for (const audio of [...live]) {
+        try {
+            audio.pause();
+            audio.removeAttribute("src");
+            audio.load();
+        } catch {
+            /* ignore */
+        }
+        finishClip(audio);
+    }
 }
 
 export function playClickR() {

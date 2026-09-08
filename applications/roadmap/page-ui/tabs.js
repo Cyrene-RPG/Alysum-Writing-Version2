@@ -1,7 +1,7 @@
 import { bindNavCompact, syncNavMore } from "./nav-compact.js";
 import { glitchFileReport, resetReportHeal } from "./report-effects.js";
 
-const PAGE_IDS = new Set(["roadmap", "suggestions", "bugs", "report"]);
+const PAGE_IDS = new Set(["roadmap", "suggestions", "bugs", "report", "chat"]);
 
 function flashTab(button) {
     if (!button) return;

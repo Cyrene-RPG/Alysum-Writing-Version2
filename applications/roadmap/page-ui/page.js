@@ -1,7 +1,7 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { wireSupabaseSession } from "@alysum/authentication/session.js";
 import { startMatrixRain } from "./rain.js?v=6";
-import { bindTabs } from "./tabs.js?v=5";
+import { bindTabs } from "./tabs.js?v=6";
 import { state } from "./state.js";
 import { loadCatalog } from "/applications/roadmap/catalog.js";
 import {
@@ -21,7 +21,8 @@ import { startEnchantScramble } from "/applications/roadmap/enchant/scramble.js?
 import { bindTypeSounds } from "./type-sounds.js?v=2";
 import { bindUiSounds } from "./ui-sounds.js?v=16";
 import { bindBackgroundMusic } from "./background-music.js?v=14";
-import { bindLeaveSite } from "./leave-site.js?v=1";
+import { bindLeaveSite } from "./leave-site.js?v=2";
+import { bindChat } from "./chat.js?v=5";
 
 function paintLists() {
     paintRoadmap(state.catalog.items);
@@ -88,6 +89,7 @@ async function refresh(session) {
     paintLists();
     bindSuggestForm({ quota: quotaS });
     bindReportForm({ quota: quotaR });
+    bindChat();
 }
 
 startMatrixRain();
@@ -97,6 +99,7 @@ bindTypeSounds();
 bindUiSounds();
 bindBackgroundMusic();
 bindLeaveSite();
+bindChat();
 bindTabs();
 bindFilterBar(document.getElementById("bugFilters"), (filter) => {
     state.bugFilter = filter;

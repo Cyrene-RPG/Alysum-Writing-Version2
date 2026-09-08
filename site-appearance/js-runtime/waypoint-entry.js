@@ -1,10 +1,11 @@
-import { playCheck1, playCheck2, playEndingSound, playLinkStart } from "./waypoint-entry-audio.js";
+import { playCheck1, playCheck2, playEndingSound, playLinkStart, stopWaypointAudio } from "./waypoint-entry-audio.js?v=2";
 import {
+    abortShatter,
     setTunnelSpeed,
     shatterAndReveal,
     startTunnel,
     stopTunnel,
-} from "./waypoint-entry-fx.js";
+} from "./waypoint-entry-fx.js?v=2";
 
 const RAY_COLORS = ["#e8453f", "#e0d43f", "#4fd6e0", "#c93fd6", "#7a8085", "#3fe06a", "#2e2e2e"];
 const SENSE_WORDS = ["Sight", "Sound", "Smell", "Taste", "Touch"];
@@ -16,15 +17,19 @@ const GLYPHS = [...new Set([
     "ᔑ ʖ ᓵ ᔑ ᒷ ⎓ ⊣ ⍑"
 ].join(""))];
 
+const SKIP = Symbol("skip");
+
 let playing = false;
 let ringSlots = [];
 let scrambleTimer = 0;
+let typeTimer = 0;
+let skipCtl = null;
 
 function loadCss() {
     if (document.querySelector("link[data-waypoint-entry-css]")) return;
     const sheet = document.createElement("link");
     sheet.rel = "stylesheet";
-    sheet.href = "/site-appearance/css-styles/waypoint-entry.css?v=10";
+    sheet.href = "/site-appearance/css-styles/waypoint-entry.css?v=12";
     sheet.setAttribute("data-waypoint-entry-css", "");
     document.head.appendChild(sheet);
 }
@@ -99,8 +104,68 @@ function showStage(id) {
     });
 }
 
+function isSkipKey(event) {
+    if (event.repeat) return false;
+    if (event.metaKey || event.ctrlKey || event.altKey) return false;
+    const key = event.key || "";
+    if (/^F\d{1,2}$/.test(key)) return false;
+    return true;
+}
+
 function later(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    const signal = skipCtl?.signal;
+    return new Promise((resolve, reject) => {
+        if (signal?.aborted) {
+            reject(SKIP);
+            return;
+        }
+        const id = setTimeout(() => {
+            signal?.removeEventListener("abort", onAbort);
+            resolve();
+        }, ms);
+        function onAbort() {
+            clearTimeout(id);
+            reject(SKIP);
+        }
+        signal?.addEventListener("abort", onAbort, { once: true });
+    });
+}
+
+function untilSkipOr(promise) {
+    const signal = skipCtl?.signal;
+    if (signal?.aborted) return Promise.reject(SKIP);
+    return new Promise((resolve, reject) => {
+        function onAbort() {
+            reject(SKIP);
+        }
+        signal?.addEventListener("abort", onAbort, { once: true });
+        promise.then((value) => {
+            signal?.removeEventListener("abort", onAbort);
+            if (signal?.aborted) reject(SKIP);
+            else resolve(value);
+        }, (err) => {
+            signal?.removeEventListener("abort", onAbort);
+            reject(err);
+        });
+    });
+}
+
+function passSkip(err) {
+    if (err === SKIP) return SKIP;
+    throw err;
+}
+
+async function waitAll(promises) {
+    const rows = await Promise.all(promises.map((p) => Promise.resolve(p).catch(passSkip)));
+    if (skipCtl?.signal.aborted || rows.includes(SKIP)) throw SKIP;
+}
+
+function after(ms, fn) {
+    const signal = skipCtl?.signal;
+    const id = setTimeout(() => {
+        if (!signal?.aborted) fn();
+    }, ms);
+    signal?.addEventListener("abort", () => clearTimeout(id), { once: true });
 }
 
 function buildBurst(burst) {
@@ -143,40 +208,62 @@ function buildRingStack(ringStage) {
 function staggerRingsIn() {
     ringSlots.forEach((row, i) => {
         const appearAt = i * 400;
-        setTimeout(() => row.slot.classList.add("in"), appearAt);
-        setTimeout(() => {
+        after(appearAt, () => row.slot.classList.add("in"));
+        after(appearAt + 220, () => {
             row.slot.style.transform = "translate(0,0) scale(1)";
-        }, appearAt + 220);
-        setTimeout(() => {
+        });
+        after(appearAt + 950, () => {
             row.slot.querySelector(".waypoint-ring")?.style.setProperty("--ringColor", "#3fe06a");
             row.label.style.color = "#3fe06a";
             row.label.textContent = "OK";
-        }, appearAt + 950);
+        });
     });
 }
 
 function staggerRingsOut() {
     ringSlots.forEach((row, i) => {
-        setTimeout(() => {
+        after(i * 100, () => {
             const dir = i % 2 === 0 ? 1 : -1;
             row.slot.style.transform = `translateX(${dir * 120}vw) scale(1)`;
             row.slot.classList.add("out");
-        }, i * 100);
+        });
     });
 }
 
 function typeInto(el, text, delay) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+        const signal = skipCtl?.signal;
+        if (signal?.aborted) {
+            reject(SKIP);
+            return;
+        }
         el.replaceChildren();
         const cursor = document.createElement("span");
         cursor.className = "waypoint-type-cursor";
         el.appendChild(cursor);
         let i = 0;
-        const timer = setInterval(() => {
+        let settled = false;
+        const finish = (err) => {
+            if (settled) return;
+            settled = true;
+            clearInterval(typeTimer);
+            typeTimer = 0;
+            signal?.removeEventListener("abort", onAbort);
+            if (err) reject(err);
+            else resolve();
+        };
+        function onAbort() {
+            cursor.remove();
+            finish(SKIP);
+        }
+        typeTimer = setInterval(() => {
+            if (signal?.aborted) {
+                finish(SKIP);
+                return;
+            }
             if (i >= text.length) {
-                clearInterval(timer);
                 cursor.remove();
-                resolve();
+                finish();
                 return;
             }
             const ch = document.createElement("span");
@@ -185,6 +272,7 @@ function typeInto(el, text, delay) {
             el.insertBefore(ch, cursor);
             i += 1;
         }, delay);
+        signal?.addEventListener("abort", onAbort, { once: true });
     });
 }
 
@@ -240,6 +328,8 @@ function startScramble(el) {
 function stopScramble() {
     if (scrambleTimer) clearInterval(scrambleTimer);
     scrambleTimer = 0;
+    if (typeTimer) clearInterval(typeTimer);
+    typeTimer = 0;
 }
 
 function travelerLabel(raw) {
@@ -250,6 +340,15 @@ function travelerLabel(raw) {
 export async function playWaypointEntry(opts = {}) {
     if (playing) return;
     playing = true;
+    skipCtl = new AbortController();
+    const onKey = (event) => {
+        if (!isSkipKey(event)) return;
+        event.preventDefault();
+        if (skipCtl.signal.aborted) return;
+        skipCtl.abort();
+        stopWaypointAudio();
+    };
+    window.addEventListener("keydown", onKey, true);
     loadCss();
     const seq = ensureLayer();
     const burst = document.getElementById("waypoint-burst");
@@ -266,67 +365,81 @@ export async function playWaypointEntry(opts = {}) {
     const resumeUser = document.getElementById("waypoint-resume-user");
     if (resumeUser) resumeUser.textContent = travelerLabel(opts.traveler);
 
-    const soundDone = playLinkStart();
-    document.documentElement.classList.add("waypoint-lock");
-    seq.classList.add("is-on");
-    seq.classList.remove("to-black", "is-fast");
-    document.getElementById("waypoint-welcome").style.opacity = "";
-    buildBurst(burst);
-    showStage("waypoint-burst");
+    try {
+        const soundDone = playLinkStart();
+        document.documentElement.classList.add("waypoint-lock");
+        seq.classList.add("is-on");
+        seq.classList.remove("to-black", "is-fast");
+        document.getElementById("waypoint-welcome").style.opacity = "";
+        buildBurst(burst);
+        showStage("waypoint-burst");
 
-    await later(1100);
-    seq.classList.add("to-black");
-    showStage("waypoint-matrix");
-    startTunnel(canvas, ctx);
-    fill.style.transition = "none";
-    fill.style.width = "0%";
-    requestAnimationFrame(() => {
-        fill.style.transition = "width 3.6s linear";
-        fill.style.width = "100%";
-    });
+        await later(1100);
+        seq.classList.add("to-black");
+        showStage("waypoint-matrix");
+        startTunnel(canvas, ctx);
+        fill.style.transition = "none";
+        fill.style.width = "0%";
+        requestAnimationFrame(() => {
+            fill.style.transition = "width 3.6s linear";
+            fill.style.width = "100%";
+        });
 
-    await later(1200);
-    setTunnelSpeed(0.025);
-    await later(1000);
-    setTunnelSpeed(0.06);
-    await Promise.all([later(1400), soundDone]);
-    stopTunnel();
-    seq.classList.remove("to-black");
-    const checkDone = playCheck1();
-    buildRingStack(rings);
-    showStage("waypoint-rings");
-    staggerRingsIn();
+        await later(1200);
+        setTunnelSpeed(0.025);
+        await later(1000);
+        setTunnelSpeed(0.06);
+        await waitAll([later(1400), untilSkipOr(soundDone)]);
+        stopTunnel();
+        seq.classList.remove("to-black");
+        const checkDone = playCheck1();
+        buildRingStack(rings);
+        showStage("waypoint-rings");
+        staggerRingsIn();
 
-    await later(3100);
-    staggerRingsOut();
-    await Promise.all([later(760), checkDone]);
+        await later(3100);
+        staggerRingsOut();
+        await waitAll([later(760), untilSkipOr(checkDone)]);
 
-    const check2Done = playCheck2();
-    await runLangSelect();
-    showStage("waypoint-connect");
-    void runLogin();
+        const check2Done = playCheck2();
+        await runLangSelect();
+        showStage("waypoint-connect");
+        void runLogin().catch((err) => {
+            if (err !== SKIP) console.warn(err);
+        });
 
-    await later(2400);
-    showStage("waypoint-resume");
+        await later(2400);
+        showStage("waypoint-resume");
 
-    await Promise.all([later(800), check2Done]);
-    const endingDone = playEndingSound();
-    showStage("waypoint-welcome");
-    startScramble(scramble);
+        await waitAll([later(800), untilSkipOr(check2Done)]);
+        const endingDone = playEndingSound();
+        showStage("waypoint-welcome");
+        startScramble(scramble);
 
-    await later(2300);
-    stopScramble();
-    await shatterAndReveal({
-        seq,
-        welcome,
-        overlay,
-        rain,
-        rainCtx,
-        crack: 350,
-        fallAfter: 150,
-        hold: 1900,
-        fade: 200,
-    });
-    await endingDone;
-    playing = false;
+        await later(2300);
+        stopScramble();
+        await untilSkipOr(shatterAndReveal({
+            seq,
+            welcome,
+            overlay,
+            rain,
+            rainCtx,
+            crack: 350,
+            fallAfter: 150,
+            hold: 1900,
+            fade: 200,
+        }));
+        await untilSkipOr(endingDone);
+    } catch (err) {
+        if (err !== SKIP) throw err;
+        seq.classList.add("is-on", "to-black");
+        stopWaypointAudio();
+        stopTunnel();
+        stopScramble();
+        abortShatter();
+    } finally {
+        window.removeEventListener("keydown", onKey, true);
+        skipCtl = null;
+        playing = false;
+    }
 }
