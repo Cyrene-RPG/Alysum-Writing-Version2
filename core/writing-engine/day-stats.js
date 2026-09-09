@@ -16,7 +16,7 @@ export function addLocalDays(dayKey, deltaDays) {
     return localDayKey(dt);
 }
 
-export const DEFAULT_DAILY_WORD_GOAL = 2000;
+export const DEFAULT_DAILY_WORD_GOAL = 1000;
 export const MIN_DAILY_WORD_GOAL = 100;
 export const MAX_CUSTOM_DAILY_WORD_GOAL = 20000;
 
@@ -28,14 +28,89 @@ export function clampDailyWordGoal(n) {
 
 // ---- word goal modes -------------------------------------------------------
 // How the writer wants to relate to a daily goal (chosen in Settings):
-//   track — no target, just today's count      goal — a fixed target + progress bar
+//   track — "Daily Goal": optional goal + checkpoints, shown as a bar or a popup
 //   pace  — target adapts to their own recent 7-day average
-export const WORD_GOAL_MODES = ["track", "goal", "pace"];
-export const DEFAULT_WORD_GOAL_MODE = "goal";
+// The retired "goal" (Writers Challenge) mode normalizes to "track".
+export const WORD_GOAL_MODES = ["track", "pace"];
+export const DEFAULT_WORD_GOAL_MODE = "track";
 
 export function normalizeWordGoalMode(value) {
     const s = String(value || "").trim().toLowerCase();
     return WORD_GOAL_MODES.includes(s) ? s : DEFAULT_WORD_GOAL_MODE;
+}
+
+// ---- checkpoints (mode: track / Writer Goals) --------------------------
+// Optional word-count milestones for the day. The list stores the base goal
+// (largest entry) plus the checkpoint marks below it — so this cap is 6
+// checkpoints + 1 goal.
+export const MAX_CHECKPOINTS = 7;
+
+/** Any input (array, comma/space string already split) -> sorted unique positive
+ *  ints. No upper limit on the value — a checkpoint can be any positive number. */
+export function normalizeCheckpoints(raw) {
+    const arr = Array.isArray(raw) ? raw : [];
+    const clean = [...new Set(
+        arr
+            .map((n) => Math.round(Number(n)))
+            .filter((n) => Number.isFinite(n) && n > 0)
+    )].sort((a, b) => a - b);
+    return clean.slice(0, MAX_CHECKPOINTS);
+}
+
+/** Progress through the day's checkpoints given today's word count. */
+export function checkpointProgress(wordsToday, checkpoints) {
+    const list = normalizeCheckpoints(checkpoints);
+    const w = Math.max(0, Number(wordsToday) || 0);
+    const hit = list.filter((c) => w >= c).length;
+    const next = list.find((c) => w < c) ?? null;
+    const prev = hit > 0 ? list[hit - 1] : 0;
+    const pct = next == null ? 100 : Math.round(((w - prev) / (next - prev)) * 100);
+    return { list, hit, next, pct: Math.max(0, Math.min(100, pct)) };
+}
+
+/** The base goal within a checkpoint list = its largest value (0 if none). */
+export function checkpointGoal(checkpoints) {
+    const list = normalizeCheckpoints(checkpoints);
+    return list.length ? list[list.length - 1] : 0;
+}
+
+// ---- per-weekday overrides (mode: track / Writer Goals) -----------------
+// Recurring per-weekday config: { "<getDay()>": { goal, checkpoints } }, 0 = Sun
+// … 6 = Sat. A weekday absent from the map uses the base goal + checkpoints; an
+// explicit goal of 0 means "no goal that weekday". Display is Monday-first.
+export const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+export const WEEKDAY_LABELS = { 0: "Sun", 1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri", 6: "Sat" };
+export const WEEKDAY_FULL = { 0: "Sunday", 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday", 6: "Saturday" };
+
+/** { "0".."6": { goal:int>=0, checkpoints:int[] } }. Accepts the legacy bare-number shape. */
+export function normalizeWeekdayGoals(raw) {
+    const src = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    const out = {};
+    for (const wd of WEEKDAY_ORDER) {
+        const key = String(wd);
+        if (!(key in src)) continue;
+        const v = src[key];
+        const obj = (v && typeof v === "object" && !Array.isArray(v)) ? v : { goal: v };
+        const goal = Math.round(Number(obj.goal));
+        if (!Number.isFinite(goal) || goal < 0) continue;
+        const g = Math.min(MAX_CUSTOM_DAILY_WORD_GOAL, goal);
+        out[key] = {
+            goal: g,
+            checkpoints: normalizeCheckpoints(obj.checkpoints).filter((n) => n !== g).slice(0, 6),
+        };
+    }
+    return out;
+}
+
+/** Today's { goal, checkpoints } — the weekday override if set, else the base. */
+export function weekdayConfigForToday(weekdayGoals, baseGoal, baseCheckpoints, d = new Date()) {
+    const map = normalizeWeekdayGoals(weekdayGoals);
+    const key = String(d.getDay());
+    if (key in map) return map[key];
+    return {
+        goal: Math.max(0, Math.round(Number(baseGoal) || 0)),
+        checkpoints: normalizeCheckpoints(baseCheckpoints),
+    };
 }
 
 // ---- adaptive pace (mode 3) ----------------------------------------------

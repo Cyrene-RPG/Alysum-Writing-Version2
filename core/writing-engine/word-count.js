@@ -22,9 +22,23 @@ export function countWordsInHtml(html) {
     return text.split(" ").filter(Boolean).length;
 }
 
+// Per-chapter count memo, keyed by chapter id with a content-equality gate.
+// Editing a chapter clones every chapter object (cloneItem), so an object key
+// would never hit; the id key does, and the gate keeps it correct even if some
+// path ever mutates chapter.content in place. Pure — no DOM, storage, network.
+const chapterCountCache = new Map();
+
 export function countWordsInChapter(chapter) {
     if (!chapter || typeof chapter !== "object") return 0;
-    return countWordsInHtml(chapter.content);
+    const content = typeof chapter.content === "string" ? chapter.content : "";
+    const id = typeof chapter.id === "string" ? chapter.id : "";
+    if (!id) return countWordsInHtml(content);
+    const hit = chapterCountCache.get(id);
+    if (hit && hit.content === content) return hit.count;
+    const count = countWordsInHtml(content);
+    if (chapterCountCache.size > 2000) chapterCountCache.clear();
+    chapterCountCache.set(id, { content, count });
+    return count;
 }
 
 const SECTION_KEYS = ["front", "body", "back"];

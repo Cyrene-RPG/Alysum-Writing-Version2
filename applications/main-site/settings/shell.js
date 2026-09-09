@@ -13,7 +13,7 @@ import { setGoalUi } from "/js/settings/saves.js";
 import { applyChromeGradient, getStoredGradientThemeId, getThemePreview } from "@alysum/site-appearance/js-runtime/gradient-theme.js";
 import { getProfileRow, LOCAL_GUEST_USER_ID } from "@alysum/synchronization-engine/local-adapter.js";
 import { normalizeAccountType } from "@alysum/account/mode.js";
-import { fillWelcomeBar } from "/js/welcome-bar.js";
+import { fillWelcomeBar } from "/js/welcome-bar.js?v=2";
 
 export function finishSettingsShell() {
     els.loadingPanel.classList.add("hidden");
@@ -60,7 +60,15 @@ export function initLocalSettingsUi() {
         r.checked = r.value === acct;
     });
 
-    setGoalUi(profile.word_goal_mode, profile.daily_word_goal, profile.writing_day_totals);
+    setGoalUi(
+        profile.word_goal_mode,
+        profile.writing_goal,
+        profile.writing_day_totals,
+        profile.daily_writing_enabled,
+        profile.writing_checkpoints,
+        profile.writing_goal_hidden,
+        profile.writing_weekday_goals,
+    );
 
     finishSettingsShell();
     applySecurityPanel(null, { local: true, username: "guest" });

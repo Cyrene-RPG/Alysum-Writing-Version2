@@ -3,7 +3,7 @@ import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=11";
 import { createEmptyBook } from "@alysum/writing-engine/manuscript.js";
 import { countWordsInSections } from "@alysum/writing-engine/word-count.js";
-import { initWorkspaceShell } from "./shell.js?v=2";
+import { initWorkspaceShell } from "./shell.js?v=9";
 import { bindBookMenu } from "./book-menu.js?v=6";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { getWritingStats } from "@alysum/account/writing-stats.js";
@@ -106,31 +106,65 @@ function renderGoal(goalMount, labelMount, fillMount, profile, userId) {
     const s = getWritingStats(profile || {}, { userId });
     const titleEl = document.getElementById("studioGoalTitle");
     const streakEl = document.getElementById("studioGoalStreak");
+    const notchesEl = document.getElementById("studioGoalNotches");
 
-    goalMount.classList.remove("hidden", "studio-goal--track", "studio-goal--goal", "studio-goal--pace");
-    goalMount.classList.add(`studio-goal--${s.mode}`);
+    goalMount.classList.remove("hidden", "studio-goal--track", "studio-goal--goal", "studio-goal--pace", "has-goal-bar", "is-celebrating");
     fillMount.classList.remove("is-green", "is-yellow", "is-purple");
+    if (notchesEl) notchesEl.innerHTML = "";
 
-    if (s.mode === "track") {
-        if (titleEl) titleEl.textContent = "Today's writing";
+    // Feature switched off in Settings: keep the plain count (like a hidden goal),
+    // no bar, no "goal reached".
+    if (!s.enabled) {
+        goalMount.classList.add("studio-goal--track");
+        if (titleEl) titleEl.textContent = "Word count today";
         labelMount.textContent = `${s.wordsToday.toLocaleString()} words`;
         if (streakEl) streakEl.textContent = s.writeStreak > 0 ? `${s.writeStreak}-day run` : "";
         return;
     }
 
-    if (s.mode === "pace") {
-        if (titleEl) titleEl.innerHTML = `Your pace ~<span class="studio-goal-num">${s.paceGoal.toLocaleString()}</span>/day`;
-        labelMount.textContent = `${s.wordsToday.toLocaleString()} today`;
-        fillMount.style.width = `${s.goalPct}%`;
-        fillMount.classList.add(`is-${s.paceState || "green"}`);
-        if (streakEl) streakEl.textContent = s.paceStreak > 0 ? `${s.paceStreak}-day run` : "";
+    goalMount.classList.add(`studio-goal--${s.mode}`);
+
+    if (s.mode === "track") {
+        const cp = s.checkpoint;
+        const hasTargets = !!(cp && cp.list.length);
+        const target = hasTargets ? cp.next : null;   // rolling goal post; null once all reached
+        const reached = hasTargets && target == null;
+
+        if (titleEl) titleEl.textContent = hasTargets ? "Word count today" : "Today's writing";
+
+        if (!hasTargets) {
+            labelMount.textContent = `${s.wordsToday.toLocaleString()} words`;
+        } else if (s.goalHidden) {
+            // Hidden — no bar. Plain count until reached, then a celebratory line.
+            goalMount.classList.toggle("is-celebrating", reached);
+            labelMount.textContent = reached
+                ? `🎉 Goal reached · ${s.wordsToday.toLocaleString()} words`
+                : `${s.wordsToday.toLocaleString()} words`;
+        } else {
+            // Shown — the bar spans 0 → final goal, with a notch at each checkpoint
+            // (filled once passed). The label still names the next target.
+            goalMount.classList.add("has-goal-bar");
+            const finalGoal = cp.list[cp.list.length - 1] || 1;
+            fillMount.style.width = `${Math.min(100, Math.round((s.wordsToday / finalGoal) * 100))}%`;
+            labelMount.textContent = reached
+                ? `${s.wordsToday.toLocaleString()} · done`
+                : `${s.wordsToday.toLocaleString()} / ${target.toLocaleString()}`;
+            if (notchesEl) {
+                notchesEl.innerHTML = cp.list.slice(0, -1)
+                    .map((c) => `<span class="studio-goal-notch${s.wordsToday >= c ? " is-hit" : ""}" style="left:${Math.min(100, (c / finalGoal) * 100)}%" title="${c.toLocaleString()}"></span>`)
+                    .join("");
+            }
+        }
+        if (streakEl) streakEl.textContent = s.writeStreak > 0 ? `${s.writeStreak}-day run` : "";
         return;
     }
 
-    if (titleEl) titleEl.textContent = "Word goal today";
-    labelMount.textContent = `${s.wordsToday.toLocaleString()} / ${s.goal.toLocaleString()}`;
+    // pace
+    if (titleEl) titleEl.innerHTML = `Your pace ~<span class="studio-goal-num">${s.paceGoal.toLocaleString()}</span>/day`;
+    labelMount.textContent = `${s.wordsToday.toLocaleString()} today`;
     fillMount.style.width = `${s.goalPct}%`;
-    if (streakEl) streakEl.textContent = s.goalStreak > 0 ? `${s.goalStreak}-day run` : "";
+    fillMount.classList.add(`is-${s.paceState || "green"}`);
+    if (streakEl) streakEl.textContent = s.paceStreak > 0 ? `${s.paceStreak}-day run` : "";
 }
 
 function lastWorkedAt(book) {

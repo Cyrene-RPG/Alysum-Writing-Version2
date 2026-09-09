@@ -8,7 +8,9 @@ Then open http://127.0.0.1:3000/
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
+import json
 import os
+import subprocess
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 PORT = int(os.environ.get("PORT", "3000"))
@@ -23,6 +25,14 @@ TYPES = {
     ".svg": "image/svg+xml",
     ".woff2": "font/woff2",
     ".txt": "text/plain; charset=utf-8",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".mp4": "video/mp4",
+    ".mov": "video/quicktime",
+    ".wav": "audio/wav",
+    ".aac": "audio/aac",
 }
 
 EXACT = {
@@ -52,6 +62,7 @@ PAGES = {
     "/privacy-policy": "applications/main-site/pages/privacy-policy.html",
     "/terms-of-service": "applications/main-site/pages/terms-of-service.html",
     "/statistics-spec": "applications/main-site/pages/statistics-spec.html",
+    "/roadmap": "applications/main-site/pages/roadmap-handoff.html",
 }
 
 
@@ -118,6 +129,8 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/word-wars/pages/word-wars-lobby.html"
     if clean == "/word-wars.html":
         return ROOT / "applications/word-wars/pages/word-wars.html"
+    if clean == "/roadmap.html":
+        return ROOT / "applications/main-site/pages/roadmap-handoff.html"
     if clean.endswith(".html") and "/" not in clean[1:]:
         return ROOT / "applications/main-site/pages" / clean[1:]
     return ROOT / clean[1:]
@@ -151,6 +164,65 @@ class Handler(BaseHTTPRequestHandler):
         content_type = TYPES.get(file_path.suffix, "application/octet-stream")
         self.send_response(200)
         self.send_header("Content-Type", content_type)
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def do_POST(self):
+        path = unquote(urlparse(self.path).path)
+        name = path[5:].split("/")[0] if path.startswith("/api/") else ""
+        api_js = ROOT / "api" / f"{name}.js"
+        runner = ROOT / "core/server/run-api.js"
+        if not name or not api_js.is_file() or not runner.is_file():
+            self.send_error(404)
+            return
+        length = int(self.headers.get("Content-Length") or 0)
+        raw = self.rfile.read(length) if length else b"{}"
+        try:
+            parsed_body = json.loads(raw.decode("utf-8") or "{}")
+        except Exception:
+            parsed_body = {}
+        payload = json.dumps({
+            "headers": {str(k).lower(): v for k, v in self.headers.items()},
+            "body": parsed_body,
+        }).encode("utf-8")
+        try:
+            proc = subprocess.run(
+                ["node", str(runner), str(api_js)],
+                input=payload,
+                capture_output=True,
+                cwd=str(ROOT),
+                timeout=60,
+            )
+        except FileNotFoundError:
+            data = b'{"error":"Node is required for /api locally."}'
+            self.send_response(501)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
+        except subprocess.TimeoutExpired:
+            data = b'{"error":"API timed out."}'
+            self.send_response(504)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
+        out = proc.stdout.decode("utf-8", errors="replace").strip()
+        try:
+            msg = json.loads(out or "{}")
+            status = int(msg.get("status") or 500)
+            text = msg.get("body")
+            data = (text if isinstance(text, str) else json.dumps(text or "")).encode("utf-8")
+        except Exception:
+            err = (proc.stderr.decode("utf-8", errors="replace") or "API handler failed.")[:400]
+            status = 500
+            data = json.dumps({"error": err}).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()

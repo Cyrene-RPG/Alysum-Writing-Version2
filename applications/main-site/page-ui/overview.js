@@ -2,7 +2,7 @@ import { supabase } from "@alysum/authentication/client.js";
 import { goToLogin } from "@alysum/desktop/app.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
 import { permanentHandleFromUserData } from "@alysum/account/profile-display.js";
-import { fillWelcomeBar } from "/js/welcome-bar.js";
+import { fillWelcomeBar } from "/js/welcome-bar.js?v=2";
 import { getProfileRow } from "@alysum/synchronization-engine/local-adapter.js";
 import { mergeUserRow, aboutMeText, supportLinksFromSources } from "/js/settings/helpers.js";
 import { supportLinksList } from "@alysum/library/author-profile.js";

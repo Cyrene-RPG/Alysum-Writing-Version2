@@ -161,6 +161,10 @@
       "destination": "/applications/library/pages/library.html"
     },
     {
+      "source": "/roadmap",
+      "destination": "/applications/main-site/pages/roadmap-handoff.html"
+    },
+    {
       "source": "/book",
       "destination": "/applications/library/pages/book.html"
     },
@@ -223,6 +227,10 @@
     {
       "source": "/word-wars.html",
       "destination": "/applications/word-wars/pages/word-wars.html"
+    },
+    {
+      "source": "/roadmap.html",
+      "destination": "/applications/main-site/pages/roadmap-handoff.html"
     },
     {
       "source": "/:page.html",
