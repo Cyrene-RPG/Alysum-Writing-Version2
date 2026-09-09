@@ -5,8 +5,9 @@
  *   1. The day counter — words per local calendar day, in two monotonic maps:
  *      "added" (typing + paste, via set_day_words / writing_day_totals) and
  *      "removed" (deletions, via set_day_removed / writing_day_removed). Both are
- *      mirrored to localStorage. Today's number and the goal/streak use "added"
- *      only (add-only); week/month totals are added − removed.
+ *      mirrored to localStorage. Today's number, like week/month, is added − removed;
+ *      goal/streak calculations stay add-only so a same-day deletion never breaks
+ *      a streak already earned.
  *   2. A read-through view of the XP ledger (users.xp / users.reputation, written
  *      only by the SECURITY DEFINER RPCs in supabase-statistics.sql) turned into
  *      level / progress via core/statistics/.
@@ -140,8 +141,9 @@ function creditDay(prefix, rpc, profileCol, { userId, supabase, isLocal, delta }
 
 /**
  * Record today's word activity. `added` = words typed or pasted (credited to the
- * daily counter / goal); `removed` = words deleted (pulls down week/month only).
- * Both are monotonic per day — deletes never shrink today's number.
+ * daily counter / goal); `removed` = words deleted (pulls down today/week/month).
+ * Both maps are monotonic per day — deleting only ever adds to `removed`, which
+ * is netted against `added` when reading the stats back out.
  */
 export function recordTypedWords({ userId, supabase, isLocal = false, added = 0, removed = 0 } = {}) {
     if (!userId) return;
@@ -162,7 +164,7 @@ export function getWritingStats(profile = {}, { userId } = {}) {
     const today = localDayKey();
 
     const mode = normalizeWordGoalMode(profile.wordGoalMode ?? profile.word_goal_mode);
-    const wordsToday = wordsTypedOnDay(added, today);
+    const wordsToday = netRange((m) => wordsTypedOnDay(m, today), added, removed);
     const fixedGoal = clampDailyWordGoal(profile.dailyWordGoal ?? profile.daily_word_goal);
     const paceGoal = computePaceGoal(added, today);
     const goal = mode === "goal" ? fixedGoal : mode === "pace" ? paceGoal : 0;
