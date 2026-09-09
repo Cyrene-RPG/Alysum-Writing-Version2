@@ -75,11 +75,12 @@ function fillSettingsFromRow(user, row) {
 
     setGoalUi(
         data.wordGoalMode,
-        data.dailyWordGoal,
+        data.writingGoal,
         data.writingDayTotals,
         data.dailyWritingEnabled,
         data.writingCheckpoints,
         data.writingGoalHidden,
+        data.writingWeekdayGoals,
     );
 
     const acct = normalizeAccountType(data.accountType);

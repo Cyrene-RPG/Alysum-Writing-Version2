@@ -143,9 +143,11 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS rep_color_unlock int NOT NULL 
 -- = added - removed; today's number and the goal stay add-only.
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS writing_day_removed jsonb NOT NULL DEFAULT '{}'::jsonb;
 
--- How the writer relates to a daily goal: 'track' (none), 'goal' (fixed target), 'pace' (adaptive).
--- UI labels these Sprint / Challenge Goal / Maintain your pace; the stored values are unchanged.
-ALTER TABLE public.users ADD COLUMN IF NOT EXISTS word_goal_mode text NOT NULL DEFAULT 'goal';
+-- How the writer relates to a daily goal: 'track' (Daily Goal — optional goal +
+-- checkpoints) or 'pace' (adaptive). The retired 'goal' (Writers Challenge) mode
+-- is still permitted by the CHECK for old rows but the app normalizes it to 'track'.
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS word_goal_mode text NOT NULL DEFAULT 'track';
+ALTER TABLE public.users ALTER COLUMN word_goal_mode SET DEFAULT 'track';
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -155,17 +157,28 @@ BEGIN
       ADD CONSTRAINT users_word_goal_mode_chk CHECK (word_goal_mode IN ('track', 'goal', 'pace'));
   END IF;
 END $$;
+-- Retire the 'goal' mode: existing rows fall back to Daily Goal.
+UPDATE public.users SET word_goal_mode = 'track' WHERE word_goal_mode = 'goal';
 
 -- Master on/off for the whole Daily Writing feature. Off = keep recording
 -- writing_day_totals silently, but hide the tracker on Studio / Overview.
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS daily_writing_enabled boolean NOT NULL DEFAULT true;
 
--- Daily Goal (track) mode word-count milestones for the day, e.g. [200, 500, 1000].
+-- Writer Goals (track) mode: the daily goal as its own number (0 = no goal).
+-- Kept separate from the legacy daily_word_goal (which keeps its 2000 default).
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS writing_goal integer NOT NULL DEFAULT 0;
+
+-- Writer Goals checkpoint marks (below the goal), e.g. [200, 500].
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS writing_checkpoints jsonb NOT NULL DEFAULT '[]'::jsonb;
 
 -- Daily Goal (track) mode: true = hide the Studio bar, just pop a celebration as
 -- each milestone is reached. false = show the progress bar.
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS writing_goal_hidden boolean NOT NULL DEFAULT false;
+
+-- Writer Goals: recurring per-weekday overrides, { "<getDay()>": { goal, checkpoints } },
+-- 0 = Sun .. 6 = Sat. Weekday absent -> base goal + checkpoints; goal 0 -> no goal.
+-- Legacy bare-number values are still read (as { goal: n, checkpoints: [] }).
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS writing_weekday_goals jsonb NOT NULL DEFAULT '{}'::jsonb;
 
 -- ===========================================================================
 -- 5. Level math (mirrors core/statistics/xp-levels.js + rep-levels.js)

@@ -20,8 +20,10 @@ function fromLocalRow() {
         dailyWordGoal: row.daily_word_goal ?? row.dailyWordGoal,
         wordGoalMode: row.word_goal_mode ?? row.wordGoalMode,
         dailyWritingEnabled: row.daily_writing_enabled ?? row.dailyWritingEnabled,
+        writingGoal: row.writing_goal ?? row.writingGoal,
         writingCheckpoints: row.writing_checkpoints ?? row.writingCheckpoints,
         writingGoalHidden: row.writing_goal_hidden ?? row.writingGoalHidden,
+        writingWeekdayGoals: row.writing_weekday_goals ?? row.writingWeekdayGoals,
         writingDayTotals: row.writing_day_totals ?? row.writingDayTotals,
         writingDayRemoved: row.writing_day_removed ?? row.writingDayRemoved,
         xp: row.xp,
@@ -92,7 +94,7 @@ export async function loadWorkspaceProfile(supabase, session) {
         try {
             const { data: d, error: e } = await supabase
                 .from("users")
-                .select("daily_writing_enabled, writing_checkpoints, writing_goal_hidden")
+                .select("daily_writing_enabled, writing_goal, writing_checkpoints, writing_goal_hidden, writing_weekday_goals")
                 .eq("id", session.user.id)
                 .maybeSingle();
             if (!e) dailyWriting = d;
@@ -107,8 +109,10 @@ export async function loadWorkspaceProfile(supabase, session) {
             dailyWordGoal: data?.daily_word_goal ?? fallback.dailyWordGoal,
             wordGoalMode: stats?.word_goal_mode ?? fallback.wordGoalMode,
             dailyWritingEnabled: dailyWriting?.daily_writing_enabled ?? fallback.dailyWritingEnabled,
+            writingGoal: dailyWriting?.writing_goal ?? fallback.writingGoal,
             writingCheckpoints: dailyWriting?.writing_checkpoints ?? fallback.writingCheckpoints,
             writingGoalHidden: dailyWriting?.writing_goal_hidden ?? fallback.writingGoalHidden,
+            writingWeekdayGoals: dailyWriting?.writing_weekday_goals ?? fallback.writingWeekdayGoals,
             writingDayTotals: data?.writing_day_totals ?? fallback.writingDayTotals,
             writingDayRemoved: stats?.writing_day_removed ?? fallback.writingDayRemoved,
             xp: stats?.xp ?? fallback.xp ?? 0,

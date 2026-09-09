@@ -65,6 +65,7 @@ function startScramble(el) {
 const WAYPOINT_HREF = "https://waypoint.spacemeadow.com/";
 
 export function initRoadmapLink({ openRoadmap } = {}) {
+    return; // temporary: hide RoadMap / Bugs until Waypoint is ready
     if (document.querySelector(".wd-welcome-bar .glitch-corner")) return;
     const bar = document.querySelector(".wd-welcome-bar");
     if (!bar) return;

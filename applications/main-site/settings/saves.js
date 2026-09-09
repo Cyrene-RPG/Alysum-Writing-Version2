@@ -7,11 +7,13 @@ import { supabase } from "@alysum/authentication/client.js";
 import { updateProfileRow } from "@alysum/synchronization-engine/local-adapter.js";
 import { ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "@alysum/account/mode.js";
 import {
-    DAILY_GOAL_PRESETS,
     DEFAULT_WORD_GOAL_MODE,
-    clampDailyWordGoal,
+    WEEKDAY_FULL,
+    WEEKDAY_LABELS,
+    WEEKDAY_ORDER,
     computePaceGoal,
     normalizeCheckpoints,
+    normalizeWeekdayGoals,
     normalizeWordGoalMode,
 } from "@alysum/writing-engine/day-stats.js";
 import {
@@ -20,68 +22,112 @@ import {
 } from "@alysum/library/author-profile.js";
 import { fillWelcomeBar } from "/js/welcome-bar.js?v=2";
 
-let goalPick = 0;
 let goalMode = DEFAULT_WORD_GOAL_MODE;
 let goalDayTotals = {};
 let dailyWritingEnabled = true;
-let checkpoints = [];
 let goalHidden = false;
+let baseGoal = 0;          // whole-week goal
+let baseChecks = [];       // whole-week checkpoint marks
+let weekdayCfg = {};       // { "5": { goal, checkpoints } } — per-weekday overrides
+let editingDay = null;     // null = editing the whole week, else "0".."6"
 
-const SLIDER_MIN = 100;
-const SLIDER_MAX = 5000;
-// Evenly spaced marks so labels sit under their real spot on the track.
-const GOAL_NOTCHES = [100, 1000, 2000, 3000, 4000, 5000];
+const MAX_MARKS = 6;   // checkpoint marks below the goal
 
-function notchLeftPct(n) {
-    return ((n - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN)) * 100;
+function clampGoal(n) {
+    return Math.max(0, Math.min(20000, Math.round(Number(n)) || 0));
 }
 
-/** Build the notch label strip + datalist once. */
-function buildGoalNotches() {
-    if (els.goalNotches && !els.goalNotches.childElementCount) {
-        els.goalNotches.innerHTML = GOAL_NOTCHES.map((n) => `<option value="${n}"></option>`).join("");
+function parseMarks(str, goal) {
+    return normalizeCheckpoints(String(str || "").split(/[,\s]+/))
+        .filter((n) => n !== goal)
+        .slice(0, MAX_MARKS);
+}
+
+/** The goal + checkpoints the top fields are currently editing. */
+function activeCfg() {
+    if (editingDay != null) {
+        const o = weekdayCfg[editingDay];
+        return o ? { goal: o.goal, checkpoints: o.checkpoints } : { goal: baseGoal, checkpoints: [] };
     }
-    if (els.goalNotchRow && !els.goalNotchRow.childElementCount) {
-        els.goalNotchRow.innerHTML = GOAL_NOTCHES
-            .map((n) => `<button type="button" class="goal-notch" data-goal="${n}" style="left:${notchLeftPct(n).toFixed(2)}%">${n.toLocaleString()}</button>`)
-            .join("");
+    return { goal: baseGoal, checkpoints: baseChecks };
+}
+
+/** Write the top fields back to whichever target is being edited. A weekday that
+ *  ends up matching the whole-week goal (and has no extra checkpoints) is not an
+ *  override — it drops out of the map. */
+function applyActive(goal, checks) {
+    if (editingDay != null) {
+        if (goal === baseGoal && checks.length === 0) delete weekdayCfg[editingDay];
+        else weekdayCfg[editingDay] = { goal, checkpoints: checks };
+    } else {
+        baseGoal = goal;
+        baseChecks = checks;
     }
 }
 
-/** Cheap: only toggle which notch reads as active. Safe to call on every drag tick. */
-function syncGoalNotchActive() {
-    els.goalNotchRow?.querySelectorAll(".goal-notch").forEach((btn) => {
-        btn.classList.toggle("is-on", Number(btn.dataset.goal) === goalPick);
-    });
+function paintCheckpointsCount() {
+    if (!els.checkpointsCount) return;
+    const n = activeCfg().checkpoints.length;
+    els.checkpointsCount.textContent = n ? `(${n} / ${MAX_MARKS})` : `(up to ${MAX_MARKS})`;
+    els.checkpointsCount.classList.toggle("is-full", n >= MAX_MARKS);
 }
 
-/** Full sync of slider position + notch state from goalPick (not while dragging). */
-function syncGoalSlider() {
-    buildGoalNotches();
-    if (els.goalSlider && document.activeElement !== els.goalSlider) {
-        els.goalSlider.value = String(Math.min(SLIDER_MAX, Math.max(SLIDER_MIN, goalPick)));
-    }
-    syncGoalNotchActive();
+function paintEditContext() {
+    const day = editingDay != null;
+    if (els.editContextBar) els.editContextBar.hidden = !day;
+    if (day && els.editContextLabel) els.editContextLabel.textContent = WEEKDAY_FULL[Number(editingDay)];
+    if (els.dailyGoalLabel) els.dailyGoalLabel.textContent = day ? `${WEEKDAY_LABELS[Number(editingDay)]} goal` : "Goal";
 }
 
-/** Sorted checkpoint array -> { goal: the largest, marks: the rest }. */
-function splitCheckpoints(list) {
-    const arr = normalizeCheckpoints(list);
-    return { goal: arr[arr.length - 1] || 0, marks: arr.slice(0, -1) };
+/** Point the top fields at a target ("0".."6" for a weekday, null for the week). */
+function selectDay(key) {
+    editingDay = key;
+    const cfg = activeCfg();
+    if (els.dailyGoalInput) els.dailyGoalInput.value = cfg.goal ? String(cfg.goal) : "";
+    if (els.checkpointsInput) els.checkpointsInput.value = cfg.checkpoints.join(", ");
+    paintEditContext();
+    paintCheckpointsPreview();
+    paintGoalVisibility();
+    renderWeekdayGrid();
+    els.dailyGoalInput?.focus();
 }
 
-/** Goal + checkpoint marks -> one sorted array. The largest value is the goal,
- *  so a mark bigger than the typed goal simply becomes the goal. */
-function combineCheckpoints(goal, marks) {
-    const g = Math.round(Number(goal)) || 0;
-    return normalizeCheckpoints([...(Array.isArray(marks) ? marks : []), g].filter(Boolean));
+/** Open / close the "Set other days" panel and keep the button state in sync. */
+function setWeekPanel(open) {
+    if (els.weekdayPanel) els.weekdayPanel.hidden = !open;
+    els.weekdayToggle?.classList.toggle("is-open", !!open);
+    if (els.weekdayToggle) els.weekdayToggle.textContent = open ? "Set other days ▾" : "Set other days";
+    if (!open && editingDay != null) selectDay(null);
+    else if (open) renderWeekdayGrid();
+}
+
+/** Draw the Mon–Sun cards. Base goal greyed; overrides lit; editing day ringed. */
+function renderWeekdayGrid() {
+    if (!els.weekdayGrid) return;
+    els.weekdayGrid.innerHTML = WEEKDAY_ORDER.map((wd) => {
+        const key = String(wd);
+        const o = weekdayCfg[key];
+        const value = o ? o.goal : baseGoal;
+        const shown = value > 0 ? value.toLocaleString() : "off";
+        const cls = `weekday-cell${o ? " is-custom" : ""}${editingDay === key ? " is-editing" : ""}`;
+        return `<div class="${cls}" data-wd="${key}" role="button" tabindex="0" aria-label="${WEEKDAY_LABELS[wd]}">
+            <span class="weekday-cell-label">${WEEKDAY_LABELS[wd]}</span>
+            <span class="weekday-cell-value">${shown}</span>
+        </div>`;
+    }).join("");
+    if (els.weekdayResetAll) els.weekdayResetAll.hidden = Object.keys(weekdayCfg).length === 0;
 }
 
 function paintCheckpointsPreview() {
     if (!els.checkpointsPreview) return;
-    els.checkpointsPreview.innerHTML = checkpoints
-        .map((n) => `<span class="checkpoint-chip">${n.toLocaleString()}</span>`)
-        .join("");
+    const cfg = activeCfg();
+    const marks = normalizeCheckpoints(cfg.checkpoints).filter((n) => n !== cfg.goal);
+    let html = "";
+    if (cfg.goal > 0) html += `<span class="checkpoint-chip is-goal">${cfg.goal.toLocaleString()}</span>`;
+    if (cfg.goal > 0 && marks.length) html += `<span class="checkpoint-gap" aria-hidden="true"></span>`;
+    html += marks.map((n) => `<span class="checkpoint-chip">${n.toLocaleString()}</span>`).join("");
+    els.checkpointsPreview.innerHTML = html;
+    paintCheckpointsCount();
 }
 
 function paintGoalVisibility() {
@@ -90,7 +136,7 @@ function paintGoalVisibility() {
         btn.classList.toggle("is-on", on);
     });
     if (els.goalVisibilityHint) {
-        const noun = splitCheckpoints(checkpoints).marks.length > 0 ? "checkpoints" : "goal";
+        const noun = baseChecks.length > 0 ? "checkpoints" : "goal";
         els.goalVisibilityHint.textContent = goalHidden
             ? `Hidden — a popup celebrates each ${noun} as you reach it.`
             : `Shown — Studio tracks your ${noun} in a bar.`;
@@ -101,7 +147,6 @@ function syncGoalModeUi() {
     els.wordGoalModeGroup?.querySelectorAll('input[name="wordGoalMode"]').forEach((radio) => {
         radio.checked = radio.value === goalMode;
     });
-    if (els.goalTargetFields) els.goalTargetFields.hidden = goalMode !== "goal";
     if (els.sprintCheckpointFields) els.sprintCheckpointFields.hidden = goalMode !== "track";
     if (els.goalPaceLine) {
         const show = goalMode === "pace";
@@ -127,20 +172,25 @@ function syncEnabledUi() {
 }
 
 /** Called by page.js / shell.js after the user row loads. */
-export function setGoalUi(mode, goal, dayTotals, enabled, checkpointList, hidden) {
+export function setGoalUi(mode, goal, dayTotals, enabled, checkpointList, hidden, weekdayList) {
     goalMode = normalizeWordGoalMode(mode);
-    goalPick = clampDailyWordGoal(goal);
     dailyWritingEnabled = enabled !== false;
-    checkpoints = normalizeCheckpoints(checkpointList);
     goalHidden = !!hidden;
+    weekdayCfg = normalizeWeekdayGoals(weekdayList);
+    editingDay = null;
     if (dayTotals && typeof dayTotals === "object") goalDayTotals = dayTotals;
-    if (els.goalCustomInput) els.goalCustomInput.value = String(goalPick);
-    const { goal: cpGoal, marks: cpMarks } = splitCheckpoints(checkpoints);
-    if (els.dailyGoalInput) els.dailyGoalInput.value = cpGoal ? String(cpGoal) : "";
-    if (els.checkpointsInput) els.checkpointsInput.value = cpMarks.join(", ");
-    syncGoalSlider();
+    // Migrate legacy rows: goal 0 but the largest checkpoint IS the goal.
+    const marks = normalizeCheckpoints(checkpointList);
+    baseGoal = clampGoal(goal);
+    if (!baseGoal && marks.length) baseGoal = marks[marks.length - 1];
+    baseChecks = marks.filter((n) => n !== baseGoal).slice(0, MAX_MARKS);
+    if (els.dailyGoalInput) els.dailyGoalInput.value = baseGoal ? String(baseGoal) : "";
+    if (els.checkpointsInput) els.checkpointsInput.value = baseChecks.join(", ");
+    setWeekPanel(Object.keys(weekdayCfg).length > 0);
+    paintEditContext();
     paintCheckpointsPreview();
     paintGoalVisibility();
+    renderWeekdayGrid();
     syncGoalModeUi();
     syncEnabledUi();
 }
@@ -366,7 +416,7 @@ export function wireSettingsSaves() {
         }
     });
 
-    // --- Daily writing (toggle + mode + goal + checkpoints) ---
+    // --- Daily writing (toggle + mode + checkpoints) ---
     els.dailyWritingToggle?.addEventListener("change", () => {
         dailyWritingEnabled = !!els.dailyWritingToggle.checked;
         syncEnabledUi();
@@ -377,52 +427,60 @@ export function wireSettingsSaves() {
         goalMode = normalizeWordGoalMode(input.value);
         syncGoalModeUi();
     });
-    const recomputeCheckpoints = () => {
-        const goal = Number(els.dailyGoalInput?.value);
-        const marks = normalizeCheckpoints(String(els.checkpointsInput?.value || "").split(/[,\s]+/));
-        checkpoints = combineCheckpoints(goal, marks);
+    const recomputeGoal = () => {
+        if (els.dailyGoalInput) {
+            const clean = els.dailyGoalInput.value.replace(/\D/g, "");
+            if (clean !== els.dailyGoalInput.value) els.dailyGoalInput.value = clean;
+        }
+        if (els.checkpointsInput) {
+            const clean = els.checkpointsInput.value.replace(/[^\d,\s]/g, "");
+            if (clean !== els.checkpointsInput.value) els.checkpointsInput.value = clean;
+        }
+        const goal = clampGoal(els.dailyGoalInput?.value);
+        applyActive(goal, parseMarks(els.checkpointsInput?.value, goal));
         paintCheckpointsPreview();
         paintGoalVisibility();
+        renderWeekdayGrid();
     };
-    els.dailyGoalInput?.addEventListener("input", recomputeCheckpoints);
-    els.checkpointsInput?.addEventListener("input", recomputeCheckpoints);
+    els.dailyGoalInput?.addEventListener("input", recomputeGoal);
+    els.checkpointsInput?.addEventListener("input", recomputeGoal);
     els.goalVisibilityRow?.addEventListener("click", (event) => {
         const btn = event.target.closest("[data-goal-visibility]");
         if (!btn) return;
         goalHidden = btn.dataset.goalVisibility === "hide";
         paintGoalVisibility();
     });
-    els.goalNotchRow?.addEventListener("click", (event) => {
-        const btn = event.target.closest("[data-goal]");
-        if (!btn) return;
-        goalPick = Number(btn.dataset.goal) || goalPick;
-        if (els.goalCustomInput) els.goalCustomInput.value = String(goalPick);
-        if (els.goalSlider) els.goalSlider.value = String(Math.min(SLIDER_MAX, Math.max(SLIDER_MIN, goalPick)));
-        syncGoalNotchActive();
+    els.weekdayToggle?.addEventListener("click", () => setWeekPanel(els.weekdayPanel?.hidden));
+    els.weekdayGrid?.addEventListener("click", (event) => {
+        const cell = event.target.closest(".weekday-cell");
+        if (!cell) return;
+        selectDay(editingDay === cell.dataset.wd ? null : cell.dataset.wd);
     });
-    els.goalSlider?.addEventListener("input", () => {
-        // Don't touch the slider's own .value here — it fights the drag.
-        goalPick = Number(els.goalSlider.value) || goalPick;
-        if (els.goalCustomInput) els.goalCustomInput.value = String(goalPick);
-        syncGoalNotchActive();
+    els.weekdayGrid?.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        const cell = event.target.closest(".weekday-cell");
+        if (!cell) return;
+        event.preventDefault();
+        selectDay(editingDay === cell.dataset.wd ? null : cell.dataset.wd);
     });
-    els.goalCustomInput?.addEventListener("input", () => {
-        goalPick = Number(els.goalCustomInput.value) || goalPick;
-        syncGoalSlider();
+    els.weekdayResetAll?.addEventListener("click", () => {
+        weekdayCfg = {};
+        selectDay(null);
     });
     els.saveGoalBtn?.addEventListener("click", async () => {
         hideMsg(els.goalMsg);
-        const goal = clampDailyWordGoal(goalPick || els.goalCustomInput?.value);
-        setGoalUi(goalMode, goal, goalDayTotals, dailyWritingEnabled, checkpoints, goalHidden);
+        selectDay(null);
+        setGoalUi(goalMode, baseGoal, goalDayTotals, dailyWritingEnabled, baseChecks, goalHidden, weekdayCfg);
         // Columns added later (supabase-statistics.sql). If the migration hasn't
         // run yet, saving these must not block the core goal settings.
         const laterPatch = {
             daily_writing_enabled: dailyWritingEnabled,
-            writing_checkpoints: checkpoints,
+            writing_goal: baseGoal,
+            writing_checkpoints: baseChecks,
             writing_goal_hidden: goalHidden,
+            writing_weekday_goals: weekdayCfg,
         };
         const patch = { word_goal_mode: goalMode };
-        if (goalMode === "goal") patch.daily_word_goal = goal;
         els.saveGoalBtn.disabled = true;
         try {
             if (state.isLocalSettings) {

@@ -123,6 +123,7 @@ body {
     color: var(--text);
 }
 .studio-goal-track {
+    position: relative;
     height: 9px;
     overflow: hidden;
     border-radius: 999px;
@@ -136,6 +137,17 @@ body {
     background: var(--accent, #7c3aed);
     transition: width 0.3s ease, background 0.2s ease;
 }
+/* Checkpoint notches — a tick on the bar where each checkpoint sits. */
+.studio-goal-notches { position: absolute; inset: 0; pointer-events: none; }
+.studio-goal-notch {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    margin-left: -1px;
+    background: color-mix(in srgb, var(--text) 45%, transparent);
+}
+.studio-goal-notch.is-hit { background: color-mix(in srgb, #fff 75%, transparent); }
 /* Track My Writing — no target, no bar: a tight left-aligned stack, not a
    spread row with an empty band where the progress track would be. */
 .studio-goal--track .studio-goal-track { display: none; }
@@ -148,8 +160,7 @@ body {
     margin-top: 4px;
     font-size: 24px;
 }
-/* Daily Goal with a target, shown — render exactly like the Challenge Goal card:
-   one progress bar toward the next mark, no dots. */
+/* Daily Goal with a target, shown — one progress bar toward the next mark, no dots. */
 .studio-goal--track.has-goal-bar .studio-goal-track { display: block; }
 .studio-goal--track.has-goal-bar .studio-goal-top {
     display: flex;
@@ -160,17 +171,20 @@ body {
     margin-top: 0;
     font-size: 19px;
 }
-/* Daily Goal set to "hidden" — the card only lights up once the goal is reached. */
-.studio-goal.is-celebrating .studio-goal-pill { color: var(--accent, #a855f7); }
+/* Daily Goal set to "hidden" — the card only lights up once the goal is reached.
+   Use full-strength --text so it reads on any theme (the muted pill is 45%). */
+.studio-goal.is-celebrating .studio-goal-pill {
+    color: var(--text);
+    animation: studioGoalPop 0.4s ease both;
+}
 .studio-goal.is-celebrating .studio-goal-top > span:first-child {
-    color: color-mix(in srgb, var(--accent, #a855f7) 70%, var(--text));
+    color: color-mix(in srgb, var(--text) 75%, transparent);
 }
 @keyframes studioGoalPop {
     0% { transform: scale(0.96); opacity: 0.4; }
     60% { transform: scale(1.02); }
     100% { transform: scale(1); opacity: 1; }
 }
-.studio-goal.is-celebrating .studio-goal-pill { animation: studioGoalPop 0.4s ease both; }
 /* Maintain Your Pace — bar tinted by where today sits in the writer's own range */
 .studio-goal-fill.is-green { background: #4ade80; }
 .studio-goal-fill.is-yellow { background: #facc15; }

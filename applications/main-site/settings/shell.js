@@ -62,11 +62,12 @@ export function initLocalSettingsUi() {
 
     setGoalUi(
         profile.word_goal_mode,
-        profile.daily_word_goal,
+        profile.writing_goal,
         profile.writing_day_totals,
         profile.daily_writing_enabled,
         profile.writing_checkpoints,
         profile.writing_goal_hidden,
+        profile.writing_weekday_goals,
     );
 
     finishSettingsShell();

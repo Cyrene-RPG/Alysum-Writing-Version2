@@ -248,75 +248,6 @@
     font-style: italic;
 }
 
-/* Challenge Goal — slider + notches */
-#goalSlider {
-    -webkit-appearance: none;
-    appearance: none;
-    display: block;
-    width: 100%;
-    max-width: 360px;
-    height: 20px;
-    margin: 10px 0 2px;
-    background: transparent;
-    cursor: pointer;
-}
-#goalSlider:focus { outline: none; }
-#goalSlider::-webkit-slider-runnable-track {
-    height: 6px;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--text) 18%, transparent);
-}
-#goalSlider::-moz-range-track {
-    height: 6px;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--text) 18%, transparent);
-}
-#goalSlider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    margin-top: -6px;
-    width: 18px;
-    height: 18px;
-    border-radius: 999px;
-    background: var(--accent, #7c3aed);
-    border: 2px solid var(--alysum-ui-chrome, #141414);
-    cursor: pointer;
-}
-#goalSlider::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    border-radius: 999px;
-    background: var(--accent, #7c3aed);
-    border: 2px solid var(--alysum-ui-chrome, #141414);
-    cursor: pointer;
-}
-#goalSlider:focus-visible::-webkit-slider-thumb {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #a855f7) 45%, transparent);
-}
-.goal-notch-row {
-    position: relative;
-    height: 16px;
-    max-width: 360px;
-    margin: 4px 0 18px;
-}
-.goal-notch {
-    position: absolute;
-    top: 0;
-    transform: translateX(-50%);
-    border: 0;
-    padding: 0;
-    background: transparent;
-    color: var(--muted);
-    font: inherit;
-    font-size: 11px;
-    white-space: nowrap;
-    cursor: pointer;
-}
-.goal-notch:first-child { transform: translateX(0); }
-.goal-notch:last-child { transform: translateX(-100%); }
-.goal-notch:hover { color: var(--text); }
-.goal-notch.is-on { color: var(--accent, #a855f7); font-weight: 700; }
-
 /* Daily Goal — goal box beside checkpoints box */
 .goal-checkpoint-fields {
     display: flex;
@@ -405,6 +336,7 @@
 .checkpoints-preview {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 6px;
     margin-top: 8px;
 }
@@ -416,6 +348,8 @@
     font-weight: 600;
     color: var(--muted);
 }
+.checkpoint-chip.is-goal { color: var(--text); }
+.checkpoint-gap { width: 16px; }
 .goal-visibility-row {
     display: inline-flex;
     gap: 0;
@@ -442,3 +376,107 @@
     background: var(--accent, #7c3aed);
     color: #fff;
 }
+
+.field-count {
+    font-weight: 600;
+    color: var(--muted);
+}
+.field-count.is-full { color: var(--purple-bright, #a855f7); }
+
+/* Writer Goals — "Set other days" toggle + per-weekday grid */
+.weekday-toggle {
+    display: block;
+    margin: 14px 0 4px;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 16px;
+    cursor: pointer;
+}
+.weekday-toggle:hover { color: var(--text); }
+.weekday-toggle.is-open {
+    background: color-mix(in srgb, var(--purple-bright, #a855f7) 22%, transparent);
+    border-color: color-mix(in srgb, var(--purple-bright, #a855f7) 55%, transparent);
+    color: var(--text);
+}
+.weekday-panel { margin: 8px 0 4px; }
+
+/* "Editing Monday" banner + fields glow while a weekday is selected */
+.edit-context-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0 8px;
+    font-size: 13px;
+    color: var(--text);
+}
+#sprintCheckpointFields:has(#editContextBar:not([hidden])) .goal-checkpoint-fields input {
+    border-color: var(--purple-bright, #a855f7);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple-bright, #a855f7) 30%, transparent);
+}
+.weekday-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0;
+}
+.weekday-cell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 64px;
+    padding: 10px 8px 8px;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--alysum-ui-chrome, #141414) 60%, transparent);
+    font: inherit;
+    cursor: pointer;
+}
+.weekday-cell:hover { border-color: rgba(255, 255, 255, 0.3); }
+.weekday-cell:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--purple-bright, #a855f7) 70%, transparent);
+    outline-offset: 2px;
+}
+/* The day whose config the top fields are editing right now. */
+.weekday-cell.is-editing {
+    border-color: var(--purple-bright, #a855f7);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple-bright, #a855f7) 35%, transparent);
+}
+.weekday-cell-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.weekday-cell-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: color-mix(in srgb, var(--text) 40%, transparent);
+    font-variant-numeric: lining-nums tabular-nums;
+}
+/* Customised days — a clear accent glow so they stand out. */
+.weekday-cell.is-custom {
+    border-color: color-mix(in srgb, var(--purple-bright, #a855f7) 65%, transparent);
+    background: color-mix(in srgb, var(--purple-bright, #a855f7) 14%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple-bright, #a855f7) 22%, transparent);
+}
+.weekday-cell.is-custom .weekday-cell-label,
+.weekday-cell.is-custom .weekday-cell-value { color: var(--text); }
+.weekday-cell.is-custom::after {
+    content: "";
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--purple-bright, #a855f7);
+}
+.weekday-reset-all { margin-top: 4px; border: 1px solid var(--border, rgba(255, 255, 255, 0.16)); border-radius: 999px; }

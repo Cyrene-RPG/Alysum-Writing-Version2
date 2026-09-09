@@ -50,7 +50,6 @@ function ensureLayer() {
             <span class="waypoint-skip-hint-hand">double tap to quit</span>
           </div>
         </div>
-        <div id="waypoint-loading-bar"><div id="waypoint-loading-fill"></div></div>
       </div>
       <div class="waypoint-stage" id="waypoint-rings"></div>
       <div class="waypoint-stage" id="waypoint-lang">
@@ -374,7 +373,6 @@ export async function playWaypointEntry(opts = {}) {
     const burst = document.getElementById("waypoint-burst");
     const rings = document.getElementById("waypoint-rings");
     const canvas = document.getElementById("waypoint-tunnel");
-    const fill = document.getElementById("waypoint-loading-fill");
     const welcome = document.querySelector("#waypoint-welcome .waypoint-welcome");
     const scramble = document.getElementById("waypoint-scramble");
     const overlay = document.getElementById("waypoint-glass");
@@ -398,12 +396,6 @@ export async function playWaypointEntry(opts = {}) {
         seq.classList.add("to-black");
         showStage("waypoint-matrix");
         startTunnel(canvas, ctx);
-        fill.style.transition = "none";
-        fill.style.width = "0%";
-        requestAnimationFrame(() => {
-            fill.style.transition = "width 3.6s linear";
-            fill.style.width = "100%";
-        });
 
         await later(1200);
         setTunnelSpeed(0.025);
