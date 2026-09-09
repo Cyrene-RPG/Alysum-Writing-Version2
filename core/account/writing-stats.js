@@ -19,12 +19,13 @@
 import { getProfileRow, updateProfileRow } from "../synchronization-engine/local-adapter.js";
 import {
     applyWritingDayDelta,
-    clampDailyWordGoal,
-    computeGoalStreakFromTotals,
+    checkpointProgress,
     computePaceGoal,
     computePaceStreak,
     computeWriteStreak,
     localDayKey,
+    normalizeCheckpoints,
+    normalizeWeekdayGoals,
     normalizeWordGoalMode,
     normalizeWritingDayTotals,
     paceState,
@@ -164,10 +165,29 @@ export function getWritingStats(profile = {}, { userId } = {}) {
     const today = localDayKey();
 
     const mode = normalizeWordGoalMode(profile.wordGoalMode ?? profile.word_goal_mode);
+    const enabled = (profile.dailyWritingEnabled ?? profile.daily_writing_enabled) !== false;
     const wordsToday = netRange((m) => wordsTypedOnDay(m, today), added, removed);
-    const fixedGoal = clampDailyWordGoal(profile.dailyWordGoal ?? profile.daily_word_goal);
     const paceGoal = computePaceGoal(added, today);
-    const goal = mode === "goal" ? fixedGoal : mode === "pace" ? paceGoal : 0;
+    const goal = mode === "pace" ? paceGoal : 0;
+    // Writer Goals (track mode): the goal is its own number; checkpoints are the
+    // marks below it. Legacy rows kept the goal as the largest checkpoint — fall
+    // back to that so nothing breaks before a re-save.
+    const cpMarks = normalizeCheckpoints(profile.writingCheckpoints ?? profile.writing_checkpoints);
+    const storedGoal = Math.max(0, Math.round(Number(profile.writingGoal ?? profile.writing_goal) || 0));
+    const baseGoal = storedGoal || (cpMarks.length ? cpMarks[cpMarks.length - 1] : 0);
+    // Daily Goal (track) mode only: hide the Studio bar and celebrate with a
+    // popup as each milestone is reached instead.
+    const goalHidden = !!(profile.writingGoalHidden ?? profile.writing_goal_hidden);
+
+    // Recurring per-weekday overrides — each is its own { goal, checkpoints }.
+    const weekdayGoals = normalizeWeekdayGoals(profile.writingWeekdayGoals ?? profile.writing_weekday_goals);
+    const override = weekdayGoals[String(new Date().getDay())] || null;
+    const todayGoal = override ? override.goal : baseGoal;
+    const todayMarks = override ? override.checkpoints : cpMarks;
+    const todayGoalOverridden = !!override;
+    const effectiveCheckpoints = todayGoal > 0
+        ? normalizeCheckpoints([...todayMarks.filter((c) => c !== todayGoal), todayGoal])
+        : [];
 
     const xp = Math.max(0, Math.floor(Number(profile.xp) || 0));
     const rep = Math.max(0, Math.floor(Number(profile.reputation) || 0));
@@ -175,13 +195,20 @@ export function getWritingStats(profile = {}, { userId } = {}) {
 
     return {
         mode,
+        enabled,
         wordsToday,
         goal,
         goalPct: goal > 0 ? Math.min(100, Math.round((wordsToday / goal) * 100)) : 0,
         goalMet: goal > 0 && wordsToday >= goal,
+        checkpoints: cpMarks,
+        checkpoint: mode === "track" ? checkpointProgress(wordsToday, effectiveCheckpoints) : null,
+        goalHidden,
+        weekdayGoals,
+        baseGoal,
+        todayGoal,
+        todayGoalOverridden,
         paceGoal,
         paceState: mode === "pace" ? paceState(wordsToday, paceGoal) : null,
-        goalStreak: computeGoalStreakFromTotals(added, fixedGoal),
         writeStreak: computeWriteStreak(added),
         paceStreak: computePaceStreak(added, paceGoal),
         streak: Math.max(0, Math.floor(Number(profile.streak) || 0)), // login streak, unchanged

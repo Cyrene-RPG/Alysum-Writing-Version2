@@ -1,6 +1,7 @@
 import { wireLogoutButtons } from "@alysum/authentication/logout.js";
+import { openRoadmap } from "@alysum/authentication/open-roadmap.js";
 import { initWelcomePfpMenu } from "/js/welcome-bar.js";
-import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/appearance-loadout-menu.js";
+import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/appearance-loadout-menu.js?v=8";
 
 function navHref(page) {
     return page;
@@ -78,7 +79,7 @@ export function initWorkspaceNav() {
     if (!navWrap) return null;
     wireLogoutButtons(document);
     initWelcomePfpMenu();
-    initAppearanceLoadoutMenu();
+    initAppearanceLoadoutMenu({ openRoadmap });
     return navWrap;
 }
 

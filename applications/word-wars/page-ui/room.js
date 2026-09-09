@@ -18,7 +18,7 @@ import { recordTypedWords } from "@alysum/account/writing-stats.js";
 import { typedWordDelta, countedWordDelta, isPasteLikeInput } from "@alysum/statistics/typed-input.js";
 import { reviewSentencesForXp, recordPastedRegion } from "@alysum/statistics/sentence-review.js";
 import { paintChipInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
-import { initWorkspaceShell } from "/js/studio/shell.js?v=2";
+import { initWorkspaceShell } from "/js/studio/shell.js?v=9";
 import { createAutosave } from "/js/editor/autosave.js";
 import { mountDocument } from "/js/editor/document.js?v=10";
 import { mountToolbar } from "/js/editor/toolbar.js?v=6";

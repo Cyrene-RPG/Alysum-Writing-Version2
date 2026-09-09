@@ -62,6 +62,8 @@
       { "source": "/word-wars-lobby", "destination": "/applications/word-wars/pages/word-wars-lobby.html" },
       { "source": "/word-wars", "destination": "/applications/word-wars/pages/word-wars.html" },
       { "source": "/library", "destination": "/applications/library/pages/library.html" },
+      { "source": "/roadmap", "destination": "/applications/main-site/pages/roadmap-handoff.html" },
+      { "source": "/roadmap.html", "destination": "/applications/main-site/pages/roadmap-handoff.html" },
       { "source": "/book", "destination": "/applications/library/pages/book.html" },
       { "source": "/read", "destination": "/applications/library/pages/read.html" },
       { "source": "/publish", "destination": "/applications/studio/pages/publish.html" },

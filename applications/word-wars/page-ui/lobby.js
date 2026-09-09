@@ -6,7 +6,7 @@ import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { goToLogin } from "@alysum/desktop/app.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=11";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
-import { initWorkspaceShell } from "/js/studio/shell.js?v=2";
+import { initWorkspaceShell } from "/js/studio/shell.js?v=9";
 import {
     createWordWarRoom,
     joinWordWarRoom,

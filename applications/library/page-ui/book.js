@@ -5,7 +5,7 @@ import { fetchPublishedWork } from "@alysum/library/work.js?v=4";
 import { cropFrameStyle, coverCropForImage, isFullCoverCrop, peekCoverSrc } from "@alysum/publishing/cover-upload.js?v=10";
 import { genreLabel } from "@alysum/publishing/genres.js?v=4";
 import { applyVisitListingLook, applyVisitSiteAccent, applyVisitTitleColor, applyVisitWelcomeChrome } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=11";
-import { initWorkspaceShell } from "/js/studio/shell.js?v=2";
+import { initWorkspaceShell } from "/js/studio/shell.js?v=9";
 
 const READ_KEY = "alysum:library:read-position";
 const WELCOME = {

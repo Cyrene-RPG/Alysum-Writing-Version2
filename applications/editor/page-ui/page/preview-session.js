@@ -4,7 +4,7 @@ import { mountBookSettings } from "../settings.js?v=5";
 import { mountLibraryPreview } from "../library-preview.js?v=51";
 import { mountPageLookRail } from "../page-look-rail.js?v=17";
 import { confirmAction } from "../prompt.js";
-import { setWelcomeCopy } from "../shell.js?v=2";
+import { setWelcomeCopy } from "../shell.js?v=9";
 
 export function mountPreviewSession({
     shell,

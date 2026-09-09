@@ -50,6 +50,10 @@ export function fillProfileStats(data = {}, { isSelf = false, supabase = null } 
         streak: data.streak,
         dailyWordGoal: data.daily_word_goal ?? data.dailyWordGoal,
         wordGoalMode: data.word_goal_mode ?? data.wordGoalMode,
+        dailyWritingEnabled: data.daily_writing_enabled ?? data.dailyWritingEnabled,
+        writingGoal: data.writing_goal ?? data.writingGoal,
+        writingCheckpoints: data.writing_checkpoints ?? data.writingCheckpoints,
+        writingWeekdayGoals: data.writing_weekday_goals ?? data.writingWeekdayGoals,
         writingDayTotals: data.writing_day_totals ?? data.writingDayTotals,
         writingDayRemoved: data.writing_day_removed ?? data.writingDayRemoved,
         writingDurableWords: data.writing_durable_words ?? data.writingDurableWords,
@@ -69,12 +73,9 @@ export function fillProfileStats(data = {}, { isSelf = false, supabase = null } 
 
     // writing stats row — shape depends on the writer's chosen goal mode
     const wrow = document.getElementById("ovWritingStats");
-    if (wrow) {
+    if (wrow && s.enabled) {
         const cells = [];
-        if (s.mode === "goal") {
-            cells.push([`${s.wordsToday.toLocaleString()} / ${s.goal.toLocaleString()}`, "Words today"]);
-            cells.push([String(s.goalStreak), "Goal streak"]);
-        } else if (s.mode === "pace") {
+        if (s.mode === "pace") {
             const dot = s.paceState ? ` <span class="pace-dot pace-dot--${s.paceState}"></span>` : "";
             cells.push([`${s.wordsToday.toLocaleString()}${dot}`, "Words today"]);
             cells.push([`~${s.paceGoal.toLocaleString()}`, "Your pace"]);
@@ -82,6 +83,12 @@ export function fillProfileStats(data = {}, { isSelf = false, supabase = null } 
         } else {
             cells.push([s.wordsToday.toLocaleString(), "Words today"]);
             cells.push([String(s.writeStreak), "Writing streak"]);
+            const cp = s.checkpoint;
+            if (cp?.list.length) {
+                cells.push(cp.next == null
+                    ? ["Reached ✓", "Goal today"]
+                    : [`${s.wordsToday.toLocaleString()} / ${cp.next.toLocaleString()}`, "Goal today"]);
+            }
         }
         cells.push([String(s.streak), "Login streak"]);
         cells.push([s.durableWords.toLocaleString(), "Durable words"]);

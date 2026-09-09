@@ -135,6 +135,43 @@ export function mountDocument({ pageEl, onInput }) {
     // synthetic "insertFromPaste" so the paste stays out of the word goal and out
     // of sentence XP (page.js reads event.prevHtml).
     let pasting = false;
+
+    /** Guarantee a live caret inside the page before inserting — otherwise
+        execCommand("insertText") silently no-ops (editor blurred, stale range). */
+    function ensureCaretInPage() {
+        pageEl.focus();
+        if (selectionInPage()) return;
+        const sel = window.getSelection();
+        if (!sel) return;
+        const range = document.createRange();
+        range.selectNodeContents(pageEl.lastElementChild || pageEl);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+
+    /** Range-based plain-text insert — fallback for when execCommand no-ops or
+        throws. <br> for newlines: safe in every block context, and word-count
+        treats it as whitespace. */
+    function insertPlainTextAtCaret(text) {
+        const sel = window.getSelection();
+        if (!sel || !sel.rangeCount) return;
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        const frag = document.createDocumentFragment();
+        text.split("\n").forEach((line, index) => {
+            if (index) frag.appendChild(document.createElement("br"));
+            if (line) frag.appendChild(document.createTextNode(line));
+        });
+        const lastNode = frag.lastChild;
+        if (!lastNode) return;
+        range.insertNode(frag);
+        range.setStartAfter(lastNode);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+
     pageEl.addEventListener("paste", (event) => {
         const cd = event.clipboardData || window.clipboardData;
         if (!cd) return;
@@ -142,24 +179,36 @@ export function mountDocument({ pageEl, onInput }) {
         if (raw == null) return;
         event.preventDefault();
         const text = String(raw).replace(/\r\n?/g, "\n");
+        if (!text) return;
+        ensureCaretInPage();
         const prevHtml = htmlForSave();
         pasting = true;
         try {
-            document.execCommand("insertText", false, text);
-            if (autoIndentOn()) {
-                pageEl.querySelectorAll(":scope > p").forEach((p) => {
-                    if (!p.classList.contains("alysum-flush")
-                        && !p.classList.contains("scene-break")
-                        && !p.classList.contains("scene-spacer")) {
-                        p.classList.add("alysum-indent");
-                    }
-                });
+            let ok = false;
+            try {
+                ok = document.execCommand("insertText", false, text);
+            } catch {
+                ok = false;
             }
-            emit({ inputType: "insertFromPaste", isTrusted: true, prevHtml });
-        } catch {
-            /* ignore */
+            if (!ok && htmlForSave() === prevHtml) {
+                try {
+                    insertPlainTextAtCaret(text);
+                } catch {
+                    /* still emit below so the count re-syncs */
+                }
+            }
+            if (autoIndentOn()) {
+                try {
+                    freezeVisibleIndent();
+                } catch {
+                    /* ignore */
+                }
+            }
         } finally {
+            // Always emit: even a partial or failed insert must trigger a recount
+            // so a paste is never silently dropped from the word count.
             pasting = false;
+            emit({ inputType: "insertFromPaste", isTrusted: true, prevHtml });
         }
     });
 
