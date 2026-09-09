@@ -180,6 +180,7 @@ async function boot() {
     const finished = readFinished(work.id);
 
     const scrollEl = document.getElementById("readerScroll");
+    const pager = document.querySelector(".reader-pager");
     const DONE = 0.97;
 
     function markFinished() {
@@ -190,7 +191,11 @@ async function boot() {
     }
 
     function atEnd() {
-        return scrollRatio(scrollEl) >= DONE;
+        if (scrollRatio(scrollEl) >= DONE) return true;
+        if (!pager) return false;
+        const root = scrollEl.getBoundingClientRect();
+        const box = pager.getBoundingClientRect();
+        return box.top < root.bottom - 8;
     }
 
     function canOpen(i) {
@@ -227,7 +232,7 @@ async function boot() {
         url.searchParams.set("id", work.id);
         url.searchParams.set("chapter", work.chapters[index].id);
         history.replaceState(null, "", `${url.pathname}${url.search}`);
-        if (ratio >= DONE) {
+        if (atEnd()) {
             markFinished();
             syncLocks();
         }
@@ -314,6 +319,14 @@ async function boot() {
         writeJson(PREF_KEY, prefs);
         applyPrefs(prefs);
     });
+    if (pager && "IntersectionObserver" in window) {
+        const endWatch = new IntersectionObserver((entries) => {
+            if (!entries.some((entry) => entry.isIntersecting)) return;
+            markFinished();
+            syncLocks();
+        }, { root: scrollEl, threshold: 0.05 });
+        endWatch.observe(pager);
+    }
     scrollEl.addEventListener("scroll", () => persist(scrollRatio(scrollEl)), { passive: true });
     document.addEventListener("click", (event) => {
         const picker = document.getElementById("chapterPicker");
