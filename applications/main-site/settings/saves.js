@@ -26,12 +26,16 @@ let goalMode = DEFAULT_WORD_GOAL_MODE;
 let goalDayTotals = {};
 let dailyWritingEnabled = true;
 let goalHidden = false;
-let baseGoal = 0;          // whole-week goal
-let baseChecks = [];       // whole-week checkpoint marks
+let baseGoal = 0;          // the default goal — every non-overridden day (incl. today) uses it
+let baseChecks = [];       // the default checkpoint marks
 let weekdayCfg = {};       // { "5": { goal, checkpoints } } — per-weekday overrides
-let editingDay = null;     // null = editing the whole week, else "0".."6"
+let editingDay = todayKey();   // which day the top fields edit; starts on today
 
 const MAX_MARKS = 6;   // checkpoint marks below the goal
+
+function todayKey() {
+    return String(new Date().getDay());
+}
 
 function clampGoal(n) {
     return Math.max(0, Math.min(20000, Math.round(Number(n)) || 0));
@@ -43,26 +47,23 @@ function parseMarks(str, goal) {
         .slice(0, MAX_MARKS);
 }
 
+const sameList = (a, b) => a.length === b.length && a.every((n, i) => n === b[i]);
+
 /** The goal + checkpoints the top fields are currently editing. */
 function activeCfg() {
-    if (editingDay != null) {
-        const o = weekdayCfg[editingDay];
-        return o ? { goal: o.goal, checkpoints: o.checkpoints } : { goal: baseGoal, checkpoints: [] };
-    }
-    return { goal: baseGoal, checkpoints: baseChecks };
+    return weekdayCfg[editingDay] || { goal: baseGoal, checkpoints: baseChecks };
 }
 
-/** Write the top fields back to whichever target is being edited. A weekday that
- *  ends up matching the whole-week goal (and has no extra checkpoints) is not an
- *  override — it drops out of the map. */
+/** Write the top fields back. Editing today (with no override yet) sets the
+ *  default for the whole week. Any day matching the default drops its override. */
 function applyActive(goal, checks) {
-    if (editingDay != null) {
-        if (goal === baseGoal && checks.length === 0) delete weekdayCfg[editingDay];
-        else weekdayCfg[editingDay] = { goal, checkpoints: checks };
-    } else {
+    if (editingDay === todayKey() && !weekdayCfg[editingDay]) {
         baseGoal = goal;
         baseChecks = checks;
+        return;
     }
+    if (goal === baseGoal && sameList(checks, baseChecks)) delete weekdayCfg[editingDay];
+    else weekdayCfg[editingDay] = { goal, checkpoints: checks };
 }
 
 function paintCheckpointsCount() {
@@ -73,14 +74,18 @@ function paintCheckpointsCount() {
 }
 
 function paintEditContext() {
-    const day = editingDay != null;
-    if (els.editContextBar) els.editContextBar.hidden = !day;
-    if (day && els.editContextLabel) els.editContextLabel.textContent = WEEKDAY_FULL[Number(editingDay)];
-    if (els.dailyGoalLabel) els.dailyGoalLabel.textContent = day ? `${WEEKDAY_LABELS[Number(editingDay)]} goal` : "Goal";
+    const wd = Number(editingDay);
+    const isToday = editingDay === todayKey();
+    if (els.editContextBar) els.editContextBar.hidden = false;
+    if (els.editContextLabel) {
+        els.editContextLabel.textContent = isToday ? `${WEEKDAY_FULL[wd]} (today)` : WEEKDAY_FULL[wd];
+    }
+    if (els.dailyGoalLabel) els.dailyGoalLabel.textContent = `${WEEKDAY_LABELS[wd]} goal`;
+    els.sprintCheckpointFields?.classList.toggle("editing-other-day", !isToday);
 }
 
-/** Point the top fields at a target ("0".."6" for a weekday, null for the week). */
-function selectDay(key) {
+/** Point the top fields at a weekday ("0".."6"). */
+function selectDay(key, focus = true) {
     editingDay = key;
     const cfg = activeCfg();
     if (els.dailyGoalInput) els.dailyGoalInput.value = cfg.goal ? String(cfg.goal) : "";
@@ -89,7 +94,7 @@ function selectDay(key) {
     paintCheckpointsPreview();
     paintGoalVisibility();
     renderWeekdayGrid();
-    els.dailyGoalInput?.focus();
+    if (focus) els.dailyGoalInput?.focus();
 }
 
 /** Open / close the "Set other days" panel and keep the button state in sync. */
@@ -97,21 +102,22 @@ function setWeekPanel(open) {
     if (els.weekdayPanel) els.weekdayPanel.hidden = !open;
     els.weekdayToggle?.classList.toggle("is-open", !!open);
     if (els.weekdayToggle) els.weekdayToggle.textContent = open ? "Set other days ▾" : "Set other days";
-    if (!open && editingDay != null) selectDay(null);
+    if (!open && editingDay !== todayKey()) selectDay(todayKey());
     else if (open) renderWeekdayGrid();
 }
 
-/** Draw the Mon–Sun cards. Base goal greyed; overrides lit; editing day ringed. */
+/** Draw the Mon–Sun cards. Default greyed; overrides lit; editing day ringed; today tagged. */
 function renderWeekdayGrid() {
     if (!els.weekdayGrid) return;
+    const today = todayKey();
     els.weekdayGrid.innerHTML = WEEKDAY_ORDER.map((wd) => {
         const key = String(wd);
         const o = weekdayCfg[key];
         const value = o ? o.goal : baseGoal;
         const shown = value > 0 ? value.toLocaleString() : "off";
-        const cls = `weekday-cell${o ? " is-custom" : ""}${editingDay === key ? " is-editing" : ""}`;
+        const cls = `weekday-cell${o ? " is-custom" : ""}${editingDay === key ? " is-editing" : ""}${key === today ? " is-today" : ""}`;
         return `<div class="${cls}" data-wd="${key}" role="button" tabindex="0" aria-label="${WEEKDAY_LABELS[wd]}">
-            <span class="weekday-cell-label">${WEEKDAY_LABELS[wd]}</span>
+            <span class="weekday-cell-label">${WEEKDAY_LABELS[wd]}${key === today ? " ·" : ""}</span>
             <span class="weekday-cell-value">${shown}</span>
         </div>`;
     }).join("");
@@ -177,20 +183,15 @@ export function setGoalUi(mode, goal, dayTotals, enabled, checkpointList, hidden
     dailyWritingEnabled = enabled !== false;
     goalHidden = !!hidden;
     weekdayCfg = normalizeWeekdayGoals(weekdayList);
-    editingDay = null;
     if (dayTotals && typeof dayTotals === "object") goalDayTotals = dayTotals;
     // Migrate legacy rows: goal 0 but the largest checkpoint IS the goal.
     const marks = normalizeCheckpoints(checkpointList);
     baseGoal = clampGoal(goal);
     if (!baseGoal && marks.length) baseGoal = marks[marks.length - 1];
     baseChecks = marks.filter((n) => n !== baseGoal).slice(0, MAX_MARKS);
-    if (els.dailyGoalInput) els.dailyGoalInput.value = baseGoal ? String(baseGoal) : "";
-    if (els.checkpointsInput) els.checkpointsInput.value = baseChecks.join(", ");
-    setWeekPanel(Object.keys(weekdayCfg).length > 0);
-    paintEditContext();
-    paintCheckpointsPreview();
-    paintGoalVisibility();
-    renderWeekdayGrid();
+    editingDay = todayKey();
+    setWeekPanel(false);            // "Set other days" collapsed on load
+    selectDay(todayKey(), false);   // top fields edit today (no autofocus on load)
     syncGoalModeUi();
     syncEnabledUi();
 }
@@ -453,23 +454,22 @@ export function wireSettingsSaves() {
     els.weekdayToggle?.addEventListener("click", () => setWeekPanel(els.weekdayPanel?.hidden));
     els.weekdayGrid?.addEventListener("click", (event) => {
         const cell = event.target.closest(".weekday-cell");
-        if (!cell) return;
-        selectDay(editingDay === cell.dataset.wd ? null : cell.dataset.wd);
+        if (cell) selectDay(cell.dataset.wd);
     });
     els.weekdayGrid?.addEventListener("keydown", (event) => {
         if (event.key !== "Enter" && event.key !== " ") return;
         const cell = event.target.closest(".weekday-cell");
         if (!cell) return;
         event.preventDefault();
-        selectDay(editingDay === cell.dataset.wd ? null : cell.dataset.wd);
+        selectDay(cell.dataset.wd);
     });
     els.weekdayResetAll?.addEventListener("click", () => {
         weekdayCfg = {};
-        selectDay(null);
+        selectDay(todayKey());
     });
     els.saveGoalBtn?.addEventListener("click", async () => {
         hideMsg(els.goalMsg);
-        selectDay(null);
+        selectDay(todayKey(), false);
         setGoalUi(goalMode, baseGoal, goalDayTotals, dailyWritingEnabled, baseChecks, goalHidden, weekdayCfg);
         // Columns added later (supabase-statistics.sql). If the migration hasn't
         // run yet, saving these must not block the core goal settings.
