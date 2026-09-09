@@ -405,16 +405,15 @@
 }
 .weekday-panel { margin: 8px 0 4px; }
 
-/* "Editing Monday" banner + fields glow while a weekday is selected */
+/* "Setting goal for <day>" banner; fields glow only when it's another day */
 .edit-context-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
     margin: 6px 0 8px;
     font-size: 13px;
-    color: var(--text);
+    color: var(--muted);
 }
-#sprintCheckpointFields:has(#editContextBar:not([hidden])) .goal-checkpoint-fields input {
+.edit-context-bar strong { color: var(--text); }
+#sprintCheckpointFields.editing-other-day .edit-context-bar { color: var(--text); }
+#sprintCheckpointFields.editing-other-day .goal-checkpoint-fields input {
     border-color: var(--purple-bright, #a855f7);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple-bright, #a855f7) 30%, transparent);
 }
@@ -444,6 +443,10 @@
     outline-offset: 2px;
 }
 /* The day whose config the top fields are editing right now. */
+.weekday-cell.is-today {
+    border-color: color-mix(in srgb, var(--text) 45%, transparent);
+}
+.weekday-cell.is-today .weekday-cell-label { color: var(--text); }
 .weekday-cell.is-editing {
     border-color: var(--purple-bright, #a855f7);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple-bright, #a855f7) 35%, transparent);
