@@ -222,24 +222,66 @@ function renderBooks(mount, books) {
 function initShelf(shelf, dots, prev, next) {
     const getMaxScroll = () => Math.max(0, shelf.scrollWidth - shelf.clientWidth);
     const getPageWidth = () => shelf.clientWidth || 1;
-    const getPageCount = () => Math.max(1, Math.ceil(getMaxScroll() / getPageWidth()) + 1);
-    const rebuildDots = () => {
-        dots.innerHTML = Array.from({ length: getPageCount() }, (_, index) =>
-            `<span class="studio-dot${index === 0 ? " active" : ""}"></span>`).join("");
-    };
+    const canScroll = () => getMaxScroll() > 0;
+    const visFrac = () => Math.min(1, shelf.clientWidth / (shelf.scrollWidth || 1));
+
+    // The indicator is a draggable scrollbar: a track with a thumb sized to the
+    // visible fraction of the shelf and positioned by scroll progress.
+    dots.innerHTML = '<span class="studio-scroll-thumb"></span>';
+    const thumb = dots.firstElementChild;
+
     const update = () => {
         const maxScroll = getMaxScroll();
         prev.disabled = shelf.scrollLeft <= 4;
         next.disabled = shelf.scrollLeft >= maxScroll - 4;
-        const current = Math.min(Math.round(shelf.scrollLeft / getPageWidth()), dots.children.length - 1);
-        [...dots.children].forEach((dot, index) => dot.classList.toggle("active", index === current));
+        dots.hidden = maxScroll <= 0;
+        if (maxScroll <= 0 || !thumb) return;
+        const vf = visFrac();
+        const prog = shelf.scrollLeft / maxScroll;
+        thumb.style.width = `${(vf * 100).toFixed(2)}%`;
+        thumb.style.left = `${(prog * (1 - vf) * 100).toFixed(2)}%`;
     };
+
     next.addEventListener("click", () => shelf.scrollTo({ left: Math.min(shelf.scrollLeft + getPageWidth(), getMaxScroll()), behavior: "smooth" }));
     prev.addEventListener("click", () => shelf.scrollTo({ left: Math.max(shelf.scrollLeft - getPageWidth(), 0), behavior: "smooth" }));
     shelf.addEventListener("scroll", () => window.requestAnimationFrame(update));
-    window.addEventListener("resize", () => { rebuildDots(); update(); });
-    rebuildDots();
+    window.addEventListener("resize", update);
+    new MutationObserver(update).observe(shelf, { childList: true });   // books re-rendered
+
+    // Over the shelf (and it can scroll): the wheel moves it sideways, not the
+    // page, and the shelf glows to show it's captured.
+    shelf.addEventListener("mouseenter", () => shelf.classList.toggle("is-scroll-zone", canScroll()));
+    shelf.addEventListener("mouseleave", () => shelf.classList.remove("is-scroll-zone"));
+    shelf.addEventListener("wheel", (event) => {
+        if (event.deltaX !== 0 || event.deltaY === 0 || !canScroll()) return;
+        event.preventDefault();
+        shelf.scrollLeft += event.deltaY;
+    }, { passive: false });
+
+    // Click or drag the scrollbar (for anyone without a wheel / the retired arrows).
+    let scrubbing = false;
+    const scrubTo = (clientX, smooth) => {
+        const rect = dots.getBoundingClientRect();
+        const max = getMaxScroll();
+        if (!rect.width || max <= 0) return;
+        const thumbW = visFrac() * rect.width;
+        const t = (clientX - rect.left - thumbW / 2) / Math.max(1, rect.width - thumbW);
+        shelf.scrollTo({ left: Math.min(1, Math.max(0, t)) * max, behavior: smooth ? "smooth" : "auto" });
+    };
+    dots.addEventListener("pointerdown", (event) => {
+        if (!canScroll()) return;
+        scrubbing = true;
+        dots.classList.add("is-scrubbing");
+        dots.setPointerCapture?.(event.pointerId);
+        scrubTo(event.clientX, true);
+    });
+    dots.addEventListener("pointermove", (event) => { if (scrubbing) scrubTo(event.clientX, false); });
+    const endScrub = () => { scrubbing = false; dots.classList.remove("is-scrubbing"); };
+    dots.addEventListener("pointerup", endScrub);
+    dots.addEventListener("pointercancel", endScrub);
+
     update();
+    return update;
 }
 
 async function boot() {
@@ -307,7 +349,27 @@ async function boot() {
         renderGoal(goal, goalLabel, goalFill, profile, session.user?.id);
     };
     paintShelf();
-    initShelf(list, document.getElementById("studioDots"), document.getElementById("prevBtn"), document.getElementById("nextBtn"));
+    const refreshShelf = initShelf(list, document.getElementById("studioDots"), document.getElementById("prevBtn"), document.getElementById("nextBtn"));
+
+    // Layout toggle: side-to-side shelf ⇄ top-to-bottom list. Remembered per device.
+    const LAYOUT_KEY = "alysum:studio:book-layout";
+    const layoutToggle = document.getElementById("layoutToggle");
+    const applyLayout = (stack) => {
+        shell?.classList.toggle("layout-stack", stack);
+        layoutToggle?.setAttribute("aria-pressed", String(stack));
+        if (layoutToggle) layoutToggle.title = stack ? "Show as a row" : "Stack the list";
+        list.scrollLeft = 0;
+        refreshShelf?.();
+    };
+    let stackLayout = false;
+    try { stackLayout = localStorage.getItem(LAYOUT_KEY) === "stack"; } catch { /* ignore */ }
+    applyLayout(stackLayout);
+    layoutToggle?.addEventListener("click", () => {
+        stackLayout = !stackLayout;
+        try { localStorage.setItem(LAYOUT_KEY, stackLayout ? "stack" : "row"); } catch { /* ignore */ }
+        applyLayout(stackLayout);
+    });
+
     watchStatPeriods(paintTotals);
 
     // Live-refresh: the editor / Word Wars tab writes alysum:typed-words:{uid}
