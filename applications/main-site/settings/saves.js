@@ -244,10 +244,19 @@ export function wireSettingsSaves() {
             showMsg(msg, "Sign in to save.", false);
             return;
         }
-        writeStoredAboutMe(user.id, bio);
-        showMsg(msg, "Saved.", true);
-        void supabase.from("users").update({ bio }).eq("id", user.id);
-        void supabase.auth.updateUser({ data: { bio } });
+        btn.disabled = true;
+        try {
+            const { data, error } = await supabase.from("users").update({ bio }).eq("id", user.id).select("id");
+            if (error) throw error;
+            if (!data?.length) throw new Error("Could not save your bio. Please try again.");
+            writeStoredAboutMe(user.id, bio);
+            void supabase.auth.updateUser({ data: { bio } });
+            showMsg(msg, "Saved.", true);
+        } catch (e) {
+            showMsg(msg, e?.message || "Could not save your bio.", false);
+        } finally {
+            btn.disabled = false;
+        }
     });
 
     saveSupportBtn?.addEventListener("click", async (event) => {
