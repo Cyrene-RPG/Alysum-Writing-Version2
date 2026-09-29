@@ -1,0 +1,14 @@
+# Cloudflare Pages response headers. Mirrors the "headers" block in vercel.json.
+# Cloudflare already sends "max-age=0, must-revalidate" on HTML, so the .html rule is not repeated here.
+
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/applications/main-site/public/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/core/authentication/client.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/site-appearance/fonts/*
+  Cache-Control: public, max-age=31536000, immutable

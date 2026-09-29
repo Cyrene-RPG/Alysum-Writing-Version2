@@ -1,0 +1,79 @@
+# Cloudflare Pages routing. Mirrors the redirects and rewrites in vercel.json.
+# Vercel ignores this file; Cloudflare ignores vercel.json. Change both together.
+# First matching line wins. A 200 serves the target file without changing the URL.
+
+# Clean URLs: /login.html -> /login (vercel.json "redirects")
+/index.html  /  308
+/studio.html  /studio  308
+/editor.html  /editor  308
+/book-invite.html  /book-invite  308
+/word-wars-lobby.html  /word-wars-lobby  308
+/word-wars.html  /word-wars  308
+/library.html  /library  308
+/roadmap.html  /roadmap  308
+/book.html  /book  308
+/read.html  /read  308
+/publish.html  /publish  308
+/login.html  /login  308
+/signup.html  /signup  308
+/settings.html  /settings  308
+/overview.html  /overview  308
+/editor-preview.html  /editor-preview  308
+/reset-password.html  /reset-password  308
+/privacy-policy.html  /privacy-policy  308
+/terms-of-service.html  /terms-of-service  308
+/statistics-spec.html  /statistics-spec  308
+
+# Pages and files (vercel.json "rewrites")
+/  /applications/main-site/pages/  200
+/sw.js  /applications/main-site/public/sw.js  200
+/manifest.webmanifest  /applications/main-site/public/manifest.webmanifest  200
+/robots.txt  /applications/main-site/public/robots.txt  200
+/Alysum-3.png  /applications/main-site/public/Alysum-3.png  200
+/discord-logo.png  /applications/main-site/public/discord-logo.png  200
+/js/homepage.js  /applications/main-site/homepage/homepage.js  200
+/js/homepage-library.js  /applications/main-site/homepage/homepage-library.js  200
+/js/homepage-auth-nav.js  /applications/main-site/homepage/homepage-auth-nav.js  200
+/js/login.js  /applications/main-site/login/login.js  200
+/js/login-ui.js  /applications/main-site/login/login-ui.js  200
+/js/login-reset.js  /applications/main-site/login/login-reset.js  200
+/studio  /applications/studio/pages/studio  200
+/editor  /applications/editor/pages/editor  200
+/book-invite  /applications/editor/pages/book-invite  200
+/word-wars-lobby  /applications/word-wars/pages/word-wars-lobby  200
+/word-wars  /applications/word-wars/pages/word-wars  200
+/library  /applications/library/pages/library  200
+/roadmap  /applications/main-site/pages/roadmap-handoff  200
+/book  /applications/library/pages/book  200
+/read  /applications/library/pages/read  200
+/publish  /applications/studio/pages/publish  200
+/login  /applications/main-site/pages/login  200
+/signup  /applications/main-site/pages/signup  200
+/settings  /applications/main-site/pages/settings  200
+/overview  /applications/main-site/pages/overview  200
+/editor-preview  /applications/main-site/pages/editor-preview  200
+/reset-password  /applications/main-site/pages/reset-password  200
+/privacy-policy  /applications/main-site/pages/privacy-policy  200
+/terms-of-service  /applications/main-site/pages/terms-of-service  200
+/statistics-spec  /applications/main-site/pages/statistics-spec  200
+
+# Folders (wildcards go last so exact lines match first)
+/js/signup/*  /applications/main-site/signup/:splat  200
+/js/settings/*  /applications/main-site/settings/:splat  200
+/js/studio/*  /applications/studio/page-ui/:splat  200
+/js/editor/*  /applications/editor/page-ui/:splat  200
+/js/word-wars/*  /applications/word-wars/page-ui/:splat  200
+/js/library/*  /applications/library/page-ui/:splat  200
+/js/statistics-ui/*  /applications/main-site/statistics-ui/:splat  200
+/js/*  /applications/main-site/page-ui/:splat  200
+/css/homepage/*  /applications/main-site/homepage/homepage-css/:splat  200
+/css/login/*  /applications/main-site/login/login-css/:splat  200
+/css/signup/*  /applications/main-site/signup/signup-css/:splat  200
+/css/settings/*  /applications/main-site/settings/settings-css/:splat  200
+/css/studio/*  /applications/studio/studio-css/:splat  200
+/css/editor/*  /applications/editor/editor-css/:splat  200
+/css/word-wars/*  /applications/word-wars/word-wars-css/:splat  200
+/css/library/*  /applications/library/library-css/:splat  200
+/css/statistics-ui/*  /applications/main-site/statistics-ui/:splat  200
+/css/*  /applications/main-site/pages-css/:splat  200
+/assets/*  /applications/main-site/assets/:splat  200
