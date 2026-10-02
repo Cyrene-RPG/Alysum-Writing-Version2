@@ -1,74 +1,18 @@
-.site-header {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 18px 32px;
-    border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-}
+/* Header: centred brand (as on the live site), actions on the right, tabs underneath */
+.site-header { position: relative; display: flex; align-items: center; justify-content: center; padding: 20px 28px; font-family: var(--ui); }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand img { width: 34px; height: 34px; border-radius: 8px; }
+.brand b { font: 700 22px/1 var(--ui); letter-spacing: -0.03em; }
+.brand b span { color: var(--accent); }
+.header-right { position: absolute; right: 28px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 16px; }
+.header-right .login { color: var(--paper-2); font-weight: 500; font-size: 14.5px; }
+.header-right .login:hover { color: var(--paper); }
+.discord { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--rule); border-radius: 8px; }
+.discord:hover { border-color: var(--rule-2); }
 
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--text);
-}
-
-.brand-logo {
-    width: 36px;
-    height: 36px;
-    object-fit: contain;
-    flex-shrink: 0;
-}
-
-.brand-wordmark {
-    display: inline-flex;
-    align-items: baseline;
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-    line-height: 1;
-}
-
-.brand-initial {
-    font-size: 1.3em;
-    font-weight: 900;
-    line-height: 1;
-    padding-right: 0.04em;
-    background: linear-gradient(135deg, var(--pink, #ec4899), var(--purple, #6d28d9));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.brand-name {
-    font: inherit;
-}
-
-.btn-discord {
-    position: absolute;
-    right: 24px;
-    top: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px;
-    line-height: 0;
-    transform: translateY(-50%);
-    transition: transform 0.25s cubic-bezier(.175, .885, .32, 1.275);
-}
-
-.discord-logo {
-    width: 32px;
-    height: 24px;
-    display: block;
-}
-
-.btn-discord:hover {
-    transform: translateY(-50%) scale(1.08);
-}
-
-.btn-discord:focus-visible {
-    outline: 2px solid var(--purple-bright, var(--purple));
-    outline-offset: 2px;
-}
+.home-tabs { display: flex; justify-content: center; gap: 40px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); font-family: var(--ui); overflow-x: auto; scrollbar-width: none; padding: 0 28px; }
+.home-tabs::-webkit-scrollbar { display: none; }
+.home-tabs a { position: relative; padding: 14px 0 15px; font-size: 14.5px; font-weight: 500; color: var(--paper-2); white-space: nowrap; }
+.home-tabs a:hover { color: var(--paper); }
+.home-tabs a.on { color: var(--paper); }
+.home-tabs a.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--accent); }

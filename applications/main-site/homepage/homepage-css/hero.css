@@ -1,75 +1,32 @@
-.hero-frame {
-    position: relative;
-    padding: 72px 24px 96px;
-}
+/* Hero: centred copy, as on the live site */
+.hero { text-align: center; padding: 84px 28px 0; }
+.rule-label { display: inline-flex; align-items: center; gap: 16px; }
+.rule-label::before, .rule-label::after { content: ""; width: 48px; height: 1px; background: var(--rule-2); }
+.hero h1 { font: 400 clamp(52px, 8.4vw, 118px)/0.92 var(--title); letter-spacing: -0.02em; margin: 30px auto 28px; max-width: 1000px; }
+.hero .sub { font-size: 21px; color: var(--paper-2); max-width: 600px; margin: 0 auto 36px; }
+.cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 22px; }
 
-.hero-content {
-    position: relative;
-    z-index: 2;
-    max-width: 720px;
-    margin: 0 auto;
-    text-align: center;
+/* Hero graphic: blurbs of real published stories drifting behind the feature cards.
+   One soft oval mask fades every edge (a single gradient; no blend modes, no stacked masks). */
+.prose-frame { position: relative; margin: 64px auto 0; padding: 104px 0 100px; overflow: hidden; }
+.prose-bar {
+    position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; pointer-events: none; opacity: 0; transition: opacity 0.9s ease;
+    background: radial-gradient(closest-side, rgba(109, 40, 217, 0.22), transparent) center 55% / 900px 420px no-repeat;
+    -webkit-mask-image: radial-gradient(closest-side, #000 62%, transparent);
+    mask-image: radial-gradient(closest-side, #000 62%, transparent);
 }
+.prose-bar.ready { opacity: 1; }
+.prose-row { display: flex; width: max-content; white-space: nowrap; font: 400 clamp(38px, 5vw, 72px)/1.18 var(--title); color: rgba(236, 230, 218, 0.13); will-change: transform; animation: home-drift var(--t, 110s) linear infinite; }
+.prose-row.rev { animation-direction: reverse; }
+.prose-row span { padding-right: 0.7em; }
+.prose-row em { font-style: italic; color: rgba(167, 139, 250, 0.5); }
+.prose-frame.is-offscreen .prose-row { animation-play-state: paused; }
+@keyframes home-drift { to { transform: translate3d(-50%, 0, 0); } }
 
-.eyebrow {
-    display: inline-block;
-    background: var(--theme-accent-soft-bg, rgba(109, 40, 217, 0.16));
-    border: 1px solid color-mix(in srgb, var(--purple, #6d28d9) 40%, transparent);
-    color: var(--theme-brand-kicker, var(--muted));
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    padding: 8px 18px;
-    border-radius: var(--radius-pill);
-    margin-bottom: 24px;
-}
+.library-cta { position: relative; z-index: 2; display: flex; justify-content: center; margin-top: 30px; }
+.library-cta .btn { background: rgba(14, 12, 20, 0.9); }
 
-.hero-content h1 {
-    font-size: clamp(34px, 5vw, 52px);
-    font-weight: 900;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-    margin: 0 0 20px;
-}
-
-.hero-sub {
-    color: var(--muted);
-    font-size: 17px;
-    line-height: 1.6;
-    max-width: 540px;
-    margin: 0 auto 32px;
-}
-
-.cta-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    flex-wrap: wrap;
-    margin-bottom: 18px;
-}
-
-.btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 13px 28px;
-    border-radius: var(--radius-pill);
-    font-weight: 700;
-    font-size: 15px;
-    cursor: pointer;
-}
-
-.cta-secondary {
-    display: inline-block;
-    color: var(--muted);
-    font-size: 14px;
-    font-weight: 600;
-    text-underline-offset: 4px;
-    text-decoration: underline;
-    text-decoration-color: color-mix(in srgb, var(--muted) 40%, transparent);
-}
-
-.cta-secondary:hover {
-    color: var(--text);
+@media (prefers-reduced-motion: reduce) {
+    .prose-row { animation: none; }
+    html { scroll-behavior: auto; }
 }

@@ -1,54 +1,75 @@
-:root {
-    --font-body: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
-    --radius-lg: 16px;
-    --radius-pill: 999px;
-}
+/* Homepage tokens live on the body (not :root) so a saved Appearance theme cannot repaint the landing page. */
+body.home-page {
+    --ink: #0e0c14;
+    --ink-2: #14111c;
+    --sheet: #18151f;
+    --sheet-2: #1f1b29;
+    --rule: #2a2535;
+    --rule-2: #3a3448;
+    --paper: #ece6da;
+    --paper-2: #b9b2a4;
+    --paper-3: #7d7768;
+    --accent: #a78bfa;
+    --accent-ink: #1a1030;
+    --gold: #f5d489;
+    --pink: #ec4899;
+    --title: "Instrument Serif", Georgia, serif;
+    --prose: "Newsreader", Georgia, serif;
+    --ui: "Inter", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
 
-* { box-sizing: border-box; }
-
-html {
-    scroll-behavior: smooth;
-}
-
-body {
     margin: 0;
     min-height: 100vh;
-    font-family: var(--font-body);
+    color: var(--paper);
+    /* Grain is the first layer: painted with the background, so it costs nothing while scrolling */
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E"),
+        radial-gradient(1100px 620px at 50% -120px, rgba(109, 40, 217, 0.3), transparent 70%),
+        radial-gradient(700px 520px at 100% 1100px, rgba(236, 72, 153, 0.09), transparent 70%),
+        radial-gradient(800px 600px at 0% 1900px, rgba(109, 40, 217, 0.12), transparent 70%),
+        radial-gradient(900px 700px at 100% 3200px, rgba(109, 40, 217, 0.1), transparent 70%),
+        radial-gradient(1000px 700px at 20% 4300px, rgba(245, 212, 137, 0.06), transparent 70%),
+        linear-gradient(180deg, #130f1e 0, #0e0c14 900px, #0c0a12 100%);
+    background-color: var(--ink);
+    font: 17px/1.6 var(--prose);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    overflow-x: clip;
 }
 
-a {
-    color: inherit;
-    text-decoration: none;
-}
+/* :where() keeps these resets at zero specificity so .btn colours win */
+:where(.home-page) * { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+:where(.home-page) a { color: inherit; text-decoration: none; }
+:where(.home-page) button { font: inherit; color: inherit; cursor: pointer; }
+.home-page .wrap { max-width: 1140px; margin: 0 auto; padding: 0 28px; }
 
-.alert-banner {
-    border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-    background: var(--theme-accent-soft-bg, rgba(109, 40, 217, 0.16));
-}
+/* Backend notice (hidden unless homepage.js shows it) */
+.alert-banner { border-bottom: 1px solid var(--rule); background: rgba(109, 40, 217, 0.16); font-family: var(--ui); }
+.alert-banner.hidden { display: none; }
+.alert-content { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 10px 20px; font-size: 13px; color: var(--paper-2); }
+.alert-content a { color: var(--accent); font-weight: 700; }
+.alert-close { border: 0; background: transparent; color: var(--paper); font-size: 18px; cursor: pointer; }
 
-.alert-banner.hidden {
-    display: none;
-}
+/* Buttons and labels */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; font: 600 15px/1 var(--ui); padding: 15px 22px; border-radius: 8px; border: 1px solid transparent; white-space: nowrap; transition: filter 0.15s, border-color 0.15s, color 0.15s; }
+.btn-ink { background: var(--accent); color: var(--accent-ink); }
+.btn-ink:hover { filter: brightness(1.08); }
+.btn-line { border-color: var(--rule-2); color: var(--paper); }
+.btn-line:hover { border-color: var(--paper-3); }
+.btn-paper { background: var(--paper); color: #1a1426; }
+.btn-paper:hover { filter: brightness(0.95); }
+.btn-gold { background: var(--gold); color: #231a05; }
+.btn-sm { padding: 11px 16px; font-size: 14px; }
+.ulink { font: 500 15px var(--ui); color: var(--paper-2); border-bottom: 1px solid var(--rule-2); padding-bottom: 2px; }
+.ulink:hover { color: var(--paper); border-color: var(--paper-3); }
+.mono-label { font: 12px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--paper-3); }
 
-.alert-content {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 10px 20px;
-    font-size: 13px;
-    color: var(--muted);
-}
+/* Section scaffolding */
+.home-page section { margin-top: 120px; }
+.home-page h2 { font: 400 clamp(42px, 5.4vw, 72px)/0.98 var(--title); letter-spacing: -0.02em; margin: 18px 0; }
+.home-page h2 em, .hero h1 em { font-style: italic; color: var(--accent); }
+.lead { color: var(--paper-2); font-size: 19px; margin: 0; max-width: 520px; }
 
-.alert-content a {
-    color: var(--link, var(--accent-soft, var(--purple)));
-    font-weight: 700;
-}
-
-.alert-close {
-    border: 0;
-    background: transparent;
-    color: var(--text);
-    font-size: 18px;
-    cursor: pointer;
-}
+@keyframes home-blink { 50% { opacity: 0; } }
+@keyframes home-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }

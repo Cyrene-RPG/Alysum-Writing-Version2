@@ -41,6 +41,42 @@ backendAlertClose?.addEventListener("click", () => {
     localStorage.setItem("alysumBackendAlertDismissed", "true");
 });
 
-if (document.getElementById("books")) {
+// Hero background: stop the drifting rows while they are scrolled out of view
+const proseFrame = document.getElementById("proseFrame");
+if (proseFrame && "IntersectionObserver" in window) {
+    new IntersectionObserver(([entry]) => {
+        proseFrame.classList.toggle("is-offscreen", !entry.isIntersecting);
+    }).observe(proseFrame);
+}
+
+// Studio card: live word count for the "Chapter one" sample page (nothing saves)
+const firstLine = document.getElementById("firstLine");
+const wordCount = document.getElementById("firstLineWords");
+firstLine?.addEventListener("input", () => {
+    const words = (firstLine.innerText.match(/[\p{L}\p{N}’'-]+/gu) || []).length;
+    if (wordCount) wordCount.textContent = words.toLocaleString("en-US");
+});
+
+// "New!" slider
+const slider = document.getElementById("featured");
+if (slider) {
+    const slides = [...slider.querySelectorAll(".slide")];
+    const total = Math.max(1, ...slides.map((slide) => Number(slide.dataset.i) + 1));
+    let current = 0;
+    const show = (index) => {
+        current = (index + total) % total;
+        slides.forEach((slide) => {
+            const on = Number(slide.dataset.i) === current;
+            slide.hidden = !on;
+            slide.classList.toggle("fade", on);
+        });
+        const counter = document.getElementById("slideIndex");
+        if (counter) counter.textContent = String(current + 1);
+    };
+    document.getElementById("slidePrev")?.addEventListener("click", () => show(current - 1));
+    document.getElementById("slideNext")?.addEventListener("click", () => show(current + 1));
+}
+
+if (document.getElementById("library")) {
     startHomepageLibrary(supabase);
 }

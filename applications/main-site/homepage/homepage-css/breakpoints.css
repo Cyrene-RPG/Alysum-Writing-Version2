@@ -1,40 +1,66 @@
-@media (max-width: 900px) {
-    .site-header {
-        padding: 16px 20px;
-    }
-
-    .btn-discord {
-        right: 16px;
-    }
-
-    .hero-frame {
-        padding: 48px 20px 64px;
-    }
-
-    .feature-grid {
-        grid-template-columns: 1fr;
-        padding: 0 16px;
-    }
-
-    .book-bar-track .book {
-        width: clamp(100px, 26vw, 180px);
-    }
+@media (max-width: 980px) {
+    .studio, .featured { grid-template-columns: 1fr; }
+    .studio { gap: 48px; }
+    .f-art { border-left: 0; border-top: 1px solid var(--rule); min-height: 380px; }
+    .fcard { grid-template-columns: 130px 1fr; }
+    .billboard { grid-template-columns: 1fr; }
+    .bb-art { order: -1; padding: 40px 24px 0; }
+    .bb-cover { width: 180px; }
+    .footer-grid { grid-template-columns: 1fr; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    html {
-        scroll-behavior: auto;
-    }
+@media (max-width: 640px) {
+    .home-page .wrap { padding: 0 18px; }
+    .site-header { justify-content: flex-start; padding: 16px 18px; }
+    .header-right { right: 18px; gap: 10px; }
+    .header-right .login, .discord { display: none; }
+    .home-tabs { justify-content: flex-start; gap: 28px; padding: 0 18px; }
+    .hero { padding-top: 56px; }
+    .hero .sub { font-size: 18.5px; }
+    .rule-label { font-size: 10.5px; letter-spacing: 0.1em; gap: 10px; }
+    .rule-label::before, .rule-label::after { width: 16px; }
 
-    .book-bar-track {
-        animation: none;
-    }
+    /* The drifting text gets its own band above the cards instead of hiding behind them */
+    .prose-frame { margin: 44px -28px 0; padding: 0 0 72px; }
+    .prose-bar { position: relative; inset: auto; height: 250px; margin-bottom: 26px; gap: 0; background-size: 460px 300px; }
+    .prose-row { font-size: 36px; }
 
-    .btn-discord:hover {
-        transform: translateY(-50%);
-    }
+    .feature-grid { grid-template-columns: 1fr; gap: 22px; padding: 0 24px 0 20px; }
+    .fcard { grid-template-columns: 124px 1fr; box-shadow: 0 24px 40px -24px rgba(0, 0, 0, 0.9), 6px 6px 0 -1px var(--ink-2), 6px 6px 0 0 var(--rule); }
+    .fcard .vis { min-height: 128px; }
+    .fcard .body { padding: 42px 16px 16px 18px; }
+    .fcard h3 { font-size: 24px; }
+    .fcard p { font-size: 14px; }
+    .fcard .tag { top: 12px; right: 12px; font-size: 9.5px; padding: 3px 6px; }
+    .v-page { width: 92px; transform: rotate(-3deg) translateY(16px); }
+    .v-clock b { font-size: 30px; }
+    .v-fan { transform: translateY(10px) scale(0.62); }
+    .v-sync svg { width: 86px; }
 
-    .glass-button:hover {
-        transform: none;
-    }
+    .home-page section { margin-top: 88px; }
+    .sheet .running, .sheet .folio { padding-left: 22px; padding-right: 22px; }
+    .sheet .page { padding: 22px 22px 26px; min-height: 180px; }
+    .sheet .page h3 { font-size: 34px; }
+    .sheet .page .line { font-size: 18.5px; }
+    .sheet { box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.9); }
+    .f-copy { padding: 34px 24px; }
+    .f-art { padding: 36px 22px; min-height: 340px; }
+    .art { box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.9); }
+
+    .bb-copy { padding: 30px 24px 26px; }
+    .episodes { padding: 0 24px 28px; grid-template-columns: repeat(5, 160px); }
+    .rail { grid-auto-columns: 148px; gap: 12px; }
+    .rail.wide { grid-auto-columns: 250px; }
+    .rail.top { grid-auto-columns: 200px; }
+    .top .tile { grid-template-columns: 70px 1fr; }
+    .top .num { font-size: 130px; }
+    .row-head h3 { font-size: 28px; }
+    .row-head h3 small { display: block; margin: 8px 0 0; }
+    .arrows { display: none; }
+    .genres { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .gtile { height: 96px; padding: 14px; }
+    .gtile b { font-size: 23px; }
+    .lib-bar { gap: 10px; }
+    .now { grid-template-columns: auto 1fr auto; gap: 12px; }
+    .footer-cols { grid-template-columns: repeat(2, 1fr); }
 }
