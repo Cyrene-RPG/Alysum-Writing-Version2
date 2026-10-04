@@ -12,3 +12,23 @@
 
 /site-appearance/fonts/*
   Cache-Control: public, max-age=31536000, immutable
+
+# CSS and JS: browsers check for a newer copy on every load (a cheap 304 when unchanged).
+# Without this, Cloudflare's 4-hour default keeps old styles after a deploy.
+/css/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/js/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/core/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/applications/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/site-appearance/css-styles/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/site-appearance/js-runtime/*
+  Cache-Control: public, max-age=0, must-revalidate
