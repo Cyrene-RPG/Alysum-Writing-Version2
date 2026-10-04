@@ -1,73 +1,11 @@
-.site-footer {
-    padding: 48px 24px 56px;
-    border-top: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-    background: color-mix(in srgb, var(--alysum-ui-panel, var(--bg, #0b1220)) 35%, transparent);
-}
-
-.footer-grid {
-    max-width: 1140px;
-    margin: 0 auto;
-    display: grid;
-    gap: 32px;
-}
-
-.footer-brand {
-    font-weight: 900;
-    font-size: 20px;
-    letter-spacing: -0.02em;
-}
-
-.footer-cols {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
-}
-
-.footer-col h4 {
-    font-size: 12px;
-    font-weight: 900;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin: 0 0 12px;
-}
-
-.footer-col a {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--muted);
-    margin-bottom: 10px;
-}
-
-.footer-col a:hover {
-    color: var(--text);
-}
-
-.footer-bottom {
-    max-width: 1140px;
-    margin: 32px auto 0;
-    padding-top: 24px;
-    border-top: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-    text-align: center;
-    font-size: 14px;
-    color: var(--muted);
-}
-
-.footer-bottom a {
-    color: var(--link, var(--accent-soft, var(--purple)));
-    font-weight: 700;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-}
-
-@media (min-width: 800px) {
-    .footer-grid {
-        grid-template-columns: 1.2fr 2fr;
-        align-items: start;
-    }
-
-    .footer-cols {
-        grid-template-columns: repeat(3, minmax(120px, 1fr));
-    }
-}
+/* Footer: live columns, colophon style */
+.site-footer { margin-top: 130px; border-top: 1px solid var(--rule); padding: 52px 28px 60px; font-family: var(--ui); }
+.footer-grid { max-width: 1140px; margin: 0 auto; display: grid; grid-template-columns: 1.2fr 2fr; gap: 32px; }
+.footer-brand { font: 400 32px/1 var(--title); }
+.footer-brand p { font: 15px/1.5 var(--prose); color: var(--paper-3); margin: 10px 0 0; max-width: 280px; }
+.footer-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.footer-col h4 { font: 400 11px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--paper-3); margin: 0 0 14px; }
+.footer-col a { display: block; font-size: 14.5px; color: var(--paper-2); margin-bottom: 10px; }
+.footer-col a:hover { color: var(--paper); }
+.footer-bottom { max-width: 1140px; margin: 40px auto 0; padding-top: 22px; border-top: 1px solid var(--rule); font: 12px var(--mono); color: var(--paper-3); text-align: center; }
+.footer-bottom a { color: var(--accent); }
