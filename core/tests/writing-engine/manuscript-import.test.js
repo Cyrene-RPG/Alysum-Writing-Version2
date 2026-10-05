@@ -251,6 +251,18 @@ test("later Title-styled lines are kept as headings", () => {
     assert.deepEqual(bodyTitles(book), ["Chapter 1", "Chapter 2"]);
 });
 
+test("a whole sentence in Title style is text, not the book title", () => {
+    const sentence = "This paragraph does not have explicit alignment, it is centered per the paragraph style today.";
+    const book = buildImportedBook([{ type: "title", text: sentence }, p("Short body.")], { fallbackTitle: "file" });
+    assert.equal(book.title, "file");
+    assert.deepEqual(bodyTitles(book), ["Chapter 1"]);
+    assert.match(book.sections.body[0].content, /explicit alignment/);
+    const real = "This paragraph does not have explicit alignment, it’s centered per the paragraph style.";
+    assert.equal(buildImportedBook([{ type: "title", text: real }, p("x")], { fallbackTitle: "file" }).title, "file");
+    assert.equal(buildImportedBook([{ type: "title", text: "Who Killed Mr. Pell?" }, p("x")]).title, "Who Killed Mr. Pell?");
+    assert.equal(buildImportedBook([{ type: "title", text: "The End of Everything..." }, p("x")]).title, "The End of Everything...");
+});
+
 test("refuses a book too big to save", () => {
     const huge = Array.from({ length: 900 }, () => p("x".repeat(10_000)));
     assert.throws(() => buildImportedBook(huge), /too long/);

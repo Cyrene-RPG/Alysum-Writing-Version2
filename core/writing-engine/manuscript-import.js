@@ -665,6 +665,12 @@ function prepareBlocks(input) {
             out.push({ type: "break" });
             continue;
         }
+        const titleWords = block.type === "title" ? countWords(block.text) : 0;
+        if (titleWords > 15 || (titleWords > 4 && /[^.]\.$/.test(cleanText(block.text)))) {
+            // A whole sentence in Word's Title style is body text, not the book's name.
+            out.push({ type: "paragraph", text: cleanText(block.text), html: escapeHtml(cleanText(block.text)) });
+            continue;
+        }
         if (block.type === "break" || block.type === "title") {
             out.push(block);
             continue;
