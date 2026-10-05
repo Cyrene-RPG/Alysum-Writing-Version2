@@ -27,10 +27,70 @@ function isQuotaError(error) {
     return error?.name === "QuotaExceededError" || /quota/i.test(String(error?.message || ""));
 }
 
+// The dialog and its stylesheet come from this script, not from studio.html. The
+// service worker serves Studio's HTML from cache (refreshed in the background) but
+// fetches scripts fresh, so right after a deploy the page can be one version behind
+// the code. Built here, the dialog always matches the code that drives it.
+const STYLESHEET = "/css/studio/import.css";
+const DIALOG_HTML = `
+<div class="import-overlay" id="importOverlay" hidden>
+    <div class="import-card" role="dialog" aria-modal="true" aria-labelledby="importHeading">
+        <div class="import-head">
+            <h2 class="import-heading" id="importHeading">Import a manuscript</h2>
+            <button type="button" class="import-close" id="importClose" aria-label="Close">×</button>
+        </div>
+        <div class="import-step" id="importPick">
+            <button type="button" class="import-drop" id="importDrop">
+                <span class="import-drop-icon" aria-hidden="true">↥</span>
+                <span class="import-drop-title">Drop your manuscript here</span>
+                <span class="import-drop-sub">or <span class="import-drop-link">choose a file</span></span>
+                <span class="import-drop-types">Word (.docx) · web page (.html) · text (.txt, .md)</span>
+            </button>
+            <input type="file" id="importFile" hidden />
+            <p class="import-tip">From Google Docs, use File → Download → Microsoft Word (.docx). Chapters are found from Heading 1 titles or from lines like “Chapter 1”.</p>
+        </div>
+        <div class="import-step import-busy" id="importBusy" aria-live="polite" hidden>
+            <span class="import-spinner" aria-hidden="true"></span>
+            <p class="import-busy-text" id="importBusyText">Reading your manuscript…</p>
+        </div>
+        <div class="import-step" id="importReview" hidden>
+            <label class="import-label" for="importBookTitle">Book title</label>
+            <input type="text" class="import-input" id="importBookTitle" maxlength="200" autocomplete="off" />
+            <div class="import-summary-row">
+                <p class="import-summary" id="importSummary"></p>
+                <label class="import-split">Chapters from
+                    <select id="importSplit"></select>
+                </label>
+            </div>
+            <ol class="import-outline" id="importOutline" aria-label="Chapters found"></ol>
+            <ul class="import-notes" id="importNotes" hidden></ul>
+        </div>
+        <p class="import-error" id="importError" role="alert" hidden></p>
+        <div class="import-actions">
+            <button type="button" class="import-btn import-btn--quiet" id="importBack" hidden>Choose another file</button>
+            <button type="button" class="import-btn import-btn--quiet" id="importCancel">Cancel</button>
+            <button type="button" class="import-btn import-btn--primary" id="importConfirm" hidden>Import book</button>
+        </div>
+    </div>
+</div>`;
+
+function ensureDialog() {
+    if (!document.querySelector(`link[href^="${STYLESHEET}"]`)) {
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = STYLESHEET;
+        document.head.appendChild(link);
+    }
+    if (!document.getElementById("importOverlay")) {
+        document.body.insertAdjacentHTML("beforeend", DIALOG_HTML);
+    }
+}
+
 /**
  * @param {{ api: object, onCreated: (book: object) => void, returnFocus?: () => HTMLElement | null }} options
  */
 export function bindManuscriptImport({ api, onCreated, returnFocus }) {
+    ensureDialog();
     const $ = (id) => document.getElementById(id);
     const els = {
         overlay: $("importOverlay"),
@@ -51,7 +111,6 @@ export function bindManuscriptImport({ api, onCreated, returnFocus }) {
         cancel: $("importCancel"),
         confirm: $("importConfirm"),
     };
-    if (!els.overlay) return { open() {}, bindDrop() {} };
     els.file.accept = ACCEPTED_FILES;
 
     let step = "closed";
