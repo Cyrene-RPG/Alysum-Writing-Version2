@@ -1,10 +1,11 @@
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=11";
-import { createEmptyBook } from "@alysum/writing-engine/manuscript.js";
+import { countBookChapters, createEmptyBook } from "@alysum/writing-engine/manuscript.js";
 import { countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { initWorkspaceShell } from "./shell.js?v=9";
 import { bindBookMenu } from "./book-menu.js?v=6";
+import { bindManuscriptImport } from "./manuscript-import.js";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { getWritingStats } from "@alysum/account/writing-stats.js";
 import { localDayKey, localMonthStartKey, localWeekStartKey } from "@alysum/writing-engine/day-stats.js";
@@ -41,8 +42,7 @@ function formatWhen(ms) {
 }
 
 function chapterCount(book) {
-    const body = book?.sections?.body;
-    return Array.isArray(body) ? body.length : 0;
+    return countBookChapters(book?.sections?.body);
 }
 
 function validNumber(value) {
@@ -203,7 +203,8 @@ function bookCoverHtml(book) {
 
 function renderBooks(mount, books) {
     const newCard = `<button type="button" class="studio-new-card" id="newBookCard"><span class="studio-plus" aria-hidden="true">+</span><span>New book</span></button>`;
-    mount.innerHTML = newCard + sortBooksByLastWorked(books)
+    const importCard = `<button type="button" class="studio-new-card studio-import-card" id="importBookCard"><span class="studio-plus" aria-hidden="true">↥</span><span>Import manuscript</span></button>`;
+    mount.innerHTML = newCard + importCard + sortBooksByLastWorked(books)
         .map((book, index) => {
             const words = bookWordCount(book);
             const chapters = chapterCount(book);
@@ -435,12 +436,25 @@ async function boot() {
         status,
     });
 
+    const importer = bindManuscriptImport({
+        api,
+        onCreated(created) {
+            window.location.href = `/editor?book=${encodeURIComponent(created.id)}`;
+        },
+        returnFocus: () => document.getElementById("importBookCard"),
+    });
+    importer.bindDrop(document.body);
+
     list?.addEventListener("click", async (event) => {
         const gear = event.target.closest("[data-book-gear]");
         if (gear) {
             event.preventDefault();
             event.stopPropagation();
             bookMenu.openFromGear(gear);
+            return;
+        }
+        if (event.target.closest("#importBookCard")) {
+            importer.open();
             return;
         }
         const card = event.target.closest("#newBookCard");

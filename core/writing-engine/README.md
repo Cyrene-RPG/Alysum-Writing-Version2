@@ -11,3 +11,4 @@ Must not talk to storage or the network after the rewrite pass. Today's files st
 | day-stats.js | writing-day-stats.js |
 | word-count.js | — |
 | manuscript.js | — |
+| manuscript-import.js | book-import.js (rewritten: finds chapters in an imported file) |

@@ -212,6 +212,9 @@ html.reader-page body {
 
 .reader-body p { margin: 0 0 var(--reader-para-gap); }
 .reader-body p:last-child { margin-bottom: 0; }
+/* `.reader-body p` outranks scene-breaks.css's centring margin — restore it. */
+.reader-body p.scene-break { margin: 2.35em auto; }
+.reader-body p.scene-spacer { margin: 0; }
 .reader-body p.alysum-indent {
     text-indent: 1.5em;
 }
