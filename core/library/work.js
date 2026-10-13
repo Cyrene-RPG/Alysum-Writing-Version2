@@ -70,7 +70,19 @@ export async function fetchPublishedWork(supabase, id) {
             const { data, error } = await supabase.from("library").select("*").eq("id", want).maybeSingle();
             if (!error && data) remoteWork = normalizePublishedWork(data);
         } catch {
-            /* RLS or network — try catalog */
+            /* RLS or network — try get_published_book */
+        }
+        if (!remoteWork?.chapters?.length) {
+            // Logged-out visitors cannot read public.library, so they get one published book
+            // (with released chapters only) from supabase-library-public-reading.sql.
+            try {
+                const { data, error } = await supabase
+                    .rpc("get_published_book", { p_book_id: want })
+                    .maybeSingle();
+                if (!error && data) remoteWork = normalizePublishedWork(data);
+            } catch {
+                /* function not installed yet — try catalog */
+            }
         }
         if (!remoteWork?.chapters?.length) {
             try {
