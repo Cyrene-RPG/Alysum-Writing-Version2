@@ -1,703 +1,297 @@
 /**
- * Word Wars lobby — create, open list, join by code. Waiting until the host begins.
+ * Word Wars hub: start a race, join or watch with a code, or pick one of the
+ * races happening now. Each race then runs on its own page (race.js).
  */
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { goToLogin } from "@alysum/desktop/app.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=11";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
-import { initWorkspaceShell } from "/js/studio/shell.js?v=9";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js";
 import {
-    createWordWarRoom,
-    joinWordWarRoom,
-    joinWordWarRoomById,
-    listOpenWordWarLobbies,
-    getWordWarLobby,
-    startWordWar,
-    updateWordWarLobby,
-    leaveWordWarRoom,
-    meFromLobby,
-} from "@alysum/community/word-wars.js?v=3";
-import { paintChipInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
-import {
-    demoRequested,
-    demoBotCount,
-    demoSession,
-    demoProfile,
-    createDemoLobbyApi,
-    mountDemoBanner,
-    DEMO_ROOM_ID,
-} from "/js/word-wars/demo.js?v=7";
+    TARGET_CHOICES,
+    createRace,
+    joinRace,
+    listRaces,
+    watchRace,
+} from "@alysum/community/word-war-race.js";
+import { initWorkspaceShell } from "/js/studio/shell.js";
 
-const LENGTHS = [5, 10, 15, 20, 25, 30, 45, 0];
-const WAIT_MS = 1500;
+const LIST_REFRESH_MS = 5_000;
+const BOOK_KEY = "alysum:word-wars:book";
 
-function escapeHtml(str) {
-    return String(str ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
+const $ = (id) => document.getElementById(id);
+const raceUrl = (id) => `/word-wars?race=${encodeURIComponent(id)}`;
+
+function rememberBook(bookId) {
+    try {
+        localStorage.setItem(BOOK_KEY, bookId);
+    } catch {
+        /* only a convenience */
+    }
 }
 
-function durationLabel(min) {
-    const n = Number(min) || 0;
-    return n === 0 ? "Unlimited" : `${n} min`;
-}
-
-function roomIdFromUrl() {
-    return new URLSearchParams(window.location.search).get("room") || "";
-}
-
-function setRoomUrl(roomId) {
-    const url = new URL(window.location.href);
-    if (roomId) url.searchParams.set("room", roomId);
-    else url.searchParams.delete("room");
-    history.replaceState({}, "", url);
+function rememberedBook() {
+    try {
+        return localStorage.getItem(BOOK_KEY) || "";
+    } catch {
+        return "";
+    }
 }
 
 function showError(el, message) {
-    if (!el) return;
-    const text = String(message || "").trim();
-    el.hidden = !text;
-    el.textContent = text;
-}
-
-function requireBook(bookId) {
-    if (bookId) return true;
-    return false;
+    el.textContent = message || "";
+    el.classList.toggle("hidden", !message);
 }
 
 async function boot() {
-    initWorkspaceShell({ lead: "Word ", accent: "Wars", subtitle: "Write together." });
-
-    const demo = demoRequested();
-    if (demo) mountDemoBanner();
-    const lobbyApi = demo
-        ? createDemoLobbyApi({ bots: demoBotCount() })
-        : {
-            createWordWarRoom,
-            joinWordWarRoom,
-            joinWordWarRoomById,
-            listOpenWordWarLobbies,
-            getWordWarLobby,
-            startWordWar,
-            updateWordWarLobby,
-            leaveWordWarRoom,
-        };
-
-    const session = demo
-        ? demoSession
-        : await requireStudioSession(supabase, "word-wars-lobby.html");
+    initWorkspaceShell({ lead: "Word ", accent: "Wars", subtitle: "Race to the line." });
+    const here = window.location.pathname + window.location.search;
+    const session = await requireStudioSession(supabase, here);
     if (!session) return;
     if (session.mode !== "cloud") {
-        goToLogin("word-wars-lobby.html");
+        goToLogin(here);
         return;
     }
 
-    const profile = demo ? demoProfile : await loadWorkspaceProfile(supabase, session);
+    const profile = await loadWorkspaceProfile(supabase, session);
     initWorkspaceShell({
         lead: "Word ",
         accent: "Wars",
-        subtitle: "Write together.",
+        subtitle: "Race to the line.",
         name: profile.name,
         imageUrl: profile.imageUrl,
     });
 
-    const uid = session.user.id;
     let books = [];
-    if (demo) {
-        books = [{ id: "demo-book", title: "The Salt Verses" }];
+    try {
+        books = await createBooksApi(session, supabase).listBooks();
+    } catch {
+        books = [];
+    }
+
+    const state = { target: 250, isPublic: true, isBusy: false };
+    const bookSelect = $("bookSelect");
+
+    // ---------- Book ----------
+    if (books.length) {
+        bookSelect.replaceChildren(...books.map((b) => {
+            const opt = document.createElement("option");
+            opt.value = b.id;
+            opt.textContent = b.title || "Untitled";
+            return opt;
+        }));
+        const saved = rememberedBook();
+        if (books.some((b) => b.id === saved)) bookSelect.value = saved;
     } else {
-        const api = createBooksApi(session, supabase);
-        try {
-            books = await api.listBooks();
-        } catch {
-            books = [];
-        }
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "No books yet. Make one in Studio first.";
+        bookSelect.replaceChildren(opt);
     }
+    bookSelect.addEventListener("change", () => rememberBook(bookSelect.value));
+    const bookId = () => bookSelect.value || "";
 
-    const loading = document.getElementById("loadingPanel");
-    const shell = document.getElementById("lobbyShell");
-    const createView = document.getElementById("createView");
-    const lobbyKicker = document.getElementById("lobbyKicker");
-    const bookSelect = document.getElementById("bookSelect");
-    const lengthSlider = document.getElementById("lengthSlider");
-    const writersValue = document.getElementById("writersValue");
-    const lockHint = document.getElementById("lockHint");
-    const openList = document.getElementById("openList");
-    const openCount = document.getElementById("openCount");
-    const codeSlots = document.getElementById("codeSlots");
-    const createError = document.getElementById("createError");
-    const joinError = document.getElementById("joinError");
-    const beginBtn = document.getElementById("beginBtn");
-    const beginHint = document.getElementById("beginHint");
-    const beginError = document.getElementById("beginError");
-    const waitPanel = document.getElementById("waitPanel");
-    const waitCount = document.getElementById("waitCount");
-    const waitPeople = document.getElementById("waitPeople");
-    const waitCode = document.getElementById("waitCode");
-    const sideRail = document.getElementById("sideRail");
-    const openPane = document.getElementById("openPane");
-    const membersPane = document.getElementById("membersPane");
+    // ---------- Start a race ----------
+    $("targets").replaceChildren(...TARGET_CHOICES.map((n) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.setAttribute("role", "radio");
+        btn.dataset.target = String(n);
+        btn.textContent = n.toLocaleString();
+        return btn;
+    }));
 
-    loading?.classList.add("hidden");
-    shell?.classList.remove("hidden");
-
-    let durationMin = 15;
-    let maxWriters = 4;
-    let locked = false;
-    let shareRequired = false;
-    let busy = false;
-    let waiting = null;
-    let waitHost = false;
-    let waitTimer = 0;
-    let hostChosenMax = null;
-    let maxPersistOk = true;
-    let readyMark = "";
-
-    bookSelect.innerHTML = books.length
-        ? books
-            .map((book) => `<option value="${escapeHtml(book.id)}">${escapeHtml(book.title || "Untitled")}</option>`)
-            .join("")
-        : `<option value="">No books yet — make one in Studio</option>`;
-
-    function selectedBookId() {
-        return String(bookSelect.value || "").trim();
-    }
-
-    function paintTicks() {
-        lengthSlider.querySelectorAll(".ww-tick").forEach((el) => {
-            el.classList.toggle("is-on", Number(el.dataset.min) === durationMin);
+    function paintSettings() {
+        $("targets").querySelectorAll("[data-target]").forEach((btn) => {
+            const isOn = Number(btn.dataset.target) === state.target;
+            btn.classList.toggle("is-on", isOn);
+            btn.setAttribute("aria-checked", String(isOn));
         });
+        $("visibility").querySelectorAll("[data-public]").forEach((btn) => {
+            const isOn = (btn.dataset.public === "1") === state.isPublic;
+            btn.classList.toggle("is-on", isOn);
+            btn.setAttribute("aria-checked", String(isOn));
+        });
+        $("visibilityHint").textContent = state.isPublic
+            ? "It shows up under Races now. Anyone signed in can join or watch."
+            : "Hidden from the list. Only people with the code can join or watch.";
     }
 
-    lengthSlider.innerHTML = LENGTHS.map((min) => {
-        const label = min === 0 ? "∞" : String(min);
-        return `<button type="button" class="ww-tick${min === durationMin ? " is-on" : ""}" data-min="${min}">${label}</button>`;
-    }).join("");
+    $("targets").addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-target]");
+        if (!btn) return;
+        state.target = Number(btn.dataset.target);
+        paintSettings();
+    });
+    $("visibility").addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-public]");
+        if (!btn) return;
+        state.isPublic = btn.dataset.public === "1";
+        paintSettings();
+    });
+    paintSettings();
 
-    function paintWriters() {
-        writersValue.textContent = String(maxWriters);
-    }
-    paintWriters();
-
-    function paintLock() {
-        document.getElementById("lockOpenBtn")?.classList.toggle("is-on", !locked);
-        document.getElementById("lockLockedBtn")?.classList.toggle("is-on", locked);
-        if (lockHint) {
-            lockHint.textContent = locked
-                ? "Invite-only. Hidden from the public list."
-                : "Anyone can join from the list.";
-        }
-    }
-    paintLock();
-
-    function paintShare() {
-        document.getElementById("shareRequiredBtn")?.classList.toggle("is-on", shareRequired);
-        document.getElementById("shareOptionalBtn")?.classList.toggle("is-on", !shareRequired);
-    }
-    paintShare();
-
-    function canEditSettings() {
-        return !waiting || waitHost;
-    }
-
-    async function persistLobby(patch) {
-        if (!waiting?.roomId || !waitHost) return;
+    async function run(errorEl, task) {
+        if (state.isBusy) return;
+        showError(errorEl, "");
+        state.isBusy = true;
         try {
-            waiting = await lobbyApi.updateWordWarLobby(waiting.roomId, patch);
-            if (patch.maxWriters != null && Number(waiting.maxWriters) !== patch.maxWriters) {
-                maxPersistOk = false;
-            }
-            paintWaiting();
+            await task();
         } catch (err) {
-            showError(beginError, err?.message || "Could not update lobby.");
+            showError(errorEl, err.message);
+        } finally {
+            state.isBusy = false;
         }
     }
 
-    lengthSlider.addEventListener("click", (event) => {
-        const btn = event.target.closest("[data-min]");
-        if (!btn || !canEditSettings()) return;
-        durationMin = Number(btn.dataset.min);
-        paintTicks();
-        void persistLobby({ durationMin });
-    });
-
-    document.getElementById("writersMinus")?.addEventListener("click", () => {
-        if (!canEditSettings()) return;
-        maxWriters = Math.max(2, maxWriters - 1);
-        if (waitHost) hostChosenMax = maxWriters;
-        paintWriters();
-        void persistLobby({ maxWriters });
-    });
-    document.getElementById("writersPlus")?.addEventListener("click", () => {
-        if (!canEditSettings()) return;
-        maxWriters = Math.min(16, maxWriters + 1);
-        if (waitHost) hostChosenMax = maxWriters;
-        paintWriters();
-        void persistLobby({ maxWriters });
-    });
-    document.getElementById("lockOpenBtn")?.addEventListener("click", () => {
-        if (!canEditSettings()) return;
-        locked = false;
-        paintLock();
-        void persistLobby({ isLocked: false });
-    });
-    document.getElementById("lockLockedBtn")?.addEventListener("click", () => {
-        if (!canEditSettings()) return;
-        locked = true;
-        paintLock();
-        void persistLobby({ isLocked: true });
-    });
-    document.getElementById("shareRequiredBtn")?.addEventListener("click", () => {
-        if (!canEditSettings()) return;
-        shareRequired = true;
-        paintShare();
-        void persistLobby({ shareRequired: true });
-    });
-    document.getElementById("shareOptionalBtn")?.addEventListener("click", () => {
-        if (!canEditSettings()) return;
-        shareRequired = false;
-        paintShare();
-        void persistLobby({ shareRequired: false });
-    });
-    bookSelect.addEventListener("change", () => {
-        const bookId = selectedBookId();
-        if (!bookId || !canEditSettings()) return;
-        void persistLobby({ bookId });
-    });
-
-    for (let i = 0; i < 6; i += 1) {
-        const input = document.createElement("input");
-        input.maxLength = 1;
-        input.autocomplete = "off";
-        input.spellcheck = false;
-        input.dataset.i = String(i);
-        input.setAttribute("aria-label", `Code character ${i + 1}`);
-        codeSlots.append(input);
+    function needBook(errorEl) {
+        if (bookId()) return false;
+        showError(errorEl, books.length ? "Pick a book to race in." : "Make a book in Studio first, then come back to race.");
+        return true;
     }
 
-    function readCode() {
-        return [...codeSlots.querySelectorAll("input")]
-            .map((el) => el.value.replace(/[^a-z0-9]/gi, "").toUpperCase())
-            .join("");
-    }
-
-    codeSlots.addEventListener("input", (event) => {
-        const input = event.target;
-        if (!(input instanceof HTMLInputElement)) return;
-        input.value = input.value.replace(/[^a-z0-9]/gi, "").toUpperCase().slice(0, 1);
-        const next = input.nextElementSibling;
-        if (input.value && next instanceof HTMLInputElement) next.focus();
-    });
-    codeSlots.addEventListener("keydown", (event) => {
-        const input = event.target;
-        if (!(input instanceof HTMLInputElement)) return;
-        if (event.key === "Backspace" && !input.value) {
-            const prev = input.previousElementSibling;
-            if (prev instanceof HTMLInputElement) prev.focus();
-        }
-    });
-    codeSlots.addEventListener("paste", (event) => {
-        event.preventDefault();
-        const text = String(event.clipboardData?.getData("text") || "")
-            .replace(/[^a-z0-9]/gi, "")
-            .toUpperCase()
-            .slice(0, 6);
-        const inputs = [...codeSlots.querySelectorAll("input")];
-        inputs.forEach((el, i) => {
-            el.value = text[i] || "";
+    $("createBtn").addEventListener("click", () => {
+        if (needBook($("createError"))) return;
+        void run($("createError"), async () => {
+            const snap = await createRace({ targetWords: state.target, isPublic: state.isPublic, bookId: bookId() });
+            window.location.assign(raceUrl(snap.race.id));
         });
-        inputs[Math.min(text.length, 5)]?.focus();
     });
 
-    function shareStatus(card) {
-        if (card.isLocked) return { label: "Invite only", share: false };
-        if (card.shareRequired) return { label: "Required", share: true };
-        const n = Number(card.sharingCount) || 0;
-        if (n > 0) return { label: `${n} sharing`, share: true };
-        return { label: "Share off", share: false };
+    // ---------- Code ----------
+    const codeInput = $("codeInput");
+    const readCode = () => codeInput.value.replace(/[^a-z0-9]/gi, "").toUpperCase().slice(0, 6);
+    codeInput.addEventListener("input", () => {
+        const clean = readCode();
+        if (codeInput.value !== clean) codeInput.value = clean;
+    });
+    const urlCode = new URLSearchParams(window.location.search).get("code");
+    if (urlCode) codeInput.value = urlCode.replace(/[^a-z0-9]/gi, "").toUpperCase().slice(0, 6);
+
+    function needCode() {
+        if (readCode().length === 6) return false;
+        showError($("codeError"), "Race codes are six letters and numbers.");
+        return true;
     }
 
-    function paintControlInk() {
-        const root = getComputedStyle(document.documentElement);
-        const chrome = root.getPropertyValue("--alysum-chrome-gradient").trim()
-            || root.getPropertyValue("--theme-welcome-bar").trim()
-            || "#6d28d9";
-        const sprint = document.getElementById("createBtn");
-        if (sprint) paintChipInk(sprint, chrome);
-        if (beginBtn) paintChipInk(beginBtn, chrome);
-        const join = document.getElementById("joinCodeBtn");
-        if (join) {
-            paintChipInk(join, root.getPropertyValue("--pink").trim() || "#f9a8d4");
-        }
-        waitPeople?.querySelectorAll(".ww-chip").forEach((el) => {
-            paintChipInk(el, root.getPropertyValue("--accent").trim() || "#db2777");
+    $("joinCodeBtn").addEventListener("click", () => {
+        if (needCode() || needBook($("codeError"))) return;
+        void run($("codeError"), async () => {
+            const snap = await joinRace({ code: readCode(), bookId: bookId() });
+            window.location.assign(raceUrl(snap.race.id));
         });
-    }
-
-    function paintNoteInk() {
-        const paper = getComputedStyle(document.documentElement)
-            .getPropertyValue("--alysum-display-highlight")
-            .trim() || "#fde68a";
-        openList.querySelectorAll(".ww-card, .ww-open-empty").forEach((el) => {
-            const ink = paintChipInk(el, paper);
-            if (ink) el.style.setProperty("--muted", ink.muted);
+    });
+    $("watchCodeBtn").addEventListener("click", () => {
+        if (needCode()) return;
+        void run($("codeError"), async () => {
+            const snap = await watchRace({ code: readCode() });
+            window.location.assign(raceUrl(snap.race.id));
         });
-        paintControlInk();
-    }
-
-    function paintOpen(list) {
-        const rows = Array.isArray(list) ? list : [];
-        openCount.textContent = rows.length
-            ? `Join a sprint · ${rows.length} ${rows.length === 1 ? "lobby" : "lobbies"} open now`
-            : "Join a sprint · none open now";
-        if (!rows.length) {
-            openList.innerHTML = `<p class="hint ww-open-empty">Pin a sprint here — none open now.</p>`;
-            paintNoteInk();
-            return;
-        }
-        openList.innerHTML = rows
-            .map((row) => {
-                const max = Number(row.maxWriters) || 16;
-                const count = Number(row.participantCount) || 0;
-                const full = count >= max;
-                const status = shareStatus(row);
-                const code = String(row.code || "");
-                return `
-                    <button type="button" class="ww-card" data-join-id="${escapeHtml(row.roomId)}" ${full ? "disabled" : ""} aria-label="${full ? "Lobby full" : `Join ${escapeHtml(row.hostBookTitle || row.hostDisplayName || "Word War")}`}">
-                        <span class="ww-card-title">${escapeHtml(row.hostBookTitle || row.hostDisplayName || "Word War")}</span>
-                        <span class="ww-card-code">#${escapeHtml(code)}</span>
-                        <span class="ww-card-meta">${escapeHtml(durationLabel(row.durationMin).toUpperCase())} · ${count}/${max}</span>
-                        <span class="ww-status${status.share ? " is-share" : ""}">${escapeHtml(full ? "Full" : status.label)}</span>
-                    </button>`;
-            })
-            .join("");
-        paintNoteInk();
-    }
-
-    async function refreshOpen() {
-        try {
-            paintOpen(await lobbyApi.listOpenWordWarLobbies());
-        } catch {
-            paintOpen([]);
-        }
-    }
-
-    function goToWar(roomId) {
-        if (!roomId) return;
-        if (demo) {
-            window.location.replace("word-wars.html?demo=1");
-            return;
-        }
-        window.location.replace(`word-wars.html?room=${encodeURIComponent(roomId)}`);
-    }
-
-    function applyLobbySettings(lobby) {
-        durationMin = Number(lobby.durationMin) || durationMin;
-        const serverMax = Number(lobby.maxWriters);
-        if (waitHost && hostChosenMax != null) {
-            maxWriters = hostChosenMax;
-        } else if (serverMax >= 2 && serverMax <= 16) {
-            maxWriters = serverMax;
-        }
-        locked = !!lobby.isLocked;
-        shareRequired = !!lobby.shareRequired;
-        const mine = meFromLobby(lobby, uid);
-        if (mine?.bookId) bookSelect.value = mine.bookId;
-        paintTicks();
-        paintWriters();
-        paintLock();
-        paintShare();
-    }
-
-    // Self-heal: older deployments of `start_word_war` refuse to begin unless every
-    // participant is flagged ready, yet this lobby has no ready control. Once a writer
-    // has a book, flag them ready so Begin works. On an up-to-date DB this is a no-op.
-    async function ensureReadyMark(lobby) {
-        if (!lobby?.roomId || typeof lobbyApi.updateWordWarLobby !== "function") return;
-        const mine = meFromLobby(lobby, uid);
-        if (!mine || mine.isReady || !mine.bookId) return;
-        const tag = `${lobby.roomId}:${mine.bookId}`;
-        if (readyMark === tag) return;
-        readyMark = tag;
-        try {
-            waiting = await lobbyApi.updateWordWarLobby(lobby.roomId, { isReady: true });
-            paintWaiting();
-        } catch {
-            readyMark = "";
-        }
-    }
-
-    function paintWaiting() {
-        const lobby = waiting;
-        if (!lobby) return;
-        applyLobbySettings(lobby);
-        const people = Array.isArray(lobby.participants) ? lobby.participants : [];
-        const max = maxWriters;
-        const count = people.length;
-        if (waitCount) waitCount.textContent = `${count}/${max}`;
-        if (waitCode) waitCode.textContent = String(lobby.code || "");
-        const remaining = Math.max(0, max - count);
-        const emptyCount = remaining;
-        const rows = people.map((p) => {
-            const tags = [];
-            if (p.userId === uid) tags.push("You");
-            if (p.isHost) tags.push("Host");
-            const chips = tags
-                .map((tag) => `<span class="ww-chip">${escapeHtml(tag)}</span>`)
-                .join("");
-            return `<li>
-                <span class="ww-people-name">${escapeHtml(p.displayName || "Writer")}</span>
-                <span class="ww-people-tags">${chips}</span>
-            </li>`;
-        });
-        for (let i = 0; i < emptyCount; i += 1) {
-            rows.push(`<li class="is-empty">Waiting for a writer…</li>`);
-        }
-        if (waitPeople) waitPeople.innerHTML = rows.join("");
-        const enough = count >= 2;
-        beginBtn?.classList.toggle("hidden", !waitHost);
-        if (beginBtn) beginBtn.disabled = !enough;
-        if (beginHint) {
-            beginHint.classList.toggle("hidden", false);
-            beginHint.textContent = waitHost
-                ? (enough ? "Start when everyone's in." : "Need 2 writers to start.")
-                : "Waiting for the host to start.";
-        }
-        paintControlInk();
-        void ensureReadyMark(lobby);
-    }
-
-    function stopWaitPoll() {
-        if (waitTimer) {
-            window.clearInterval(waitTimer);
-            waitTimer = 0;
-        }
-    }
-
-    function exitWaiting() {
-        waiting = null;
-        waitHost = false;
-        hostChosenMax = null;
-        maxPersistOk = true;
-        readyMark = "";
-        stopWaitPoll();
-        setRoomUrl("");
-        createView?.classList.remove("is-waiting", "is-guest");
-        waitPanel?.classList.add("hidden");
-        openPane?.classList.remove("hidden");
-        membersPane?.classList.add("hidden");
-        if (sideRail) sideRail.setAttribute("aria-label", "Open lobbies");
-        beginBtn?.classList.add("hidden");
-        beginHint?.classList.add("hidden");
-        document.getElementById("createBtn")?.classList.remove("hidden");
-        document.getElementById("createHint")?.classList.remove("hidden");
-        if (lobbyKicker) lobbyKicker.textContent = "Create a lobby";
-        showError(beginError, "");
-    }
-
-    async function pollWaiting() {
-        if (!waiting?.roomId) return;
-        try {
-            const next = await lobbyApi.getWordWarLobby({ roomId: waiting.roomId });
-            if (!next || next.status === "finished" || next.status === "cancelled") {
-                exitWaiting();
-                return;
-            }
-            if (!meFromLobby(next, uid)) {
-                exitWaiting();
-                return;
-            }
-            if (next.status === "active") {
-                goToWar(next.roomId);
-                return;
-            }
-            waiting = next;
-            waitHost = !!meFromLobby(next, uid)?.isHost;
-            createView?.classList.toggle("is-guest", !waitHost);
-            if (maxPersistOk && waitHost && hostChosenMax != null && Number(next.maxWriters) !== hostChosenMax) {
-                void persistLobby({ maxWriters: hostChosenMax });
-                return;
-            }
-            paintWaiting();
-        } catch {
-            /* keep last */
-        }
-    }
-
-    function enterWaiting(lobby) {
-        if (!lobby?.roomId) return;
-        if (lobby.status === "active") {
-            goToWar(lobby.roomId);
-            return;
-        }
-        waiting = lobby;
-        waitHost = !!meFromLobby(lobby, uid)?.isHost;
-        if (!demo) setRoomUrl(lobby.roomId);
-        createView?.classList.add("is-waiting");
-        createView?.classList.toggle("is-guest", !waitHost);
-        waitPanel?.classList.remove("hidden");
-        openPane?.classList.add("hidden");
-        membersPane?.classList.remove("hidden");
-        if (sideRail) sideRail.setAttribute("aria-label", "Joined members");
-        document.getElementById("createBtn")?.classList.add("hidden");
-        document.getElementById("createHint")?.classList.add("hidden");
-        if (lobbyKicker) lobbyKicker.textContent = "Lobby live";
-        showError(createError, "");
-        showError(beginError, "");
-        paintWaiting();
-        stopWaitPoll();
-        waitTimer = window.setInterval(() => {
-            void pollWaiting();
-        }, WAIT_MS);
-    }
-
-    document.getElementById("refreshLobbiesBtn")?.addEventListener("click", () => {
-        void refreshOpen();
+    });
+    codeInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") $("joinCodeBtn").click();
     });
 
-    document.getElementById("createBtn")?.addEventListener("click", async () => {
-        if (busy || waiting) return;
-        const bookId = selectedBookId();
-        if (!requireBook(bookId)) {
-            showError(createError, "Pick a book first.");
-            return;
+    // ---------- Races now ----------
+    function statusText(race) {
+        if (race.status === "lobby") return "Waiting";
+        if (race.status === "countdown") return "Starting";
+        return "Live";
+    }
+
+    function raceCard(race) {
+        const card = document.createElement("article");
+        card.className = `ww-race-card is-${race.status}${race.isMine ? " is-mine" : ""}`;
+
+        const top = document.createElement("div");
+        top.className = "ww-race-card-top";
+        const chip = document.createElement("span");
+        chip.className = "ww-chip";
+        if (race.status !== "lobby") {
+            const dot = document.createElement("span");
+            dot.className = "ww-live-dot";
+            chip.append(dot);
         }
-        busy = true;
-        showError(createError, "");
+        chip.append(document.createTextNode(statusText(race)));
+        const target = document.createElement("span");
+        target.className = "ww-race-card-target";
+        target.textContent = race.targetWords.toLocaleString();
+        top.append(chip, target);
+
+        const title = document.createElement("h3");
+        title.textContent = race.isMine ? "Your race" : `${race.hostName}'s race`;
+        const meta = document.createElement("p");
+        meta.className = "ww-hint";
+        meta.textContent = `Race to ${race.targetWords.toLocaleString()} words · ${race.racerCount}/${race.maxRacers} writers${race.isPublic ? "" : " · Private"}`;
+
+        const actions = document.createElement("div");
+        actions.className = "ww-row";
+        const isFull = race.racerCount >= race.maxRacers;
+        if (race.isMine) {
+            actions.append(button("Back to it", "ww-primary", () => window.location.assign(raceUrl(race.id))));
+        } else {
+            if (race.status === "lobby" && !isFull) {
+                actions.append(button("Join", "ww-primary", () => {
+                    if (needBook($("listError"))) return;
+                    void run($("listError"), async () => {
+                        const snap = await joinRace({ raceId: race.id, bookId: bookId() });
+                        window.location.assign(raceUrl(snap.race.id));
+                    });
+                }));
+            }
+            actions.append(button("Watch", "ww-btn", () => window.location.assign(raceUrl(race.id))));
+        }
+
+        card.append(top, title, meta, actions);
+        return card;
+    }
+
+    function button(label, className, onClick) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = className;
+        btn.textContent = label;
+        btn.addEventListener("click", onClick);
+        return btn;
+    }
+
+    let hasListFailed = false;
+
+    async function refreshList() {
         try {
-            const chosenMax = maxWriters;
-            hostChosenMax = chosenMax;
-            maxPersistOk = true;
-            const next = await lobbyApi.createWordWarRoom({
-                durationMin,
-                maxWriters: chosenMax,
-                bookId,
-                isLocked: locked,
-                shareRequired,
-            });
-            enterWaiting({ ...next, maxWriters: chosenMax });
-            void persistLobby({ maxWriters: chosenMax });
+            const races = await listRaces();
+            if (hasListFailed) {
+                hasListFailed = false;
+                showError($("listError"), "");
+            }
+            const list = $("raceList");
+            if (!races.length) {
+                const empty = document.createElement("p");
+                empty.className = "ww-race-empty";
+                empty.textContent = "No races right now. Open one and send the code to a friend.";
+                list.replaceChildren(empty);
+            } else {
+                list.replaceChildren(...races.map(raceCard));
+            }
+            const live = races.filter((r) => r.status !== "lobby").length;
+            $("raceCount").textContent = races.length
+                ? `${races.length} ${races.length === 1 ? "race" : "races"}${live ? ` · ${live} live` : ""}`
+                : "";
         } catch (err) {
-            showError(createError, err?.message || "Could not create lobby.");
-        } finally {
-            busy = false;
-        }
-    });
-
-    beginBtn?.addEventListener("click", async () => {
-        if (busy || !waiting?.roomId || !waitHost) return;
-        busy = true;
-        showError(beginError, "");
-        try {
-            const live = await lobbyApi.startWordWar(waiting.roomId);
-            goToWar(live.roomId || waiting.roomId);
-        } catch (err) {
-            try {
-                const next = await lobbyApi.getWordWarLobby({ roomId: waiting.roomId });
-                if (next?.status === "active") {
-                    goToWar(next.roomId);
-                    return;
-                }
-                if (next) {
-                    waiting = next;
-                    readyMark = "";
-                    await ensureReadyMark(next);
-                }
-            } catch {
-                /* show original error */
-            }
-            showError(beginError, err?.message || "Could not start.");
-        } finally {
-            busy = false;
-        }
-    });
-
-    document.getElementById("copyCodeBtn")?.addEventListener("click", async () => {
-        const code = String(waiting?.code || "").trim();
-        if (!code) return;
-        try {
-            await navigator.clipboard.writeText(code);
-        } catch {
-            /* ignore */
-        }
-    });
-
-    document.getElementById("leaveLobbyBtn")?.addEventListener("click", async () => {
-        if (busy || !waiting?.roomId) return;
-        busy = true;
-        try {
-            await lobbyApi.leaveWordWarRoom(waiting.roomId);
-        } catch {
-            /* still leave the view */
-        } finally {
-            busy = false;
-            exitWaiting();
-        }
-    });
-
-    async function joinWithBook(joinFn) {
-        const bookId = selectedBookId();
-        if (!requireBook(bookId)) {
-            showError(joinError, "Pick a book first.");
-            return;
-        }
-        if (busy || waiting) return;
-        busy = true;
-        showError(joinError, "");
-        try {
-            const next = await joinFn(bookId);
-            if (next?.status === "active") goToWar(next.roomId);
-            else enterWaiting(next);
-        } catch (err) {
-            showError(joinError, err?.message || "Could not join.");
-        } finally {
-            busy = false;
+            hasListFailed = true;
+            showError($("listError"), `Could not load races: ${err.message}`);
         }
     }
 
-    document.getElementById("joinCodeBtn")?.addEventListener("click", () => {
-        const code = readCode();
-        if (code.length !== 6) {
-            showError(joinError, "Enter the six-character code.");
-            return;
-        }
-        void joinWithBook((bookId) => lobbyApi.joinWordWarRoom(code, bookId));
-    });
-
-    openList.addEventListener("click", (event) => {
-        const btn = event.target.closest("[data-join-id]");
-        if (!btn || btn.disabled) return;
-        const roomId = btn.dataset.joinId;
-        void joinWithBook((bookId) => lobbyApi.joinWordWarRoomById(roomId, bookId));
-    });
-
-    document.documentElement.addEventListener("alysum-display-text-color", paintNoteInk);
-    window.addEventListener("alysum-gradient-theme", paintNoteInk);
-    paintControlInk();
-
-    await refreshOpen();
-
-    if (demo) {
-        enterWaiting(await lobbyApi.getWordWarLobby({ roomId: DEMO_ROOM_ID }));
-        return;
-    }
-
-    const existingId = roomIdFromUrl();
-    if (existingId) {
-        try {
-            const next = await lobbyApi.getWordWarLobby({ roomId: existingId });
-            if (next && meFromLobby(next, uid)) enterWaiting(next);
-            else setRoomUrl("");
-        } catch {
-            setRoomUrl("");
-        }
-    }
+    $("loadingPanel").classList.add("hidden");
+    $("hubShell").classList.remove("hidden");
+    await refreshList();
+    setInterval(() => {
+        if (!document.hidden) void refreshList();
+    }, LIST_REFRESH_MS);
 }
 
 boot().catch(() => {
-    const loading = document.getElementById("loadingPanel");
-    if (loading) loading.textContent = "Could not load Word Wars.";
+    const loading = $("loadingPanel");
+    if (loading) loading.textContent = "Could not load Word Wars. Check your connection and try again.";
 });

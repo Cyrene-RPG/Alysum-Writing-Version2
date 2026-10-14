@@ -34,10 +34,10 @@
     <title>Word Wars — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="/css/workspace-nav.css?v=30" />
-    <link rel="stylesheet" href="/css/word-wars/lobby.css?v=22" />
+    <link rel="stylesheet" href="/css/word-wars/lobby.css" />
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 </head>
-<body>
+<body class="ww-hub-body">
     <header class="wd-welcome-bar ui-bar" aria-label="Welcome">
         <div class="wd-welcome-inner">
             <div class="wd-pfp-menu" id="welcomePfpMenu">
@@ -68,113 +68,65 @@
         </div>
     </nav>
 
-    <div class="wrap">
-        <div class="panel" id="loadingPanel">
-            <p class="hint" style="margin:0">Loading Word Wars…</p>
+    <div class="ww-loading" id="loadingPanel">Loading Word Wars…</div>
+
+    <main class="ww-hub hidden" id="hubShell">
+        <header class="ww-hub-head">
+            <p class="ww-eyebrow">Word Wars · Race</p>
+            <h1 class="ww-display">First to the line wins</h1>
+            <p class="ww-lede">Everyone writes in their own book. Racers and spectators see each other's word counts and pace, never anyone's words.</p>
+        </header>
+
+        <div class="ww-hub-book">
+            <label class="ww-label" for="bookSelect">Racing in</label>
+            <select class="ww-select" id="bookSelect"></select>
         </div>
 
-        <div class="ww-shell hidden" id="lobbyShell">
-            <aside class="ww-open" id="sideRail" aria-label="Open lobbies">
-                <div class="ww-open-pane" id="openPane">
-                    <div class="ww-open-head">
-                        <h2>Open lobbies</h2>
-                        <button type="button" class="ww-refresh" id="refreshLobbiesBtn" aria-label="Refresh">Refresh</button>
-                    </div>
-                    <p class="hint" id="openCount">Join a sprint</p>
-                    <div class="ww-open-list" id="openList"></div>
-                </div>
-                <div class="ww-members-pane hidden" id="membersPane">
-                    <div class="ww-open-head">
-                        <h2>Joined members</h2>
-                    </div>
-                    <p class="hint" id="waitCount">0/4</p>
-                    <ul class="ww-people" id="waitPeople"></ul>
-                </div>
-            </aside>
-
-            <div class="ww-main" id="createView">
-                <header class="ww-hero">
-                    <p class="ww-kicker" id="lobbyKicker">Create a lobby</p>
-                    <h1>Settings</h1>
-                </header>
-
-                <label class="ww-field">
-                    <span class="ww-label">Book</span>
-                    <div class="ww-pencil">
-                        <select id="bookSelect"></select>
-                    </div>
-                </label>
-
+        <div class="ww-hub-grid">
+            <section class="ww-panel ww-hub-start">
+                <h2 class="ww-label">Start a race</h2>
                 <div class="ww-field">
-                    <span class="ww-label">Sprint length</span>
-                    <div class="ww-slider" id="lengthSlider" role="radiogroup" aria-label="Sprint length"></div>
+                    <span class="ww-label ww-sublabel">Race to</span>
+                    <div class="ww-targets" id="targets" role="radiogroup" aria-label="Target word count"></div>
                 </div>
+                <div class="ww-field">
+                    <span class="ww-label ww-sublabel">Who can join</span>
+                    <div class="ww-seg" id="visibility" role="radiogroup" aria-label="Who can join">
+                        <button type="button" role="radio" data-public="1">Public</button>
+                        <button type="button" role="radio" data-public="0">Private</button>
+                    </div>
+                    <p class="ww-hint" id="visibilityHint"></p>
+                </div>
+                <button type="button" class="ww-primary" id="createBtn">Open a race</button>
+                <p class="ww-error hidden" id="createError" role="alert"></p>
+            </section>
 
+            <section class="ww-panel ww-hub-code">
+                <h2 class="ww-label">Have a code?</h2>
+                <input class="ww-code-input" id="codeInput" maxlength="6" autocomplete="off" spellcheck="false" placeholder="ABC123" aria-label="Race code" />
                 <div class="ww-row">
-                    <div class="ww-field">
-                        <span class="ww-label">Max writers</span>
-                        <div class="ww-stepper">
-                            <button type="button" id="writersMinus" aria-label="Fewer writers">−</button>
-                            <span id="writersValue">4</span>
-                            <button type="button" id="writersPlus" aria-label="More writers">+</button>
-                        </div>
-                        <p class="hint">2 minimum · 16 max.</p>
-                    </div>
-                    <div class="ww-field">
-                        <span class="ww-label">Lobby</span>
-                        <div class="ww-seg ww-seg--erasers" role="radiogroup" aria-label="Lobby privacy">
-                            <button type="button" class="ww-seg-btn is-on" id="lockOpenBtn">Open</button>
-                            <button type="button" class="ww-seg-btn" id="lockLockedBtn">Locked</button>
-                        </div>
-                        <p class="hint" id="lockHint">Anyone can join from the list.</p>
-                    </div>
+                    <button type="button" class="ww-primary" id="joinCodeBtn">Race</button>
+                    <button type="button" class="ww-btn" id="watchCodeBtn">Watch</button>
                 </div>
-
-                <div class="ww-sprint-row">
-                    <div class="ww-field ww-field--share">
-                        <span class="ww-label">Live writing</span>
-                        <div class="ww-seg ww-seg--sharpener" role="radiogroup" aria-label="Live writing">
-                            <button type="button" class="ww-seg-btn" id="shareRequiredBtn" data-share="required">Required</button>
-                            <button type="button" class="ww-seg-btn is-on" id="shareOptionalBtn" data-share="optional">Optional</button>
-                        </div>
-                    </div>
-                    <div class="ww-sprint-launch">
-                        <button type="button" class="ww-cta ww-cta--sprint" id="createBtn">Start a sprint</button>
-                        <p class="hint ww-cta-hint" id="createHint">Invite writers, then Begin.</p>
-                        <button type="button" class="ww-cta ww-cta--sprint hidden" id="beginBtn">Begin</button>
-                        <p class="hint ww-cta-hint hidden" id="beginHint">Need 2 writers to start.</p>
-                        <p class="ww-error" id="createError" hidden></p>
-                        <p class="ww-error" id="beginError" hidden></p>
-                    </div>
-                </div>
-
-                <section class="ww-wait hidden" id="waitPanel">
-                    <div class="ww-wait-foot">
-                        <div class="ww-wait-code">
-                            <span class="ww-label">Lobby code</span>
-                            <p class="ww-wait-code-value" id="waitCode"></p>
-                        </div>
-                        <div class="ww-wait-actions">
-                            <button type="button" class="ww-copy" id="copyCodeBtn">Copy code</button>
-                            <button type="button" class="ww-leave" id="leaveLobbyBtn">Leave</button>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="ww-join-friend" id="joinFriend">
-                    <div>
-                        <h2>Join a friend</h2>
-                        <p class="hint">Paste the six-character code they sent you.</p>
-                    </div>
-                    <div class="ww-code-row">
-                        <div class="ww-code" id="codeSlots"></div>
-                        <button type="button" class="ww-join" id="joinCodeBtn">Join</button>
-                    </div>
-                    <p class="ww-error" id="joinError" hidden></p>
-                </section>
-            </div>
+                <p class="ww-error hidden" id="codeError" role="alert"></p>
+                <ul class="ww-rules">
+                    <li>Deleting lowers your count. Pasting doesn't count.</li>
+                    <li>Counts can't rise faster than 150 words a minute.</li>
+                    <li>Once the winner crosses, everyone else has 2 minutes.</li>
+                </ul>
+            </section>
         </div>
-    </div>
-    <script type="module" src="/js/word-wars/lobby.js?v=31"></script>
+
+        <section class="ww-hub-races">
+            <div class="ww-hub-races-head">
+                <h2 class="ww-label">Races now</h2>
+                <span class="ww-hint" id="raceCount"></span>
+            </div>
+            <div class="ww-race-list" id="raceList"></div>
+            <p class="ww-error hidden" id="listError" role="alert"></p>
+        </section>
+    </main>
+
+    <script type="module" src="/js/word-wars/lobby.js"></script>
 </body>
 </html>

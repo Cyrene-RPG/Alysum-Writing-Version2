@@ -1,4 +1,118 @@
-@import url("lobby/page.css?v=4");
-@import url("lobby/notes.css?v=8");
-@import url("lobby/settings.css?v=4");
-@import url("lobby/stationery.css?v=6");
+/* Word Wars hub: start a race, join with a code, races now.
+   Shared buttons, panels and type live in shared.css. */
+@import url("shared.css");
+
+.ww-hub-body { min-height: 100vh; }
+
+.ww-hub {
+    display: grid;
+    gap: 20px;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 24px clamp(16px, 3vw, 28px) 48px;
+}
+.ww-hub-book {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+}
+.ww-hub-book .ww-select { width: auto; flex: 0 1 360px; }
+.ww-hub-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+.ww-hub-start,
+.ww-hub-code { display: grid; gap: 16px; }
+.ww-hub-start .ww-primary { justify-self: start; }
+.ww-sublabel { font-size: 10.5px; }
+
+.ww-code-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--ww-line);
+    border-radius: var(--ww-radius);
+    background: var(--ww-raised);
+    color: var(--text);
+    font-family: var(--ww-display);
+    font-size: 40px;
+    line-height: 1;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+.ww-code-input::placeholder { color: color-mix(in srgb, var(--muted) 45%, transparent); }
+.ww-code-input:focus-visible { outline: 2px solid var(--ww-gold); outline-offset: 2px; }
+.ww-rules {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.ww-hub-races { display: grid; gap: 12px; }
+.ww-hub-races-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.ww-race-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+}
+.ww-race-card {
+    display: grid;
+    gap: 8px;
+    align-content: start;
+    padding: 16px;
+    border: 1px solid var(--ww-line);
+    border-radius: var(--ww-radius);
+    background: var(--ww-panel);
+}
+.ww-race-card.is-mine { border-color: var(--ww-gold); }
+.ww-race-card h3 {
+    margin: 0;
+    font-size: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ww-race-card .ww-row { margin-top: 4px; }
+.ww-race-card .ww-primary { padding: 8px 18px; font-size: 22px; }
+.ww-race-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ww-race-card-target {
+    font-family: var(--ww-display);
+    font-size: 30px;
+    line-height: 1;
+    color: var(--muted);
+}
+.ww-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--ww-raised);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+.ww-race-card.is-running .ww-chip,
+.ww-race-card.is-countdown .ww-chip { color: #fca5a5; }
+.ww-race-empty {
+    margin: 0;
+    padding: 28px 16px;
+    border: 1px dashed var(--ww-line);
+    border-radius: var(--ww-radius);
+    text-align: center;
+    color: var(--muted);
+}
+
+@media (max-width: 860px) {
+    .ww-hub-grid { grid-template-columns: minmax(0, 1fr); }
+    .ww-hub-book .ww-select { flex: 1 1 100%; }
+}
+@media (max-width: 640px) {
+    .ww-race-card .ww-primary { width: auto; }
+}

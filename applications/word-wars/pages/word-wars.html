@@ -31,17 +31,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow">
-    <title>Word War — Alysum</title>
+    <title>Word Wars Race — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="/css/workspace-nav.css?v=30" />
     <link rel="stylesheet" href="/css/editor/page.css?v=46" />
     <link rel="stylesheet" href="/css/editor/document.css?v=12" />
     <link rel="stylesheet" href="/css/editor/editor-fonts.css?v=1" />
     <link rel="stylesheet" href="/css/editor/scene-breaks.css?v=2" />
-    <link rel="stylesheet" href="/css/word-wars/room.css?v=11" />
+    <link rel="stylesheet" href="/css/word-wars/race.css" />
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 </head>
-<body class="ww-body">
+<body class="ww-body" data-view="loading">
     <header class="wd-welcome-bar ui-bar" aria-label="Welcome">
         <div class="wd-welcome-inner">
             <div class="wd-pfp-menu" id="welcomePfpMenu">
@@ -72,45 +72,179 @@
         </div>
     </nav>
 
-    <div class="ww-loading" id="loadingPanel">Loading war…</div>
-    <div class="ww-room hidden" id="roomShell">
-        <aside class="ww-chapters" aria-label="Chapters">
-            <div class="ww-chapters-head">
-                <p class="ww-label">Chapters</p>
-                <button type="button" class="writer-tree-toggle" id="treeToggle" aria-expanded="true" title="Hide chapters">‹</button>
+    <div class="ww-loading" id="loadingPanel">Loading race…</div>
+
+    <div class="ww-notice hidden" id="noticePanel">
+        <p id="noticeText">This race is not available.</p>
+        <a class="ww-btn" href="/word-wars-lobby">Back to Word Wars</a>
+    </div>
+
+    <main class="ww-race hidden" id="raceShell">
+
+        <!-- ===== Waiting room ===== -->
+        <section class="ww-view ww-wait hidden" id="waitingView">
+            <header class="ww-wait-head">
+                <p class="ww-eyebrow">Waiting room</p>
+                <h1 class="ww-display" id="waitTitle">Race to 250 words</h1>
+                <p class="ww-lede" id="waitStatus">First to the word count wins.</p>
+            </header>
+
+            <div class="ww-wait-grid">
+                <section class="ww-panel">
+                    <div class="ww-panel-head">
+                        <h2 class="ww-label">Writers</h2>
+                        <span class="ww-label" id="waitCount">1/10</span>
+                    </div>
+                    <ul class="ww-wait-list" id="waitList"></ul>
+                </section>
+
+                <section class="ww-panel ww-wait-side">
+                    <div class="ww-field">
+                        <h2 class="ww-label">Invite</h2>
+                        <p class="ww-code" id="waitCode">——————</p>
+                        <div class="ww-row">
+                            <button type="button" class="ww-btn" id="copyCodeBtn">Copy code</button>
+                            <button type="button" class="ww-btn" id="copyLinkBtn">Copy invite link</button>
+                        </div>
+                    </div>
+                    <div class="ww-field">
+                        <h2 class="ww-label">Race to</h2>
+                        <div class="ww-targets" id="waitTargets" role="radiogroup" aria-label="Target word count"></div>
+                    </div>
+                    <div class="ww-field">
+                        <h2 class="ww-label">Who can join</h2>
+                        <div class="ww-seg" id="waitVisibility" role="radiogroup" aria-label="Who can join">
+                            <button type="button" role="radio" data-public="1">Public</button>
+                            <button type="button" role="radio" data-public="0">Private</button>
+                        </div>
+                        <p class="ww-hint" id="visibilityHint"></p>
+                    </div>
+                    <div class="ww-field" id="waitBookField">
+                        <label class="ww-label" id="waitBookLabel" for="waitBook">Your book</label>
+                        <select class="ww-select" id="waitBook"></select>
+                    </div>
+                </section>
             </div>
-            <button type="button" class="ww-add-chapter" id="addChapterBtn" title="Add chapter" aria-label="Add chapter">+ Chapter</button>
-            <ul id="chapterList"></ul>
-        </aside>
-        <section class="ww-stage" id="stage">
-            <div class="ww-stage-bar">
-                <span id="timerEl">—</span>
-                <span class="ww-watch-who hidden" id="watchWho"></span>
-                <button type="button" class="ww-leave hidden" id="kickBtn">Kick</button>
-                <button type="button" class="ww-view-toggle" id="myViewBtn" aria-pressed="false">Go live</button>
-                <span class="ww-view-live hidden" id="myViewLive">LIVE</span>
-                <span id="wordEl" class="ww-word-badge">0 words</span>
-                <button type="button" class="ww-finish hidden" id="finishBtn">Finish</button>
-                <button type="button" class="ww-leave" id="leaveBtn">Leave</button>
+
+            <div class="ww-wait-actions">
+                <button type="button" class="ww-primary hidden" id="beginBtn">Begin</button>
+                <button type="button" class="ww-primary hidden" id="joinBtn">Join this race</button>
+                <button type="button" class="ww-btn" id="leaveWaitBtn">Leave</button>
+                <p class="ww-hint" id="waitHint"></p>
             </div>
-            <div class="ww-spectate hidden" id="spectatePane">
-                <div class="writer-page" id="spectatePage"></div>
+            <p class="ww-error hidden" id="waitError" role="alert"></p>
+        </section>
+
+        <!-- ===== Race (countdown + running) ===== -->
+        <section class="ww-view ww-race-view hidden" id="raceView">
+            <div class="ww-scoreboard">
+                <div class="ww-sb"><span class="ww-label">Race to</span><span class="ww-sb-val" id="sbTarget">250</span></div>
+                <div class="ww-sb"><span class="ww-label">Clock</span><span class="ww-sb-val" id="sbClock">0:00</span></div>
+                <div class="ww-sb"><span class="ww-label">Leader</span><span class="ww-sb-val" id="sbLeader">—</span></div>
+                <div class="ww-sb"><span class="ww-label">Lead by</span><span class="ww-sb-val" id="sbGap">—</span></div>
+                <div class="ww-sb is-gold hidden" id="sbCloseWrap"><span class="ww-label">Line closes</span><span class="ww-sb-val" id="sbClose">2:00</span></div>
+                <div class="ww-sb"><span class="ww-label" id="sbWatchersLabel">Watching</span><span class="ww-sb-val" id="sbWatchers">0</span></div>
+                <div class="ww-sb ww-sb-exit"><button type="button" class="ww-btn" id="exitBtn">Leave race</button></div>
             </div>
-            <div class="ww-editor" id="editorPane">
-                <div class="writer-toolbar" id="writerToolbar"></div>
-                <div class="writer-main-scroll">
-                    <div class="writer-page" id="pageEditor" contenteditable="true" spellcheck="false"></div>
+
+            <div class="ww-ticker hidden" id="ticker">
+                <span class="ww-live-dot" aria-hidden="true"></span>
+                <time id="tickerTime">0:00</time>
+                <span id="tickerText">Waiting for the start.</span>
+            </div>
+
+            <div class="ww-racer hidden" id="racerLayout">
+                <div class="ww-panel ww-track-panel is-compact"><ol class="ww-track" id="racerTrack"></ol></div>
+                <div class="ww-writer">
+                    <aside class="ww-panel ww-chapters" aria-label="Chapters">
+                        <div class="ww-panel-head">
+                            <h2 class="ww-label">Chapters</h2>
+                            <button type="button" class="ww-btn ww-btn-small" id="addChapterBtn">+ Chapter</button>
+                        </div>
+                        <ul id="chapterList"></ul>
+                    </aside>
+                    <section class="ww-editor" id="editorPane">
+                        <div class="ww-editor-head">
+                            <label class="ww-label" for="chapterSelect">Chapter</label>
+                            <select class="ww-select" id="chapterSelect"></select>
+                            <span class="ww-pace-chip hidden" id="paceChip">Over 150 wpm · your count is catching up</span>
+                        </div>
+                        <div class="writer-toolbar" id="writerToolbar"></div>
+                        <div class="writer-main-scroll">
+                            <div class="writer-page" id="pageEditor" contenteditable="false" spellcheck="false"></div>
+                        </div>
+                    </section>
+                    <aside class="ww-me">
+                        <div class="ww-panel">
+                            <span class="ww-label">Your count</span>
+                            <div class="ww-me-big"><span id="meWords">0</span><small> / <span id="meTarget">250</span></small></div>
+                            <dl class="ww-me-stats">
+                                <dt>To go</dt><dd id="meToGo">250</dd>
+                                <dt>Pace</dt><dd id="mePace">0 wpm</dd>
+                                <dt>Place</dt><dd id="mePlace">–</dd>
+                            </dl>
+                            <p class="ww-hint" id="meStatus"></p>
+                        </div>
+                        <div class="ww-panel ww-cheer-box" id="cheerBox">
+                            <span class="ww-label">From the stands</span>
+                            <div class="ww-cheer-line" id="meCheersWrap">
+                                <span id="heartIcon"></span>
+                                <span class="ww-cheer-count" id="meCheers">0</span>
+                                <span>cheers</span>
+                            </div>
+                            <p class="ww-hint hidden" id="cheersOff">Cheers hidden. Head down.</p>
+                            <label class="ww-toggle"><input type="checkbox" id="showCheers" checked> Show cheers</label>
+                        </div>
+                        <p class="ww-hint">Nobody can read your page. The others only see your count.</p>
+                    </aside>
                 </div>
             </div>
-        </section>
-        <aside class="ww-others" aria-label="Others">
-            <div class="ww-others-head">
-                <p class="ww-label">Others</p>
-                <button type="button" class="writer-tree-toggle" id="railToggle" aria-expanded="true" title="Hide others">›</button>
+
+            <div class="ww-spectator hidden" id="spectatorLayout">
+                <div class="ww-panel ww-track-panel"><ol class="ww-track" id="spectatorTrack"></ol></div>
+                <aside class="ww-stands">
+                    <div class="ww-panel">
+                        <span class="ww-label">Your pick</span>
+                        <div class="ww-pick" id="pickBody"></div>
+                    </div>
+                    <div class="ww-panel ww-feed-panel">
+                        <div class="ww-label ww-feed-head"><span class="ww-live-dot" aria-hidden="true"></span>Live calls</div>
+                        <ol class="ww-feed" id="feed" aria-live="polite"></ol>
+                    </div>
+                </aside>
             </div>
-            <div class="ww-others-list" id="tileList"></div>
-        </aside>
-    </div>
-    <script type="module" src="/js/word-wars/room.js?v=29"></script>
+        </section>
+
+        <!-- ===== Results ===== -->
+        <section class="ww-view ww-results hidden" id="resultsView">
+            <header class="ww-results-head">
+                <p class="ww-eyebrow" id="resEyebrow">Final</p>
+                <h1 class="ww-display" id="resTitle">—</h1>
+                <p class="ww-lede" id="resSub"></p>
+            </header>
+            <div class="ww-podium" id="podium"></div>
+            <div class="ww-panel ww-table-wrap">
+                <table class="ww-table">
+                    <thead>
+                        <tr>
+                            <th>Place</th><th>Writer</th><th>Time</th>
+                            <th class="num">Words</th><th class="num">Avg wpm</th><th class="num">Peak wpm</th><th class="num">Cheers</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resRows"></tbody>
+                </table>
+            </div>
+            <div class="ww-results-actions">
+                <button type="button" class="ww-primary hidden" id="rematchBtn">Rematch</button>
+                <a class="ww-btn" href="/word-wars-lobby">Back to Word Wars</a>
+            </div>
+            <p class="ww-error hidden" id="resError" role="alert"></p>
+        </section>
+    </main>
+
+    <div class="ww-countdown hidden" id="countdown" aria-live="assertive"><span id="countNum">3</span></div>
+    <div class="ww-toast hidden" id="toast" role="status"></div>
+
+    <script type="module" src="/js/word-wars/race.js"></script>
 </body>
 </html>
