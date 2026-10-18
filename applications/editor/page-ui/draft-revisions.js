@@ -20,11 +20,11 @@ export function mountDraftRevisions({ button, shell, writePane, getBook, api, se
     const wrapper = document.createElement('div'); wrapper.className = 'draft-workspace';
     const referencePane = document.createElement('section'); referencePane.className = 'draft-reference'; referencePane.setAttribute('aria-label', 'Read-only reference');
     referencePane.innerHTML = `<header><div><strong data-reference-title></strong><span data-reference-label></span></div><span class="draft-readonly">Read-only</span></header><label>Chapter<select data-reference-chapter></select></label><article class="writer-page draft-reference-text" tabindex="0" contenteditable="false" aria-label="Read-only reference text"></article>`;
-    const divider = document.createElement('div'); divider.className = 'draft-divider'; divider.tabIndex = 0; divider.setAttribute('role','separator'); divider.setAttribute('aria-label','Resize reference pane'); divider.setAttribute('aria-orientation','vertical'); divider.setAttribute('aria-valuemin','25'); divider.setAttribute('aria-valuemax','65'); divider.setAttribute('aria-valuenow','40');
+    const divider = document.createElement('div'); divider.className = 'draft-divider'; divider.tabIndex = 0; divider.setAttribute('role','separator'); divider.setAttribute('aria-label','Resize writing pane'); divider.setAttribute('aria-orientation','vertical'); divider.setAttribute('aria-valuemin','35'); divider.setAttribute('aria-valuemax','75'); divider.setAttribute('aria-valuenow','60');
     const bar = document.createElement('div');bar.className='draft-mode-bar';bar.hidden=true;
     bar.innerHTML='<span data-writing-label></span><div class="draft-mobile-tabs" role="tablist" aria-label="Draft pane"><button type="button" role="tab" aria-selected="true" data-pane="write">Write</button><button type="button" role="tab" aria-selected="false" data-pane="reference">Reference</button></div><button type="button" data-choose>Choose versions</button><button type="button" data-end>Close reference</button>';
     let reference=null, source=null, generation=0, books=[], loading=0, busy=false, open=false;
-    let split=40, railWasCollapsed=false;
+    let split=60, railWasCollapsed=false;
     const scrollPositions=new Map();
     function error(message){find('[data-error]').textContent=message;find('[data-error]').hidden=false;}
     function fill(select,rows,value){select.replaceChildren(...rows.map(row=>{const option=document.createElement('option');option.value=String(row.id);option.textContent=row.label;return option;}));if(rows.some(row=>String(row.id)===String(value)))select.value=String(value);}
@@ -64,7 +64,7 @@ export function mountDraftRevisions({ button, shell, writePane, getBook, api, se
         renderReferenceChapter();
         if(!open){
             main.insertBefore(bar,writePane);main.insertBefore(wrapper,writePane);
-            wrapper.append(referencePane,divider,writePane);railWasCollapsed=shell.classList.contains('is-rail-collapsed');shell.classList.add('is-rail-collapsed');main.classList.add('has-draft-reference');shell.classList.add('is-draft-comparison');open=true;
+            wrapper.append(writePane,divider,referencePane);railWasCollapsed=shell.classList.contains('is-rail-collapsed');shell.classList.add('is-rail-collapsed');main.classList.add('has-draft-reference');shell.classList.add('is-draft-comparison');open=true;
         }
         bar.querySelector('[data-writing-label]').textContent=`Writing · ${revisionLabel(getBook())}`;
         bar.hidden=false;button.setAttribute('aria-expanded','true');setPane('write');
@@ -84,9 +84,9 @@ export function mountDraftRevisions({ button, shell, writePane, getBook, api, se
         tab.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight'].includes(event.key))return;event.preventDefault();const next=tab.dataset.pane==='write'?'reference':'write';setPane(next);bar.querySelector(`[data-pane="${next}"]`).focus();});
     }
     bar.querySelector('[data-end]').addEventListener('click',closeReference);bar.querySelector('[data-choose]').addEventListener('click',()=>void openDialog());
-    function resize(value){split=Math.max(25,Math.min(65,Math.round(value)));wrapper.style.setProperty('--draft-reference-width',`${split}fr`);wrapper.style.setProperty('--draft-writing-width',`${100-split}fr`);divider.setAttribute('aria-valuenow',String(split));}
+    function resize(value){split=Math.max(35,Math.min(75,Math.round(value)));wrapper.style.setProperty('--draft-writing-width',`${split}fr`);wrapper.style.setProperty('--draft-reference-width',`${100-split}fr`);divider.setAttribute('aria-valuenow',String(split));}
     divider.addEventListener('pointerdown',event=>divider.setPointerCapture(event.pointerId));divider.addEventListener('pointermove',event=>{if(divider.hasPointerCapture(event.pointerId)){const bounds=wrapper.getBoundingClientRect();resize((event.clientX-bounds.left)/bounds.width*100);}});divider.addEventListener('pointerup',event=>{if(divider.hasPointerCapture(event.pointerId))divider.releasePointerCapture(event.pointerId);});
-    divider.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();resize(event.key==='Home'?25:event.key==='End'?65:split+(event.key==='ArrowLeft'?-2:2));});
+    divider.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();resize(event.key==='Home'?35:event.key==='End'?75:split+(event.key==='ArrowLeft'?-2:2));});
     async function loadVersions(preferred=''){
         const request=++loading;find('button[type=submit]').disabled=true;
         fill(find('[data-version]'),[{id:'',label:'Current draft · read-only snapshot'}]);find('[data-version-note]').hidden=true;
