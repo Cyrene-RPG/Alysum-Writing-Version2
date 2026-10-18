@@ -44,3 +44,16 @@
 .quote-dialog-head, .quote-dialog-foot { flex-shrink: 0; }
 .quote-workspace { flex: 1; min-height: 0; overflow-y: auto; padding-right: 4px; }
 @media (max-width: 700px) { .quote-dialog[open] { height: calc(100dvh - 12px); } .quote-preview-surface canvas { max-height: 300px; } }
+.quote-modes { display: flex; gap: 8px; margin: -8px 0 18px; flex-shrink: 0; }
+.quote-modes [aria-pressed=true] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, var(--alysum-ui-panel)); }
+#quote-section-preview { align-self: stretch; width: 100%; max-height: 520px; overflow: auto; box-sizing: border-box; padding: 8px 4px; text-align: left; }
+#quote-section-preview h3 { font: 600 28px/1.3 "Cormorant Garamond", Georgia, serif; margin: 0 0 10px; overflow-wrap: anywhere; }
+#quote-section-text { white-space: pre-wrap; overflow-wrap: anywhere; font: 17px/1.85 Georgia, serif; }
+#quote-link-manager { font-size: 12px; margin-top: 20px; }
+#quote-link-manager summary { cursor: pointer; padding: 8px 0; }
+#quote-link-list { max-height: 220px; overflow: auto; font-size: 11px; line-height: 1.6; color: var(--muted); }
+.quote-managed-link { padding: 12px 0; border-bottom: 1px solid var(--quote-border); }
+.quote-managed-link p { margin: 0 0 8px; }
+.quote-managed-link a { color: var(--text); margin-right: 12px; }
+.quote-managed-link .quote-button { min-height: 30px; padding: 6px 10px; font-size: 10px; }
+@media (max-width:700px) { #quote-section-preview { max-height: 270px; } }

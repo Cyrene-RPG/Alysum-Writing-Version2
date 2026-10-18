@@ -50,6 +50,7 @@ PAGES = {
     "/word-wars-lobby": "applications/word-wars/pages/word-wars-lobby.html",
     "/word-wars": "applications/word-wars/pages/word-wars.html",
     "/library": "applications/library/pages/library.html",
+    "/shared-section": "applications/excerpts/pages/read.html",
     "/book": "applications/library/pages/book.html",
     "/read": "applications/library/pages/read.html",
     "/publish": "applications/studio/pages/publish.html",
