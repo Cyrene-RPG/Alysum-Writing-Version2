@@ -59,6 +59,8 @@ export function fromCloudRow(row) {
         media_format: String(row.media_format || row.mediaFormat || "novel"),
         publish_meta: meta,
         published_chapter_ids: published,
+        draft_parent_id: row.draft_parent_id || null,
+        draft_label: row.draft_label || null,
         is_published: Boolean(row.is_published ?? row.isPublished),
         created: rowTime(row, ["created", "created_at", "createdAt"]),
         updated: rowTime(row, ["updated", "updated_at", "updatedAt"]),
@@ -78,6 +80,7 @@ function toCloudInsert(payload, userId) {
         media_format: String(seed.media_format || seed.mediaFormat || "novel"),
         created: Number(seed.created) || now,
         updated: Number(seed.updated) || now,
+        ...(seed.draft_parent_id ? { draft_parent_id: String(seed.draft_parent_id), draft_label: String(seed.draft_label || 'New draft') } : {}),
     };
 }
 
@@ -161,4 +164,18 @@ export async function deleteBook(supabase, userId, id) {
         .select("id");
     if (error) throw error;
     if (!data?.length) throw new Error("Could not delete this book.");
+}
+
+/** Names and grouping only: opening a draft menu must not download manuscripts. */
+export async function listDraftSummaries(supabase, userId, rootId) {
+    if (!String(userId || '').trim() || !String(rootId || '').trim()) return [];
+    const columns = 'id,title,draft_parent_id,draft_label,created';
+    const query = () => supabase.from('books').select(columns).eq('user_id', userId);
+    const [original, revisions] = await Promise.all([
+        query().eq('id', rootId),
+        query().eq('draft_parent_id', rootId),
+    ]);
+    if (original.error) throw original.error;
+    if (revisions.error) throw revisions.error;
+    return [...(original.data || []), ...(revisions.data || [])];
 }

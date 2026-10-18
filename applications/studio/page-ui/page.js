@@ -1,6 +1,7 @@
+import { groupRevisionBooks } from "/core/writing-engine/draft-revisions.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=11";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=12";
 import { countBookChapters, createEmptyBook } from "@alysum/writing-engine/manuscript.js";
 import { countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { initWorkspaceShell } from "./shell.js?v=9";
@@ -204,8 +205,8 @@ function bookCoverHtml(book) {
 function renderBooks(mount, books) {
     const newCard = `<button type="button" class="studio-new-card" id="newBookCard"><span class="studio-plus" aria-hidden="true">+</span><span>New book</span></button>`;
     const importCard = `<button type="button" class="studio-new-card studio-import-card" id="importBookCard"><span class="studio-plus" aria-hidden="true">↥</span><span>Import manuscript</span></button>`;
-    mount.innerHTML = newCard + importCard + sortBooksByLastWorked(books)
-        .map((book, index) => {
+    mount.innerHTML = newCard + importCard + groupRevisionBooks(sortBooksByLastWorked(books))
+        .map(({ book, drafts }, index) => {
             const words = bookWordCount(book);
             const chapters = chapterCount(book);
             const cover = bookCoverHtml(book);
@@ -215,6 +216,7 @@ function renderBooks(mount, books) {
                     <button type="button" class="studio-book-gear" data-book-gear="${escapeHtml(book.id)}" aria-label="Book options">⚙</button>
                     <h2 class="studio-book-title">${escapeHtml(bookDisplayTitle(book))}</h2>
                     <p class="studio-book-meta">${chapters} chapter${chapters === 1 ? "" : "s"} · ${words.toLocaleString()} words</p>
+                    ${drafts.length > 1 ? `<p class="studio-book-meta">${drafts.length} drafts · Choose a draft in the editor</p>` : ""}
                 </a>`;
         })
         .join("");

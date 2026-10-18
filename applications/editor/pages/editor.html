@@ -39,6 +39,7 @@
     <link rel="stylesheet" href="/css/editor/editor-fonts.css?v=1" />
     <link rel="stylesheet" href="/css/editor/scene-breaks.css?v=2" />
     <link rel="stylesheet" href="/css/editor/snippets.css">
+    <link rel="stylesheet" href="/css/editor/draft-revisions.css">
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 </head>
 <body>
@@ -143,6 +144,7 @@
                 </div>
             </aside>
             <section class="writer-main">
+                <div class="writer-draft-switch"><span>Editing: <strong id="active-draft-label">Main / original draft</strong></span><button type="button" id="switch-draft" class="quote-button" aria-haspopup="dialog" aria-expanded="false">Switch draft ▾</button></div>
                 <div class="writer-main-scroll" id="writerWritePane">
                 <span class="writer-status" id="saveStatus" role="status" hidden></span>
                 <div class="writer-mobile-titlebar" id="writerMobileTitlebar">
@@ -159,7 +161,7 @@
                     <p class="writer-folder-meta" id="folderMeta"></p>
                     <ul class="writer-folder-list" id="folderList"></ul>
                 </div>
-                <div class="snippet-editor-action"><button type="button" id="share-snippet" class="quote-button" aria-haspopup="dialog">Share excerpt</button></div>
+                <div class="snippet-editor-action"><button type="button" id="compare-drafts" class="quote-button" aria-haspopup="dialog" aria-expanded="false">Drafts / Reference</button><button type="button" id="share-snippet" class="quote-button" aria-haspopup="dialog">Share excerpt</button></div>
                 <div class="writer-toolbar" id="writerToolbar" role="toolbar" aria-label="Formatting">
                     <span class="writer-wordcount" aria-live="polite">
                         <span id="chapterWords">0</span> / <span id="totalWords">0</span>
@@ -231,6 +233,6 @@
     <div class="lib-toast" id="libToast" hidden></div>
     <script src="/js/pwa-register.js?v=5" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-    <script type="module" src="/js/editor/page.js?v=133"></script>
+    <script type="module" src="/js/editor/page.js?v=137"></script>
 </body>
 </html>
