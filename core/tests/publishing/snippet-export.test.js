@@ -1,65 +1,34 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import vm from 'node:vm';
 import { File } from 'node:buffer';
-import { canShareSnippet, shareSnippet, saveSnippet } from '../../../site-appearance/js-runtime/snippet-export.js';
-
+import { canShareSnippet, shareSnippet, prepareSnippetDownload, copyReadingLink } from '../../../site-appearance/js-runtime/snippet-export.js';
 const file = new File(['PNG'], 'book-card.png', { type: 'image/png' });
-test('image sharing sends the prepared file immediately, with no URL or delayed activation', async () => {
+test('native sharing starts immediately with the file; unsupported browsers can use the save fallback', async () => {
     let sent;
-    const browser = { canShare: () => true, share: (payload) => { sent = payload; return Promise.resolve(); } };
+    const browser = { canShare: () => true, share: payload => { sent = payload; return Promise.resolve(); } };
     const promise = shareSnippet(file, browser);
-    assert.deepEqual(sent, { files: [file] });
-    await promise;
+    assert.deepEqual(sent, { files: [file] }); await promise;
     assert.equal(canShareSnippet(file, {}), false);
-    assert.throws(() => shareSnippet(file, {}), /cannot share image files/);
+    assert.equal(shareSnippet(file, {}), null);
     assert.equal(canShareSnippet(file, { canShare() { throw Error('blocked'); }, share() {} }), false);
 });
-test('save requests a reload when the local download worker is unavailable', async () => {
-    await assert.rejects(saveSnippet(file, {}, {}, {}), /Reload Alysum/);
+test('PNG is ready on a real link before the tap, without a picker or service worker', () => {
+    const attrs = new Map([['target', '_blank'], ['aria-disabled', 'true']]);
+    const link = { removeAttribute: key => attrs.delete(key), setAttribute: (key, value) => attrs.set(key, value) };
+    let revoked;
+    const cleanup = prepareSnippetDownload(file, link, { URL: { createObjectURL(value) { assert.equal(value, file); return 'blob:local-png'; }, revokeObjectURL: value => { revoked = value; } } });
+    assert.equal(link.href, 'blob:local-png'); assert.equal(link.download, 'book-card.png');
+    assert.equal(attrs.has('target'), false); assert.equal(attrs.has('aria-disabled'), false);
+    assert.equal(revoked, undefined);
+    cleanup(); assert.equal(revoked, 'blob:local-png'); assert.equal(attrs.get('aria-disabled'), 'true');
 });
-test('local download returns a named PNG attachment once, without network or cache storage', async () => {
-    const listeners = {};
-    const self = { location: { origin: 'https://alysumwriting.com' }, addEventListener: (type, fn) => { (listeners[type] ??= []).push(fn); } };
-    let now = 0;
-    const context = vm.createContext({ self, URL, Blob, Response, Request, Date: { now: () => now } });
-    vm.runInContext(fs.readFileSync(new URL('../../../applications/main-site/public/sw.js', import.meta.url), 'utf8'), context);
-    const token = '12345678-1234-1234-1234-123456789abc';
-    let ack;
-    const register = (origin = self.location.origin) => {
-        for (const handler of listeners.message) handler({ source: { url: origin + '/editor' }, data: { type: 'ALYSUM_DOWNLOAD_PNG', token, file }, ports: [{ postMessage: value => { ack = value; } }] });
-    };
-    const download = async () => {
-        let response;
-        const event = { request: new Request(self.location.origin + '/__alysum-download/' + token), respondWith(value) { response = Promise.resolve(value); } };
-        for (const handler of listeners.fetch) handler(event);
-        return response;
-    };
-    register('https://other.test'); assert.equal(ack.ok, false);
-    assert.equal((await download()).status, 410);
-    register(); assert.equal(ack.ok, true);
-    const response = await download();
-    assert.equal(response.headers.get('Content-Disposition'), 'attachment; filename="book-card.png"');
-    assert.equal(response.headers.get('Content-Type'), 'image/png');
-    assert.equal(response.headers.get('Cache-Control'), 'no-store');
-    assert.equal(await response.text(), 'PNG');
-    assert.equal((await download()).status, 410);
-    register(); now = 60001; assert.equal((await download()).status, 410);
-});
-test('save downloads through a hidden frame even when the browser exposes a failing picker', async () => {
-    const previousDocument = globalThis.document;
-    let frame;
-    globalThis.document = { createElement(tag) { assert.equal(tag, 'iframe'); return { setAttribute() {} }; } };
-    const mount = { querySelector: () => frame, append: value => { frame = value; } };
-    try {
-        const browser = { serviceWorker: { controller: { postMessage({ type, file: sent }, [reply]) {
-            assert.equal(type, 'ALYSUM_DOWNLOAD_PNG'); assert.equal(sent, file);
-            reply.postMessage({ ok: true }); reply.close();
-        } } } };
-        const result = await saveSnippet(file, mount, browser, { crypto: { randomUUID: () => '12345678-1234-1234-1234-123456789abc' }, showSaveFilePicker() { throw new DOMException('Browser picker cancelled', 'AbortError'); } });
-        assert.equal(frame.hidden, true);
-        assert.equal(frame.src, '/__alysum-download/12345678-1234-1234-1234-123456789abc');
-        assert.match(result, /download started/);
-    } finally { globalThis.document = previousDocument; }
+test('reading links copy with clipboard permission, legacy copy, or manual selection', async () => {
+    let copied, selected = false;
+    const input = { value: 'https://example.test/shared-section#token', focus() {}, select() { selected = true; }, setSelectionRange(start, end) { assert.equal(start, 0); assert.equal(end, this.value.length); } };
+    assert.equal(await copyReadingLink(input, { clipboard: { writeText: async value => { copied = value; } } }, {}), true);
+    assert.equal(copied, input.value);
+    assert.equal(await copyReadingLink(input, { clipboard: { writeText: async () => { throw Error('Denied'); } } }, { execCommand: action => action === 'copy' }), true);
+    assert.equal(selected, true);
+    assert.equal(await copyReadingLink(input, {}, {}), false);
+    assert.equal(await copyReadingLink(input, {}, { execCommand() { throw Error('Blocked'); } }), false);
 });

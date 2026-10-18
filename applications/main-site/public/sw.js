@@ -9,7 +9,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v2.51.2';
+const SW_VERSION = 'v2.51.4';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -99,22 +99,6 @@ function isWorkspaceHtml(url) {
   return /\/(?:studio|editor)(?:\.html)?$/i.test(url.pathname);
 }
 
-// Short-lived local PNG downloads. Never uploaded or written to offline caches.
-const pngDownloads = new Map();
-self.addEventListener('message', (event) => {
-  if (event.data?.type !== 'ALYSUM_DOWNLOAD_PNG') return;
-  const { token, file } = event.data;
-  const port = event.ports?.[0];
-  if (!event.source?.url || new URL(event.source.url).origin !== self.location.origin || !/^[a-f0-9-]{36}$/i.test(token || '') || !(file instanceof Blob) || file.type !== 'image/png' || file.size > 32 * 1024 * 1024) {
-    port?.postMessage({ ok: false, error: 'Could not prepare this image for download.' }); return;
-  }
-  for (const [key, item] of pngDownloads) if (item.expires < Date.now()) pngDownloads.delete(key);
-  if (pngDownloads.size >= 4) pngDownloads.delete(pngDownloads.keys().next().value);
-  const name = String(file.name || 'alysum-card.png').replace(/[^a-zA-Z0-9._-]/g, '-').slice(0, 100);
-  pngDownloads.set(token, { file, name, expires: Date.now() + 60000 });
-  port?.postMessage({ ok: true });
-});
-
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
@@ -124,15 +108,7 @@ self.addEventListener('fetch', (event) => {
 
   // Never intercept Firebase / Google APIs / auth flows / analytics
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith('/__alysum-download/')) {
-    const token = url.pathname.slice('/__alysum-download/'.length);
-    const item = pngDownloads.get(token);
-    pngDownloads.delete(token);
-    event.respondWith(item && item.expires >= Date.now()
-      ? new Response(item.file, { headers: { 'Content-Type': 'image/png', 'Content-Disposition': `attachment; filename="${item.name}"`, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } })
-      : new Response('Image download expired. Return to Alysum and choose Save PNG again.', { status: 410, headers: { 'Cache-Control': 'no-store' } }));
-    return;
-  }
+
   if (
     url.pathname.startsWith('/__/') ||              // Firebase Hosting init scripts
     url.pathname.startsWith('/.well-known/')
