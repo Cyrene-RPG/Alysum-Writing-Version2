@@ -1,6 +1,22 @@
 /** Drafts keep separate manuscript records. Grouping never changes a save target. */
 export function revisionRootId(book) { return String(book?.draft_parent_id || book?.id || ''); }
 export function revisionLabel(book) { return String(book?.draft_label || 'Original draft'); }
+export function draftSwitchChoices(books, current) {
+    const rootId = revisionRootId(current);
+    const available = new Map(books.map(book => [String(book.id), book]));
+    available.set(String(current.id), current);
+    return [...available.values()]
+        .filter(book => String(book.id) === rootId || String(book.draft_parent_id || '') === rootId)
+        .sort((a,b) => Number(String(b.id) === rootId) - Number(String(a.id) === rootId) || Number(a.created || 0) - Number(b.created || 0))
+        .map(book => ({ id: String(book.id), label: String(book.id) === rootId ? 'Main / original draft' : revisionLabel(book), current: String(book.id) === String(current.id) }));
+}
+export function draftSwitchUrl(location, bookId) {
+    const url = new URL(location);
+    url.searchParams.set('book', String(bookId));
+    url.searchParams.delete('referenceBook');
+    url.searchParams.delete('referenceVersion');
+    return url.href;
+}
 export function groupRevisionBooks(books) {
     const byId = new Map(books.map(book => [String(book.id), book]));
     const groups = new Map();

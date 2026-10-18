@@ -22,3 +22,7 @@ The editor now has a **Drafts / Reference** button. It can reference a saved ver
 On the test branch, `applications/editor/tests/draft-revisions.html` seeds invented local sample books without overwriting existing samples, then opens the real editor. The standalone mockup and sample launcher are excluded from the main release. The hosted isolated preview packages this page as its landing page and uses a local-only cloud-client stub so testing cannot read or modify live Supabase data. That stub is confined to the hosted preview build; the repository's production authentication client is unchanged.
 
 Run `node --test core/tests/writing-engine/draft-revisions.test.js core/tests/publishing/*.test.js`. Regression coverage checks separate writing IDs, original content preservation, local reloads, version history isolation, blank nested chapter creation, orphan visibility, cloud grouping persistence, missing-schema failures and save-before-navigation ordering. Browser layout and interactive formatting still need hands-on test coverage; no live account was used to test this feature.
+
+## Direct draft switching
+
+The editor always shows an Editing label and a Switch draft button above the document. The switcher lists the main/original draft and sibling revisions for that book, marks the current draft, saves before navigating and returns to the normal single-pane editor. It does not require opening reference mode or creating a snapshot.

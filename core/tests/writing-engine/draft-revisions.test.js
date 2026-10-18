@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { blankRevisionPayload, referenceSnapshot, groupRevisionBooks, revisionChapterList, saveBeforeRevisionNavigation } from '../../writing-engine/draft-revisions.js';
+import { blankRevisionPayload, referenceSnapshot, groupRevisionBooks, revisionChapterList, saveBeforeRevisionNavigation, draftSwitchChoices, draftSwitchUrl } from '../../writing-engine/draft-revisions.js';
 import { createBooksApi } from '../../synchronization-engine/books.js';
 import { LOCAL_STUDIO_STORAGE_KEY } from '../../synchronization-engine/local-adapter.js';
 import { createBookVersion, getBookVersion } from '../../writing-engine/version-api.js';
@@ -73,4 +73,18 @@ test('switching waits for the real autosave queue and a failed save prevents nav
     const navigation=saveBeforeRevisionNavigation(()=>autosave.flush(),()=>{navigated=true;},'/editor?book=another');
     await Promise.resolve();assert.equal(navigated,false);release();await navigation;assert.deepEqual(writes,['writing-draft']);assert.equal(navigated,true);
     navigated=false;await assert.rejects(saveBeforeRevisionNavigation(async()=>'error',()=>{navigated=true;},'/editor?book=another'),/could not be saved/);assert.equal(navigated,false);
+});
+
+test('direct draft switch lists the original first, siblings only, and the current unsynced revision',()=>{
+    const root=original(),current={...original(),id:'revision-2',draft_parent_id:'original',draft_label:'Second pass',created:20};
+    const sibling={...original(),id:'revision-1',draft_parent_id:'original',draft_label:'First pass',created:10};
+    const other={...original(),id:'unrelated',title:'Another book'};
+    const choices=draftSwitchChoices([sibling,other,root],current);
+    assert.deepEqual(choices.map(choice=>choice.id),['original','revision-1','revision-2']);
+    assert.equal(choices[0].label,'Main / original draft');assert.equal(choices[2].label,'Second pass');assert.equal(choices[2].current,true);
+    assert.deepEqual(draftSwitchChoices([root,sibling],root).map(choice=>choice.current),[true,false]);
+});
+test('direct draft switch returns to single editor without losing other URL options',()=>{
+    const url=new URL(draftSwitchUrl('https://alysumwriting.com/editor?book=revision&referenceBook=original&referenceVersion=snapshot&theme=dark','original'));
+    assert.equal(url.searchParams.get('book'),'original');assert.equal(url.searchParams.has('referenceBook'),false);assert.equal(url.searchParams.has('referenceVersion'),false);assert.equal(url.searchParams.get('theme'),'dark');
 });

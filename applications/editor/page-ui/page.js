@@ -1,3 +1,4 @@
+import { mountDraftSwitcher } from "./draft-switcher.js";
 import { mountDraftRevisions } from "./draft-revisions.js";
 import { createSnippetDownloadApi } from "/core/publishing/snippet-download.js";
 import { createExcerptApi } from "/core/publishing/excerpts.js";
@@ -565,6 +566,11 @@ async function boot() {
     leavePreview = preview.leavePreview;
 
     showChapter(selectedId);
+    mountDraftSwitcher({
+        button: document.getElementById("switch-draft"),
+        label: document.getElementById("active-draft-label"),
+        getBook: () => book, api, saveCurrent: saveChapter,
+    });
     mountDraftRevisions({
         button: document.getElementById("compare-drafts"), shell,
         writePane: document.getElementById("writerWritePane"), getBook: () => book,
