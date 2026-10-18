@@ -1,3 +1,4 @@
+import { saveSnippet, shareSnippet } from "/site-appearance/js-runtime/snippet-export.js";
 import { normalizeExcerpt, countExcerptWords, MAX_EXCERPT_CHARACTERS, MAX_EXCERPT_WORDS } from "/core/publishing/excerpts.js";
 import { normalizeSnippetCard, cardFileName, CARD_FORMATS, MAX_CARD_CHARACTERS } from "/core/publishing/snippet-card.js";
 import { drawSnippetCard } from "/site-appearance/js-runtime/snippet-card.js";
@@ -72,7 +73,6 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
     let mode = "link";
     let isCreatingLink = false;
     let capturedText = "";
-    let objectUrl = "";
     let file = null;
     let generation = 0;
     let renderTimer = 0;
@@ -85,8 +85,6 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         return pageEl.contains(range.startContainer) && pageEl.contains(range.endContainer) ? selection.toString() : "";
     }
     function clearImage() {
-        if (objectUrl) URL.revokeObjectURL(objectUrl);
-        objectUrl = "";
         file = null;
         save.disabled = true;
         share.disabled = true;
@@ -185,17 +183,14 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
             const blob = await new Promise((resolve, reject) => canvas.toBlob((result) => result ? resolve(result) : reject(new Error("Could not save the image. Try again.")), "image/png"));
             if (request !== generation || !dialog.open) return;
             file = new File([blob], cardFileName(data.title), { type: "image/png" });
-            objectUrl = URL.createObjectURL(file);
             canvas.hidden = false;
             canvas.setAttribute("aria-label", `Quote card: ${data.excerpt}`);
             find("quote-placeholder").hidden = true;
             find("quote-dimensions").textContent = `${rendered.width} × ${rendered.height} · PNG`;
             save.disabled = false;
-            let canShare = false;
-            try { canShare = typeof navigator.share === "function" && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] }); } catch { /* Saving stays available. */ }
-            share.hidden = !canShare;
-            share.disabled = !canShare;
-            status.textContent = canShare ? "" : "Save the PNG to share it from your photos or files.";
+            share.hidden = false;
+            share.disabled = false;
+            status.textContent = "Save downloads a PNG. Share image opens your device’s share menu when supported.";
         } catch (error) {
             if (request !== generation || !dialog.open) return;
             canvas.hidden = true;
@@ -270,21 +265,23 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
     form.addEventListener("input", queueRender);
     form.addEventListener("change", queueRender);
     form.addEventListener("submit", (event) => event.preventDefault());
-    save.addEventListener("click", () => {
-        if (!file || !objectUrl) return;
-        const link = document.createElement("a");
-        link.href = objectUrl;
-        link.download = file.name;
-        document.body.append(link);
-        link.click();
-        link.remove();
-        status.textContent = "PNG ready. If your browser opens it, touch and hold the image to save it.";
+    save.addEventListener("click", async () => {
+        if (!file || save.disabled) return;
+        const saving = file;
+        save.disabled = true;
+        status.textContent = "Preparing download…";
+        try { status.textContent = await saveSnippet(saving, dialog); }
+        catch (error) { status.textContent = error?.name === "AbortError" ? "Save cancelled." : error?.message || "Could not save the PNG. Try Share image."; }
+        finally { save.disabled = !file; }
     });
     share.addEventListener("click", () => {
-        if (!file) return;
-        navigator.share({ files: [file] }).catch((error) => {
-            if (error?.name !== "AbortError") status.textContent = "Could not open sharing. Save the PNG instead.";
-        });
+        if (!file || share.disabled) return;
+        share.disabled = true;
+        try {
+            shareSnippet(file).then(() => { status.textContent = "Image handed to your device’s share menu."; }).catch((error) => {
+                status.textContent = error?.name === "AbortError" ? "Sharing cancelled." : error?.message || "Could not share the image. Save the PNG and share it from Downloads.";
+            }).finally(() => { share.disabled = !file; });
+        } catch (error) { status.textContent = error.message; share.disabled = !file; }
     });
     return { close: () => dialog.close() };
 }
