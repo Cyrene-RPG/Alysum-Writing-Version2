@@ -1,3 +1,4 @@
+import { createExcerptApi } from "/core/publishing/excerpts.js";
 import { mountSnippetSharing } from "./snippets.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
@@ -456,6 +457,7 @@ async function boot() {
     typewriter.setToolbarApi(toolbarApi);
     mountSnippetSharing({
         button: document.getElementById("share-snippet"),
+        excerptApi: createExcerptApi(supabase, { origin: window.location.origin }),
         pageEl,
         getBook: () => book,
         getAuthor: () => profile.name || "",
