@@ -39,14 +39,20 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         pageEl.focus({ preventScroll: true });
         selectionBar.scrollIntoView({ block: "nearest", behavior: "auto" });
     }
-    document.addEventListener("selectionchange", () => {
-        if (selectionBar.hidden) return;
+    function captureSelection() {
         const text = readSelection();
+        if (text.trim()) capturedText = text;
+        return capturedText;
+    }
+    document.addEventListener("selectionchange", () => {
+        if (dialog.open) return;
+        const text = captureSelection();
+        if (selectionBar.hidden) return;
         useSelection.disabled = !text.trim();
         selectionNotice.textContent = text.trim() ? `${text.trim().split(/\s+/u).length} words selected` : "Highlight text in your WIP, then choose Create card.";
     });
-    useSelection.addEventListener("pointerdown", (event) => { capturedText = readSelection(); event.preventDefault(); });
-    useSelection.addEventListener("click", () => { if (readSelection().trim() || capturedText.trim()) button.click(); });
+    useSelection.addEventListener("pointerdown", captureSelection);
+    useSelection.addEventListener("click", () => { if (captureSelection().trim()) button.click(); });
     selectionBar.querySelector("[data-cancel-selection]").addEventListener("click", () => { selectionBar.hidden = true; capturedText = ""; });
 
     const find = (id) => dialog.querySelector(`#${id}`);
@@ -139,7 +145,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         clearTimeout(renderTimer);
         renderTimer = setTimeout(render, 120);
     }
-    button.addEventListener("pointerdown", () => { capturedText = readSelection(); });
+    button.addEventListener("pointerdown", captureSelection);
     button.addEventListener("click", () => {
         const selected = readSelection() || capturedText || initialExcerpt;
         capturedText = "";
@@ -148,7 +154,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         form.reset();
         title.value = String(getBook()?.title || "").slice(0, 80);
         author.value = String(getAuthor() || "").slice(0, 80);
-        excerpt.value = selected.length <= MAX_CARD_CHARACTERS ? selected : "";
+        excerpt.value = selected;
         find("quote-placeholder").textContent = "Select or paste an excerpt to preview the card.";
         dialog.showModal();
         void render();
@@ -158,6 +164,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
     dialog.querySelector(".quote-close").addEventListener("click", () => dialog.close());
     dialog.addEventListener("close", () => {
         generation++;
+        capturedText = "";
         clearTimeout(renderTimer);
         clearImage();
         form.reset();
