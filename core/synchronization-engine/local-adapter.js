@@ -1,3 +1,4 @@
+import { prepareDraftPromotion } from "../writing-engine/promote-draft.js";
 /**
  * Local-only Studio data (books + profile) for desktop "Host Local Version".
  * Same shapes as Supabase rows; persisted in localStorage on this device.
@@ -194,4 +195,18 @@ export function notifyLocalStudioSync() {
   } catch {
     /* ignore */
   }
+}
+
+/** One localStorage write commits the backup and promotion together. */
+export function promoteBookDraft(draftId) {
+  const state=readState();
+  const source=state.books.find(book=>String(book.id)===String(draftId));
+  const main=state.books.find(book=>String(book.id)===String(source?.draft_parent_id));
+  if(!source||!main)throw new Error('Choose a revision with an available main draft.');
+  const plan=prepareDraftPromotion(source,main);
+  if(state.books.some(book=>String(book.id)===plan.backup.id))throw new Error('Could not create a unique backup. Try again.');
+  const promoted={...main,...plan.patch};const backup={...plan.backup,user_id:main.user_id};
+  state.books=state.books.map(book=>book.id===main.id?promoted:book);
+  state.books.unshift(backup);writeState(state);
+  return {main:promoted,backup};
 }

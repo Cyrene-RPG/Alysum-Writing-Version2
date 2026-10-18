@@ -39,3 +39,21 @@ test('cached drafts are selectable before refresh completes and a late refresh c
         assert.equal(new URL(navigated).searchParams.get('book'),'original');assert.equal(dialog.open,false);
     } finally {globalThis.document=previousDocument;globalThis.window=previousWindow;}
 });
+
+test('making a draft main requires confirmation, saves first and opens the stable main book ID',async()=>{
+    const previousDocument=globalThis.document,previousWindow=globalThis.window;let dialog;
+    globalThis.document={body:new Element(),createElement(tag){const element=new Element(tag);if(tag==='dialog')dialog=element;return element;}};
+    globalThis.window={location:{href:'https://alysumwriting.com/editor?book=revision&referenceBook=main'}};
+    try{
+        const sourceFile=new URL('../../../applications/editor/page-ui/draft-switcher.js',import.meta.url);
+        const model=new URL('../../writing-engine/draft-revisions.js',import.meta.url).href;
+        const source=(await readFile(sourceFile,'utf8')).replace("'/core/writing-engine/draft-revisions.js'",JSON.stringify(model));
+        const {mountDraftSwitcher}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+        const current={id:'revision',draft_parent_id:'main',draft_label:'Draft 2'},order=[];let destination;
+        const trigger=new Element('button');
+        mountDraftSwitcher({button:trigger,getBook:()=>current,api:{peekDrafts:()=>[current,{id:'main'}],listDrafts:async()=>[current,{id:'main'}],async promoteDraft(id){assert.equal(id,'revision');order.push('promote');return {main:{id:'main'}};}},async saveCurrent(){order.push('save');return 'saved';},navigate:url=>{order.push('navigate');destination=url;}});
+        await trigger.fire('click');dialog.querySelector('[data-promote]').fire('click');assert.deepEqual(order,[]);
+        await dialog.querySelector('[data-confirm-promote]').fire('click');
+        assert.deepEqual(order,['save','promote','navigate']);assert.equal(new URL(destination).searchParams.get('book'),'main');assert.equal(new URL(destination).searchParams.has('referenceBook'),false);
+    }finally{globalThis.document=previousDocument;globalThis.window=previousWindow;}
+});

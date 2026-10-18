@@ -10,3 +10,6 @@
 .draft-switch-option span { font-size: 10px; color: var(--muted); flex-shrink: 0; }
 .draft-switch-dialog .draft-switch-option[aria-current=true] { border-color: var(--accent); }
 @media(max-width:720px) { .writer-draft-switch { padding: 7px 10px; font-size: 11px; } .writer-draft-switch .quote-button { min-height: 40px; font-size: 11px; } }
+
+.draft-switch-dialog > [data-promote] { width: 100%; min-height: 44px; margin-top: 14px; border-color: var(--accent); font-weight: 700; }
+.draft-switch-dialog [data-promote-confirm] h3 { margin: 18px 0 10px; font-size: 17px; }

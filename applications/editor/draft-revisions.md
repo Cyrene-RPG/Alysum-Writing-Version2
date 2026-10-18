@@ -30,3 +30,11 @@ The editor always shows an Editing label and a Switch draft button above the doc
 ## Switching performance
 
 The switcher renders cached draft names immediately and refreshes only the current family’s ID/title/grouping metadata. It no longer fetches every manuscript to open the menu or overwrites manuscript caches with partial rows. Uncached target drafts can prefetch when pointed at or focused. A pending refresh cannot replace controls during saving. Identical chapter HTML skips redundant save scheduling; changed content and formatting still flush before navigation.
+
+## Make main draft
+
+In Switch draft, a non-main revision offers Make this draft main. A confirmation explains that the current main becomes a separate Previous main draft, the source revision stays saved, and public content does not change until publishing. Pending edits save before promotion.
+
+Promotion reuses the original main book ID so its existing library listing, cover, followers and other ID-based associations stay attached to that book. It copies the selected revision's title and manuscript into that record, preserving unambiguously matching chapter IDs. The previous main is inserted as a private sibling draft first. Cloud updates compare the main record's updated timestamp and stop on concurrent changes. Backup failure stops before replacement; a conflict may leave an extra safe backup but does not overwrite newer main content. The selected source revision is unchanged. Local mode commits promotion and backup in one storage write. No new migration is required beyond the already installed draft grouping fields.
+
+The operation never writes the public library table. Publishing remains an explicit action on the main book ID. If promotion leaves no valid selected chapters, the publish form requires chapter selection instead of accidentally taking the existing listing down. A private publishing-settings save preserves this guard until a successful publication.

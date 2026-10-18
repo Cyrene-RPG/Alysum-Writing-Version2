@@ -81,7 +81,7 @@ test('direct draft switch lists the original first, siblings only, and the curre
     const other={...original(),id:'unrelated',title:'Another book'};
     const choices=draftSwitchChoices([sibling,other,root],current);
     assert.deepEqual(choices.map(choice=>choice.id),['original','revision-1','revision-2']);
-    assert.equal(choices[0].label,'Main / original draft');assert.equal(choices[2].label,'Second pass');assert.equal(choices[2].current,true);
+    assert.equal(choices[0].label,'Main draft');assert.equal(choices[2].label,'Second pass');assert.equal(choices[2].current,true);
     assert.deepEqual(draftSwitchChoices([root,sibling],root).map(choice=>choice.current),[true,false]);
 });
 test('direct draft switch returns to single editor without losing other URL options',()=>{

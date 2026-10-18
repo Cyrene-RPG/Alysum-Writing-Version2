@@ -1,3 +1,4 @@
+import { prepareDraftPromotion } from "../writing-engine/promote-draft.js";
 /**
  * Cloud manuscript drafts on public.books. Owner-only via RLS.
  * Live Alysum uses `created` / `updated` (epoch ms), matching writer-dashboard.
@@ -178,4 +179,20 @@ export async function listDraftSummaries(supabase, userId, rootId) {
     if (original.error) throw original.error;
     if (revisions.error) throw revisions.error;
     return [...(original.data || []), ...(revisions.data || [])];
+}
+
+/** Persist a backup first; compare-and-set the main record to avoid overwriting concurrent edits. */
+export async function promoteDraft(supabase, userId, draftId) {
+    const source=await getBook(supabase,userId,draftId);
+    if(!source?.draft_parent_id)throw new Error('This is already the main draft.');
+    const main=await getBook(supabase,userId,source.draft_parent_id);
+    if(!main||String(source.user_id)!==String(userId)||String(main.user_id)!==String(userId))throw new Error('Only the book owner can change its main draft.');
+    const plan=prepareDraftPromotion(source,main);
+    const backup=await insertBook(supabase,userId,plan.backup);
+    if(!backup?.id)throw new Error('The previous main could not be backed up. Promotion stopped.');
+    const patch={...toCloudPatch(plan.patch),updated:plan.patch.updated};
+    const {data,error}=await supabase.from('books').update(patch).eq('id',main.id).eq('user_id',userId).eq('updated',main.updated).select('*').maybeSingle();
+    if(error)throw new Error('Could not confirm the main-draft update. Your source revision and previous-main backup are saved. Reopen the main draft before retrying.');
+    if(!data)throw new Error('The main draft changed while preparing this update. A backup was saved; reopen the main draft and try again.');
+    return {main:fromCloudRow(data),backup};
 }
