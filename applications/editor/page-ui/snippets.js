@@ -1,9 +1,9 @@
-import { prepareSnippetDownload, shareSnippet, copyReadingLink } from "/site-appearance/js-runtime/snippet-export.js";
+import { requestSnippetDownload, shareSnippet, copyReadingLink } from "/site-appearance/js-runtime/snippet-export.js";
 import { normalizeExcerpt, countExcerptWords, MAX_EXCERPT_CHARACTERS, MAX_EXCERPT_WORDS } from "/core/publishing/excerpts.js";
 import { normalizeSnippetCard, cardFileName, CARD_FORMATS, MAX_CARD_CHARACTERS } from "/core/publishing/snippet-card.js";
 import { drawSnippetCard } from "/site-appearance/js-runtime/snippet-card.js";
 
-export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () => "", initialExcerpt = "", excerptApi = null }) {
+export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () => "", initialExcerpt = "", excerptApi = null, downloadApi = null }) {
     if (!button || !pageEl) return;
     const dialog = document.createElement("dialog");
     dialog.className = "quote-dialog";
@@ -25,9 +25,8 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
             </form>
             <section class="quote-preview" aria-label="Image preview"><div class="quote-preview-surface"><article id="quote-section-preview" hidden><p class="quote-label">Read-only section</p><h3 id="quote-section-title"></h3><p id="quote-section-author" class="quote-hint"></p><div id="quote-section-text"></div></article><canvas id="quote-canvas" role="img" aria-label="Preview of the selected excerpt card" hidden></canvas><p id="quote-placeholder" class="quote-hint">Select or paste an excerpt to preview the card.</p></div><p id="quote-dimensions" class="quote-hint"></p></section>
         </div>
-        <section id="quote-save-help" class="quote-save-help" hidden><p>Touch and hold the image below, then choose Save image. On a computer, right-click and choose Save image as.</p><img id="quote-save-image" alt="Your excerpt card, ready to save"></section>
         <p id="quote-error" class="quote-error" role="alert" hidden></p>
-        <div class="quote-dialog-foot"><p id="quote-status" class="quote-hint" role="status"></p><div class="quote-actions"><button type="button" id="quote-create-link" class="quote-button quote-primary" disabled>Create reading link</button><a id="quote-save" class="quote-button quote-primary" role="button" aria-disabled="true" download>Save PNG</a><button type="button" id="quote-share" class="quote-button" disabled hidden>Share image…</button></div></div>`;
+        <div class="quote-dialog-foot"><p id="quote-status" class="quote-hint" role="status"></p><div class="quote-actions"><button type="button" id="quote-create-link" class="quote-button quote-primary" disabled>Create reading link</button><button type="button" id="quote-save" class="quote-button quote-primary" disabled>Save PNG</button><button type="button" id="quote-share" class="quote-button" disabled hidden>Share image…</button></div></div>`;
     document.body.append(dialog);
     const selectionBar = document.createElement("div");
     selectionBar.className = "quote-selection-bar";
@@ -75,8 +74,6 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
     let isCreatingLink = false;
     let capturedText = "";
     let file = null;
-    let releaseDownload = null;
-    let saveImageUrl = "";
     let generation = 0;
     let renderTimer = 0;
     let fontPromise = null;
@@ -88,11 +85,6 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         return pageEl.contains(range.startContainer) && pageEl.contains(range.endContainer) ? selection.toString() : "";
     }
     function clearImage() {
-        if (releaseDownload) releaseDownload();
-        releaseDownload = null;
-        saveImageUrl = "";
-        find("quote-save-image").removeAttribute("src");
-        find("quote-save-help").hidden = true;
         file = null;
         save.disabled = true;
         share.disabled = true;
@@ -191,10 +183,6 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
             const blob = await new Promise((resolve, reject) => canvas.toBlob((result) => result ? resolve(result) : reject(new Error("Could not save the image. Try again.")), "image/png"));
             if (request !== generation || !dialog.open) return;
             file = new File([blob], cardFileName(data.title), { type: "image/png" });
-            releaseDownload = prepareSnippetDownload(file, save);
-            // A real image in this dialog gives mobile browsers their own Save image action.
-            saveImageUrl = canvas.toDataURL("image/png");
-            find("quote-save-image").src = saveImageUrl;
             canvas.hidden = false;
             canvas.setAttribute("aria-label", `Quote card: ${data.excerpt}`);
             find("quote-placeholder").hidden = true;
@@ -202,7 +190,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
             save.disabled = false;
             share.hidden = false;
             share.disabled = false;
-            status.textContent = "Save PNG downloads the image. If needed, touch and hold the image below to save it.";
+            status.textContent = "Save PNG creates a temporary download copy on Alysum, available for up to five minutes.";
         } catch (error) {
             if (request !== generation || !dialog.open) return;
             canvas.hidden = true;
@@ -276,33 +264,29 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
     form.addEventListener("input", queueRender);
     form.addEventListener("change", queueRender);
     form.addEventListener("submit", (event) => event.preventDefault());
-    function showSaveImage() {
-        if (!file || !saveImageUrl) return;
-        find("quote-save-help").hidden = false;
-        find("quote-save-help").scrollIntoView({ block: "nearest" });
-    }
-    save.addEventListener("click", (event) => {
-        if (!file || !save.hasAttribute("href")) { event.preventDefault(); return; }
-        // Leave the trusted link click intact; no await, synthetic click, or navigation target.
-        showSaveImage();
-        status.textContent = "Check Downloads. If no file appears, touch and hold the image above and choose Save image.";
+    save.addEventListener("click", async () => {
+        if (!file || save.disabled) return;
+        const saving = file; const opening = generation;
+        save.disabled = true; status.textContent = "Preparing file download…";
+        try {
+            const started = await requestSnippetDownload(saving, dialog, downloadApi, () => opening === generation && dialog.open);
+            if (started) status.textContent = "File download requested. Check your browser’s Downloads.";
+        } catch (error) { if (opening === generation && dialog.open) status.textContent = error.message || "Could not prepare the file download. Try again."; }
+        finally { save.disabled = !file; }
     });
-    save.addEventListener("keydown", (event) => { if (event.key === " ") { event.preventDefault(); save.click(); } });
     share.addEventListener("click", () => {
         if (!file || share.disabled) return;
         try {
             const sharing = shareSnippet(file);
             if (!sharing) {
-                showSaveImage();
-                status.textContent = "Save the image above to share from your photos, or choose Reading link and copy its link.";
+                status.textContent = "Download the PNG to share from your files, or choose Reading link and copy its link.";
                 return;
             }
             share.disabled = true;
             sharing.catch((error) => {
-                if (error?.name !== "AbortError") { showSaveImage(); status.textContent = "Use the image above to save and share, or copy a reading link."; }
-                else status.textContent = "Sharing cancelled.";
+                status.textContent = error?.name === "AbortError" ? "Sharing cancelled." : "Download the PNG to share from your files, or copy a reading link.";
             }).finally(() => { share.disabled = !file; });
-        } catch { showSaveImage(); status.textContent = "Use the image above to save and share, or copy a reading link."; }
+        } catch { status.textContent = "Download the PNG to share from your files, or copy a reading link."; }
     });
     return { close: () => dialog.close() };
 }

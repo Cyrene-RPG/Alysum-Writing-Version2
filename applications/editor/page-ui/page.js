@@ -1,3 +1,4 @@
+import { createSnippetDownloadApi } from "/core/publishing/snippet-download.js";
 import { createExcerptApi } from "/core/publishing/excerpts.js";
 import { mountSnippetSharing } from "./snippets.js";
 import { supabase } from "@alysum/authentication/client.js";
@@ -458,6 +459,7 @@ async function boot() {
     mountSnippetSharing({
         button: document.getElementById("share-snippet"),
         excerptApi: createExcerptApi(supabase, { origin: window.location.origin }),
+        downloadApi: createSnippetDownloadApi(supabase, { origin: window.location.origin, getBook: () => book }),
         pageEl,
         getBook: () => book,
         getAuthor: () => profile.name || "",

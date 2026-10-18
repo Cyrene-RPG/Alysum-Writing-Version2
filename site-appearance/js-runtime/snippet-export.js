@@ -1,4 +1,4 @@
-/** Local exports. No upload, background worker, file picker, or popup required. */
+/** Device sharing and short-lived HTTP attachment downloads. */
 export function canShareSnippet(file, browser = navigator) {
     try { return typeof browser.share === "function" && typeof browser.canShare === "function" && browser.canShare({ files: [file] }); }
     catch { return false; }
@@ -7,18 +7,18 @@ export function shareSnippet(file, browser = navigator) {
     if (!canShareSnippet(file, browser)) return null;
     return browser.share({ files: [file] });
 }
-export function prepareSnippetDownload(file, link, host = window) {
-    const url = host.URL.createObjectURL(file);
-    link.href = url;
-    link.download = file.name;
-    link.removeAttribute("target");
-    link.removeAttribute("aria-disabled");
-    // Keep the actual link and Blob alive until the preview is replaced/closed.
-    return () => {
-        link.removeAttribute("href");
-        link.setAttribute("aria-disabled", "true");
-        host.URL.revokeObjectURL(url);
-    };
+export async function requestSnippetDownload(file, mount, api, isCurrent = () => true) {
+    if (!api) throw new Error("Sign in to prepare the PNG download.");
+    const result = await api.prepare(file);
+    if (!isCurrent()) return false;
+    let frame = mount.querySelector('iframe[data-snippet-download]');
+    if (!frame) {
+        frame = document.createElement('iframe'); frame.hidden = true;
+        frame.setAttribute('data-snippet-download', ''); frame.title = 'PNG file download';
+        mount.append(frame);
+    }
+    frame.src = result.url;
+    return true;
 }
 export async function copyReadingLink(input, browser = navigator, doc = document) {
     if (browser.clipboard?.writeText) {

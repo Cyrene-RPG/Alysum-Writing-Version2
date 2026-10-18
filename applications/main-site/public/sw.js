@@ -9,7 +9,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v2.51.4';
+const SW_VERSION = 'v2.51.5';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -105,6 +105,9 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
+
+  // File attachments are real network responses, never offline documents.
+  if (url.pathname === '/api/snippet-download') return;
 
   // Never intercept Firebase / Google APIs / auth flows / analytics
   if (url.origin !== self.location.origin) return;
