@@ -100,7 +100,7 @@
 .quote-preview-long canvas { width: 100%; max-height: none; height: auto; }
 
 .quote-button[aria-disabled="true"] { opacity: .45; cursor: default; }
-.quote-save-help { margin-top: 20px; }
+.quote-save-help { margin-top: 20px; max-height: 300px; overflow: auto; flex-shrink: 0; overscroll-behavior: contain; }
 .quote-save-help p { font: 13px/1.6 var(--font-sans, sans-serif); color: var(--text); }
 .quote-save-help img { display: block; width: 100%; height: auto; max-width: 500px; margin: 12px auto; }
 .quote-save-help[hidden] { display: none !important; }
