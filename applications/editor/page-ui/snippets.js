@@ -16,7 +16,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
                 <label for="quote-title">Book title <span>(optional)</span><input id="quote-title" maxlength="80" autocomplete="off"></label>
                 <label for="quote-author">Author <span>(optional)</span><input id="quote-author" maxlength="80" autocomplete="off"></label>
                 <label class="quote-check" for="quote-brand"><input type="checkbox" id="quote-brand" checked> Include Alysum mark</label>
-                <p class="quote-hint">Only this text and attribution appear in the image.</p>
+                <p class="quote-hint">Up to 30,000 characters. Longer excerpts create a taller image.</p>
             </form>
             <section class="quote-preview" aria-label="Image preview"><div class="quote-preview-surface"><canvas id="quote-canvas" role="img" aria-label="Preview of the selected excerpt card" hidden></canvas><p id="quote-placeholder" class="quote-hint">Select or paste an excerpt to preview the card.</p></div><p id="quote-dimensions" class="quote-hint"></p></section>
         </div>
@@ -114,7 +114,8 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
             await waitForFont();
             if (request !== generation || !dialog.open) return;
             const dimensions = CARD_FORMATS[data.format];
-            drawSnippetCard(canvas, data, dimensions);
+            const rendered = drawSnippetCard(canvas, data, dimensions);
+            canvas.parentElement.classList.toggle("quote-preview-long", rendered.height > 1920);
             const blob = await new Promise((resolve, reject) => canvas.toBlob((result) => result ? resolve(result) : reject(new Error("Could not save the image. Try again.")), "image/png"));
             if (request !== generation || !dialog.open) return;
             file = new File([blob], cardFileName(data.title), { type: "image/png" });
@@ -122,7 +123,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
             canvas.hidden = false;
             canvas.setAttribute("aria-label", `Quote card: ${data.excerpt}`);
             find("quote-placeholder").hidden = true;
-            find("quote-dimensions").textContent = `${dimensions.width} × ${dimensions.height} · PNG`;
+            find("quote-dimensions").textContent = `${rendered.width} × ${rendered.height} · PNG`;
             save.disabled = false;
             let canShare = false;
             try { canShare = typeof navigator.share === "function" && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] }); } catch { /* Saving stays available. */ }
@@ -158,7 +159,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         find("quote-placeholder").textContent = "Select or paste an excerpt to preview the card.";
         dialog.showModal();
         void render();
-        if (selected.length > MAX_CARD_CHARACTERS) showError(new Error("That selection is too long for one card. Select a shorter excerpt or paste part of it below."));
+        if (selected.length > MAX_CARD_CHARACTERS) showError(new Error("That selection is too long for one card. Select up to 30,000 characters or shorten the excerpt below."));
     });
     find("quote-select-in-wip").addEventListener("click", () => { selectAfterClose = true; dialog.close(); });
     dialog.querySelector(".quote-close").addEventListener("click", () => dialog.close());

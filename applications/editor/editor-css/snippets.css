@@ -82,3 +82,6 @@
     }
     .quote-dialog-foot { padding-bottom: 4px; }
 }
+
+.quote-preview-surface.quote-preview-long { display: block; max-height: 420px; overflow: auto; overscroll-behavior: contain; }
+.quote-preview-long canvas { width: 100%; max-height: none; height: auto; }

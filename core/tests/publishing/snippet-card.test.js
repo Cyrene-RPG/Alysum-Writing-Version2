@@ -16,7 +16,7 @@ test("empty and oversized selections fail instead of being truncated", () => {
     assert.throws(() => normalizeSnippetCard({ excerpt: "text", title: "x".repeat(81) }));
 });
 
-test("formats have fixed high resolution image dimensions and unknown styles fall back", () => {
+test("formats have high resolution starting dimensions and unknown styles fall back", () => {
     assert.deepEqual(CARD_FORMATS.portrait, { width: 1080, height: 1350 });
     assert.deepEqual(CARD_FORMATS.square, { width: 1080, height: 1080 });
     assert.deepEqual(CARD_FORMATS.story, { width: 1080, height: 1920 });
@@ -44,4 +44,11 @@ test("filenames cannot introduce directories and always use PNG", () => {
     assert.equal(cardFileName("../My Book?!"), "my-book-card.png");
     assert.equal(cardFileName(""), "snippet-card.png");
     assert.equal(cardFileName("💜"), "snippet-card.png");
+});
+
+ test("a long section is accepted intact through the 30,000-character boundary", () => {
+    const text = "A".repeat(30000);
+    assert.equal(MAX_CARD_CHARACTERS, 30000);
+    assert.equal(normalizeSnippetCard({ excerpt: text }).excerpt, text);
+    assert.throws(() => normalizeSnippetCard({ excerpt: text + "B" }), /30,000/);
 });

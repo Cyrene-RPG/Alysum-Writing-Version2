@@ -1,5 +1,5 @@
 /** Only the text and attribution explicitly confirmed for an exported image. */
-export const MAX_CARD_CHARACTERS = 1800;
+export const MAX_CARD_CHARACTERS = 30000;
 export const CARD_FORMATS = Object.freeze({ portrait: { width: 1080, height: 1350 }, square: { width: 1080, height: 1080 }, story: { width: 1080, height: 1920 } });
 export const CARD_STYLES = Object.freeze(["alysum", "paper", "rose"]);
 
