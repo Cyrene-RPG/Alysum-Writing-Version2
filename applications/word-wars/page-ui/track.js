@@ -63,10 +63,17 @@ function setText(el, text) {
     if (el && el.textContent !== text) el.textContent = text;
 }
 
-export function createTrack(listEl, { isSpectator = false, myId = "", onStar = () => {}, onCheer = () => {} } = {}) {
+export function createTrack(listEl, {
+    isSpectator = false, myId = "", onStar = () => {}, onCheer = () => {}, onRead = () => {},
+} = {}) {
     const rows = new Map();
 
     listEl.addEventListener("click", (event) => {
+        const read = event.target.closest("[data-read]");
+        if (read) {
+            onRead(read.dataset.read);
+            return;
+        }
         const star = event.target.closest("[data-star]");
         if (star) {
             onStar(star.dataset.star);
@@ -120,10 +127,19 @@ export function createTrack(listEl, { isSpectator = false, myId = "", onStar = (
 
         li.append(pos, who, run, nums);
 
-        const refs = { li, pos, state, words, wpm, cheerCount: null, star: null, cheer: null };
+        const refs = { li, pos, state, words, wpm, cheerCount: null, star: null, cheer: null, read: null };
         if (isSpectator) {
             const acts = document.createElement("div");
             acts.className = "ww-acts";
+            const read = document.createElement("button");
+            read.type = "button";
+            read.className = "ww-read";
+            read.dataset.read = racer.userId;
+            read.setAttribute("aria-pressed", "false");
+            read.setAttribute("aria-label", `Read ${racer.displayName}'s page`);
+            read.textContent = "Read";
+            acts.append(read);
+            refs.read = read;
             const star = document.createElement("button");
             star.type = "button";
             star.className = "ww-star";
@@ -150,7 +166,7 @@ export function createTrack(listEl, { isSpectator = false, myId = "", onStar = (
      * list: standings(); paces: Map userId → { wpm, idleMs };
      * mine: { counted, isOverLimit } for the racer's own row, or null.
      */
-    function sync(list, { racers, targetWords, startsAt, status, nowMs, paces, cheersOf, favId, mine }) {
+    function sync(list, { racers, targetWords, startsAt, status, nowMs, paces, cheersOf, favId, mine, readingId = null }) {
         const ids = new Set(list.map((r) => r.userId));
         for (const [id, refs] of rows) {
             if (!ids.has(id)) {
@@ -214,6 +230,11 @@ export function createTrack(listEl, { isSpectator = false, myId = "", onStar = (
             if (refs.cheerCount) {
                 setText(refs.cheerCount, String(cheersOf(r)));
                 refs.star.setAttribute("aria-pressed", String(favId === r.userId));
+            }
+            if (refs.read) {
+                refs.read.classList.toggle("hidden", !r.isPagePublic);
+                refs.read.setAttribute("aria-pressed", String(readingId === r.userId));
+                refs.li.classList.toggle("is-reading", readingId === r.userId);
             }
         }
     }

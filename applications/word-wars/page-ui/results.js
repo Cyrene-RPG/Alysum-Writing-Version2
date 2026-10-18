@@ -11,7 +11,8 @@ function cell(text, className = "") {
     return td;
 }
 
-export function renderResults(els, { race, racers, list, myId, isRacer, favId, cheersOf, myPeak, nowMs, bookTitle }) {
+/** pageOwners: Set of user ids whose writing can be read on this screen. */
+export function renderResults(els, { race, racers, list, myId, isRacer, favId, cheersOf, myPeak, nowMs, bookTitle, pageOwners = new Set() }) {
     const startsAt = race.startsAt;
     const endedAt = raceEndedAt(race, nowMs);
     const target = race.targetWords.toLocaleString();
@@ -78,6 +79,19 @@ export function renderResults(els, { race, racers, list, myId, isRacer, favId, c
         who.append(dot, document.createTextNode(nameOf(r)));
         let time = timeOf(r);
         if (!time) time = r.hasLeft ? "Left" : "Out of time";
+        const work = document.createElement("td");
+        if (pageOwners.has(r.userId)) {
+            const read = document.createElement("button");
+            read.type = "button";
+            read.className = "ww-read";
+            read.dataset.readResult = r.userId;
+            read.textContent = "Read";
+            read.setAttribute("aria-label", `Read ${nameOf(r)}'s writing`);
+            work.append(read);
+        } else {
+            work.textContent = r.userId === myId ? "Private" : "—";
+            work.className = "ww-muted";
+        }
         tr.append(
             cell(r.place ? ordinal(r.place) : "—"),
             who,
@@ -86,6 +100,7 @@ export function renderResults(els, { race, racers, list, myId, isRacer, favId, c
             cell(String(avgOf(r)), "num"),
             cell(String(peakOf(r)), "num"),
             cell(String(cheersOf(r)), "num"),
+            work,
         );
         return tr;
     }));

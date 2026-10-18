@@ -74,7 +74,7 @@
         <header class="ww-hub-head">
             <p class="ww-eyebrow">Word Wars · Race</p>
             <h1 class="ww-display">First to the line wins</h1>
-            <p class="ww-lede">Everyone writes in their own book. Racers and spectators see each other's word counts and pace, never anyone's words.</p>
+            <p class="ww-lede">Everyone writes in their own book. Pages are public by default, so spectators can watch you write; other racers can read it after the race. You can make yours private.</p>
         </header>
 
         <div class="ww-hub-book">
@@ -97,6 +97,10 @@
                     </div>
                     <p class="ww-hint" id="visibilityHint"></p>
                 </div>
+                <div class="ww-field">
+                    <span class="ww-label ww-sublabel">Prompt</span>
+                    <div class="ww-prompt-picker" id="promptPicker"></div>
+                </div>
                 <button type="button" class="ww-primary" id="createBtn">Open a race</button>
                 <p class="ww-error hidden" id="createError" role="alert"></p>
             </section>
@@ -113,6 +117,7 @@
                     <li>Deleting lowers your count. Pasting doesn't count.</li>
                     <li>Counts can't rise faster than 150 words a minute.</li>
                     <li>Once the winner crosses, everyone else has 2 minutes.</li>
+                    <li>Your page is public unless you make it private. Private pages can be shared after the race.</li>
                 </ul>
             </section>
         </div>

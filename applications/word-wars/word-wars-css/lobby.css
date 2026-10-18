@@ -77,6 +77,20 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+.ww-race-card-prompt {
+    margin: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    color: var(--text);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 13.5px;
+    line-height: 1.45;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+.ww-race-card-prompt.is-free { color: var(--muted); font-family: inherit; font-style: italic; }
 .ww-race-card .ww-row { margin-top: 4px; }
 .ww-race-card .ww-primary { padding: 8px 18px; font-size: 22px; }
 .ww-race-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }

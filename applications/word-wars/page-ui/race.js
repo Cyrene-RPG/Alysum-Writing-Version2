@@ -2,28 +2,38 @@
  * Word Wars race page: waiting room → countdown → race → results, for racers
  * and spectators. Live updates come through Supabase Realtime; a slower poll
  * keeps the page right if that connection drops.
+ *
+ * A racer's page is public by default: spectators can watch it live, other
+ * racers can read it after the race. Private pages can be shared afterwards.
  */
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { goToLogin } from "@alysum/desktop/app.js";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js";
+import { listBodyChapters } from "@alysum/writing-engine/manuscript.js";
 import {
     CHECK_IN_MS,
+    askForNewPrompt,
     createPaceTracker,
     createServerClock,
     formatClock,
+    getPage,
     getRace,
     joinRace,
     leaveRace,
     lineClosesAt,
+    listPages,
     lobbyRacers,
     ordinal,
+    pageTextFromHtml,
     raceEndedAt,
     raceStatus,
     rematchRace,
     reportProgress,
+    savePage,
     sendCheers,
+    setPageVisibility,
     standings,
     startRace,
     subscribeRace,
@@ -32,7 +42,8 @@ import {
 import { createRaceCaller } from "@alysum/community/word-war-calls.js";
 import { initWorkspaceShell } from "/js/studio/shell.js";
 import { createTrack, heartIcon } from "/js/word-wars/track.js";
-import { mountWaitingRoom } from "/js/word-wars/waiting.js";
+import { WRITE_IN_NEW, mountWaitingRoom } from "/js/word-wars/waiting.js";
+import { createPromptView } from "/js/word-wars/prompt-picker.js";
 import { mountWriter } from "/js/word-wars/writer.js";
 import { renderResults } from "/js/word-wars/results.js";
 
@@ -45,6 +56,9 @@ const POLL_OFFLINE_MS = 2_000;
 const CHEER_FLUSH_MS = 2_500;
 const PEAK_AFTER_MS = 20_000;
 const LEAVE_CONFIRM_MS = 4_000;
+const PAGE_SHARE_MS = 3_000;
+const READ_POLL_MS = 4_000;
+const RESULTS_PAGES_MS = 8_000;
 const MAX_CALLS = 40;
 const HUB = "/word-wars-lobby";
 
@@ -74,6 +88,33 @@ async function copyText(text, done) {
     } catch {
         toast(text);
     }
+}
+
+function readSession(key, fallback) {
+    try {
+        return sessionStorage.getItem(key) || fallback;
+    } catch {
+        return fallback;
+    }
+}
+
+function writeSession(key, value) {
+    try {
+        sessionStorage.setItem(key, value);
+    } catch {
+        /* only a convenience */
+    }
+}
+
+/** Shared writing is plain text: one paragraph per line, never HTML. */
+function paintPageText(bodyEl, text) {
+    const lines = String(text || "").split("\n");
+    bodyEl.replaceChildren(...lines.map((line) => {
+        const p = document.createElement("p");
+        if (line) p.textContent = line;
+        else p.className = "is-gap";
+        return p;
+    }));
 }
 
 async function boot() {
@@ -130,13 +171,25 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         resultsKey: "",
         pickKey: "",
         countText: "",
+        readingId: null,
+        readerKey: "",
+        resultsReadingId: null,
+        resultsReaderKey: "",
+        isWorkBusy: false,
     };
     const clock = createServerClock();
     const paces = new Map();
     const cheersShown = new Map();
     const pendingCheers = new Map();
     const bookCache = new Map();
+    const pages = new Map();
+    let pageOwners = new Set();
     const report = { at: 0, raw: -1, isBusy: false, isBehind: false };
+    const share = { at: 0, sent: "", isBusy: false };
+    const reading = { at: 0, isBusy: false };
+    const resultsPages = { at: 0, isBusy: false };
+    const WRITE_IN_KEY = `alysum:word-wars:write-in:${raceId}`;
+    const RACE_CHAPTER_KEY = `alysum:word-wars:race-chapter:${raceId}`;
     let caller = null;
     let isCallerPrimed = false;
     let writer = null;
@@ -148,6 +201,7 @@ function runRace({ raceId, uid, booksApi, books, first }) {
 
     const me = () => S.racers.get(uid);
     const isRacer = () => !!me() && me().leftAt == null;
+    const nameOf = (id) => (id === uid ? "You" : S.racers.get(id)?.displayName || "A writer");
     const paceFor = (id) => {
         if (!paces.has(id)) paces.set(id, createPaceTracker());
         return paces.get(id);
@@ -187,8 +241,27 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         if (!isRacer() || !mine.bookId || bookCache.has(mine.bookId)) return;
         bookCache.set(mine.bookId, null);
         booksApi.getBook(mine.bookId)
-            .then((book) => bookCache.set(mine.bookId, book || null))
+            .then((book) => {
+                bookCache.set(mine.bookId, book || null);
+                tick();
+            })
             .catch(() => bookCache.delete(mine.bookId));
+    }
+
+    function chaptersOfMyBook() {
+        const book = bookCache.get(me()?.bookId);
+        if (!book) return null;
+        return listBodyChapters(book.sections)
+            .filter((ch) => ch && ch.kind !== "folder")
+            .map((ch) => ({ id: ch.id, title: ch.title || "Untitled chapter" }));
+    }
+
+    /** What a new chapter for this race is called: the prompt's first line, or the date. */
+    function raceChapterTitle() {
+        const prompt = (S.race.prompt || "").split("\n")[0].trim();
+        if (prompt) return prompt.length > 80 ? `${prompt.slice(0, 79).trimEnd()}…` : prompt;
+        const day = new Date(S.race.startsAt || Date.now()).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+        return `Word War · ${day}`;
     }
 
     function schedulePoll() {
@@ -227,6 +300,15 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         copyLinkBtn: $("copyLinkBtn"),
         hint: $("waitHint"),
         error: $("waitError"),
+        promptText: $("waitPrompt"),
+        promptPicker: $("waitPromptPicker"),
+        askPromptBtn: $("askPromptBtn"),
+        promptAsks: $("promptAsks"),
+        myPageField: $("myPageField"),
+        pageSeg: $("waitPage"),
+        pageHint: $("waitPageHint"),
+        writeInSelect: $("waitWriteIn"),
+        writeInHint: $("waitWriteInHint"),
     }, {
         books,
         onBegin: () => act(async () => applySnapshot(await startRace(raceId))),
@@ -245,10 +327,18 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         onVisibility: (isPublic) => act(async () => applySnapshot(await updateRace(raceId, { isPublic }))),
         onBook: (bookId) => {
             if (!isRacer() || !bookId) return;
+            writeSession(WRITE_IN_KEY, WRITE_IN_NEW);
             void act(async () => applySnapshot(await joinRace({ raceId, bookId })));
         },
         onCopyCode: () => copyText(S.race.code, "Code copied."),
         onCopyLink: () => copyText(`${window.location.origin}${HUB}?code=${S.race.code}`, "Invite link copied."),
+        onPrompt: (prompt) => act(async () => applySnapshot(await updateRace(raceId, { prompt }))),
+        onAskPrompt: () => act(async () => applySnapshot(await askForNewPrompt(raceId))),
+        onPageVisibility: (isPublic) => act(() => changeVisibility(isPublic)),
+        onWriteIn: (value) => {
+            writeSession(WRITE_IN_KEY, value);
+            tick();
+        },
     });
 
     async function act(task) {
@@ -263,6 +353,9 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         }
     }
 
+    const racePrompt = createPromptView($("racePrompt"), $("racePromptToggle"));
+    const resultsPrompt = createPromptView($("resPrompt"), $("resPromptToggle"), { freeText: "Free write" });
+
     const racerTrack = createTrack($("racerTrack"), { myId: uid });
     const spectatorTrack = createTrack($("spectatorTrack"), {
         isSpectator: true,
@@ -272,6 +365,12 @@ function runRace({ raceId, uid, booksApi, books, first }) {
             tick();
         },
         onCheer: cheerFor,
+        onRead: (id) => {
+            S.readingId = S.readingId === id ? null : id;
+            S.readerKey = "";
+            void fetchReading(true);
+            tick();
+        },
     });
 
     const writerEls = {
@@ -316,6 +415,15 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         }
     }
 
+    /** Where the racer starts writing: the chapter they were in, their pick, or a new one. */
+    function startChapter() {
+        const mine = me();
+        const known = mine?.pageChapterId || readSession(RACE_CHAPTER_KEY, "");
+        if (known) return { chapterId: known };
+        const choice = readSession(WRITE_IN_KEY, WRITE_IN_NEW);
+        return choice === WRITE_IN_NEW ? { newTitle: raceChapterTitle() } : { chapterId: choice };
+    }
+
     async function ensureWriter() {
         if (writer || writerLoading) return writerLoading;
         const mine = me();
@@ -336,8 +444,16 @@ function runRace({ raceId, uid, booksApi, books, first }) {
                     uid,
                     raceId,
                     targetWords: S.race.targetWords,
+                    start: startChapter(),
                     onPaste: () => toast("Pasted words don't count in a race."),
+                    onChapterChange: () => {
+                        if (!writer) return;
+                        share.sent = "";
+                        void sendReport(true);
+                        void sharePage(true);
+                    },
                 });
+                if (writer.createdChapterId) writeSession(RACE_CHAPTER_KEY, writer.createdChapterId);
                 const start = me()?.startWords;
                 mineCount = writer.beginCount(start ?? writer.bookWords(), S.race.startsAt, clock.now());
                 writer.setEditable(S.status === "running");
@@ -354,6 +470,7 @@ function runRace({ raceId, uid, booksApi, books, first }) {
 
     async function finishUp() {
         writer?.setEditable(false);
+        await sharePage(true);
         if (writer && !S.isSealed) {
             S.isSealed = true;
             await writer.seal();
@@ -363,6 +480,7 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         } catch {
             /* the poll will catch up */
         }
+        void refreshResultsPages(true);
     }
 
     // ---------- Reporting my count ----------
@@ -386,7 +504,7 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         report.isBusy = true;
         report.at = now;
         try {
-            const res = await reportProgress(raceId, { words, startWords, peakWpm });
+            const res = await reportProgress(raceId, { words, startWords, peakWpm, chapterId: writer?.chapterId || null });
             if (words != null) {
                 report.raw = words;
                 report.isBehind = res.finishedAt == null && res.words < Math.min(words, S.race.targetWords);
@@ -409,6 +527,160 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         } finally {
             report.isBusy = false;
         }
+    }
+
+    // ---------- My page ----------
+
+    /** Shares what I'm writing while my page is public: every few seconds, only when it changed. */
+    async function sharePage(force = false) {
+        const mine = me();
+        if (!writer || !mine?.isPagePublic || share.isBusy) return;
+        if (S.status !== "running" && S.status !== "finished") return;
+        const now = Date.now();
+        if (!force && now - share.at < PAGE_SHARE_MS) return;
+        const page = writer.page();
+        const key = `${page.chapterId}\n${page.title}\n${page.text}`;
+        if (key === share.sent) return;
+        share.isBusy = true;
+        share.at = now;
+        try {
+            await savePage(raceId, page);
+            share.sent = key;
+            live.sendPageSignal(uid);
+        } catch {
+            /* try again in a few seconds */
+        } finally {
+            share.isBusy = false;
+        }
+    }
+
+    async function changeVisibility(isPublic) {
+        await setPageVisibility(raceId, isPublic);
+        const mine = me();
+        if (mine) putRacer({ ...mine, isPagePublic: isPublic });
+        share.sent = "";
+        if (isPublic) await sharePage(true);
+        live.sendPageSignal(uid);
+        tick();
+    }
+
+    /** After the race: my page as it ended, from the open editor or from the saved book. */
+    async function myFinalPage() {
+        if (writer) return writer.page();
+        const mine = me();
+        const book = bookCache.get(mine?.bookId) || await booksApi.getBook(mine?.bookId);
+        const chapterId = mine?.pageChapterId || readSession(RACE_CHAPTER_KEY, "");
+        const chapter = book && listBodyChapters(book.sections).find((ch) => ch?.id === chapterId);
+        if (!chapter) throw new Error("Couldn't find the chapter you wrote in.");
+        return { chapterId, title: chapter.title || "Untitled chapter", text: pageTextFromHtml(chapter.content) };
+    }
+
+    async function toggleMyWork() {
+        if (S.isWorkBusy) return;
+        S.isWorkBusy = true;
+        $("resError").classList.add("hidden");
+        try {
+            if (pageOwners.has(uid)) {
+                await changeVisibility(false);
+            } else {
+                const page = await myFinalPage();
+                await setPageVisibility(raceId, true);
+                const mine = me();
+                if (mine) putRacer({ ...mine, isPagePublic: true });
+                await savePage(raceId, page);
+                live.sendPageSignal(uid);
+            }
+            await refreshResultsPages(true);
+        } catch (err) {
+            $("resError").textContent = err.message;
+            $("resError").classList.remove("hidden");
+        } finally {
+            S.isWorkBusy = false;
+            S.resultsKey = "";
+            tick();
+        }
+    }
+
+    // ---------- Reading pages ----------
+
+    async function fetchReading(force = false) {
+        const id = S.readingId;
+        if (!id || reading.isBusy) return;
+        const now = Date.now();
+        if (!force && now - reading.at < READ_POLL_MS) return;
+        reading.isBusy = true;
+        reading.at = now;
+        try {
+            pages.set(id, await getPage(raceId, id));
+        } catch {
+            /* keep what we have */
+        } finally {
+            reading.isBusy = false;
+        }
+        renderReader();
+    }
+
+    function renderReader() {
+        const pane = $("readerPane");
+        const id = S.readingId;
+        pane.classList.toggle("hidden", !id);
+        if (!id) return;
+        const racer = S.racers.get(id);
+        const page = pages.get(id);
+        const key = JSON.stringify([id, racer?.isPagePublic, page?.title, page?.text]);
+        if (key === S.readerKey) return;
+        S.readerKey = key;
+        const body = $("readerBody");
+        const isAtBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
+        $("readerTitle").textContent = page?.title ? `${nameOf(id)} · ${page.title}` : nameOf(id);
+        if (racer && !racer.isPagePublic) {
+            paintPageText(body, `${nameOf(id)}'s page is private.`);
+            body.classList.add("is-empty");
+        } else if (!page || !page.text) {
+            paintPageText(body, `Waiting for ${nameOf(id)} to start writing…`);
+            body.classList.add("is-empty");
+        } else {
+            paintPageText(body, page.text);
+            body.classList.remove("is-empty");
+            if (isAtBottom) body.scrollTop = body.scrollHeight;
+        }
+    }
+
+    async function refreshResultsPages(force = false) {
+        if (resultsPages.isBusy) return;
+        const now = Date.now();
+        if (!force && now - resultsPages.at < RESULTS_PAGES_MS) return;
+        resultsPages.isBusy = true;
+        resultsPages.at = now;
+        try {
+            const list = await listPages(raceId);
+            const next = new Set(list.map((p) => p.userId));
+            if ([...next].join() !== [...pageOwners].join()) {
+                pageOwners = next;
+                S.resultsKey = "";
+            }
+        } catch {
+            /* try again later */
+        } finally {
+            resultsPages.isBusy = false;
+        }
+    }
+
+    async function openResultsPage(id) {
+        S.resultsReadingId = id;
+        S.resultsReaderKey = "";
+        $("resReader").classList.remove("hidden");
+        $("resReaderTitle").textContent = nameOf(id);
+        paintPageText($("resReaderBody"), "Loading…");
+        try {
+            const page = await getPage(raceId, id);
+            if (S.resultsReadingId !== id) return;
+            $("resReaderTitle").textContent = page?.title ? `${nameOf(id)} · ${page.title}` : nameOf(id);
+            paintPageText($("resReaderBody"), page?.text || "Nothing shared yet.");
+        } catch (err) {
+            paintPageText($("resReaderBody"), err.message);
+        }
+        $("resReader").scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     // ---------- Cheers ----------
@@ -537,6 +809,9 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         $("sbWatchersLabel").textContent = isRacer() ? "Watching you" : "Watching";
         $("sbWatchers").textContent = String(S.watchers);
 
+        $("racePromptBox").classList.toggle("hidden", !race.prompt);
+        racePrompt.set(race.prompt);
+
         const btn = $("exitBtn");
         const isArmed = now - S.leaveArmedAt < LEAVE_CONFIRM_MS;
         btn.textContent = !isRacer() ? "Back to Word Wars" : isArmed ? "Click again to leave" : "Leave race";
@@ -557,6 +832,11 @@ function runRace({ raceId, uid, booksApi, books, first }) {
             : words > 0 ? `${ordinal(mine.pos)} of ${list.length}` : "–";
         $("meCheers").textContent = String(cheersOf(mine));
         $("paceChip").classList.toggle("hidden", !mineCount.isOverLimit || mine.finishedAt != null);
+
+        const toggle = $("pageToggle");
+        toggle.textContent = mine.isPagePublic ? "Public: spectators can watch you write" : "Private: only you can see this";
+        toggle.classList.toggle("is-public", mine.isPagePublic);
+        toggle.setAttribute("aria-pressed", String(mine.isPagePublic));
 
         let status = "";
         const closes = lineClosesAt(S.race);
@@ -617,12 +897,18 @@ function runRace({ raceId, uid, booksApi, books, first }) {
             cheersOf,
             favId: S.favId,
             mine: asRacer ? mineCount : null,
+            readingId: S.readingId,
         });
 
         renderCountdown(now);
         renderScoreboard(list, now);
-        if (asRacer) renderMe(list, now);
-        else renderPick(list);
+        if (asRacer) {
+            renderMe(list, now);
+        } else {
+            renderPick(list);
+            void fetchReading(false);
+            renderReader();
+        }
 
         if (S.status === "running") {
             if (!caller) caller = createRaceCaller({ targetWords: S.race.targetWords, myId: uid });
@@ -634,8 +920,9 @@ function runRace({ raceId, uid, booksApi, books, first }) {
             } else {
                 const lead = list[0];
                 const leader = lead && lead.words > 0 ? (lead.userId === uid ? "You lead" : `${lead.displayName} leads`) : null;
+                const opener = asRacer ? "You're back in the race." : "You're watching live.";
                 pushCall({
-                    text: leader ? `You're watching live. ${leader} with ${lead.words.toLocaleString()} words.` : "You're watching live.",
+                    text: leader ? `${opener} ${leader} with ${lead.words.toLocaleString()} words.` : opener,
                     isBig: false,
                     raceMs,
                 });
@@ -645,11 +932,16 @@ function runRace({ raceId, uid, booksApi, books, first }) {
     }
 
     function renderResultsView(now) {
+        void refreshResultsPages(false);
+        resultsPrompt.set(S.race.prompt);
         const racers = [...S.racers.values()];
         const list = standings(S.race, racers, now);
+        const mine = me();
         const key = JSON.stringify([
             S.race.rematchId,
             S.favId,
+            [...pageOwners],
+            S.isWorkBusy,
             list.map((r) => [r.userId, r.words, r.place, r.hasLeft, cheersOf(r), r.peakWpm]),
         ]);
         if (key === S.resultsKey) return;
@@ -666,13 +958,22 @@ function runRace({ raceId, uid, booksApi, books, first }) {
             racers,
             list,
             myId: uid,
-            isRacer: !!me(),
+            isRacer: !!mine,
             favId: S.favId,
             cheersOf,
             myPeak: paceFor(uid).peak,
             nowMs: now,
-            bookTitle: writer?.bookTitle || me()?.bookTitle,
+            bookTitle: writer?.bookTitle || mine?.bookTitle,
+            pageOwners,
         });
+
+        const isShared = pageOwners.has(uid);
+        $("myWork").classList.toggle("hidden", !mine);
+        $("myWorkBtn").textContent = isShared ? "Hide my writing" : "Show my writing";
+        $("myWorkBtn").disabled = S.isWorkBusy;
+        $("myWorkHint").textContent = isShared
+            ? "Everyone who can see this race can read what you wrote."
+            : "What you wrote is private. Share it if you'd like the others to read it.";
     }
 
     function tick() {
@@ -682,6 +983,7 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         // Run the count every tick so a count held back by the speed limit catches up.
         if (writer && status === "running" && me()?.finishedAt == null) mineCount = writer.count(now);
         if (S.view === "waiting") {
+            const mine = me();
             waiting.render({
                 race: S.race,
                 racers: [...S.racers.values()],
@@ -689,6 +991,9 @@ function runRace({ raceId, uid, booksApi, books, first }) {
                 myId: uid,
                 isRacer: isRacer(),
                 nowMs: now,
+                chapters: mine ? chaptersOfMyBook() : null,
+                writeIn: readSession(WRITE_IN_KEY, WRITE_IN_NEW),
+                newChapterTitle: raceChapterTitle(),
             });
         } else if (S.view === "race") {
             renderRace(now);
@@ -696,6 +1001,7 @@ function runRace({ raceId, uid, booksApi, books, first }) {
             renderResultsView(now);
         }
         if (status !== "finished" && status !== "cancelled") void sendReport();
+        if (status === "running" && isRacer()) void sharePage();
     }
 
     // ---------- Controls ----------
@@ -719,6 +1025,38 @@ function runRace({ raceId, uid, booksApi, books, first }) {
             /* leaving anyway */
         }
         window.location.assign(HUB);
+    });
+
+    $("pageToggle").addEventListener("click", async () => {
+        const mine = me();
+        if (!mine) return;
+        const btn = $("pageToggle");
+        btn.disabled = true;
+        try {
+            await changeVisibility(!mine.isPagePublic);
+            toast(mine.isPagePublic ? "Your page is private now." : "Your page is public. Spectators can watch.");
+        } catch (err) {
+            toast(err.message);
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    $("readerClose").addEventListener("click", () => {
+        S.readingId = null;
+        tick();
+    });
+
+    $("resRows").addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-read-result]");
+        if (btn) void openResultsPage(btn.dataset.readResult);
+    });
+    $("resReaderClose").addEventListener("click", () => {
+        S.resultsReadingId = null;
+        $("resReader").classList.add("hidden");
+    });
+    $("myWorkBtn").addEventListener("click", () => {
+        void toggleMyWork();
     });
 
     $("showCheers").addEventListener("change", (event) => {
@@ -774,6 +1112,10 @@ function runRace({ raceId, uid, booksApi, books, first }) {
             if (isLive === S.isLive) return;
             S.isLive = isLive;
             schedulePoll();
+        },
+        onPage: ({ userId }) => {
+            if (userId === S.readingId) void fetchReading(true);
+            if (S.view === "results") void refreshResultsPages(true);
         },
     });
 

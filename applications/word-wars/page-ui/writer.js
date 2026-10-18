@@ -13,7 +13,7 @@ import { countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { recordTypedWords } from "@alysum/account/writing-stats.js";
 import { countedWordDelta, isPasteLikeInput } from "@alysum/statistics/typed-input.js";
 import { reviewSentencesForXp, recordPastedRegion } from "@alysum/statistics/sentence-review.js";
-import { createRaceCounter } from "@alysum/community/word-war-race.js";
+import { createRaceCounter, pageTextFromHtml } from "@alysum/community/word-war-race.js";
 import { createAutosave } from "/js/editor/autosave.js";
 import { mountDocument } from "/js/editor/document.js";
 import { mountToolbar } from "/js/editor/toolbar.js";
@@ -38,7 +38,15 @@ function writePasted(raceId, words) {
     }
 }
 
-export function mountWriter({ els, book, booksApi, supabase, uid, raceId, targetWords, onEdit = () => {}, onPaste = () => {} }) {
+/**
+ * start: { chapterId } opens that chapter if it still exists; { newTitle }
+ * adds a fresh chapter for the race. onChapterChange(chapterId) fires when the
+ * racer switches chapters, so a shared page can follow them.
+ */
+export function mountWriter({
+    els, book, booksApi, supabase, uid, raceId, targetWords,
+    start = {}, onEdit = () => {}, onPaste = () => {}, onChapterChange = () => {},
+}) {
     const { chapterList, chapterSelect, addChapterBtn, pageEl, toolbarMount, editorPane } = els;
     let current = withUpdatedWords(book);
     let counter = null;
@@ -139,9 +147,11 @@ export function mountWriter({ els, book, booksApi, supabase, uid, raceId, target
     }
 
     function openChapter(id) {
+        const isSwitch = id !== selectedId;
         selectedId = id;
         paintChapters();
         editor.setHtml(currentChapter()?.content || "<p><br></p>");
+        if (isSwitch) onChapterChange(selectedId);
     }
 
     async function addChapter() {
@@ -168,16 +178,36 @@ export function mountWriter({ els, book, booksApi, supabase, uid, raceId, target
         void addChapter();
     });
 
-    if (!chapters().length) {
-        current = withUpdatedWords({ ...current, sections: addBodyChapter(current.sections, "", null) });
+    let createdChapterId = "";
+    if (start.chapterId && chapters().some((ch) => ch.id === start.chapterId)) {
+        selectedId = start.chapterId;
+    } else if (start.newTitle || !chapters().length) {
+        current = withUpdatedWords({ ...current, sections: addBodyChapter(current.sections, start.newTitle || "", null) });
         selectedId = lastOfKind(current.sections.body, "chapter", null)?.id || "";
+        createdChapterId = selectedId;
         autosave.schedule(current);
     }
-    openChapter(selectedId || chapters()[0]?.id || "");
+    const firstId = selectedId || chapters()[0]?.id || "";
+    selectedId = "";
+    openChapter(firstId);
 
     return {
         bookTitle: current.title || "your book",
         bookWords,
+        /** The chapter this race added to the book, if it added one. */
+        createdChapterId,
+        get chapterId() {
+            return selectedId;
+        },
+        /** What a public page shares: the open chapter's title and plain text. */
+        page() {
+            const chapter = currentChapter();
+            return {
+                chapterId: chapter?.id || "",
+                title: chapter?.title || "Untitled chapter",
+                text: pageTextFromHtml(editor.getHtml()),
+            };
+        },
         /** Start counting from the book's word count when the race began. Times are server time. */
         beginCount(startWords, startsAtMs, nowMs) {
             counter = createRaceCounter({ startWords, pastedWords: pasted, targetWords, startsAtMs });

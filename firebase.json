@@ -162,6 +162,7 @@
       { "source": "/js/word-wars/writer.js", "destination": "/applications/word-wars/page-ui/writer.js" },
       { "source": "/js/word-wars/waiting.js", "destination": "/applications/word-wars/page-ui/waiting.js" },
       { "source": "/js/word-wars/results.js", "destination": "/applications/word-wars/page-ui/results.js" },
+      { "source": "/js/word-wars/prompt-picker.js", "destination": "/applications/word-wars/page-ui/prompt-picker.js" },
       { "source": "/js/editor/autosave.js", "destination": "/applications/editor/page-ui/autosave.js" },
       { "source": "/js/editor/prompt.js", "destination": "/applications/editor/page-ui/prompt.js" },
       { "source": "/js/editor/font-catalog.js", "destination": "/applications/editor/page-ui/font-catalog.js" },

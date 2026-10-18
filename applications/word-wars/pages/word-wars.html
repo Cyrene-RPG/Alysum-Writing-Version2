@@ -89,6 +89,14 @@
                 <p class="ww-lede" id="waitStatus">First to the word count wins.</p>
             </header>
 
+            <section class="ww-panel ww-prompt-panel">
+                <h2 class="ww-label">Prompt</h2>
+                <p class="ww-prompt-full" id="waitPrompt"></p>
+                <p class="ww-hint ww-prompt-asks hidden" id="promptAsks" role="status"></p>
+                <button type="button" class="ww-btn hidden" id="askPromptBtn">Ask for a different prompt</button>
+                <div class="ww-prompt-picker hidden" id="waitPromptPicker"></div>
+            </section>
+
             <div class="ww-wait-grid">
                 <section class="ww-panel">
                     <div class="ww-panel-head">
@@ -123,6 +131,17 @@
                         <label class="ww-label" id="waitBookLabel" for="waitBook">Your book</label>
                         <select class="ww-select" id="waitBook"></select>
                     </div>
+                    <div class="ww-field hidden" id="myPageField">
+                        <h2 class="ww-label">Your page</h2>
+                        <div class="ww-seg" id="waitPage" role="radiogroup" aria-label="Your page">
+                            <button type="button" role="radio" data-page="public">Public</button>
+                            <button type="button" role="radio" data-page="private">Private</button>
+                        </div>
+                        <p class="ww-hint" id="waitPageHint"></p>
+                        <label class="ww-label" for="waitWriteIn">Write in</label>
+                        <select class="ww-select" id="waitWriteIn"></select>
+                        <p class="ww-hint" id="waitWriteInHint"></p>
+                    </div>
                 </section>
             </div>
 
@@ -153,6 +172,12 @@
                 <span id="tickerText">Waiting for the start.</span>
             </div>
 
+            <div class="ww-race-prompt hidden" id="racePromptBox">
+                <span class="ww-label">Prompt</span>
+                <p class="ww-prompt-full is-folded" id="racePrompt"></p>
+                <button type="button" class="ww-link hidden" id="racePromptToggle" aria-expanded="false">Show full prompt</button>
+            </div>
+
             <div class="ww-racer hidden" id="racerLayout">
                 <div class="ww-panel ww-track-panel is-compact"><ol class="ww-track" id="racerTrack"></ol></div>
                 <div class="ww-writer">
@@ -167,6 +192,7 @@
                         <div class="ww-editor-head">
                             <label class="ww-label" for="chapterSelect">Chapter</label>
                             <select class="ww-select" id="chapterSelect"></select>
+                            <button type="button" class="ww-page-toggle is-public" id="pageToggle" aria-pressed="true">Public: spectators can watch you write</button>
                             <span class="ww-pace-chip hidden" id="paceChip">Over 150 wpm · your count is catching up</span>
                         </div>
                         <div class="writer-toolbar" id="writerToolbar"></div>
@@ -201,7 +227,16 @@
             </div>
 
             <div class="ww-spectator hidden" id="spectatorLayout">
-                <div class="ww-panel ww-track-panel"><ol class="ww-track" id="spectatorTrack"></ol></div>
+                <div class="ww-spec-main">
+                    <div class="ww-panel ww-track-panel"><ol class="ww-track" id="spectatorTrack"></ol></div>
+                    <section class="ww-panel ww-reader hidden" id="readerPane" aria-live="polite">
+                        <div class="ww-panel-head">
+                            <h2 class="ww-reader-title" id="readerTitle">Reading</h2>
+                            <button type="button" class="ww-btn ww-btn-small" id="readerClose">Close</button>
+                        </div>
+                        <div class="ww-reader-body" id="readerBody"></div>
+                    </section>
+                </div>
                 <aside class="ww-stands">
                     <div class="ww-panel">
                         <span class="ww-label">Your pick</span>
@@ -221,6 +256,10 @@
                 <p class="ww-eyebrow" id="resEyebrow">Final</p>
                 <h1 class="ww-display" id="resTitle">—</h1>
                 <p class="ww-lede" id="resSub"></p>
+                <div class="ww-results-prompt">
+                    <p class="ww-prompt-full is-folded" id="resPrompt"></p>
+                    <button type="button" class="ww-link hidden" id="resPromptToggle" aria-expanded="false">Show full prompt</button>
+                </div>
             </header>
             <div class="ww-podium" id="podium"></div>
             <div class="ww-panel ww-table-wrap">
@@ -228,12 +267,23 @@
                     <thead>
                         <tr>
                             <th>Place</th><th>Writer</th><th>Time</th>
-                            <th class="num">Words</th><th class="num">Avg wpm</th><th class="num">Peak wpm</th><th class="num">Cheers</th>
+                            <th class="num">Words</th><th class="num">Avg wpm</th><th class="num">Peak wpm</th><th class="num">Cheers</th><th>Writing</th>
                         </tr>
                     </thead>
                     <tbody id="resRows"></tbody>
                 </table>
             </div>
+            <div class="ww-my-work hidden" id="myWork">
+                <button type="button" class="ww-btn" id="myWorkBtn">Show my writing</button>
+                <p class="ww-hint" id="myWorkHint"></p>
+            </div>
+            <section class="ww-panel ww-reader hidden" id="resReader">
+                <div class="ww-panel-head">
+                    <h2 class="ww-reader-title" id="resReaderTitle">Reading</h2>
+                    <button type="button" class="ww-btn ww-btn-small" id="resReaderClose">Close</button>
+                </div>
+                <div class="ww-reader-body" id="resReaderBody"></div>
+            </section>
             <div class="ww-results-actions">
                 <button type="button" class="ww-primary hidden" id="rematchBtn">Rematch</button>
                 <a class="ww-btn" href="/word-wars-lobby">Back to Word Wars</a>

@@ -17,6 +17,8 @@ export const MAX_RACE_MS = 2 * 60 * 60_000;
 export const LOBBY_EXPIRES_MS = 6 * 60 * 60_000;
 export const GONE_AFTER_MS = 45_000;
 export const CHECK_IN_MS = 15_000;
+export const PROMPT_MAX_CHARS = 1000;
+export const PAGE_MAX_CHARS = 30_000;
 
 // ---------------------------------------------------------------------------
 // Rows → app shapes. Supabase sends snake_case; nothing outside this file
@@ -54,6 +56,7 @@ export function raceFromRow(row) {
         endedAt: parseTime(row.ended_at),
         isCancelled: row.cancelled === true,
         rematchId: row.rematch_id ? String(row.rematch_id) : null,
+        prompt: row.prompt ? String(row.prompt) : null,
     };
 }
 
@@ -74,6 +77,9 @@ export function racerFromRow(row) {
         joinedAt: parseTime(row.joined_at) || 0,
         lastSeenAt: parseTime(row.last_seen_at) || 0,
         leftAt: parseTime(row.left_at),
+        isPagePublic: row.is_page_public !== false,
+        wantsNewPrompt: row.wants_new_prompt === true,
+        pageChapterId: row.page_chapter_id ? String(row.page_chapter_id) : "",
     };
 }
 
@@ -90,6 +96,17 @@ function listingFromRow(row) {
         isMine: row.is_mine === true,
         racerCount: toCount(row.racer_count),
         hostName: String(row.host_name || "Writer"),
+        prompt: row.prompt ? String(row.prompt) : null,
+    };
+}
+
+function pageFromRow(row) {
+    if (!row || typeof row !== "object" || !row.user_id) return null;
+    return {
+        userId: String(row.user_id),
+        title: String(row.title || ""),
+        text: String(row.body || ""),
+        updatedAt: parseTime(row.updated_at),
     };
 }
 
@@ -116,20 +133,30 @@ function snapshotFrom({ data, sentAt, receivedAt }) {
     return { race, racers, serverOffsetMs };
 }
 
-export async function createRace({ targetWords, isPublic, bookId }) {
+/** prompt: the prompt text, or null for free write. */
+export async function createRace({ targetWords, isPublic, bookId, prompt = null }) {
     return snapshotFrom(await callRpc("create_word_war_race", {
         p_target_words: targetWords,
         p_is_public: isPublic,
         p_book_id: bookId,
+        p_prompt: prompt,
     }));
 }
 
-export async function updateRace(raceId, { targetWords = null, isPublic = null } = {}) {
+/** Leave prompt undefined to keep it; pass null for free write. */
+export async function updateRace(raceId, { targetWords = null, isPublic = null, prompt } = {}) {
     return snapshotFrom(await callRpc("update_word_war_race", {
         p_race_id: raceId,
         p_target_words: targetWords,
         p_is_public: isPublic,
+        p_prompt: prompt === undefined ? null : prompt,
+        p_set_prompt: prompt !== undefined,
     }));
+}
+
+/** A racer asks the host for a different prompt. */
+export async function askForNewPrompt(raceId) {
+    return snapshotFrom(await callRpc("ask_word_war_prompt_change", { p_race_id: raceId }));
 }
 
 export async function joinRace({ raceId = null, code = null, bookId = null } = {}) {
@@ -172,12 +199,13 @@ export async function listRaces(limit = 30) {
  * Send this racer's count. Without `words` it is only a check-in, which keeps
  * the racer (and a host's lobby) from showing as gone.
  */
-export async function reportProgress(raceId, { words = null, startWords = null, peakWpm = null } = {}) {
+export async function reportProgress(raceId, { words = null, startWords = null, peakWpm = null, chapterId = null } = {}) {
     const { data } = await callRpc("report_word_war_progress", {
         p_race_id: raceId,
         p_words: words == null ? null : toCount(words),
         p_start_words: startWords == null ? null : toCount(startWords),
         p_peak_wpm: peakWpm == null ? null : toCount(peakWpm),
+        p_chapter_id: chapterId || null,
     });
     const raw = data && typeof data === "object" ? data : {};
     return {
@@ -199,6 +227,71 @@ export async function sendCheers(raceId, cheersByRacer) {
     if (!Object.keys(payload).length) return 0;
     const { data } = await callRpc("cheer_word_war_racers", { p_race_id: raceId, p_cheers: payload });
     return toCount(data?.accepted);
+}
+
+// ---------------------------------------------------------------------------
+// Shared pages
+// ---------------------------------------------------------------------------
+
+/** Public: spectators can watch during the race, everyone can read after it. Private deletes what was shared. */
+export async function setPageVisibility(raceId, isPublic) {
+    const { data } = await callRpc("set_word_war_page_visibility", { p_race_id: raceId, p_is_public: !!isPublic });
+    return data?.is_page_public !== false;
+}
+
+/** Shares the plain text of the chapter being written. Only works while the page is public. */
+export async function savePage(raceId, { title = "", text = "", chapterId = null } = {}) {
+    await callRpc("save_word_war_page", {
+        p_race_id: raceId,
+        p_title: String(title).slice(0, 200),
+        p_body: String(text).slice(0, PAGE_MAX_CHARS),
+        p_chapter_id: chapterId || null,
+    });
+}
+
+/** One racer's shared page, or null when it is private, missing, or not readable yet. */
+export async function getPage(raceId, userId) {
+    const { data, error } = await supabase
+        .from("word_war_pages")
+        .select("user_id, title, body, updated_at")
+        .eq("race_id", raceId)
+        .eq("user_id", userId)
+        .maybeSingle();
+    if (error) throw new Error(error.message || "Could not load that page.");
+    return pageFromRow(data);
+}
+
+/** Who has a readable page in this race (titles only, no text). */
+export async function listPages(raceId) {
+    const { data, error } = await supabase
+        .from("word_war_pages")
+        .select("user_id, title, updated_at")
+        .eq("race_id", raceId);
+    if (error) throw new Error(error.message || "Could not load pages.");
+    return Array.isArray(data) ? data.map(pageFromRow).filter(Boolean) : [];
+}
+
+const ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
+
+/** Editor HTML → plain text, one line per paragraph. Shared pages are never HTML. */
+export function pageTextFromHtml(html) {
+    return String(html || "")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/(p|div|h[1-6]|li|blockquote|tr)>/gi, "\n")
+        .replace(/<[^>]*>/g, "")
+        .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (match, code) => {
+            const key = code.toLowerCase();
+            if (key.startsWith("#x")) return String.fromCodePoint(parseInt(key.slice(2), 16) || 32);
+            if (key.startsWith("#")) return String.fromCodePoint(Number(key.slice(1)) || 32);
+            return ENTITIES[key] ?? match;
+        })
+        .replace(/[ \t\u00a0]+/g, " ")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line, i, lines) => line || (i > 0 && lines[i - 1]))
+        .join("\n")
+        .trim()
+        .slice(0, PAGE_MAX_CHARS);
 }
 
 // ---------------------------------------------------------------------------
@@ -410,7 +503,7 @@ export function ordinal(n) {
 /**
  * Streams race and racer rows, cheers and who is watching.
  * Handlers: onRace(race), onRacer(racer), onCheer({ racerId, count }),
- * onWatchers(count), onConnection(isLive).
+ * onWatchers(count), onConnection(isLive), onPage({ userId }).
  */
 export function subscribeRace(raceId, {
     userId,
@@ -420,6 +513,7 @@ export function subscribeRace(raceId, {
     onCheer = () => {},
     onWatchers = () => {},
     onConnection = () => {},
+    onPage = () => {},
 } = {}) {
     let currentRole = role;
     const channel = supabase.channel(`word-war-race:${raceId}`, {
@@ -462,6 +556,10 @@ export function subscribeRace(raceId, {
             const count = Math.min(10, toCount(payload?.count));
             if (racerId && count > 0) onCheer({ racerId, count });
         })
+        .on("broadcast", { event: "page" }, ({ payload }) => {
+            const userId = String(payload?.userId || "");
+            if (userId) onPage({ userId });
+        })
         .on("presence", { event: "sync" }, () => onWatchers(countWatchers()))
         .subscribe((status) => {
             const isLive = status === "SUBSCRIBED";
@@ -472,6 +570,10 @@ export function subscribeRace(raceId, {
     return {
         sendCheer(racerId, count) {
             void channel.send({ type: "broadcast", event: "cheer", payload: { racerId, count } });
+        },
+        /** Tells readers that this writer's page changed, so they fetch it again. */
+        sendPageSignal(userId) {
+            void channel.send({ type: "broadcast", event: "page", payload: { userId } });
         },
         setRole(nextRole) {
             if (nextRole === currentRole) return;

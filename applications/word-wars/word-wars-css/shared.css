@@ -175,6 +175,108 @@ html[data-corner-style="sharp"] .ww-hub-body { --ww-radius: 0; }
 .ww-targets button:disabled { cursor: default; }
 .ww-targets button:disabled:not(.is-on) { opacity: 0.5; }
 
+.ww-input,
+.ww-textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--ww-line);
+    border-radius: var(--ww-radius);
+    background: var(--ww-raised);
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+}
+.ww-textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
+.ww-input:focus-visible,
+.ww-textarea:focus-visible { outline: 2px solid var(--ww-gold); outline-offset: 1px; }
+.ww-link {
+    justify-self: start;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+.ww-muted { color: var(--muted); }
+
+/* Prompts are shown as written: line breaks kept, long ones scroll. */
+.ww-prompt-full {
+    margin: 0;
+    max-height: 16em;
+    overflow-y: auto;
+    padding: 10px 14px;
+    border-left: 3px solid var(--ww-gold);
+    border-radius: 0 var(--ww-radius) var(--ww-radius) 0;
+    background: color-mix(in srgb, var(--ww-gold) 7%, transparent);
+    color: var(--text);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 16px;
+    line-height: 1.55;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+.ww-prompt-full.is-free {
+    border-left-color: var(--ww-line);
+    background: none;
+    color: var(--muted);
+    font-family: inherit;
+    font-style: italic;
+}
+.ww-prompt-full.is-folded {
+    max-height: calc(3.1em + 20px);
+    overflow: hidden;
+    padding-bottom: 0;
+    border-bottom: 10px solid transparent;
+}
+.ww-prompt-picker { display: grid; gap: 10px; min-width: 0; }
+.ww-prompt-picker .ww-seg { flex-wrap: wrap; }
+.ww-prompt-pick,
+.ww-prompt-browse,
+.ww-prompt-own { display: grid; gap: 8px; min-width: 0; }
+.ww-prompt-list {
+    list-style: none;
+    margin: 0;
+    padding: 0 4px 0 0;
+    display: grid;
+    gap: 6px;
+    max-height: 340px;
+    overflow-y: auto;
+}
+.ww-prompt-list button {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 2.4rem minmax(0, 1fr);
+    gap: 8px;
+    align-items: start;
+    padding: 8px 10px;
+    border: 1px solid var(--ww-line);
+    border-radius: var(--ww-radius);
+    background: var(--ww-lane);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.45;
+    text-align: left;
+    cursor: pointer;
+}
+.ww-prompt-list button:hover { border-color: color-mix(in srgb, var(--text) 30%, transparent); }
+.ww-prompt-list button.is-on { border-color: var(--ww-gold); }
+.ww-prompt-num { color: var(--muted); font-weight: 800; font-variant-numeric: tabular-nums; }
+.ww-prompt-preview {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
 .ww-tag {
     padding: 2px 8px;
     border-radius: 999px;

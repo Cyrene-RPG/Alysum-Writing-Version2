@@ -15,6 +15,7 @@ import {
     watchRace,
 } from "@alysum/community/word-war-race.js";
 import { initWorkspaceShell } from "/js/studio/shell.js";
+import { mountPromptPicker } from "/js/word-wars/prompt-picker.js";
 
 const LIST_REFRESH_MS = 5_000;
 const BOOK_KEY = "alysum:word-wars:book";
@@ -70,6 +71,7 @@ async function boot() {
     }
 
     const state = { target: 250, isPublic: true, isBusy: false };
+    const promptPicker = mountPromptPicker($("promptPicker"));
     const bookSelect = $("bookSelect");
 
     // ---------- Book ----------
@@ -153,7 +155,12 @@ async function boot() {
     $("createBtn").addEventListener("click", () => {
         if (needBook($("createError"))) return;
         void run($("createError"), async () => {
-            const snap = await createRace({ targetWords: state.target, isPublic: state.isPublic, bookId: bookId() });
+            const snap = await createRace({
+                targetWords: state.target,
+                isPublic: state.isPublic,
+                bookId: bookId(),
+                prompt: promptPicker.getValue(),
+            });
             window.location.assign(raceUrl(snap.race.id));
         });
     });
@@ -220,6 +227,9 @@ async function boot() {
 
         const title = document.createElement("h3");
         title.textContent = race.isMine ? "Your race" : `${race.hostName}'s race`;
+        const prompt = document.createElement("p");
+        prompt.className = `ww-race-card-prompt${race.prompt ? "" : " is-free"}`;
+        prompt.textContent = race.prompt || "Free write";
         const meta = document.createElement("p");
         meta.className = "ww-hint";
         meta.textContent = `Race to ${race.targetWords.toLocaleString()} words · ${race.racerCount}/${race.maxRacers} writers${race.isPublic ? "" : " · Private"}`;
@@ -242,7 +252,7 @@ async function boot() {
             actions.append(button("Watch", "ww-btn", () => window.location.assign(raceUrl(race.id))));
         }
 
-        card.append(top, title, meta, actions);
+        card.append(top, title, prompt, meta, actions);
         return card;
     }
 
