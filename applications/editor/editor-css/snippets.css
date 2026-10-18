@@ -100,3 +100,7 @@
 .quote-preview-long canvas { width: 100%; max-height: none; height: auto; }
 
 .quote-button[aria-disabled="true"] { opacity: .45; cursor: default; }
+
+.quote-pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 14px; }
+.quote-pagination .quote-hint { margin: 0; white-space: nowrap; }
+.quote-pagination .quote-button { min-height: 44px; }

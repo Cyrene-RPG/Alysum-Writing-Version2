@@ -14,7 +14,7 @@ export function normalizeSnippetCard(value) {
     return { excerpt, title, author, style: CARD_STYLES.includes(value.style) ? value.style : "alysum", format: Object.hasOwn(CARD_FORMATS, value.format) ? value.format : "portrait", showBrand: value.showBrand !== false };
 }
 
-export function cardFileName(title) {
+export function cardFileName(title, pageNumber = 0) {
     const name = String(title || "snippet").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60).replace(/-$/g, "").toLowerCase();
-    return `${name || "snippet"}-card.png`;
+    return `${name || "snippet"}-card${pageNumber ? `-page-${String(pageNumber).padStart(2, "0")}` : ""}.png`;
 }

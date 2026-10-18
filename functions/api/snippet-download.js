@@ -16,16 +16,15 @@ export async function onRequest({ request, env }) {
             const user = await response.json();
             const bookId = req.headers.get('X-Book-ID');
             if (!user.id || !bookId || bookId.length > 200) return false;
-            // Explicitly restricted rollout: only the authenticated owner's Archangel WIP.
+            // Verify ownership for every WIP before accepting its generated card.
             const url = new URL(`${SUPABASE_URL}/rest/v1/books`);
-            url.searchParams.set('select', 'id,title');
+            url.searchParams.set('select', 'id');
             url.searchParams.set('id', `eq.${bookId}`);
             url.searchParams.set('user_id', `eq.${user.id}`);
-            url.searchParams.set('title', 'ilike.Archangel');
             const bookResponse = await fetch(url, { headers: { apikey: API_KEY, Authorization: authorization }, signal: AbortSignal.timeout(10000) });
             if (!bookResponse.ok) return false;
             const books = await bookResponse.json();
-            return books.length === 1 && String(books[0].id) === bookId && String(books[0].title).trim().toLowerCase() === 'archangel';
+            return books.length === 1 && String(books[0].id) === bookId;
         } });
     } catch {
         return Response.json({ error: 'The download could not be prepared. Please try Save PNG again.' }, { status: 503, headers: { 'Cache-Control': 'no-store' } });

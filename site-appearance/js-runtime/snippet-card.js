@@ -44,14 +44,37 @@ export function fitCardText(context, text, maxWidth, maxHeight, { maximum = 62, 
     throw new Error("This excerpt does not fit at a readable size. Shorten it or choose a taller card.");
 }
 
-export function drawSnippetCard(canvas, data, dimensions) {
+/** Keep shared images at their chosen aspect ratio, without shrinking long excerpts. */
+export function layoutSnippetPages(context, data, dimensions) {
+    const size = 44;
+    const lineHeight = size * 1.5;
+    const footerSpace = data.title || data.author ? 260 : 150;
+    const availableHeight = dimensions.height - 200 - footerSpace;
+    const linesPerPage = Math.floor(availableHeight / lineHeight);
+    if (linesPerPage < 1) throw new Error("Choose a larger card size.");
+    context.font = `600 ${size}px ${SERIF}`;
+    const lines = wrapCardText(context, data.excerpt, dimensions.width - 176);
+    const pages = [];
+    for (let start = 0; start < lines.length; start += linesPerPage) {
+        pages.push({ lines: lines.slice(start, start + linesPerPage), size, lineHeight });
+    }
+    return pages;
+}
+
+export function drawSnippetPage(canvas, data, dimensions, pages, pageIndex) {
+    const page = pages[pageIndex];
+    if (!page) throw new Error("That card page is unavailable.");
+    return drawSnippetCard(canvas, data, dimensions, { ...page, pageNumber: pageIndex + 1, pageCount: pages.length });
+}
+
+export function drawSnippetCard(canvas, data, dimensions, page = null) {
     canvas.width = dimensions.width;
     const measuring = canvas.getContext("2d");
     if (!measuring) throw new Error("This browser could not create the image. Try an updated browser.");
     const footer = data.title || data.author ? 260 : 150;
     measuring.font = `600 36px ${SERIF}`;
     const readableHeight = wrapCardText(measuring, data.excerpt, dimensions.width - 176).length * 54 + 200 + footer;
-    canvas.height = Math.max(dimensions.height, Math.min(16000, Math.ceil(readableHeight)));
+    canvas.height = page ? dimensions.height : Math.max(dimensions.height, Math.min(16000, Math.ceil(readableHeight)));
     const context = canvas.getContext("2d");
     if (!context) throw new Error("This browser could not create the image. Try an updated browser.");
     const palette = SNIPPET_PALETTES[data.style] || SNIPPET_PALETTES.alysum;
@@ -62,7 +85,9 @@ export function drawSnippetCard(canvas, data, dimensions) {
     const footerSpace = data.title || data.author ? 260 : 150;
     const top = 200;
     const availableHeight = height - top - footerSpace;
-    const fit = fitCardText(context, data.excerpt, textWidth, availableHeight, { maximum: data.excerpt.length < 100 ? 82 : 62, minimum: 26 });
+    const fit = page && page.pageCount > 1
+        ? { ...page, height: page.lines.length * page.lineHeight }
+        : fitCardText(context, data.excerpt, textWidth, availableHeight, { maximum: data.excerpt.length < 100 ? 82 : 62, minimum: page ? 44 : 26 });
     const titleFit = data.title ? fitCardText(context, data.title, textWidth, 70, { maximum: 36, minimum: 20, spacing: 1.1 }) : null;
     const authorFit = data.author ? fitCardText(context, data.author, textWidth, 44, { maximum: 25, minimum: 18, spacing: 1.1 }) : null;
     context.fillStyle = palette.background;
@@ -79,10 +104,10 @@ export function drawSnippetCard(canvas, data, dimensions) {
     context.fillRect(padding, 96, 52, 2);
     context.font = `19px ${SANS}`;
     context.textBaseline = "top";
-    context.fillText("WIP EXCERPT", padding, 118);
+    context.fillText(page?.pageCount > 1 ? `WIP EXCERPT · ${page.pageNumber} / ${page.pageCount}` : "WIP EXCERPT", padding, 118);
     context.fillStyle = palette.text;
     context.font = `600 ${fit.size}px ${SERIF}`;
-    const quoteTop = top + Math.max(0, (availableHeight - fit.height) / 2);
+    const quoteTop = page?.pageCount > 1 ? top : top + Math.max(0, (availableHeight - fit.height) / 2);
     fit.lines.forEach((line, index) => context.fillText(line, padding, quoteTop + index * fit.lineHeight));
     let footerTop = height - footerSpace + 32;
     if (titleFit) {
