@@ -52,3 +52,33 @@
 .quote-selection-bar > div { display: flex; flex-shrink: 0; gap: 8px; }
 .quote-selection-bar .quote-button { min-height: 34px; padding: 8px 12px; }
 @media(max-width:600px) { .quote-selection-bar { flex-direction: column; align-items: stretch; margin: 0 8px 12px; padding: 12px; } .quote-selection-bar > div > * { flex: 1; } }
+
+/* Use one scrolling surface on phones so every card control stays reachable. */
+@media (max-width: 700px) {
+    .quote-dialog[open] {
+        display: block;
+        overflow-x: hidden;
+        overflow-y: scroll;
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: var(--muted, #8d96a8) transparent;
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+    .quote-dialog::-webkit-scrollbar { width: 6px; }
+    .quote-dialog::-webkit-scrollbar-thumb { background: var(--muted, #8d96a8); border-radius: 6px; }
+    .quote-workspace {
+        display: flex;
+        flex-direction: column;
+        overflow: visible;
+        padding-right: 0;
+    }
+    .quote-controls, .quote-preview { width: 100%; min-width: 0; }
+    .quote-preview { position: static; }
+    .quote-controls textarea {
+        max-height: min(280px, 42dvh);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .quote-dialog-foot { padding-bottom: 4px; }
+}
