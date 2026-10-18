@@ -1,7 +1,7 @@
 import { requestSnippetDownload, shareSnippet, copyReadingLink } from "/site-appearance/js-runtime/snippet-export.js";
 import { normalizeExcerpt, countExcerptWords, MAX_EXCERPT_CHARACTERS, MAX_EXCERPT_WORDS } from "/core/publishing/excerpts.js";
 import { normalizeSnippetCard, cardFileName, CARD_FORMATS, MAX_CARD_CHARACTERS } from "/core/publishing/snippet-card.js";
-import { drawSnippetCard } from "/site-appearance/js-runtime/snippet-card.js";
+import { layoutSnippetPages, drawSnippetPage } from "/site-appearance/js-runtime/snippet-card.js";
 
 export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () => "", initialExcerpt = "", excerptApi = null, downloadApi = null }) {
     if (!button || !pageEl) return;
@@ -23,7 +23,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
                 <div id="quote-link-result" hidden><label for="quote-reading-url">Reading link<input id="quote-reading-url" readonly spellcheck="false"></label><div class="quote-actions"><button type="button" class="quote-button" id="quote-copy-link">Copy link</button><a class="quote-button" id="quote-open-link" target="_blank" rel="noopener noreferrer">Open section</a></div></div>
                 <details id="quote-link-manager"><summary>Your reading links</summary><div id="quote-link-list"></div></details>
             </form>
-            <section class="quote-preview" aria-label="Image preview"><div class="quote-preview-surface"><article id="quote-section-preview" hidden><p class="quote-label">Read-only section</p><h3 id="quote-section-title"></h3><p id="quote-section-author" class="quote-hint"></p><div id="quote-section-text"></div></article><canvas id="quote-canvas" role="img" aria-label="Preview of the selected excerpt card" hidden></canvas><p id="quote-placeholder" class="quote-hint">Select or paste an excerpt to preview the card.</p></div><p id="quote-dimensions" class="quote-hint"></p></section>
+            <section class="quote-preview" aria-label="Image preview"><div class="quote-preview-surface"><article id="quote-section-preview" hidden><p class="quote-label">Read-only section</p><h3 id="quote-section-title"></h3><p id="quote-section-author" class="quote-hint"></p><div id="quote-section-text"></div></article><canvas id="quote-canvas" role="img" aria-label="Preview of the selected excerpt card" hidden></canvas><p id="quote-placeholder" class="quote-hint">Select or paste an excerpt to preview the card.</p></div><div id="quote-pagination" class="quote-pagination" role="group" aria-label="Card pages" hidden><button type="button" id="quote-previous" class="quote-button">Previous</button><span id="quote-page-number" class="quote-hint" aria-live="polite"></span><button type="button" id="quote-next" class="quote-button">Next</button></div><p id="quote-dimensions" class="quote-hint"></p></section>
         </div>
         <p id="quote-error" class="quote-error" role="alert" hidden></p>
         <div class="quote-dialog-foot"><p id="quote-status" class="quote-hint" role="status"></p><div class="quote-actions"><button type="button" id="quote-create-link" class="quote-button quote-primary" disabled>Create reading link</button><button type="button" id="quote-save" class="quote-button quote-primary" disabled>Save PNG</button><button type="button" id="quote-share" class="quote-button" disabled hidden>Share image…</button></div></div>`;
@@ -74,6 +74,8 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
     let isCreatingLink = false;
     let capturedText = "";
     let file = null;
+    let pageIndex = 0;
+    let pageCount = 0;
     let generation = 0;
     let renderTimer = 0;
     let fontPromise = null;
@@ -88,6 +90,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         file = null;
         save.disabled = true;
         share.disabled = true;
+        find("quote-pagination").hidden = true;
     }
     function showError(error) {
         errorEl.textContent = error?.message || "Could not create the card. Try again.";
@@ -101,6 +104,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
     }
     function setMode(nextMode) {
         mode = nextMode;
+        pageIndex = 0;
         for (const tab of dialog.querySelectorAll("[data-share-mode]")) tab.setAttribute("aria-pressed", String(tab.dataset.shareMode === mode));
         const image = mode === "image";
         find("quote-image-options").hidden = !image;
@@ -112,7 +116,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         share.hidden = true;
         canvas.hidden = true;
         find("quote-link-result").hidden = true;
-        find("quote-privacy-note").textContent = image ? "Up to 30,000 characters. Longer excerpts create a taller image." : "Anyone with the link can read this saved copy. Draft edits will not change it. Disable the link to stop future access.";
+        find("quote-privacy-note").textContent = image ? "Up to 30,000 characters. Long excerpts split into numbered cards. Save or share each page." : "Anyone with the link can read this saved copy. Draft edits will not change it. Disable the link to stop future access.";
         void render();
     }
     function sectionPayload() { return normalizeExcerpt({ title: title.value, author: author.value, excerpt: excerpt.value }); }
@@ -178,19 +182,28 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
             await waitForFont();
             if (request !== generation || !dialog.open) return;
             const dimensions = CARD_FORMATS[data.format];
-            const rendered = drawSnippetCard(canvas, data, dimensions);
+            const pages = layoutSnippetPages(canvas.getContext("2d"), data, dimensions);
+            pageCount = pages.length;
+            pageIndex = Math.min(pageIndex, pageCount - 1);
+            const rendered = drawSnippetPage(canvas, data, dimensions, pages, pageIndex);
             canvas.parentElement.classList.toggle("quote-preview-long", rendered.height > 1920);
             const blob = await new Promise((resolve, reject) => canvas.toBlob((result) => result ? resolve(result) : reject(new Error("Could not save the image. Try again.")), "image/png"));
             if (request !== generation || !dialog.open) return;
-            file = new File([blob], cardFileName(data.title), { type: "image/png" });
+            file = new File([blob], cardFileName(data.title, pageCount > 1 ? pageIndex + 1 : 0), { type: "image/png" });
             canvas.hidden = false;
-            canvas.setAttribute("aria-label", `Quote card: ${data.excerpt}`);
+            canvas.setAttribute("aria-label", `Excerpt card, page ${pageIndex + 1} of ${pageCount}`);
             find("quote-placeholder").hidden = true;
             find("quote-dimensions").textContent = `${rendered.width} × ${rendered.height} · PNG`;
+            find("quote-pagination").hidden = pageCount <= 1;
+            find("quote-page-number").textContent = `Page ${pageIndex + 1} of ${pageCount}`;
+            find("quote-previous").disabled = pageIndex === 0;
+            find("quote-next").disabled = pageIndex === pageCount - 1;
+            save.textContent = pageCount > 1 ? `Save page ${pageIndex + 1} PNG` : "Save PNG";
+            share.textContent = pageCount > 1 ? `Share page ${pageIndex + 1}…` : "Share image…";
             save.disabled = false;
             share.hidden = false;
             share.disabled = false;
-            status.textContent = "Save PNG creates a temporary download copy on Alysum, available for up to five minutes.";
+            status.textContent = pageCount > 1 ? `${pageCount} cards. Save or share each page using Previous and Next. Download copies expire after five minutes.` : "Save PNG creates a temporary download copy on Alysum, available for up to five minutes.";
         } catch (error) {
             if (request !== generation || !dialog.open) return;
             canvas.hidden = true;
@@ -202,6 +215,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         }
     }
     function queueRender() {
+        pageIndex = 0;
         generation++;
         clearImage();
         clearTimeout(renderTimer);
@@ -261,6 +275,8 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         const copied = await copyReadingLink(find("quote-reading-url"));
         status.textContent = copied ? "Link copied." : "The link is selected above. Touch and hold it, then choose Copy.";
     });
+    find("quote-previous").addEventListener("click", () => { if (pageIndex > 0) { pageIndex--; void render(); } });
+    find("quote-next").addEventListener("click", () => { if (pageIndex + 1 < pageCount) { pageIndex++; void render(); } });
     form.addEventListener("input", queueRender);
     form.addEventListener("change", queueRender);
     form.addEventListener("submit", (event) => event.preventDefault());
