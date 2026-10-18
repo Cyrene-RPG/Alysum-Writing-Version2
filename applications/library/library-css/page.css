@@ -14,7 +14,8 @@ body {
 .lib-page {
     --lib-panel: var(--alysum-ui-panel, #141b29);
     --lib-line: var(--border, #ffffff1a);
-    width: min(1180px, 100%);
+    width: min(1280px, 100%);
+    min-width: 0;
     flex: 1;
     margin: 0 auto;
     padding: 24px clamp(16px, 2vw, 28px) 48px;
@@ -30,7 +31,7 @@ body {
 .lib-page input::placeholder { color: var(--muted); }
 .lib-page button { font: inherit; cursor: pointer; }
 .lib-page :is(a, button, input, select):focus-visible { outline: 2px solid var(--accent, #a78bfa); outline-offset: 4px; }
-.lib-layout { display: grid; grid-template-columns: 228px minmax(0, 1fr); gap: 32px; align-items: start; }
+.lib-layout { display: grid; grid-template-columns: 216px minmax(0, 1fr); gap: 28px; align-items: start; }
 .lib-filters { border: 1px solid var(--lib-line); border-radius: var(--glass-radius, 14px); padding: 20px; background: var(--lib-panel); }
 .lib-filter-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
 .lib-filter-head h2 { font-size: 17px; margin: 0; }
@@ -60,7 +61,7 @@ body {
 .lib-sort { display: flex; align-items: center; gap: 10px; font-size: 12px; }
 .lib-sort label { color: var(--muted); white-space: nowrap; }
 .lib-sort select { font-size: 12px; }
-.lib-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 20px; }
 .lib-card { display: grid; grid-template-columns: 108px minmax(0, 1fr); gap: 18px; padding: 18px; color: inherit; text-decoration: none; background: var(--lib-panel); border: 1px solid var(--lib-line); border-radius: var(--glass-radius, 10px); transition: border-color .15s ease, background .15s ease; }
 .lib-card:hover { border-color: var(--accent, #a78bfa); background: color-mix(in srgb, var(--lib-panel) 96%, var(--text)); }
 .lib-cover { position: relative; aspect-ratio: 2 / 3; align-self: start; overflow: hidden; border-radius: 5px; background: color-mix(in srgb, color-mix(in srgb, var(--alysum-ui-raised, #2a2a2a) 45%, var(--alysum-ui-panel, #111827)) 80%, black); box-shadow: none; border: 1px solid var(--lib-line); }
@@ -80,7 +81,6 @@ body {
 .lib-card-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--lib-line); font-size: 10px; color: var(--muted); }
 .lib-read-link { color: var(--text); font-weight: 600; }
 .lib-continue { margin-bottom: 36px; padding-bottom: 28px; border-bottom: 1px solid var(--lib-line); }
-.lib-shelf-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .lib-shelf-row .lib-card { grid-template-columns: 64px minmax(0, 1fr); padding: 12px; gap: 12px; }
 .lib-shelf-row .lib-title { font-size: 18px; }
 .lib-shelf-row :is(.lib-blurb, .lib-tags, .lib-rating, .lib-status) { display: none; }
@@ -90,10 +90,6 @@ body {
 .lib-empty h3 { margin: 0 0 10px; font-size: 20px; }
 .lib-empty p { color: var(--muted); line-height: 1.6; }
 .lib-empty button { padding: 10px 16px; border: 1px solid var(--lib-line); border-radius: 6px; color: var(--text); background: var(--lib-panel); }
-@media (max-width: 1150px) {
-    .lib-grid { grid-template-columns: minmax(0, 1fr); }
-    .lib-shelf-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
 @media (max-width: 700px) {
     .lib-page { padding-top: 24px; }
     .lib-heading { align-items: stretch; flex-direction: column; gap: 20px; margin-bottom: 24px; }
@@ -106,7 +102,6 @@ body {
     .lib-genre-tab, .lib-genre-more-btn { width: auto; padding: 8px 10px; border-color: var(--lib-line); }
     .lib-genre-more-btn { margin-top: 0; }
     .lib-card { grid-template-columns: 90px minmax(0, 1fr); gap: 14px; padding: 14px; }
-    .lib-shelf-row { grid-template-columns: minmax(0, 1fr); }
     .lib-shelf-head { flex-wrap: wrap; }
     .lib-sort { width: 100%; justify-content: space-between; }
     .lib-sort select { flex: 1; max-width: 200px; }
@@ -177,3 +172,27 @@ body {
 @media (max-width:700px) { .lib-shelf-row .lib-cover-placeholder strong { font-size: 20px; } .lib-grid .lib-cover-placeholder { inset: 6px; padding: 8px 4px; gap: 8px; } .lib-grid .lib-cover-placeholder strong { font-size: 14px; } }
 
 .wd-welcome-sub:empty { display: none; }
+
+/* Use the desktop width for shelves and keep catalog cards at readable widths. */
+.lib-layout > *, .lib-personal-shelf { min-width: 0; }
+@media (min-width: 1000px) {
+    .lib-reading-space { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 28px; margin-bottom: 40px; }
+    .lib-personal-head, .lib-personal-note { grid-column: 1 / -1; }
+    .lib-personal-note { margin: 12px 0 12px; }
+    .lib-personal-shelf { display: flex; flex-direction: column; padding-top: 20px; }
+    .lib-personal-shelf .lib-shelf-head { margin-bottom: 16px; }
+    .lib-shelf-row { flex: 1; gap: 18px; }
+    .lib-shelf-row .lib-book { flex-basis: 136px; }
+    .lib-shelf-placeholder { height: 100%; min-height: 300px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 16px; }
+    .lib-filters { position: sticky; top: calc(var(--alysum-nav-sticky-offset, 45px) + 16px); }
+}
+@media (min-width: 701px) and (max-width: 999px) {
+    .lib-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+    .lib-filters { padding: 18px; }
+    .lib-filter-head { margin-bottom: 12px; }
+    .lib-filters > select { max-width: 260px; }
+    .lib-genres { margin-top: 16px; padding-top: 16px; }
+    .lib-genre-tabs { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+    .lib-genre-tab, .lib-genre-more-btn { width: auto; padding: 8px 10px; border-color: var(--lib-line); }
+    .lib-genre-more-btn { margin-top: 0; }
+}

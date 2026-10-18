@@ -1,150 +1,159 @@
-import { createSnippetLink, normalizeSnippet, countSnippetWords, MAX_SNIPPET_LENGTH } from "/core/publishing/snippets.js";
+import { normalizeSnippetCard, cardFileName, CARD_FORMATS, MAX_CARD_CHARACTERS } from "/core/publishing/snippet-card.js";
+import { drawSnippetCard } from "/site-appearance/js-runtime/snippet-card.js";
 
-/** Share a selection or pasted excerpt, never an implicit whole-manuscript export. */
-export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () => "" }) {
+export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () => "", initialExcerpt = "" }) {
     if (!button || !pageEl) return;
     const dialog = document.createElement("dialog");
-    dialog.className = "snippet-dialog";
-    dialog.setAttribute("aria-labelledby", "snippet-dialog-title");
+    dialog.className = "quote-dialog";
+    dialog.setAttribute("aria-labelledby", "quote-dialog-title");
     dialog.innerHTML = `
-        <div class="snippet-dialog-head"><div><p class="snippet-label">Read-only excerpt</p><h2 id="snippet-dialog-title">Share snippet</h2></div><button type="button" class="snippet-close" aria-label="Close sharing dialog">×</button></div>
-        <form id="snippet-form">
-            <div class="snippet-fields">
-                <label for="snippet-title">Title<input id="snippet-title" maxlength="120" autocomplete="off" /></label>
-                <label for="snippet-byline">Author <span>(optional)</span><input id="snippet-byline" maxlength="80" autocomplete="off" /></label>
-                <label for="snippet-excerpt">Excerpt<textarea id="snippet-excerpt" maxlength="${MAX_SNIPPET_LENGTH}" required placeholder="Select text in the editor first, or paste your excerpt here."></textarea></label>
-                <p id="snippet-count" class="snippet-hint" aria-live="polite"></p>
-                <label for="snippet-note">Note for readers <span>(optional)</span><textarea id="snippet-note" maxlength="280" rows="2" placeholder="For example: This is from chapter 3."></textarea></label>
-            </div>
-            <div id="snippet-preview" hidden><p class="snippet-label">Reader preview</p><article class="snippet-preview-card"><h3 id="snippet-preview-title"></h3><p id="snippet-preview-byline" class="snippet-byline"></p><p id="snippet-preview-note" class="snippet-reader-note"></p><div id="snippet-preview-excerpt" class="snippet-prose"></div></article></div>
-            <p class="snippet-sharing-note">Anyone with the link can read and copy this excerpt. The link contains a fixed copy, not access to your draft. It cannot expire or be revoked.</p>
-            <p id="snippet-error" class="snippet-error" role="alert" hidden></p>
-            <div class="snippet-actions"><button type="button" id="snippet-back" class="snippet-button" hidden>Edit excerpt</button><button type="submit" id="snippet-next" class="snippet-button snippet-primary">Preview</button></div>
-        </form>
-        <section id="snippet-result" hidden aria-labelledby="snippet-result-title"><h3 id="snippet-result-title">Link ready</h3><p class="snippet-hint">Changes to your draft will not change this excerpt.</p><label for="snippet-link">Read-only link<input id="snippet-link" readonly spellcheck="false" /></label><div class="snippet-actions"><button type="button" id="snippet-copy" class="snippet-button snippet-primary">Copy link</button><button type="button" id="snippet-share" class="snippet-button">Share…</button><a id="snippet-open" class="snippet-button" target="_blank" rel="noopener noreferrer">Open reader view</a></div><p id="snippet-result-status" class="snippet-hint" role="status"></p><button type="button" id="snippet-another" class="snippet-text-button">Create another snippet</button></section>`;
+        <div class="quote-dialog-head"><div><p class="quote-label">Image card</p><h2 id="quote-dialog-title">Share an excerpt</h2></div><button type="button" class="quote-close" aria-label="Close card editor">×</button></div>
+        <div class="quote-workspace">
+            <form class="quote-controls" id="quote-form">
+                <label for="quote-excerpt">Selected text<textarea id="quote-excerpt" maxlength="${MAX_CARD_CHARACTERS}" rows="7" required placeholder="Select text in your WIP first, or paste an excerpt here."></textarea></label>
+                <p id="quote-count" class="quote-hint"></p>
+                <div class="quote-option-row"><label for="quote-style">Style<select id="quote-style"><option value="alysum">Alysum</option><option value="paper">Paper</option><option value="rose">Rose</option></select></label><label for="quote-format">Size<select id="quote-format"><option value="portrait">Portrait · 4:5</option><option value="square">Square · 1:1</option><option value="story">Story · 9:16</option></select></label></div>
+                <label for="quote-title">Book title <span>(optional)</span><input id="quote-title" maxlength="80" autocomplete="off"></label>
+                <label for="quote-author">Author <span>(optional)</span><input id="quote-author" maxlength="80" autocomplete="off"></label>
+                <label class="quote-check" for="quote-brand"><input type="checkbox" id="quote-brand" checked> Include Alysum mark</label>
+                <p class="quote-hint">Only this text and attribution appear in the image.</p>
+            </form>
+            <section class="quote-preview" aria-label="Image preview"><div class="quote-preview-surface"><canvas id="quote-canvas" role="img" aria-label="Preview of the selected excerpt card" hidden></canvas><p id="quote-placeholder" class="quote-hint">Select or paste an excerpt to preview the card.</p></div><p id="quote-dimensions" class="quote-hint"></p></section>
+        </div>
+        <p id="quote-error" class="quote-error" role="alert" hidden></p>
+        <div class="quote-dialog-foot"><p id="quote-status" class="quote-hint" role="status"></p><div class="quote-actions"><button type="button" id="quote-save" class="quote-button quote-primary" disabled>Save PNG</button><button type="button" id="quote-share" class="quote-button" disabled hidden>Share image…</button></div></div>`;
     document.body.append(dialog);
     const find = (id) => dialog.querySelector(`#${id}`);
-    const form = find("snippet-form");
-    const fields = dialog.querySelector(".snippet-fields");
-    const preview = find("snippet-preview");
-    const result = find("snippet-result");
-    const errorEl = find("snippet-error");
-    const title = find("snippet-title");
-    const byline = find("snippet-byline");
-    const excerpt = find("snippet-excerpt");
-    const note = find("snippet-note");
-    const next = find("snippet-next");
-    const back = find("snippet-back");
-    let stage = "edit";
-    let sharedUrl = "";
+    const form = find("quote-form");
+    const excerpt = find("quote-excerpt");
+    const title = find("quote-title");
+    const author = find("quote-author");
+    const canvas = find("quote-canvas");
+    const errorEl = find("quote-error");
+    const save = find("quote-save");
+    const share = find("quote-share");
+    const status = find("quote-status");
     let capturedText = "";
+    let objectUrl = "";
+    let file = null;
     let generation = 0;
+    let renderTimer = 0;
+    let fontPromise = null;
 
-    function selectedText() {
+    function readSelection() {
         const selection = window.getSelection();
         if (!selection || !selection.rangeCount || selection.isCollapsed) return "";
         const range = selection.getRangeAt(0);
-        return pageEl.contains(range.startContainer) && pageEl.contains(range.endContainer)
-            ? selection.toString() : "";
+        return pageEl.contains(range.startContainer) && pageEl.contains(range.endContainer) ? selection.toString() : "";
+    }
+    function clearImage() {
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        objectUrl = "";
+        file = null;
+        save.disabled = true;
+        share.disabled = true;
     }
     function showError(error) {
-        errorEl.textContent = error?.message || "Could not create the snippet link. Try again.";
+        errorEl.textContent = error?.message || "Could not create the card. Try again.";
         errorEl.hidden = false;
     }
-    function updateCount() {
-        find("snippet-count").textContent = `${countSnippetWords(excerpt.value)} words · ${excerpt.value.length.toLocaleString()} / ${MAX_SNIPPET_LENGTH.toLocaleString()} characters`;
+    function waitForFont() {
+        if (!fontPromise) fontPromise = document.fonts
+            ? Promise.race([document.fonts.load('600 48px "Cormorant Garamond"').catch(() => {}), new Promise((resolve) => setTimeout(resolve, 1500))])
+            : Promise.resolve();
+        return fontPromise;
     }
-    function edit() {
-        stage = "edit";
-        fields.hidden = false;
-        preview.hidden = true;
-        result.hidden = true;
-        form.hidden = false;
-        back.hidden = true;
-        next.textContent = "Preview";
+    async function render() {
+        const request = ++generation;
+        clearImage();
         errorEl.hidden = true;
-        updateCount();
+        const words = excerpt.value.trim().split(/\s+/u).filter(Boolean).length;
+        find("quote-count").textContent = `${words} words · ${excerpt.value.length.toLocaleString()} / ${MAX_CARD_CHARACTERS.toLocaleString()} characters`;
+        if (!excerpt.value.trim()) {
+            canvas.hidden = true;
+            find("quote-placeholder").hidden = false;
+            find("quote-dimensions").textContent = "";
+            status.textContent = "";
+            return;
+        }
+        status.textContent = "Rendering…";
+        try {
+            const data = normalizeSnippetCard({ excerpt: excerpt.value, title: title.value, author: author.value, style: find("quote-style").value, format: find("quote-format").value, showBrand: find("quote-brand").checked });
+            await waitForFont();
+            if (request !== generation || !dialog.open) return;
+            const dimensions = CARD_FORMATS[data.format];
+            drawSnippetCard(canvas, data, dimensions);
+            const blob = await new Promise((resolve, reject) => canvas.toBlob((result) => result ? resolve(result) : reject(new Error("Could not save the image. Try again.")), "image/png"));
+            if (request !== generation || !dialog.open) return;
+            file = new File([blob], cardFileName(data.title), { type: "image/png" });
+            objectUrl = URL.createObjectURL(file);
+            canvas.hidden = false;
+            canvas.setAttribute("aria-label", `Quote card: ${data.excerpt}`);
+            find("quote-placeholder").hidden = true;
+            find("quote-dimensions").textContent = `${dimensions.width} × ${dimensions.height} · PNG`;
+            save.disabled = false;
+            let canShare = false;
+            try { canShare = typeof navigator.share === "function" && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] }); } catch { /* Saving stays available. */ }
+            share.hidden = !canShare;
+            share.disabled = !canShare;
+            status.textContent = canShare ? "" : "Save the PNG to share it from your photos or files.";
+        } catch (error) {
+            if (request !== generation || !dialog.open) return;
+            canvas.hidden = true;
+            find("quote-placeholder").hidden = false;
+            find("quote-placeholder").textContent = "Adjust the text or size to preview your card.";
+            find("quote-dimensions").textContent = "";
+            status.textContent = "";
+            showError(error);
+        }
     }
-    function payload() {
-        return normalizeSnippet({ version: 1, title: title.value, byline: byline.value, note: note.value, excerpt: excerpt.value });
-    }
-    function close() { dialog.close(); }
-    button.addEventListener("pointerdown", () => { capturedText = selectedText(); });
-    button.addEventListener("click", () => {
+    function queueRender() {
         generation++;
-        form.reset();
-        title.value = String(getBook()?.title || "Untitled").slice(0, 120);
-        byline.value = String(getAuthor() || "").slice(0, 80);
-        const selection = selectedText() || capturedText;
+        clearImage();
+        clearTimeout(renderTimer);
+        renderTimer = setTimeout(render, 120);
+    }
+    button.addEventListener("pointerdown", () => { capturedText = readSelection(); });
+    button.addEventListener("click", () => {
+        const selected = readSelection() || capturedText || initialExcerpt;
         capturedText = "";
-        edit();
-        next.disabled = false;
+        form.reset();
+        title.value = String(getBook()?.title || "").slice(0, 80);
+        author.value = String(getAuthor() || "").slice(0, 80);
+        excerpt.value = selected.length <= MAX_CARD_CHARACTERS ? selected : "";
+        find("quote-placeholder").textContent = "Select or paste an excerpt to preview the card.";
         dialog.showModal();
-        if (selection.length > MAX_SNIPPET_LENGTH) {
-            showError(new Error("The selection is too long. Choose a shorter excerpt or paste part of it below."));
-        } else { excerpt.value = selection; updateCount(); }
-        excerpt.focus();
+        void render();
+        if (selected.length > MAX_CARD_CHARACTERS) showError(new Error("That selection is too long for one card. Select a shorter excerpt or paste part of it below."));
     });
-    dialog.querySelector(".snippet-close").addEventListener("click", close);
+    dialog.querySelector(".quote-close").addEventListener("click", () => dialog.close());
     dialog.addEventListener("close", () => {
         generation++;
-        button.focus({ preventScroll: true });
+        clearTimeout(renderTimer);
+        clearImage();
         form.reset();
-        find("snippet-link").value = "";
-        sharedUrl = "";
-        find("snippet-open").removeAttribute("href");
+        canvas.width = 1;
+        canvas.height = 1;
+        button.focus({ preventScroll: true });
     });
-    excerpt.addEventListener("input", updateCount);
-    back.addEventListener("click", () => { edit(); excerpt.focus(); });
-    find("snippet-another").addEventListener("click", () => { edit(); excerpt.focus(); });
-    form.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        errorEl.hidden = true;
-        try {
-            const data = payload();
-            if (stage === "edit") {
-                find("snippet-preview-title").textContent = data.title;
-                find("snippet-preview-byline").textContent = data.byline ? `by ${data.byline}` : "";
-                find("snippet-preview-note").textContent = data.note;
-                find("snippet-preview-note").hidden = !data.note;
-                find("snippet-preview-excerpt").textContent = data.excerpt;
-                fields.hidden = true;
-                preview.hidden = false;
-                back.hidden = false;
-                next.textContent = "Create link";
-                stage = "preview";
-                next.focus();
-                return;
-            }
-            const currentGeneration = ++generation;
-            next.disabled = true;
-            next.textContent = "Creating…";
-            const url = await createSnippetLink(data, window.location.origin);
-            if (currentGeneration !== generation || !dialog.open) return;
-            sharedUrl = url;
-            find("snippet-link").value = url;
-            find("snippet-open").href = url;
-            find("snippet-result-status").textContent = "";
-            find("snippet-share").hidden = typeof navigator.share !== "function";
-            form.hidden = true;
-            result.hidden = false;
-            find("snippet-copy").focus();
-        } catch (error) { if (dialog.open) showError(error); }
-        finally { next.disabled = false; next.textContent = stage === "preview" ? "Create link" : "Preview"; }
+    form.addEventListener("input", queueRender);
+    form.addEventListener("change", queueRender);
+    form.addEventListener("submit", (event) => event.preventDefault());
+    save.addEventListener("click", () => {
+        if (!file || !objectUrl) return;
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.download = file.name;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        status.textContent = "PNG ready. If your browser opens it, touch and hold the image to save it.";
     });
-    find("snippet-copy").addEventListener("click", async () => {
-        try {
-            await navigator.clipboard.writeText(sharedUrl);
-            find("snippet-result-status").textContent = "Link copied.";
-        } catch {
-            const input = find("snippet-link");
-            input.focus(); input.select(); input.setSelectionRange(0, input.value.length);
-            find("snippet-result-status").textContent = "Select and copy the link above.";
-        }
+    share.addEventListener("click", () => {
+        if (!file) return;
+        navigator.share({ files: [file] }).catch((error) => {
+            if (error?.name !== "AbortError") status.textContent = "Could not open sharing. Save the PNG instead.";
+        });
     });
-    find("snippet-share").addEventListener("click", async () => {
-        try { await navigator.share({ title: title.value || "Shared snippet", url: sharedUrl }); }
-        catch (error) { if (error?.name !== "AbortError") find("snippet-result-status").textContent = "Could not open sharing. Use Copy link instead."; }
-    });
-    return { close, destroy() { dialog.remove(); } };
+    return { close: () => dialog.close() };
 }

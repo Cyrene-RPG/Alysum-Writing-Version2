@@ -1,0 +1,46 @@
+.quote-dialog { --quote-border: var(--border, #ffffff20); width: min(1040px, calc(100% - 24px)); max-height: calc(100dvh - 24px); box-sizing: border-box; margin: auto; padding: clamp(18px, 3vw, 28px); background: var(--alysum-ui-panel, #141821); border: 1px solid var(--quote-border); border-radius: var(--glass-radius, 14px); color: var(--text, #f8fafc); font-family: var(--font-sans, sans-serif); overflow-y: auto; }
+.quote-dialog::backdrop { background: #050914bd; backdrop-filter: blur(4px); }
+.quote-dialog [hidden] { display: none !important; }
+.quote-dialog-head, .quote-dialog-foot { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.quote-dialog-head { margin-bottom: 24px; align-items: flex-start; }
+.quote-dialog h2 { margin: 0; font: 600 32px/1.2 "Cormorant Garamond", Georgia, serif; }
+.quote-label { margin: 0 0 7px; color: var(--muted); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+.quote-close { width: 36px; height: 36px; flex-shrink: 0; border: 1px solid var(--quote-border); border-radius: 50%; background: transparent; color: var(--muted); font: 24px/1 sans-serif; cursor: pointer; }
+.quote-workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 32px; align-items: start; }
+.quote-controls label { display: block; margin-bottom: 16px; font-size: 12px; line-height: 1.5; font-weight: 600; }
+.quote-controls label span { font-weight: 400; color: var(--muted); }
+.quote-controls :is(input:not([type=checkbox]), textarea, select) { width: 100%; max-width: 100%; box-sizing: border-box; margin-top: 7px; padding: 10px 12px; font: 16px/1.5 var(--font-sans, sans-serif); background: color-mix(in srgb, var(--bg, #0b1220) 65%, transparent); color: var(--text); border: 1px solid var(--quote-border); border-radius: var(--glass-radius, 8px); }
+.quote-controls textarea { resize: vertical; min-height: 150px; }
+.quote-controls textarea::placeholder { color: var(--muted); }
+.quote-option-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.quote-controls label.quote-check { display: flex; align-items: center; gap: 8px; font-weight: 400; }
+.quote-check input { accent-color: var(--accent, #7c3aed); width: 16px; height: 16px; margin: 0; }
+.quote-hint { color: var(--muted); font: 12px/1.6 var(--font-sans, sans-serif); margin: 0 0 16px; }
+.quote-preview { position: sticky; top: 0; min-width: 0; }
+.quote-preview-surface { display: grid; place-items: center; background: color-mix(in srgb, var(--bg, #0b1220) 80%, transparent); border: 1px solid var(--quote-border); border-radius: var(--glass-radius, 10px); min-height: 280px; padding: 20px; }
+.quote-preview-surface canvas { display: block; width: auto; height: auto; max-width: 100%; max-height: 520px; box-shadow: 0 12px 32px #0004; }
+.quote-preview-surface .quote-hint { text-align: center; padding: 30px 20px; }
+.quote-preview > .quote-hint { margin-top: 10px; text-align: center; font-size: 11px; }
+.quote-dialog-foot { border-top: 1px solid var(--quote-border); padding-top: 18px; margin-top: 16px; }
+.quote-dialog-foot .quote-hint { margin: 0; max-width: 420px; }
+.quote-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.quote-button { display: inline-flex; justify-content: center; align-items: center; min-height: 42px; box-sizing: border-box; padding: 10px 16px; border: 1px solid var(--quote-border, var(--border)); border-radius: var(--glass-radius, 8px); background: var(--alysum-ui-raised, #222837); color: var(--text, #fff); font: 600 12px/1.4 var(--font-sans, sans-serif); cursor: pointer; text-decoration: none; }
+.quote-button:disabled { opacity: .45; cursor: default; }
+.quote-primary { background: var(--accent, #7c3aed); border-color: var(--accent, #7c3aed); color: #fff; }
+.quote-error { color: var(--text); border-left: 3px solid var(--accent); padding: 8px 12px; font-size: 12px; line-height: 1.6; }
+.quote-dialog :is(input, textarea, select, button):focus-visible, .quote-demo :is(a, button, [contenteditable]):focus-visible { outline: 2px solid var(--accent, #a78bfa); outline-offset: 3px; }
+.snippet-editor-action { display: flex; justify-content: flex-end; padding: 8px 16px; }
+.snippet-editor-action .quote-button { min-height: 36px; }
+.quote-demo-page { margin: 0; min-height: 100vh; background: radial-gradient(circle at top, var(--theme-body-spot-strong, transparent), transparent 42%), linear-gradient(180deg, var(--bg-gradient-top, var(--bg)), var(--bg)); color: var(--text); font-family: var(--font-sans, sans-serif); }
+.quote-demo { max-width: 920px; padding: 32px 20px 64px; margin: 0 auto; box-sizing: border-box; }
+.quote-demo h1 { margin: 0 0 12px; font: 600 34px/1.2 "Cormorant Garamond", Georgia, serif; }
+.quote-demo p { color: var(--muted); font-size: 13px; line-height: 1.7; }
+.quote-demo-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; margin-bottom: 28px; }
+.quote-demo-editor { padding: clamp(20px, 5vw, 40px); border: 1px solid var(--border); border-radius: var(--glass-radius, 12px); background: var(--alysum-ui-panel); color: var(--text); font: 18px/1.9 Georgia, serif; white-space: pre-wrap; min-height: 200px; }
+.quote-demo-editor p { color: inherit; font: inherit; margin: 0 0 20px; }
+.quote-demo a { color: var(--text); font-size: 12px; text-underline-offset: 4px; }
+@media (max-width: 700px) { .quote-dialog { max-height: calc(100dvh - 12px); width: calc(100% - 12px); padding: 20px 16px; } .quote-workspace { grid-template-columns: minmax(0, 1fr); gap: 20px; } .quote-preview { position: static; grid-row: 1; } .quote-preview-surface { min-height: 180px; padding: 16px; } .quote-preview-surface canvas { max-height: 330px; } .quote-dialog-foot { flex-direction: column; align-items: stretch; gap: 14px; } .quote-actions > * { flex: 1; } .quote-dialog h2 { font-size: 28px; } }
+.quote-dialog[open] { display: flex; flex-direction: column; height: min(850px, calc(100dvh - 24px)); overflow: hidden; }
+.quote-dialog-head, .quote-dialog-foot { flex-shrink: 0; }
+.quote-workspace { flex: 1; min-height: 0; overflow-y: auto; padding-right: 4px; }
+@media (max-width: 700px) { .quote-dialog[open] { height: calc(100dvh - 12px); } .quote-preview-surface canvas { max-height: 300px; } }

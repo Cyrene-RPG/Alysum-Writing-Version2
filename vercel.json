@@ -157,10 +157,6 @@
       "destination": "/applications/word-wars/pages/word-wars.html"
     },
     {
-      "source": "/snippet",
-      "destination": "/applications/snippets/pages/read.html"
-    },
-    {
       "source": "/library",
       "destination": "/applications/library/pages/library.html"
     },
