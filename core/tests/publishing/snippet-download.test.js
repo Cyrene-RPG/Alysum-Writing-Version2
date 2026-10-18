@@ -32,17 +32,42 @@ test('unauthenticated, cross-origin, oversized, and non-PNG uploads are rejected
 test('the client prepares only a PNG under the signed-in session and rejects foreign download URLs', async () => {
  const client={auth:{getSession:async()=>({data:{session:{access_token:'test-session'}}})}};
  const file=new Blob([png],{type:'image/png'});file.name='card.png';
- const api=createSnippetDownloadApi(client,{origin,getBook:()=>({id:'archangel-book',title:'Archangel'}),fetcher:async(url,init)=>{
+ const api=createSnippetDownloadApi(client,{origin,getBook:()=>({id:'archangel-book',title:'Another WIP'}),fetcher:async(url,init)=>{
   assert.equal(url.href,origin+'/api/snippet-download');assert.equal(init.headers.Authorization,'Bearer test-session');assert.equal(init.body,file);assert.equal(init.headers['X-Book-ID'],'archangel-book');
   return Response.json({url:'/api/snippet-download?token='+id,expiresAt:Date.now()+600000});
  }});assert.equal((await api.prepare(file)).url,origin+'/api/snippet-download?token='+id);
- const foreign=createSnippetDownloadApi(client,{origin,getBook:()=>({id:'archangel-book',title:'Archangel'}),fetcher:async()=>Response.json({url:'https://other.test/?token='+id,expiresAt:Date.now()+600000})});
+ const foreign=createSnippetDownloadApi(client,{origin,getBook:()=>({id:'archangel-book',title:'Another WIP'}),fetcher:async()=>Response.json({url:'https://other.test/?token='+id,expiresAt:Date.now()+600000})});
  await assert.rejects(foreign.prepare(file),/invalid/);
 });
 
-test('other WIPs are rejected before a session lookup or PNG upload', async () => {
+test('a missing WIP is rejected before a session lookup or PNG upload', async () => {
  let touched=false;
- const api=createSnippetDownloadApi({auth:{getSession(){touched=true;}}},{origin,getBook:()=>({id:'other-book',title:'Another WIP'}),fetcher:async()=>{touched=true;}});
- await assert.rejects(api.prepare(new Blob([png])),/only with Archangel/);
+ const api=createSnippetDownloadApi({auth:{getSession(){touched=true;}}},{origin,getBook:()=>null,fetcher:async()=>{touched=true;}});
+ await assert.rejects(api.prepare(new Blob([png])),/Open a WIP/);
  assert.equal(touched,false);
+});
+
+// Exercise the deployed authorization path, including its ownership filter.
+import { onRequest } from '../../../functions/api/snippet-download.js';
+test('the deployed endpoint accepts any owned WIP and rejects unowned WIPs', async () => {
+ const originalFetch = globalThis.fetch, originalCaches = globalThis.caches;
+ const f = fixture();
+ globalThis.caches = {default: f.dependencies.cache};
+ try {
+  for (const owned of [true, false]) {
+   let lookups = 0;
+   globalThis.fetch = async url => {
+    if (String(url).endsWith('/auth/v1/user')) return Response.json({id:'owner-123'});
+    const query = new URL(url).searchParams;
+    assert.equal(query.get('id'), 'eq.other-book');
+    assert.equal(query.get('user_id'), 'eq.owner-123');
+    assert.equal(query.has('title'), false);
+    lookups++;
+    return Response.json(owned ? [{id:'other-book'}] : []);
+   };
+   const response = await onRequest({request:upload(png, {Authorization:'Bearer test-session', 'X-Book-ID':'other-book'}), env:{}});
+   assert.equal(lookups, 1);
+   assert.equal(response.status, owned ? 201 : 401);
+  }
+ } finally { globalThis.fetch = originalFetch; globalThis.caches = originalCaches; }
 });

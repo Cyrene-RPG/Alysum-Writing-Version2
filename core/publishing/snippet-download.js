@@ -3,7 +3,7 @@ export function createSnippetDownloadApi(supabase, { origin, getBook, fetcher = 
     return {
         async prepare(file) {
             const book = getBook?.();
-            if (String(book?.title || '').trim().toLowerCase() !== 'archangel' || !book?.id) throw new Error('Direct PNG downloads are currently being tested only with Archangel.');
+            if (!book?.id) throw new Error('Open a WIP before downloading its card.');
             const { data, error } = await supabase.auth.getSession();
             if (error || !data?.session?.access_token) throw new Error('Sign in again to prepare the PNG download.');
             const response = await fetcher(new URL('/api/snippet-download', origin), {
