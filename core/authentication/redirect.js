@@ -12,16 +12,23 @@ export function isProductionHost(hostname) {
     return hostname === "alysumwriting.com" || hostname === "www.alysumwriting.com";
 }
 
+/**
+ * Cloudflare Pages test deploys of this project, e.g. cloudflare.alysum-writing-version2.pages.dev.
+ * Sign-ins return here only if the address is also listed under Supabase Redirect URLs.
+ */
+export function isTestDeployHost(hostname) {
+    return hostname === "alysum-writing-version2.pages.dev"
+        || hostname.endsWith(".alysum-writing-version2.pages.dev");
+}
+
 /** Return URL for signInWithOAuth, resetPasswordForEmail, etc. */
 export function authRedirectUrl(relativePath) {
     const path = String(relativePath || "").replace(/^\//, "");
     const hostname =
         typeof location !== "undefined" && location.hostname ? location.hostname : "";
-    const origin = isLocalDevHost(hostname)
+    const origin = isLocalDevHost(hostname) || isProductionHost(hostname) || isTestDeployHost(hostname)
         ? location.origin
-        : isProductionHost(hostname)
-          ? location.origin
-          : PRODUCTION_ORIGIN;
+        : PRODUCTION_ORIGIN;
     const base = origin.endsWith("/") ? origin : `${origin}/`;
     return new URL(path, base).href;
 }
