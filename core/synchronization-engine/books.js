@@ -9,7 +9,7 @@ import {
     listBooks as listLocalBooks,
     updateBook as updateLocalBook,
 } from "./local-adapter.js";
-import * as cloud from "./cloud-adapter.js?v=3";
+import * as cloud from "./cloud-adapter.js?v=4";
 import { removeLocalListing } from "../publishing/post-work.js";
 import {
     createEmptyBook,
@@ -154,6 +154,7 @@ function cloudWritePayload(book) {
         publish_meta: src.publish_meta || {},
         published_chapter_ids: src.published_chapter_ids || [],
         is_published: Boolean(src.is_published),
+        ...(src.draft_parent_id ? { draft_parent_id: src.draft_parent_id, draft_label: src.draft_label } : {}),
     };
 }
 
@@ -348,7 +349,7 @@ export function createBooksApi(session, supabase) {
                 return cached ? normalizeBook(cached) : null;
             }
         },
-        async insertBook(payload) {
+        async insertBook(payload, { strict = false } = {}) {
             const seed = asBook(payload);
             try {
                 requireOnline();
@@ -356,7 +357,8 @@ export function createBooksApi(session, supabase) {
                 lastReadFromCache = false;
                 upsertCache(userId, withoutPending(book));
                 return { ...book, _synced: true };
-            } catch {
+            } catch (error) {
+                if (strict) throw error;
                 lastReadFromCache = true;
                 const fallback = withPending({
                     ...seed,

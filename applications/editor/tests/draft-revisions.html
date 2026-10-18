@@ -1,0 +1,27 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Draft revisions · Editor test</title><style>html{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#171717;color:#f4f4f4}body{max-width:580px;margin:12vh auto;padding:24px}h1{font-size:27px}p{line-height:1.7;color:#bdbdbd}button{font:700 15px inherit;padding:13px 20px;min-height:46px;border:1px solid #ffffff26;background:#6d28d9;color:white;border-radius:9px;cursor:pointer}#status{font-size:13px}</style></head><body><h1>Draft revisions in the editor</h1><p>This test opens Alysum’s actual editor with sample books. Try its formatting toolbar, chapter list, autosave, and the new <strong>Drafts / Reference</strong> button.</p><p>Sample revisions stay on this device. This test does not connect to your real books.</p><button id="start" type="button">Open sample editor</button><p id="status" role="status"></p><script type="module">
+import { enableDesktopLocalHost } from '/core/desktop/app.js';
+import { createBooksApi } from '/core/synchronization-engine/books.js?v=12';
+import { createBookVersion, listBookVersions } from '/core/writing-engine/version-api.js';
+import { createDemo } from '/prototypes/draft-revisions/model.mjs';
+const button=document.getElementById('start'),status=document.getElementById('status');
+const escape=value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+button.addEventListener('click',async()=>{
+ button.disabled=true;status.textContent='Preparing sample books…';
+ try{
+  enableDesktopLocalHost();const api=createBooksApi({mode:'local'});
+  for(const book of createDemo().books){
+   const parentId=`demo-revisions-${book.id}-${book.drafts[0].id}`;
+   for(const [index,draft] of book.drafts.entries()){
+    const id=`demo-revisions-${book.id}-${draft.id}`;
+    if(await api.getBook(id))continue;
+    await api.insertBook({id,title:book.title,...(index?{draft_parent_id:parentId,draft_label:draft.name}:{}),sections:{front:[],body:draft.chapters.map(chapter=>({id:`${id}-${chapter.id}`,title:chapter.title,kind:'chapter',content:chapter.text?chapter.text.split(/\n\n/).map(paragraph=>`<p>${escape(paragraph).replaceAll('\n','<br>')}</p>`).join(''):'',notes:[]})),back:[]}});
+   }
+  }
+  const referenceId='demo-revisions-harbor-first',writingId='demo-revisions-harbor-second';
+  let versions=await listBookVersions({isLocalStudio:true,bookId:referenceId});
+  if(!versions.length){await createBookVersion({isLocalStudio:true,userId:'alysum-local-guest',bookId:referenceId,book:await api.getBook(referenceId),label:'Before revision'});versions=await listBookVersions({isLocalStudio:true,bookId:referenceId});}
+  const params=new URLSearchParams({book:writingId,referenceBook:referenceId,referenceVersion:versions[0].id});
+  window.location.assign('/editor?'+params);
+ }catch(error){status.textContent=error.message||'Could not open the test editor.';button.disabled=false;}
+});
+</script></body></html>

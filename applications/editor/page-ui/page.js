@@ -1,9 +1,10 @@
+import { mountDraftRevisions } from "./draft-revisions.js";
 import { createSnippetDownloadApi } from "/core/publishing/snippet-download.js";
 import { createExcerptApi } from "/core/publishing/excerpts.js";
 import { mountSnippetSharing } from "./snippets.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=11";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=12";
 import {
     countBookChapters,
     countBookFolders,
@@ -564,6 +565,11 @@ async function boot() {
     leavePreview = preview.leavePreview;
 
     showChapter(selectedId);
+    mountDraftRevisions({
+        button: document.getElementById("compare-drafts"), shell,
+        writePane: document.getElementById("writerWritePane"), getBook: () => book,
+        api, session, supabase, saveCurrent: saveChapter,
+    });
     paintOfflineStatus();
     if (openedFromCache && session.mode === "cloud") {
         void api.getBook(bookId).then((fresh) => {
