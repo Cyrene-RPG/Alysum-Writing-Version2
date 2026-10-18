@@ -11,13 +11,6 @@ export function shareSnippet(file, browser = navigator) {
 }
 
 export async function saveSnippet(file, mount, browser = navigator, host = window) {
-    if (typeof host.showSaveFilePicker === "function") {
-        const handle = await host.showSaveFilePicker({ suggestedName: file.name, types: [{ description: "PNG image", accept: { "image/png": [".png"] } }] });
-        const stream = await handle.createWritable();
-        try { await stream.write(file); await stream.close(); }
-        catch (error) { await stream.abort().catch(() => {}); throw error; }
-        return "PNG saved.";
-    }
     const controller = browser.serviceWorker?.controller;
     if (!controller) throw new Error("Reload Alysum once to enable image downloads, then try Save PNG again.");
     const token = host.crypto.randomUUID();
