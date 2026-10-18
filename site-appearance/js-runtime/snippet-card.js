@@ -46,7 +46,12 @@ export function fitCardText(context, text, maxWidth, maxHeight, { maximum = 62, 
 
 export function drawSnippetCard(canvas, data, dimensions) {
     canvas.width = dimensions.width;
-    canvas.height = dimensions.height;
+    const measuring = canvas.getContext("2d");
+    if (!measuring) throw new Error("This browser could not create the image. Try an updated browser.");
+    const footer = data.title || data.author ? 260 : 150;
+    measuring.font = `600 36px ${SERIF}`;
+    const readableHeight = wrapCardText(measuring, data.excerpt, dimensions.width - 176).length * 54 + 200 + footer;
+    canvas.height = Math.max(dimensions.height, Math.min(16000, Math.ceil(readableHeight)));
     const context = canvas.getContext("2d");
     if (!context) throw new Error("This browser could not create the image. Try an updated browser.");
     const palette = SNIPPET_PALETTES[data.style] || SNIPPET_PALETTES.alysum;

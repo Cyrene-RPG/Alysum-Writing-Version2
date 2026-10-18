@@ -114,7 +114,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         share.hidden = true;
         canvas.hidden = true;
         find("quote-link-result").hidden = true;
-        find("quote-privacy-note").textContent = image ? "Only this text and attribution appear in the image." : "Anyone with the link can read this saved copy. Draft edits will not change it. Disable the link to stop future access.";
+        find("quote-privacy-note").textContent = image ? "Up to 30,000 characters. Longer excerpts create a taller image." : "Anyone with the link can read this saved copy. Draft edits will not change it. Disable the link to stop future access.";
         void render();
     }
     function sectionPayload() { return normalizeExcerpt({ title: title.value, author: author.value, excerpt: excerpt.value }); }
@@ -180,7 +180,8 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
             await waitForFont();
             if (request !== generation || !dialog.open) return;
             const dimensions = CARD_FORMATS[data.format];
-            drawSnippetCard(canvas, data, dimensions);
+            const rendered = drawSnippetCard(canvas, data, dimensions);
+            canvas.parentElement.classList.toggle("quote-preview-long", rendered.height > 1920);
             const blob = await new Promise((resolve, reject) => canvas.toBlob((result) => result ? resolve(result) : reject(new Error("Could not save the image. Try again.")), "image/png"));
             if (request !== generation || !dialog.open) return;
             file = new File([blob], cardFileName(data.title), { type: "image/png" });
@@ -188,7 +189,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
             canvas.hidden = false;
             canvas.setAttribute("aria-label", `Quote card: ${data.excerpt}`);
             find("quote-placeholder").hidden = true;
-            find("quote-dimensions").textContent = `${dimensions.width} × ${dimensions.height} · PNG`;
+            find("quote-dimensions").textContent = `${rendered.width} × ${rendered.height} · PNG`;
             save.disabled = false;
             let canShare = false;
             try { canShare = typeof navigator.share === "function" && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] }); } catch { /* Saving stays available. */ }
