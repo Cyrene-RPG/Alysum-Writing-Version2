@@ -12,7 +12,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         <div class="quote-modes" role="group" aria-label="Sharing format"><button type="button" class="quote-button" data-share-mode="link" aria-pressed="true">Reading link</button><button type="button" class="quote-button" data-share-mode="image" aria-pressed="false">Image card</button></div>
         <div class="quote-workspace">
             <form class="quote-controls" id="quote-form">
-                <label for="quote-excerpt">Selected text<textarea id="quote-excerpt" maxlength="${MAX_EXCERPT_CHARACTERS}" rows="7" required placeholder="Select text in your WIP first, or paste an excerpt here."></textarea></label>
+                <button type="button" id="quote-select-in-wip" class="quote-button quote-select-in-wip">Select text in WIP</button><label for="quote-excerpt">Selected text<textarea id="quote-excerpt" maxlength="${MAX_EXCERPT_CHARACTERS}" rows="7" required placeholder="Select text in your WIP first, or paste an excerpt here."></textarea></label>
                 <p id="quote-count" class="quote-hint"></p>
                 <div class="quote-option-row" id="quote-image-options"><label for="quote-style">Style<select id="quote-style"><option value="alysum">Alysum</option><option value="paper">Paper</option><option value="rose">Rose</option></select></label><label for="quote-format">Size<select id="quote-format"><option value="portrait">Portrait · 4:5</option><option value="square">Square · 1:1</option><option value="story">Story · 9:16</option></select></label></div>
                 <label for="quote-title">Book title <span>(optional)</span><input id="quote-title" maxlength="80" autocomplete="off"></label>
@@ -27,6 +27,32 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         <p id="quote-error" class="quote-error" role="alert" hidden></p>
         <div class="quote-dialog-foot"><p id="quote-status" class="quote-hint" role="status"></p><div class="quote-actions"><button type="button" id="quote-create-link" class="quote-button quote-primary" disabled>Create reading link</button><button type="button" id="quote-save" class="quote-button quote-primary" disabled>Save PNG</button><button type="button" id="quote-share" class="quote-button" disabled hidden>Share image…</button></div></div>`;
     document.body.append(dialog);
+    const selectionBar = document.createElement("div");
+    selectionBar.className = "quote-selection-bar";
+    selectionBar.hidden = true;
+    selectionBar.innerHTML = '<p role="status">Highlight text in your WIP, then choose Share selection.</p><div><button type="button" class="quote-button quote-primary" data-use-selection disabled>Share selection</button><button type="button" class="quote-button" data-cancel-selection>Cancel</button></div>';
+    pageEl.before(selectionBar);
+    const selectionNotice = selectionBar.querySelector("p");
+    const useSelection = selectionBar.querySelector("[data-use-selection]");
+    let selectAfterClose = false;
+    function showSelectionBar() {
+        selectionBar.hidden = false;
+        capturedText = "";
+        useSelection.disabled = true;
+        selectionNotice.textContent = "Highlight text in your WIP, then choose Share selection.";
+        pageEl.focus({ preventScroll: true });
+        selectionBar.scrollIntoView({ block: "nearest", behavior: "auto" });
+    }
+    document.addEventListener("selectionchange", () => {
+        if (selectionBar.hidden) return;
+        const text = readSelection();
+        useSelection.disabled = !text.trim();
+        selectionNotice.textContent = text.trim() ? `${text.trim().split(/\s+/u).length} words selected` : "Highlight text in your WIP, then choose Share selection.";
+    });
+    useSelection.addEventListener("pointerdown", (event) => { capturedText = readSelection(); event.preventDefault(); });
+    useSelection.addEventListener("click", () => { if (readSelection().trim() || capturedText.trim()) button.click(); });
+    selectionBar.querySelector("[data-cancel-selection]").addEventListener("click", () => { selectionBar.hidden = true; capturedText = ""; });
+
     const find = (id) => dialog.querySelector(`#${id}`);
     const form = find("quote-form");
     const excerpt = find("quote-excerpt");
@@ -185,6 +211,8 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
     button.addEventListener("click", () => {
         const selected = readSelection() || capturedText || initialExcerpt;
         capturedText = "";
+        if (!selected.trim()) { showSelectionBar(); return; }
+        selectionBar.hidden = true;
         form.reset();
         title.value = String(getBook()?.title || "").slice(0, 80);
         author.value = String(getAuthor() || "").slice(0, 80);
@@ -195,6 +223,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         void loadLinks();
         if (selected.length > MAX_EXCERPT_CHARACTERS) showError(new Error("That section is too long. Select up to 150,000 characters."));
     });
+    find("quote-select-in-wip").addEventListener("click", () => { selectAfterClose = true; dialog.close(); });
     dialog.querySelector(".quote-close").addEventListener("click", () => dialog.close());
     dialog.addEventListener("close", () => {
         generation++;
@@ -203,7 +232,8 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         form.reset();
         canvas.width = 1;
         canvas.height = 1;
-        button.focus({ preventScroll: true });
+        if (selectAfterClose) { selectAfterClose = false; showSelectionBar(); }
+        else button.focus({ preventScroll: true });
     });
     for (const tab of dialog.querySelectorAll("[data-share-mode]")) tab.addEventListener("click", () => setMode(tab.dataset.shareMode));
     find("quote-create-link").addEventListener("click", async () => {
