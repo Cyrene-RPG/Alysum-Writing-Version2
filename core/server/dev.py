@@ -50,6 +50,7 @@ PAGES = {
     "/word-wars-lobby": "applications/word-wars/pages/word-wars-lobby.html",
     "/word-wars": "applications/word-wars/pages/word-wars.html",
     "/library": "applications/library/pages/library.html",
+    "/snippet": "applications/snippets/pages/read.html",
     "/book": "applications/library/pages/book.html",
     "/read": "applications/library/pages/read.html",
     "/publish": "applications/studio/pages/publish.html",
@@ -115,7 +116,7 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/main-site/pages-css" / clean[len("/css/") :]
     if clean.startswith("/assets/"):
         return ROOT / "applications/main-site/assets" / clean[len("/assets/") :]
-    if clean.startswith(("/site-appearance/", "/core/")):
+    if clean.startswith(("/site-appearance/", "/core/", "/applications/snippets/")):
         return ROOT / clean[1:]
     if clean in PAGES:
         return ROOT / PAGES[clean]

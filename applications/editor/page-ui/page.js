@@ -1,3 +1,4 @@
+import { mountSnippetSharing } from "./snippets.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=11";
@@ -453,6 +454,12 @@ async function boot() {
         }
     });
     typewriter.setToolbarApi(toolbarApi);
+    mountSnippetSharing({
+        button: document.getElementById("share-snippet"),
+        pageEl,
+        getBook: () => book,
+        getAuthor: () => profile.name || "",
+    });
     const findUi = mountFind({
         pageEl,
         host: document.querySelector(".writer-main") || pageEl.parentElement,
