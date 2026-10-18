@@ -16,13 +16,7 @@ test('image sharing sends the prepared file immediately, with no URL or delayed 
     assert.throws(() => shareSnippet(file, {}), /cannot share image files/);
     assert.equal(canShareSnippet(file, { canShare() { throw Error('blocked'); }, share() {} }), false);
 });
-test('desktop save writes a PNG through the picker without opening a page', async () => {
-    let written, closed = false;
-    const result = await saveSnippet(file, {}, {}, { showSaveFilePicker: async ({ suggestedName }) => {
-        assert.equal(suggestedName, 'book-card.png');
-        return { createWritable: async () => ({ write: async (value) => { written = value; }, close: async () => { closed = true; } }) };
-    } });
-    assert.equal(written, file); assert.equal(closed, true); assert.equal(result, 'PNG saved.');
+test('save requests a reload when the local download worker is unavailable', async () => {
     await assert.rejects(saveSnippet(file, {}, {}, {}), /Reload Alysum/);
 });
 test('local download returns a named PNG attachment once, without network or cache storage', async () => {
@@ -53,7 +47,7 @@ test('local download returns a named PNG attachment once, without network or cac
     assert.equal((await download()).status, 410);
     register(); now = 60001; assert.equal((await download()).status, 410);
 });
-test('phone save uses a hidden local attachment frame, without opening a tab', async () => {
+test('save downloads through a hidden frame even when the browser exposes a failing picker', async () => {
     const previousDocument = globalThis.document;
     let frame;
     globalThis.document = { createElement(tag) { assert.equal(tag, 'iframe'); return { setAttribute() {} }; } };
@@ -63,7 +57,7 @@ test('phone save uses a hidden local attachment frame, without opening a tab', a
             assert.equal(type, 'ALYSUM_DOWNLOAD_PNG'); assert.equal(sent, file);
             reply.postMessage({ ok: true }); reply.close();
         } } } };
-        const result = await saveSnippet(file, mount, browser, { crypto: { randomUUID: () => '12345678-1234-1234-1234-123456789abc' } });
+        const result = await saveSnippet(file, mount, browser, { crypto: { randomUUID: () => '12345678-1234-1234-1234-123456789abc' }, showSaveFilePicker() { throw new DOMException('Browser picker cancelled', 'AbortError'); } });
         assert.equal(frame.hidden, true);
         assert.equal(frame.src, '/__alysum-download/12345678-1234-1234-1234-123456789abc');
         assert.match(result, /download started/);
