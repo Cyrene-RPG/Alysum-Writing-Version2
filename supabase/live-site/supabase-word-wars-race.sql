@@ -4,12 +4,16 @@
 -- not touched; they can be dropped later once nothing uses them.
 --
 -- What the server enforces:
---   • First racer to target_words wins. Places follow finished_at.
+--   • Two kinds of race. 'words': first racer to target_words wins; places
+--     follow finished_at. 'chill': everyone writes for duration_min minutes,
+--     or with no limit (NULL) until the host ends it; no winner. A chill
+--     session can start with just the host, and writers can drop in after it
+--     starts (but not come back once they leave).
 --   • A racer's count can rise at most 150 words a minute, measured from the
 --     start (a pause can bank up to 20 words for a quick burst after it).
---   • Once the first racer finishes, everyone else has 2 minutes.
---   • A race ends after 2 hours no matter what. A lobby nobody starts within
---     6 hours is dropped.
+--   • In a word race, once the first racer finishes, everyone else has 2
+--     minutes. A word race ends after 2 hours no matter what, a chill session
+--     with no limit after 6. A lobby nobody starts within 6 hours is dropped.
 --   • A racer's writing is stored only while their page is public, as plain
 --     text (word_war_pages). Spectators can watch it during the race; other
 --     racers can read it once the race is over. Going private deletes it.
@@ -78,6 +82,18 @@ ALTER TABLE public.word_war_racers ADD COLUMN IF NOT EXISTS is_page_public boole
 ALTER TABLE public.word_war_racers ADD COLUMN IF NOT EXISTS wants_new_prompt boolean NOT NULL DEFAULT false;
 ALTER TABLE public.word_war_racers ADD COLUMN IF NOT EXISTS page_chapter_id text;
 
+-- Race type. 'words' = first to target_words. 'chill' = write together for
+-- duration_min minutes, or with no limit (NULL) until the host ends it.
+ALTER TABLE public.word_war_races ADD COLUMN IF NOT EXISTS mode text NOT NULL DEFAULT 'words';
+ALTER TABLE public.word_war_races ADD COLUMN IF NOT EXISTS duration_min integer;
+ALTER TABLE public.word_war_races DROP CONSTRAINT IF EXISTS word_war_races_mode_check;
+ALTER TABLE public.word_war_races
+  ADD CONSTRAINT word_war_races_mode_check
+  CHECK (
+    mode = 'words'
+    OR (mode = 'chill' AND (duration_min IS NULL OR duration_min IN (10, 15, 30, 45, 60, 90, 120, 180)))
+  );
+
 -- A racer's page while it is public: plain text of the chapter they are
 -- writing in. Deleted as soon as they make it private.
 CREATE TABLE IF NOT EXISTS public.word_war_pages (
@@ -142,9 +158,12 @@ AS $$
     WHEN p_race.starts_at IS NULL THEN 'lobby'
     WHEN now() < p_race.starts_at THEN 'countdown'
     WHEN p_race.ended_at IS NOT NULL THEN 'finished'
+    WHEN p_race.mode = 'chill' AND p_race.duration_min IS NOT NULL
+      AND now() >= p_race.starts_at + make_interval(mins => p_race.duration_min) THEN 'finished'
+    WHEN p_race.mode = 'chill' AND now() >= p_race.starts_at + interval '6 hours' THEN 'finished'
     WHEN p_race.first_finish_at IS NOT NULL
       AND now() >= p_race.first_finish_at + interval '2 minutes' THEN 'finished'
-    WHEN now() >= p_race.starts_at + interval '2 hours' THEN 'finished'
+    WHEN p_race.mode = 'words' AND now() >= p_race.starts_at + interval '2 hours' THEN 'finished'
     ELSE 'running'
   END;
 $$;
@@ -244,6 +263,23 @@ BEGIN
     RAISE EXCEPTION 'Keep the prompt under 1,000 characters.';
   END IF;
   RETURN v_prompt;
+END;
+$$;
+
+-- Raises unless the race type and length go together.
+CREATE OR REPLACE FUNCTION public.word_war_race_check_mode(p_mode text, p_duration_min integer)
+RETURNS void
+LANGUAGE plpgsql
+IMMUTABLE
+AS $$
+BEGIN
+  IF p_mode IS NULL OR p_mode NOT IN ('words', 'chill') THEN
+    RAISE EXCEPTION 'Pick a race or a chill session.';
+  END IF;
+  IF p_mode = 'chill' AND p_duration_min IS NOT NULL
+     AND p_duration_min NOT IN (10, 15, 30, 45, 60, 90, 120, 180) THEN
+    RAISE EXCEPTION 'Pick a length from the list, or no limit.';
+  END IF;
 END;
 $$;
 
@@ -375,12 +411,15 @@ $$;
 -- Earlier versions without a prompt; replaced below (an overload would make
 -- calls ambiguous).
 DROP FUNCTION IF EXISTS public.create_word_war_race(integer, boolean, text);
+DROP FUNCTION IF EXISTS public.create_word_war_race(integer, boolean, text, text);
 
 CREATE OR REPLACE FUNCTION public.create_word_war_race(
   p_target_words integer DEFAULT 250,
   p_is_public boolean DEFAULT true,
   p_book_id text DEFAULT NULL,
-  p_prompt text DEFAULT NULL
+  p_prompt text DEFAULT NULL,
+  p_mode text DEFAULT 'words',
+  p_duration_min integer DEFAULT NULL
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -392,11 +431,14 @@ DECLARE
   v_target integer := coalesce(p_target_words, 250);
   v_book_id text := nullif(trim(coalesce(p_book_id, '')), '');
   v_prompt text := public.word_war_race_clean_prompt(p_prompt);
+  v_mode text := coalesce(p_mode, 'words');
+  v_duration integer := CASE WHEN coalesce(p_mode, 'words') = 'chill' THEN p_duration_min END;
   v_title text;
   v_name text;
   v_avatar text;
   v_race_id uuid;
 BEGIN
+  PERFORM public.word_war_race_check_mode(v_mode, v_duration);
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'Sign in to race.';
   END IF;
@@ -417,8 +459,8 @@ BEGIN
 
   LOOP
     BEGIN
-      INSERT INTO public.word_war_races (code, host_id, target_words, is_public, prompt)
-      VALUES (public.gen_word_war_race_code(), v_uid, v_target, coalesce(p_is_public, true), v_prompt)
+      INSERT INTO public.word_war_races (code, host_id, target_words, is_public, prompt, mode, duration_min)
+      VALUES (public.gen_word_war_race_code(), v_uid, v_target, coalesce(p_is_public, true), v_prompt, v_mode, v_duration)
       RETURNING id INTO v_race_id;
       EXIT;
     EXCEPTION WHEN unique_violation THEN
@@ -434,15 +476,20 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS public.update_word_war_race(uuid, integer, boolean);
+DROP FUNCTION IF EXISTS public.update_word_war_race(uuid, integer, boolean, text, boolean);
 
 -- Host only, while the lobby is open. p_set_prompt = true sets the prompt to
 -- p_prompt (blank = free write) and clears everyone's request for a new one.
+-- p_set_duration = true sets a chill session's length (NULL = no limit).
 CREATE OR REPLACE FUNCTION public.update_word_war_race(
   p_race_id uuid,
   p_target_words integer DEFAULT NULL,
   p_is_public boolean DEFAULT NULL,
   p_prompt text DEFAULT NULL,
-  p_set_prompt boolean DEFAULT false
+  p_set_prompt boolean DEFAULT false,
+  p_mode text DEFAULT NULL,
+  p_duration_min integer DEFAULT NULL,
+  p_set_duration boolean DEFAULT false
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -453,6 +500,8 @@ DECLARE
   v_uid uuid := auth.uid();
   v_race public.word_war_races%ROWTYPE;
   v_prompt text := public.word_war_race_clean_prompt(p_prompt);
+  v_mode text;
+  v_duration integer;
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'Sign in to race.';
@@ -467,11 +516,20 @@ BEGIN
   IF p_target_words IS NOT NULL AND p_target_words NOT IN (100, 250, 500, 1000) THEN
     RAISE EXCEPTION 'Pick 100, 250, 500 or 1,000 words.';
   END IF;
+  v_mode := coalesce(p_mode, v_race.mode);
+  v_duration := CASE
+    WHEN v_mode <> 'chill' THEN NULL
+    WHEN coalesce(p_set_duration, false) THEN p_duration_min
+    ELSE v_race.duration_min
+  END;
+  PERFORM public.word_war_race_check_mode(v_mode, v_duration);
 
   UPDATE public.word_war_races
   SET target_words = coalesce(p_target_words, target_words),
       is_public = coalesce(p_is_public, is_public),
-      prompt = CASE WHEN coalesce(p_set_prompt, false) THEN v_prompt ELSE prompt END
+      prompt = CASE WHEN coalesce(p_set_prompt, false) THEN v_prompt ELSE prompt END,
+      mode = v_mode,
+      duration_min = v_duration
   WHERE id = p_race_id;
 
   IF coalesce(p_set_prompt, false) THEN
@@ -531,10 +589,18 @@ BEGIN
   IF v_status = 'cancelled' THEN
     RAISE EXCEPTION 'That race was called off.';
   END IF;
-  IF v_status <> 'lobby' THEN
+  -- Chill sessions take new writers after the start. Coming back after leaving
+  -- would wipe the words you already wrote, so that is watching only.
+  IF v_race.mode = 'chill' AND v_status = 'finished' THEN
+    RAISE EXCEPTION 'That session is over.';
+  END IF;
+  IF v_status <> 'lobby' AND NOT (v_race.mode = 'chill' AND v_status IN ('countdown', 'running')) THEN
     RAISE EXCEPTION 'That race has already started. You can still watch it.';
   END IF;
-  IF NOT EXISTS (
+  IF v_status <> 'lobby' AND v_me.user_id IS NOT NULL THEN
+    RAISE EXCEPTION 'You left this session, so you can watch it but not rejoin.';
+  END IF;
+  IF v_status = 'lobby' AND NOT EXISTS (
     SELECT 1 FROM public.word_war_racers x
     WHERE x.race_id = v_race.id
       AND x.user_id = v_race.host_id
@@ -562,8 +628,13 @@ BEGIN
 
   SELECT m.display_name, m.avatar_url INTO v_name, v_avatar FROM public.word_war_race_me() m;
 
-  INSERT INTO public.word_war_racers (race_id, user_id, display_name, avatar_url, book_id, book_title)
-  VALUES (v_race.id, v_uid, coalesce(v_name, 'Writer'), v_avatar, v_book_id, v_title)
+  -- Someone dropping in after the start gets their speed allowance from when
+  -- they join (or from the start, during the countdown), as if they had just reported.
+  INSERT INTO public.word_war_racers (race_id, user_id, display_name, avatar_url, book_id, book_title, reported_at)
+  VALUES (
+    v_race.id, v_uid, coalesce(v_name, 'Writer'), v_avatar, v_book_id, v_title,
+    CASE WHEN v_status = 'lobby' THEN NULL ELSE greatest(now(), v_race.starts_at) END
+  )
   ON CONFLICT (race_id, user_id) DO UPDATE
   SET display_name = EXCLUDED.display_name,
       avatar_url = EXCLUDED.avatar_url,
@@ -674,6 +745,8 @@ AS $$
   SELECT coalesce(jsonb_agg(jsonb_build_object(
     'id', s.id,
     'prompt', s.prompt,
+    'mode', s.mode,
+    'duration_min', s.duration_min,
     'target_words', s.target_words,
     'is_public', s.is_public,
     'max_racers', s.max_racers,
@@ -727,7 +800,7 @@ BEGIN
   SELECT count(*)::integer INTO v_count
   FROM public.word_war_racers x
   WHERE x.race_id = p_race_id AND x.left_at IS NULL;
-  IF v_count < 2 THEN
+  IF v_count < 2 AND v_race.mode <> 'chill' THEN
     RAISE EXCEPTION 'You need at least one other writer to start.';
   END IF;
 
@@ -829,7 +902,7 @@ BEGIN
     v_me.speed_budget
       + 2.5 * greatest(0, extract(epoch FROM v_now - coalesce(v_me.reported_at, v_race.starts_at)))
   );
-  v_words := least(greatest(0, p_words), v_race.target_words);
+  v_words := least(greatest(0, p_words), CASE WHEN v_race.mode = 'words' THEN v_race.target_words ELSE 100000 END);
   IF v_words > v_me.words THEN
     v_words := v_me.words + least(v_words - v_me.words, floor(v_budget)::integer);
     v_budget := v_budget - (v_words - v_me.words);
@@ -841,7 +914,7 @@ BEGIN
       reported_at = v_now,
       last_seen_at = v_now,
       peak_wpm = greatest(peak_wpm, least(greatest(coalesce(p_peak_wpm, 0), 0), 150)),
-      finished_at = CASE WHEN v_words >= v_race.target_words THEN v_now END
+      finished_at = CASE WHEN v_race.mode = 'words' AND v_words >= v_race.target_words THEN v_now END
   WHERE race_id = p_race_id AND user_id = v_uid
   RETURNING * INTO v_me;
 
@@ -978,11 +1051,56 @@ BEGIN
     END IF;
   END IF;
 
-  v_snapshot := public.create_word_war_race(v_race.target_words, v_race.is_public, v_me.book_id, v_race.prompt);
+  v_snapshot := public.create_word_war_race(
+    v_race.target_words, v_race.is_public, v_me.book_id, v_race.prompt, v_race.mode, v_race.duration_min
+  );
   UPDATE public.word_war_races
   SET rematch_id = (v_snapshot -> 'race' ->> 'id')::uuid
   WHERE id = p_race_id;
   RETURN v_snapshot;
+END;
+$$;
+
+-- Ends a chill session early (or a no-limit one at all). The host does this;
+-- if the host has left, any racer still there can.
+CREATE OR REPLACE FUNCTION public.end_word_war_race(p_race_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_race public.word_war_races%ROWTYPE;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Sign in to race.';
+  END IF;
+  SELECT * INTO v_race FROM public.word_war_races WHERE id = p_race_id FOR UPDATE;
+  IF v_race.id IS NULL THEN
+    RAISE EXCEPTION 'Race not found.';
+  END IF;
+  IF v_race.mode <> 'chill' THEN
+    RAISE EXCEPTION 'Only chill sessions can be ended early.';
+  END IF;
+  IF public.word_war_race_status(v_race) NOT IN ('countdown', 'running') THEN
+    RAISE EXCEPTION 'This session isn''t running.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.word_war_racers x
+    WHERE x.race_id = p_race_id AND x.user_id = v_uid AND x.left_at IS NULL
+  ) THEN
+    RAISE EXCEPTION 'You are not in this session.';
+  END IF;
+  IF v_race.host_id <> v_uid AND EXISTS (
+    SELECT 1 FROM public.word_war_racers x
+    WHERE x.race_id = p_race_id AND x.user_id = v_race.host_id AND x.left_at IS NULL
+  ) THEN
+    RAISE EXCEPTION 'Only the host can end the session.';
+  END IF;
+
+  UPDATE public.word_war_races SET ended_at = coalesce(ended_at, now()) WHERE id = p_race_id;
+  RETURN public.word_war_race_snapshot(p_race_id);
 END;
 $$;
 
@@ -1160,6 +1278,7 @@ REVOKE ALL ON FUNCTION public.word_war_race_me() FROM PUBLIC, anon, authenticate
 REVOKE ALL ON FUNCTION public.word_war_race_book_title(text) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.gen_word_war_race_code() FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.word_war_race_clean_prompt(text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.word_war_race_check_mode(text, integer) FROM PUBLIC, anon, authenticated;
 
 -- Used by the row level security policies, so signed-in users need it.
 REVOKE ALL ON FUNCTION public.can_see_word_war_race(uuid) FROM PUBLIC, anon;
@@ -1169,8 +1288,8 @@ GRANT EXECUTE ON FUNCTION public.word_war_race_status(public.word_war_races) TO 
 REVOKE ALL ON FUNCTION public.can_read_word_war_page(uuid, uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.can_read_word_war_page(uuid, uuid) TO authenticated;
 
-REVOKE ALL ON FUNCTION public.create_word_war_race(integer, boolean, text, text) FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.update_word_war_race(uuid, integer, boolean, text, boolean) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.create_word_war_race(integer, boolean, text, text, text, integer) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.update_word_war_race(uuid, integer, boolean, text, boolean, text, integer, boolean) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.join_word_war_race(uuid, text, text) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.watch_word_war_race(uuid, text) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.get_word_war_race(uuid) FROM PUBLIC, anon;
@@ -1181,11 +1300,12 @@ REVOKE ALL ON FUNCTION public.leave_word_war_race(uuid) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.cheer_word_war_racers(uuid, jsonb) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.rematch_word_war_race(uuid) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.ask_word_war_prompt_change(uuid) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.end_word_war_race(uuid) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.set_word_war_page_visibility(uuid, boolean) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.save_word_war_page(uuid, text, text, text) FROM PUBLIC, anon;
 
-GRANT EXECUTE ON FUNCTION public.create_word_war_race(integer, boolean, text, text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.update_word_war_race(uuid, integer, boolean, text, boolean) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_word_war_race(integer, boolean, text, text, text, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_word_war_race(uuid, integer, boolean, text, boolean, text, integer, boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.join_word_war_race(uuid, text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.watch_word_war_race(uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_word_war_race(uuid) TO authenticated;
@@ -1196,6 +1316,7 @@ GRANT EXECUTE ON FUNCTION public.leave_word_war_race(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.cheer_word_war_racers(uuid, jsonb) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.rematch_word_war_race(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.ask_word_war_prompt_change(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.end_word_war_race(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.set_word_war_page_visibility(uuid, boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.save_word_war_page(uuid, text, text, text) TO authenticated;
 

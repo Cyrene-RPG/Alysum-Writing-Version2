@@ -72,9 +72,9 @@
 
     <main class="ww-hub hidden" id="hubShell">
         <header class="ww-hub-head">
-            <p class="ww-eyebrow">Word Wars · Race</p>
-            <h1 class="ww-display">First to the line wins</h1>
-            <p class="ww-lede">Everyone writes in their own book. Pages are public by default, so spectators can watch you write; other racers can read it after the race. You can make yours private.</p>
+            <p class="ww-eyebrow">Word Wars</p>
+            <h1 class="ww-display">Race to the line, or just write</h1>
+            <p class="ww-lede">Race to a word count, or write together in chill mode with no finish line. Everyone writes in their own book. Pages are public by default, so spectators can watch you write; other racers can read it afterwards. You can make yours private.</p>
         </header>
 
         <div class="ww-hub-book">
@@ -84,10 +84,22 @@
 
         <div class="ww-hub-grid">
             <section class="ww-panel ww-hub-start">
-                <h2 class="ww-label">Start a race</h2>
+                <h2 class="ww-label">Start one</h2>
                 <div class="ww-field">
+                    <span class="ww-label ww-sublabel">Type</span>
+                    <div class="ww-seg" id="mode" role="radiogroup" aria-label="Type">
+                        <button type="button" role="radio" data-mode="words">Word race</button>
+                        <button type="button" role="radio" data-mode="chill">Chill mode</button>
+                    </div>
+                    <p class="ww-hint" id="modeHint"></p>
+                </div>
+                <div class="ww-field" id="targetField">
                     <span class="ww-label ww-sublabel">Race to</span>
                     <div class="ww-targets" id="targets" role="radiogroup" aria-label="Target word count"></div>
+                </div>
+                <div class="ww-field hidden" id="lengthField">
+                    <span class="ww-label ww-sublabel">How long</span>
+                    <div class="ww-targets ww-lengths" id="lengths" role="radiogroup" aria-label="How long"></div>
                 </div>
                 <div class="ww-field">
                     <span class="ww-label ww-sublabel">Who can join</span>
@@ -109,14 +121,15 @@
                 <h2 class="ww-label">Have a code?</h2>
                 <input class="ww-code-input" id="codeInput" maxlength="6" autocomplete="off" spellcheck="false" placeholder="ABC123" aria-label="Race code" />
                 <div class="ww-row">
-                    <button type="button" class="ww-primary" id="joinCodeBtn">Race</button>
+                    <button type="button" class="ww-primary" id="joinCodeBtn">Join</button>
                     <button type="button" class="ww-btn" id="watchCodeBtn">Watch</button>
                 </div>
                 <p class="ww-error hidden" id="codeError" role="alert"></p>
                 <ul class="ww-rules">
                     <li>Deleting lowers your count. Pasting doesn't count.</li>
                     <li>Counts can't rise faster than 150 words a minute.</li>
-                    <li>Once the winner crosses, everyone else has 2 minutes.</li>
+                    <li>Word race: once the winner crosses, everyone else has 2 minutes.</li>
+                    <li>Chill mode: no finish line, and people can drop in after it starts. It ends when time's up, or when the host ends it.</li>
                     <li>Your page is public unless you make it private. Private pages can be shared after the race.</li>
                 </ul>
             </section>
@@ -124,7 +137,7 @@
 
         <section class="ww-hub-races">
             <div class="ww-hub-races-head">
-                <h2 class="ww-label">Races now</h2>
+                <h2 class="ww-label">Happening now</h2>
                 <span class="ww-hint" id="raceCount"></span>
             </div>
             <div class="ww-race-list" id="raceList"></div>

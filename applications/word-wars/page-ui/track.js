@@ -1,7 +1,8 @@
 /**
  * The race track: one row per writer, with a bar running toward the finish
- * flag. Racers see a compact track; spectators get star and cheer buttons.
- * Rows stay in join order so nobody's row jumps around mid-race.
+ * flag (chill sessions have no flag). Racers see a compact track; spectators
+ * get star and cheer buttons. Rows stay in join order so nobody's row jumps
+ * around mid-race.
  */
 import { averageWpm, formatClock, ordinal } from "@alysum/community/word-war-race.js";
 
@@ -165,8 +166,12 @@ export function createTrack(listEl, {
     /**
      * list: standings(); paces: Map userId → { wpm, idleMs };
      * mine: { counted, isOverLimit } for the racer's own row, or null.
+     * scaleWords: the word count at the end of the bar (the target in a word race).
      */
-    function sync(list, { racers, targetWords, startsAt, status, nowMs, paces, cheersOf, favId, mine, readingId = null }) {
+    function sync(list, {
+        racers, targetWords, scaleWords = targetWords, isChill = false, startsAt, status, nowMs, paces, cheersOf, favId, mine, readingId = null,
+    }) {
+        listEl.classList.toggle("is-open", isChill);
         const ids = new Set(list.map((r) => r.userId));
         for (const [id, refs] of rows) {
             if (!ids.has(id)) {
@@ -190,7 +195,7 @@ export function createTrack(listEl, {
             const isMe = r.userId === myId;
             const words = isMe && mine && r.finishedAt == null ? mine.counted : r.words;
             const pace = paces.get(r.userId) || { wpm: 0, idleMs: 0 };
-            const pct = Math.min(100, (words / targetWords) * 100);
+            const pct = Math.min(100, (words / scaleWords) * 100);
             refs.li.style.setProperty("--p", pct.toFixed(2));
 
             setText(refs.pos, words > 0 || r.place ? String(r.pos) : "–");
@@ -207,7 +212,7 @@ export function createTrack(listEl, {
             } else if (r.hasLeft) {
                 label = "Left";
             } else if (status === "finished") {
-                label = "Out of time";
+                label = isChill ? "Done" : "Out of time";
             } else if (r.isGone) {
                 label = "Connection lost";
             } else if (isMe && mine?.isOverLimit) {
@@ -232,7 +237,7 @@ export function createTrack(listEl, {
                 refs.star.setAttribute("aria-pressed", String(favId === r.userId));
             }
             if (refs.read) {
-                refs.read.classList.toggle("hidden", !r.isPagePublic);
+                refs.read.classList.toggle("is-off", !r.isPagePublic);
                 refs.read.setAttribute("aria-pressed", String(readingId === r.userId));
                 refs.li.classList.toggle("is-reading", readingId === r.userId);
             }

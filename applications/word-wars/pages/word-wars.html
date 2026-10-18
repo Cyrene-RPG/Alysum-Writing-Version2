@@ -116,8 +116,19 @@
                         </div>
                     </div>
                     <div class="ww-field">
+                        <h2 class="ww-label">Type</h2>
+                        <div class="ww-seg" id="waitMode" role="radiogroup" aria-label="Type">
+                            <button type="button" role="radio" data-mode="words">Word race</button>
+                            <button type="button" role="radio" data-mode="chill">Chill mode</button>
+                        </div>
+                    </div>
+                    <div class="ww-field" id="waitTargetField">
                         <h2 class="ww-label">Race to</h2>
                         <div class="ww-targets" id="waitTargets" role="radiogroup" aria-label="Target word count"></div>
+                    </div>
+                    <div class="ww-field hidden" id="waitLengthField">
+                        <h2 class="ww-label">How long</h2>
+                        <div class="ww-targets ww-lengths" id="waitLengths" role="radiogroup" aria-label="How long"></div>
                     </div>
                     <div class="ww-field">
                         <h2 class="ww-label">Who can join</h2>
@@ -157,13 +168,13 @@
         <!-- ===== Race (countdown + running) ===== -->
         <section class="ww-view ww-race-view hidden" id="raceView">
             <div class="ww-scoreboard">
-                <div class="ww-sb"><span class="ww-label">Race to</span><span class="ww-sb-val" id="sbTarget">250</span></div>
+                <div class="ww-sb" id="sbTargetWrap"><span class="ww-label" id="sbTargetLabel">Race to</span><span class="ww-sb-val" id="sbTarget">250</span></div>
                 <div class="ww-sb"><span class="ww-label">Clock</span><span class="ww-sb-val" id="sbClock">0:00</span></div>
-                <div class="ww-sb"><span class="ww-label">Leader</span><span class="ww-sb-val" id="sbLeader">—</span></div>
+                <div class="ww-sb"><span class="ww-label" id="sbLeaderLabel">Leader</span><span class="ww-sb-val" id="sbLeader">—</span></div>
                 <div class="ww-sb"><span class="ww-label">Lead by</span><span class="ww-sb-val" id="sbGap">—</span></div>
                 <div class="ww-sb is-gold hidden" id="sbCloseWrap"><span class="ww-label">Line closes</span><span class="ww-sb-val" id="sbClose">2:00</span></div>
                 <div class="ww-sb"><span class="ww-label" id="sbWatchersLabel">Watching</span><span class="ww-sb-val" id="sbWatchers">0</span></div>
-                <div class="ww-sb ww-sb-exit"><button type="button" class="ww-btn" id="exitBtn">Leave race</button></div>
+                <div class="ww-sb ww-sb-exit"><button type="button" class="ww-btn hidden" id="endBtn">End session</button><button type="button" class="ww-btn" id="exitBtn">Leave race</button></div>
             </div>
 
             <div class="ww-ticker hidden" id="ticker">
@@ -203,9 +214,9 @@
                     <aside class="ww-me">
                         <div class="ww-panel">
                             <span class="ww-label">Your count</span>
-                            <div class="ww-me-big"><span id="meWords">0</span><small> / <span id="meTarget">250</span></small></div>
+                            <div class="ww-me-big"><span id="meWords">0</span><small id="meTargetWrap"> / <span id="meTarget">250</span></small></div>
                             <dl class="ww-me-stats">
-                                <dt>To go</dt><dd id="meToGo">250</dd>
+                                <dt id="meToGoLabel">To go</dt><dd id="meToGo">250</dd>
                                 <dt>Pace</dt><dd id="mePace">0 wpm</dd>
                                 <dt>Place</dt><dd id="mePlace">–</dd>
                             </dl>
@@ -221,7 +232,7 @@
                             <p class="ww-hint hidden" id="cheersOff">Cheers hidden. Head down.</p>
                             <label class="ww-toggle"><input type="checkbox" id="showCheers" checked> Show cheers</label>
                         </div>
-                        <p class="ww-hint">Nobody can read your page. The others only see your count.</p>
+                        <p class="ww-hint" id="meHint"></p>
                     </aside>
                 </div>
             </div>
@@ -238,6 +249,14 @@
                     </section>
                 </div>
                 <aside class="ww-stands">
+                    <div class="ww-panel ww-drop-in hidden" id="dropIn">
+                        <span class="ww-label">Write along</span>
+                        <p class="ww-hint">It's a chill session, so you can jump in now. Your count starts when you join. Your page is public until you make it private.</p>
+                        <label class="ww-label ww-sublabel" for="dropInBook">Your book</label>
+                        <select class="ww-select" id="dropInBook"></select>
+                        <button type="button" class="ww-primary" id="dropInBtn">Join this session</button>
+                        <p class="ww-error hidden" id="dropInError" role="alert"></p>
+                    </div>
                     <div class="ww-panel">
                         <span class="ww-label">Your pick</span>
                         <div class="ww-pick" id="pickBody"></div>

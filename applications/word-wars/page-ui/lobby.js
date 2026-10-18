@@ -8,9 +8,12 @@ import { goToLogin } from "@alysum/desktop/app.js";
 import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js";
 import {
+    CHILL_DEFAULT_MIN,
+    CHILL_LENGTH_CHOICES,
     TARGET_CHOICES,
     createRace,
     joinRace,
+    lengthLabel,
     listRaces,
     watchRace,
 } from "@alysum/community/word-war-race.js";
@@ -70,7 +73,7 @@ async function boot() {
         books = [];
     }
 
-    const state = { target: 250, isPublic: true, isBusy: false };
+    const state = { mode: "words", target: 250, durationMin: CHILL_DEFAULT_MIN, isPublic: true, isBusy: false };
     const promptPicker = mountPromptPicker($("promptPicker"));
     const bookSelect = $("bookSelect");
 
@@ -103,26 +106,64 @@ async function boot() {
         return btn;
     }));
 
+    $("lengths").replaceChildren(...CHILL_LENGTH_CHOICES.map((minutes) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.setAttribute("role", "radio");
+        btn.dataset.length = minutes == null ? "" : String(minutes);
+        btn.textContent = lengthLabel(minutes, { isShort: true });
+        return btn;
+    }));
+
     function paintSettings() {
+        const isChill = state.mode === "chill";
+        $("mode").querySelectorAll("[data-mode]").forEach((btn) => {
+            const isOn = btn.dataset.mode === state.mode;
+            btn.classList.toggle("is-on", isOn);
+            btn.setAttribute("aria-checked", String(isOn));
+        });
+        $("modeHint").textContent = isChill
+            ? "Write together with no finish line. You can start alone: people can drop in any time. At the end you see everyone's words and cheers."
+            : "First to the word count wins.";
+        $("targetField").classList.toggle("hidden", isChill);
+        $("lengthField").classList.toggle("hidden", !isChill);
         $("targets").querySelectorAll("[data-target]").forEach((btn) => {
             const isOn = Number(btn.dataset.target) === state.target;
             btn.classList.toggle("is-on", isOn);
             btn.setAttribute("aria-checked", String(isOn));
         });
+        $("lengths").querySelectorAll("[data-length]").forEach((btn) => {
+            const isOn = btn.dataset.length === (state.durationMin == null ? "" : String(state.durationMin));
+            btn.classList.toggle("is-on", isOn);
+            btn.setAttribute("aria-checked", String(isOn));
+        });
+        $("createBtn").textContent = isChill ? "Open a chill session" : "Open a race";
         $("visibility").querySelectorAll("[data-public]").forEach((btn) => {
             const isOn = (btn.dataset.public === "1") === state.isPublic;
             btn.classList.toggle("is-on", isOn);
             btn.setAttribute("aria-checked", String(isOn));
         });
         $("visibilityHint").textContent = state.isPublic
-            ? "It shows up under Races now. Anyone signed in can join or watch."
+            ? "It shows up under Happening now. Anyone signed in can join or watch."
             : "Hidden from the list. Only people with the code can join or watch.";
     }
 
+    $("mode").addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-mode]");
+        if (!btn) return;
+        state.mode = btn.dataset.mode === "chill" ? "chill" : "words";
+        paintSettings();
+    });
     $("targets").addEventListener("click", (event) => {
         const btn = event.target.closest("[data-target]");
         if (!btn) return;
         state.target = Number(btn.dataset.target);
+        paintSettings();
+    });
+    $("lengths").addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-length]");
+        if (!btn) return;
+        state.durationMin = btn.dataset.length ? Number(btn.dataset.length) : null;
         paintSettings();
     });
     $("visibility").addEventListener("click", (event) => {
@@ -160,6 +201,8 @@ async function boot() {
                 isPublic: state.isPublic,
                 bookId: bookId(),
                 prompt: promptPicker.getValue(),
+                mode: state.mode,
+                durationMin: state.durationMin,
             });
             window.location.assign(raceUrl(snap.race.id));
         });
@@ -220,19 +263,24 @@ async function boot() {
             chip.append(dot);
         }
         chip.append(document.createTextNode(statusText(race)));
+        const isChill = race.mode === "chill";
         const target = document.createElement("span");
         target.className = "ww-race-card-target";
-        target.textContent = race.targetWords.toLocaleString();
+        target.textContent = isChill ? lengthLabel(race.durationMin, { isShort: true }) : race.targetWords.toLocaleString();
         top.append(chip, target);
 
+        const kind = isChill ? "chill session" : "race";
         const title = document.createElement("h3");
-        title.textContent = race.isMine ? "Your race" : `${race.hostName}'s race`;
+        title.textContent = race.isMine ? `Your ${kind}` : `${race.hostName}'s ${kind}`;
         const prompt = document.createElement("p");
         prompt.className = `ww-race-card-prompt${race.prompt ? "" : " is-free"}`;
         prompt.textContent = race.prompt || "Free write";
         const meta = document.createElement("p");
         meta.className = "ww-hint";
-        meta.textContent = `Race to ${race.targetWords.toLocaleString()} words · ${race.racerCount}/${race.maxRacers} writers${race.isPublic ? "" : " · Private"}`;
+        const about = isChill
+            ? `Chill mode · ${race.durationMin == null ? "no time limit" : lengthLabel(race.durationMin)}`
+            : `Race to ${race.targetWords.toLocaleString()} words`;
+        meta.textContent = `${about} · ${race.racerCount}/${race.maxRacers} writers${race.isPublic ? "" : " · Private"}`;
 
         const actions = document.createElement("div");
         actions.className = "ww-row";
@@ -240,8 +288,9 @@ async function boot() {
         if (race.isMine) {
             actions.append(button("Back to it", "ww-primary", () => window.location.assign(raceUrl(race.id))));
         } else {
-            if (race.status === "lobby" && !isFull) {
-                actions.append(button("Join", "ww-primary", () => {
+            const canDropIn = isChill && (race.status === "countdown" || race.status === "running");
+            if ((race.status === "lobby" || canDropIn) && !isFull) {
+                actions.append(button(race.status === "lobby" ? "Join" : "Drop in", "ww-primary", () => {
                     if (needBook($("listError"))) return;
                     void run($("listError"), async () => {
                         const snap = await joinRace({ raceId: race.id, bookId: bookId() });
@@ -278,7 +327,7 @@ async function boot() {
             if (!races.length) {
                 const empty = document.createElement("p");
                 empty.className = "ww-race-empty";
-                empty.textContent = "No races right now. Open one and send the code to a friend.";
+                empty.textContent = "Nothing on right now. Open a race or a chill session and send the code to a friend.";
                 list.replaceChildren(empty);
             } else {
                 list.replaceChildren(...races.map(raceCard));

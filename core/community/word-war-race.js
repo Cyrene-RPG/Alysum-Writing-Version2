@@ -10,10 +10,16 @@
 import { supabase } from "../authentication/client.js";
 
 export const TARGET_CHOICES = [100, 250, 500, 1000];
+/** Chill session lengths in minutes; null is no limit. */
+export const CHILL_LENGTH_CHOICES = [10, 15, 30, 45, 60, 90, 120, 180, null];
+export const CHILL_DEFAULT_MIN = 30;
 export const SPEED_LIMIT_WPM = 150;
 export const SPEED_BURST_WORDS = 20;
 export const CLOSE_AFTER_FIRST_MS = 2 * 60_000;
 export const MAX_RACE_MS = 2 * 60 * 60_000;
+export const MAX_CHILL_MS = 6 * 60 * 60_000;
+/** Chill sessions have no target; this only stops silly numbers (same as the server). */
+const CHILL_WORD_CAP = 100_000;
 export const LOBBY_EXPIRES_MS = 6 * 60 * 60_000;
 export const GONE_AFTER_MS = 45_000;
 export const CHECK_IN_MS = 15_000;
@@ -57,7 +63,15 @@ export function raceFromRow(row) {
         isCancelled: row.cancelled === true,
         rematchId: row.rematch_id ? String(row.rematch_id) : null,
         prompt: row.prompt ? String(row.prompt) : null,
+        ...modeFromRow(row),
     };
+}
+
+/** "words": first to targetWords wins. "chill": write for durationMin minutes, or no limit (null). */
+function modeFromRow(row) {
+    const mode = row.mode === "chill" ? "chill" : "words";
+    const minutes = mode === "chill" && row.duration_min != null ? toCount(row.duration_min) : 0;
+    return { mode, durationMin: minutes > 0 ? minutes : null };
 }
 
 export function racerFromRow(row) {
@@ -97,6 +111,7 @@ function listingFromRow(row) {
         racerCount: toCount(row.racer_count),
         hostName: String(row.host_name || "Writer"),
         prompt: row.prompt ? String(row.prompt) : null,
+        ...modeFromRow(row),
     };
 }
 
@@ -133,25 +148,38 @@ function snapshotFrom({ data, sentAt, receivedAt }) {
     return { race, racers, serverOffsetMs };
 }
 
-/** prompt: the prompt text, or null for free write. */
-export async function createRace({ targetWords, isPublic, bookId, prompt = null }) {
-    return snapshotFrom(await callRpc("create_word_war_race", {
+/** prompt: the prompt text, or null for free write. mode "chill" takes durationMin (null = no limit). */
+export async function createRace({ targetWords, isPublic, bookId, prompt = null, mode = "words", durationMin = null }) {
+    const args = {
         p_target_words: targetWords,
         p_is_public: isPublic,
         p_book_id: bookId,
         p_prompt: prompt,
-    }));
+    };
+    if (mode === "chill") Object.assign(args, { p_mode: "chill", p_duration_min: durationMin });
+    return snapshotFrom(await callRpc("create_word_war_race", args));
 }
 
-/** Leave prompt undefined to keep it; pass null for free write. */
-export async function updateRace(raceId, { targetWords = null, isPublic = null, prompt } = {}) {
-    return snapshotFrom(await callRpc("update_word_war_race", {
+/**
+ * Leave prompt undefined to keep it; pass null for free write. Leave mode and
+ * durationMin undefined to keep them; durationMin null is no limit.
+ */
+export async function updateRace(raceId, { targetWords = null, isPublic = null, prompt, mode, durationMin } = {}) {
+    const args = {
         p_race_id: raceId,
         p_target_words: targetWords,
         p_is_public: isPublic,
         p_prompt: prompt === undefined ? null : prompt,
         p_set_prompt: prompt !== undefined,
-    }));
+    };
+    if (mode !== undefined) args.p_mode = mode;
+    if (durationMin !== undefined) Object.assign(args, { p_duration_min: durationMin, p_set_duration: true });
+    return snapshotFrom(await callRpc("update_word_war_race", args));
+}
+
+/** Ends a chill session for everyone. The host can; if the host has left, any racer can. */
+export async function endRace(raceId) {
+    return snapshotFrom(await callRpc("end_word_war_race", { p_race_id: raceId }));
 }
 
 /** A racer asks the host for a different prompt. */
@@ -307,9 +335,35 @@ export function raceStatus(race, nowMs) {
     }
     if (nowMs < race.startsAt) return "countdown";
     if (race.endedAt != null) return "finished";
+    const timeUp = timeUpAt(race);
+    if (timeUp != null && nowMs >= timeUp) return "finished";
     if (race.firstFinishAt != null && nowMs >= race.firstFinishAt + CLOSE_AFTER_FIRST_MS) return "finished";
-    if (nowMs >= race.startsAt + MAX_RACE_MS) return "finished";
     return "running";
+}
+
+export const isChill = (race) => race?.mode === "chill";
+
+/** Most words a racer can count: the target in a word race. */
+export function wordCap(race) {
+    return isChill(race) ? CHILL_WORD_CAP : race?.targetWords || 250;
+}
+
+/** When the clock runs out: a chill session's length, else the 2-hour (or 6-hour) limit. */
+export function timeUpAt(race) {
+    if (race?.startsAt == null) return null;
+    if (!isChill(race)) return race.startsAt + MAX_RACE_MS;
+    if (race.durationMin != null) return race.startsAt + race.durationMin * 60_000;
+    return race.startsAt + MAX_CHILL_MS;
+}
+
+/** "30 minutes", "1½ hours", "No limit" (null). isShort: "30 min", "1½ hr". */
+export function lengthLabel(minutes, { isShort = false } = {}) {
+    if (minutes == null) return "No limit";
+    if (minutes < 60) return isShort ? `${minutes} min` : `${minutes} minutes`;
+    const hours = minutes / 60;
+    const text = Number.isInteger(hours) ? String(hours) : `${Math.floor(hours)}½`;
+    if (isShort) return `${text} hr`;
+    return `${text} ${hours === 1 ? "hour" : "hours"}`;
 }
 
 /** When the line closes for everyone still writing, or null before anyone finishes. */
@@ -323,7 +377,8 @@ export function raceEndedAt(race, nowMs) {
     if (race?.endedAt != null) ends.push(race.endedAt);
     const closes = lineClosesAt(race);
     if (closes != null) ends.push(closes);
-    if (race?.startsAt != null) ends.push(race.startsAt + MAX_RACE_MS);
+    const timeUp = timeUpAt(race);
+    if (timeUp != null) ends.push(timeUp);
     return Math.min(...ends);
 }
 
@@ -335,6 +390,7 @@ export function lobbyRacers(racers) {
 /**
  * Everyone who took part, best first: finishers by finish time, then the rest
  * by words. Adds pos (1-based), place (finishers only), hasLeft and isGone.
+ * Chill sessions have no finishers, so it is by words.
  */
 export function standings(race, racers, nowMs) {
     const startsAt = race?.startsAt;

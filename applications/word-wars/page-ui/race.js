@@ -14,12 +14,15 @@ import { createBooksApi } from "@alysum/synchronization-engine/books.js";
 import { listBodyChapters } from "@alysum/writing-engine/manuscript.js";
 import {
     CHECK_IN_MS,
+    CHILL_DEFAULT_MIN,
     askForNewPrompt,
     createPaceTracker,
     createServerClock,
+    endRace,
     formatClock,
     getPage,
     getRace,
+    isChill,
     joinRace,
     leaveRace,
     lineClosesAt,
@@ -37,7 +40,9 @@ import {
     standings,
     startRace,
     subscribeRace,
+    timeUpAt,
     updateRace,
+    wordCap,
 } from "@alysum/community/word-war-race.js";
 import { createRaceCaller } from "@alysum/community/word-war-calls.js";
 import { initWorkspaceShell } from "/js/studio/shell.js";
@@ -61,6 +66,8 @@ const READ_POLL_MS = 4_000;
 const RESULTS_PAGES_MS = 8_000;
 const MAX_CALLS = 40;
 const HUB = "/word-wars-lobby";
+// The book picked on the hub (lobby.js keeps it here too).
+const BOOK_KEY = "alysum:word-wars:book";
 
 const $ = (id) => document.getElementById(id);
 const raceUrl = (id) => `/word-wars?race=${encodeURIComponent(id)}`;
@@ -95,6 +102,14 @@ function readSession(key, fallback) {
         return sessionStorage.getItem(key) || fallback;
     } catch {
         return fallback;
+    }
+}
+
+function rememberedBook() {
+    try {
+        return localStorage.getItem(BOOK_KEY) || "";
+    } catch {
+        return "";
     }
 }
 
@@ -168,8 +183,10 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         isSealed: false,
         sawCountdown: false,
         leaveArmedAt: 0,
+        endArmedAt: 0,
+        isEnding: false,
         resultsKey: "",
-        pickKey: "",
+        pickKey: null,
         countText: "",
         readingId: null,
         readerKey: "",
@@ -194,6 +211,7 @@ function runRace({ raceId, uid, booksApi, books, first }) {
     let isCallerPrimed = false;
     let writer = null;
     let writerLoading = null;
+    let hasWriterFailed = false;
     let mineCount = null;
     let lastSampleAt = 0;
     let isCheerBusy = false;
@@ -287,7 +305,11 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         code: $("waitCode"),
         count: $("waitCount"),
         list: $("waitList"),
+        mode: $("waitMode"),
+        targetField: $("waitTargetField"),
         targets: $("waitTargets"),
+        lengthField: $("waitLengthField"),
+        lengths: $("waitLengths"),
         visibility: $("waitVisibility"),
         visibilityHint: $("visibilityHint"),
         bookField: $("waitBookField"),
@@ -323,7 +345,11 @@ function runRace({ raceId, uid, booksApi, books, first }) {
             if (isRacer()) await leaveRace(raceId);
             window.location.assign(HUB);
         }),
+        onMode: (mode) => act(async () => applySnapshot(await updateRace(raceId, (
+            mode === "chill" ? { mode, durationMin: CHILL_DEFAULT_MIN } : { mode }
+        )))),
         onTarget: (targetWords) => act(async () => applySnapshot(await updateRace(raceId, { targetWords }))),
+        onLength: (durationMin) => act(async () => applySnapshot(await updateRace(raceId, { durationMin }))),
         onVisibility: (isPublic) => act(async () => applySnapshot(await updateRace(raceId, { isPublic }))),
         onBook: (bookId) => {
             if (!isRacer() || !bookId) return;
@@ -424,8 +450,13 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         return choice === WRITE_IN_NEW ? { newTitle: raceChapterTitle() } : { chapterId: choice };
     }
 
+    /** Where my count starts: the race start, or later if I dropped in to a chill session. */
+    function countFrom() {
+        return Math.max(S.race.startsAt, me()?.joinedAt || 0);
+    }
+
     async function ensureWriter() {
-        if (writer || writerLoading) return writerLoading;
+        if (writer || writerLoading || hasWriterFailed) return writerLoading;
         const mine = me();
         if (!mine?.bookId) return null;
         writerLoading = (async () => {
@@ -433,6 +464,7 @@ function runRace({ raceId, uid, booksApi, books, first }) {
                 let book = bookCache.get(mine.bookId);
                 if (!book) book = await booksApi.getBook(mine.bookId);
                 if (!book) {
+                    hasWriterFailed = true;
                     toast("Your book could not be opened, so you're watching this one.");
                     return;
                 }
@@ -443,7 +475,7 @@ function runRace({ raceId, uid, booksApi, books, first }) {
                     supabase,
                     uid,
                     raceId,
-                    targetWords: S.race.targetWords,
+                    targetWords: wordCap(S.race),
                     start: startChapter(),
                     onPaste: () => toast("Pasted words don't count in a race."),
                     onChapterChange: () => {
@@ -455,11 +487,12 @@ function runRace({ raceId, uid, booksApi, books, first }) {
                 });
                 if (writer.createdChapterId) writeSession(RACE_CHAPTER_KEY, writer.createdChapterId);
                 const start = me()?.startWords;
-                mineCount = writer.beginCount(start ?? writer.bookWords(), S.race.startsAt, clock.now());
+                mineCount = writer.beginCount(start ?? writer.bookWords(), countFrom(), clock.now());
                 writer.setEditable(S.status === "running");
                 if (S.status === "running") writer.focus();
                 void sendReport(true);
             } catch {
+                hasWriterFailed = true;
                 toast("Your book could not be opened, so you're watching this one.");
             } finally {
                 writerLoading = null;
@@ -507,7 +540,7 @@ function runRace({ raceId, uid, booksApi, books, first }) {
             const res = await reportProgress(raceId, { words, startWords, peakWpm, chapterId: writer?.chapterId || null });
             if (words != null) {
                 report.raw = words;
-                report.isBehind = res.finishedAt == null && res.words < Math.min(words, S.race.targetWords);
+                report.isBehind = res.finishedAt == null && res.words < Math.min(words, wordCap(S.race));
             }
             const mine = me();
             if (mine) {
@@ -520,7 +553,7 @@ function runRace({ raceId, uid, booksApi, books, first }) {
                 });
             }
             if (writer && res.startWords != null && writer.startWords !== res.startWords) {
-                mineCount = writer.beginCount(res.startWords, S.race.startsAt, clock.now());
+                mineCount = writer.beginCount(res.startWords, countFrom(), clock.now());
             }
         } catch {
             /* try again on the next tick */
@@ -761,7 +794,7 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         if (now - lastSampleAt < SAMPLE_MS) return;
         lastSampleAt = now;
         for (const r of racers) paceFor(r.userId).add(r.words, now);
-        if (now - S.race.startsAt > PEAK_AFTER_MS) {
+        if (now - countFrom() > PEAK_AFTER_MS) {
             const mine = paceFor(uid);
             mine.notePeak(mine.wpm(now));
         }
@@ -789,6 +822,41 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         S.countText = text;
     }
 
+    /** Chill sessions take new writers after the start, until they're full. Leaving is for good. */
+    function canDropIn() {
+        if (!isChill(S.race) || isRacer() || me() || !["countdown", "running"].includes(S.status)) return false;
+        const active = [...S.racers.values()].filter((r) => r.leftAt == null).length;
+        return active < S.race.maxRacers;
+    }
+
+    async function dropIn() {
+        const bookId = $("dropInBook").value;
+        const error = $("dropInError");
+        error.classList.add("hidden");
+        if (!bookId) {
+            error.textContent = "Make a book in Studio first, then come back to write along.";
+            error.classList.remove("hidden");
+            return;
+        }
+        $("dropInBtn").disabled = true;
+        try {
+            applySnapshot(await joinRace({ raceId, bookId }));
+            toast("You're in. Your count starts now.");
+        } catch (err) {
+            error.textContent = err.message;
+            error.classList.remove("hidden");
+        } finally {
+            $("dropInBtn").disabled = false;
+        }
+    }
+
+    /** Chill sessions: the host ends it; if the host has left, any racer can. */
+    function canEnd() {
+        if (!isChill(S.race) || !isRacer() || !["countdown", "running"].includes(S.status)) return false;
+        const host = S.racers.get(S.race.hostId);
+        return S.race.hostId === uid || !host || host.leftAt != null;
+    }
+
     function renderScoreboard(list, now) {
         const race = S.race;
         const lead = list[0];
@@ -796,8 +864,20 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         const hasLead = lead && lead.words > 0;
         const elapsed = S.status === "running" ? now - race.startsAt
             : S.status === "finished" ? raceEndedAt(race, now) - race.startsAt : 0;
-        $("sbTarget").textContent = race.targetWords.toLocaleString();
+        const timeLeft = isChill(race) && race.durationMin != null ? timeUpAt(race) - Math.max(now, race.startsAt) : null;
+        if (!isChill(race)) {
+            $("sbTargetLabel").textContent = "Race to";
+            $("sbTarget").textContent = race.targetWords.toLocaleString();
+        } else if (timeLeft != null) {
+            $("sbTargetLabel").textContent = "Time left";
+            $("sbTarget").textContent = formatClock(timeLeft);
+        } else {
+            $("sbTargetLabel").textContent = "Chill mode";
+            $("sbTarget").textContent = "No limit";
+        }
+        $("sbTargetWrap").classList.toggle("is-gold", timeLeft != null && timeLeft <= 60_000 && S.status === "running");
         $("sbClock").textContent = formatClock(elapsed);
+        $("sbLeaderLabel").textContent = isChill(race) ? "Most words" : "Leader";
         $("sbLeader").textContent = hasLead ? (lead.userId === uid ? "You" : lead.displayName) : "—";
         $("sbGap").textContent = hasLead && second ? `+${lead.words - second.words}` : "—";
         const closes = lineClosesAt(race);
@@ -814,8 +894,16 @@ function runRace({ raceId, uid, booksApi, books, first }) {
 
         const btn = $("exitBtn");
         const isArmed = now - S.leaveArmedAt < LEAVE_CONFIRM_MS;
-        btn.textContent = !isRacer() ? "Back to Word Wars" : isArmed ? "Click again to leave" : "Leave race";
+        const leaveText = isChill(race) ? "Leave session" : "Leave race";
+        btn.textContent = !isRacer() ? "Back to Word Wars" : isArmed ? "Click again to leave" : leaveText;
         btn.classList.toggle("is-armed", isRacer() && isArmed);
+
+        const endBtn = $("endBtn");
+        const isEndArmed = now - S.endArmedAt < LEAVE_CONFIRM_MS;
+        endBtn.classList.toggle("hidden", !canEnd());
+        endBtn.textContent = isEndArmed ? "Click again to end it for everyone" : "End session";
+        endBtn.classList.toggle("is-armed", isEndArmed);
+        endBtn.disabled = S.isEnding;
     }
 
     function renderMe(list, now) {
@@ -823,9 +911,21 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         if (!mine || !mineCount) return;
         const words = mine.finishedAt != null ? mine.words : mineCount.counted;
         const target = S.race.targetWords;
+        const chill = isChill(S.race);
+        const timeLeft = chill && S.race.durationMin != null ? timeUpAt(S.race) - Math.max(now, S.race.startsAt) : null;
         $("meWords").textContent = words.toLocaleString();
+        $("meTargetWrap").classList.toggle("hidden", chill);
         $("meTarget").textContent = target.toLocaleString();
-        $("meToGo").textContent = Math.max(0, target - words).toLocaleString();
+        if (!chill) {
+            $("meToGoLabel").textContent = "To go";
+            $("meToGo").textContent = Math.max(0, target - words).toLocaleString();
+        } else if (timeLeft != null) {
+            $("meToGoLabel").textContent = "Time left";
+            $("meToGo").textContent = formatClock(timeLeft);
+        } else {
+            $("meToGoLabel").textContent = "Writing for";
+            $("meToGo").textContent = formatClock(S.status === "running" ? now - countFrom() : 0);
+        }
         $("mePace").textContent = `${paceFor(uid).wpm(now)} wpm`;
         $("mePlace").textContent = mine.place
             ? `Finished ${ordinal(mine.place)}`
@@ -837,6 +937,9 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         toggle.textContent = mine.isPagePublic ? "Public: spectators can watch you write" : "Private: only you can see this";
         toggle.classList.toggle("is-public", mine.isPagePublic);
         toggle.setAttribute("aria-pressed", String(mine.isPagePublic));
+        $("meHint").textContent = mine.isPagePublic
+            ? "Spectators can read your page. Other writers only see your count until the end."
+            : "Nobody can read your page. The others only see your count.";
 
         let status = "";
         const closes = lineClosesAt(S.race);
@@ -848,6 +951,8 @@ function runRace({ raceId, uid, booksApi, books, first }) {
             status = "Get ready. Your page unlocks when the countdown ends.";
         } else if (closes && now < closes) {
             status = `The winner's in. ${formatClock(closes - now)} left to finish.`;
+        } else if (timeLeft != null && timeLeft <= 60_000) {
+            status = "Last minute.";
         }
         $("meStatus").textContent = status;
     }
@@ -887,9 +992,13 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         $("ticker").classList.toggle("hidden", !asRacer);
 
         const track = asRacer ? racerTrack : spectatorTrack;
+        // No finish line in chill mode: the bars are scaled so the leader sits about four-fifths along.
+        const most = list.reduce((max, r) => Math.max(max, r.userId === uid && mineCount ? mineCount.counted : r.words), 0);
         track.sync(list, {
             racers,
             targetWords: S.race.targetWords,
+            scaleWords: isChill(S.race) ? Math.max(100, Math.ceil((most * 1.25) / 50) * 50) : S.race.targetWords,
+            isChill: isChill(S.race),
             startsAt: S.race.startsAt,
             status: S.status,
             nowMs: now,
@@ -905,13 +1014,21 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         if (asRacer) {
             renderMe(list, now);
         } else {
+            $("dropIn").classList.toggle("hidden", !canDropIn());
             renderPick(list);
             void fetchReading(false);
             renderReader();
         }
 
         if (S.status === "running") {
-            if (!caller) caller = createRaceCaller({ targetWords: S.race.targetWords, myId: uid });
+            if (!caller) {
+                caller = createRaceCaller({
+                    targetWords: S.race.targetWords,
+                    myId: uid,
+                    mode: S.race.mode,
+                    durationMin: S.race.durationMin,
+                });
+            }
             const raceMs = now - S.race.startsAt;
             const calls = caller.update(list, { raceMs, nowMs: now, startsAt: S.race.startsAt, paces: paceMap });
             // Opening the page mid-race: skip the backlog and say where things stand.
@@ -919,8 +1036,13 @@ function runRace({ raceId, uid, booksApi, books, first }) {
                 calls.forEach(pushCall);
             } else {
                 const lead = list[0];
-                const leader = lead && lead.words > 0 ? (lead.userId === uid ? "You lead" : `${lead.displayName} leads`) : null;
-                const opener = asRacer ? "You're back in the race." : "You're watching live.";
+                const chill = isChill(S.race);
+                let leader = null;
+                if (lead && lead.words > 0) {
+                    if (chill) leader = lead.userId === uid ? "You have the most" : `${lead.displayName} has the most`;
+                    else leader = lead.userId === uid ? "You lead" : `${lead.displayName} leads`;
+                }
+                const opener = asRacer ? `You're back in the ${chill ? "session" : "race"}.` : "You're watching live.";
                 pushCall({
                     text: leader ? `${opener} ${leader} with ${lead.words.toLocaleString()} words.` : opener,
                     isBig: false,
@@ -982,6 +1104,8 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         if (status !== S.status) enterStatus(status, S.status);
         // Run the count every tick so a count held back by the speed limit catches up.
         if (writer && status === "running" && me()?.finishedAt == null) mineCount = writer.count(now);
+        // Someone who just dropped in (or whose page opened mid-race) needs their editor.
+        if ((status === "countdown" || status === "running") && isRacer() && !writer) void ensureWriter();
         if (S.view === "waiting") {
             const mine = me();
             waiting.render({
@@ -1025,6 +1149,44 @@ function runRace({ raceId, uid, booksApi, books, first }) {
             /* leaving anyway */
         }
         window.location.assign(HUB);
+    });
+
+    if (books.length) {
+        $("dropInBook").replaceChildren(...books.map((b) => Object.assign(document.createElement("option"), {
+            value: b.id,
+            textContent: b.title || "Untitled",
+        })));
+        const saved = rememberedBook();
+        if (books.some((b) => b.id === saved)) $("dropInBook").value = saved;
+    } else {
+        $("dropInBook").replaceChildren(Object.assign(document.createElement("option"), {
+            value: "",
+            textContent: "No books yet. Make one in Studio.",
+        }));
+    }
+    $("dropInBtn").addEventListener("click", () => {
+        void dropIn();
+    });
+
+    $("endBtn").addEventListener("click", async () => {
+        if (!canEnd() || S.isEnding) return;
+        const now = clock.now();
+        if (now - S.endArmedAt >= LEAVE_CONFIRM_MS) {
+            S.endArmedAt = now;
+            tick();
+            return;
+        }
+        S.endArmedAt = 0;
+        S.isEnding = true;
+        tick();
+        try {
+            applySnapshot(await endRace(raceId));
+        } catch (err) {
+            toast(err.message);
+        } finally {
+            S.isEnding = false;
+            tick();
+        }
     });
 
     $("pageToggle").addEventListener("click", async () => {

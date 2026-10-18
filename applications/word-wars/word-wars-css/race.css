@@ -100,7 +100,7 @@ body[data-view="race"] .ww-race {
     text-overflow: ellipsis;
 }
 .ww-sb.is-gold .ww-sb-val { color: var(--ww-gold); }
-.ww-sb-exit { flex: 0 0 auto; justify-content: center; border-right: 0; margin-left: auto; }
+.ww-sb-exit { flex: 0 0 auto; flex-direction: row; align-items: center; justify-content: center; gap: 8px; border-right: 0; margin-left: auto; }
 .ww-ticker { flex: none; display: flex; align-items: center; gap: 10px; min-height: 20px; font-size: 14px; }
 .ww-ticker time { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .ww-race-prompt { flex: none; display: grid; gap: 4px; }
@@ -169,6 +169,7 @@ body[data-view="race"] .ww-race {
     background: repeating-conic-gradient(#f8fafc 0 25%, #1e293b 0 50%) 0 0 / 5px 5px;
     opacity: 0.85;
 }
+.ww-track.is-open .ww-rail::after { display: none; }
 .ww-fill {
     position: absolute;
     inset: 0 auto 0 0;
@@ -379,6 +380,8 @@ body[data-view="race"] .ww-race {
     align-content: start;
 }
 .ww-stands { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.ww-drop-in { display: grid; gap: 8px; border-color: color-mix(in srgb, var(--ww-gold) 45%, var(--ww-line)); }
+.ww-drop-in .ww-hint { margin: 0; }
 .ww-spec-main { display: grid; gap: 12px; align-content: start; min-width: 0; }
 .ww-read {
     padding: 6px 12px;
@@ -393,6 +396,8 @@ body[data-view="race"] .ww-race {
 }
 .ww-read:hover { border-color: #34d399; }
 .ww-read[aria-pressed="true"] { border-color: #34d399; color: #6ee7b7; }
+/* Keeps its space so every bar on the track is the same length. */
+.ww-read.is-off { visibility: hidden; }
 .ww-lane.is-reading { box-shadow: inset 0 0 0 1px color-mix(in srgb, #34d399 60%, transparent); }
 .ww-reader { display: flex; flex-direction: column; min-height: 0; }
 .ww-reader-title {
@@ -472,6 +477,32 @@ body[data-view="race"] .ww-race {
 }
 .ww-step.is-p2 .ww-block { height: 116px; }
 .ww-step.is-p3 .ww-block { height: 88px; }
+.ww-awards {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    width: min(100%, 680px);
+    margin: 12px auto 0;
+}
+.ww-awards:empty { display: none; }
+.ww-award {
+    flex: 1 1 220px;
+    max-width: 320px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 16px;
+    border: 1px solid var(--ww-line);
+    border-radius: var(--ww-radius);
+    background: var(--ww-panel);
+    text-align: center;
+}
+.ww-award .ww-av { width: 52px; height: 52px; font-size: 28px; }
+.ww-award .ww-label { color: var(--ww-gold); }
+.ww-table .ww-tag { margin-left: 8px; }
 .ww-table-wrap { padding: 0; overflow-x: auto; }
 .ww-table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
 .ww-table th,
