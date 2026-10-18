@@ -5,12 +5,14 @@ import { initWorkspaceShell } from "/js/studio/shell.js?v=9";
 import { fetchLibraryCatalog } from "@alysum/library/author-profile.js?v=3";
 import { readLocalLibraryListings } from "@alysum/publishing/post-work.js?v=8";
 import { genreColor, genreDef, genreLabel, matchingGenreKeys, normalizeGenreList } from "@alysum/publishing/genres.js?v=4";
-import { cropFrameStyle, defaultCrops, peekCoverSrc, rememberCovers } from "@alysum/publishing/cover-upload.js?v=4";
+import { cropFrameStyle, peekCoverSrc, rememberCovers } from "@alysum/publishing/cover-upload.js?v=4";
+
+const SHELVES_KEY = "alysum:library:shelves";
+const SHELF_LABELS = { none: "Add to shelf", reading: "Currently reading", want: "Want to read", finished: "Finished" };
+let savedShelves = readSavedShelves();
 
 const READ_KEY = "alysum:library:read-position";
-const NEW_DAYS = 21;
-const SHELF_ROWS = [5, 4, 2];
-const SHELF_LIMIT = SHELF_ROWS.reduce((sum, n) => sum + n, 0);
+const SHELF_LIMIT = 11;
 const DEFAULT_SHELF = [
     "fantasy", "isekai", "litrpg", "scifi", "romance",
     "horror", "mystery", "slice", "action", "drama", "adventure",
@@ -31,14 +33,6 @@ function readProgress() {
         return raw && typeof raw === "object" ? raw : {};
     } catch {
         return {};
-    }
-}
-
-function writeProgress(map) {
-    try {
-        localStorage.setItem(READ_KEY, JSON.stringify(map));
-    } catch {
-        /* ignore */
     }
 }
 
@@ -106,7 +100,7 @@ function cardsFromLocal() {
         }));
 }
 
-const state = { search: "", genreQuery: "", genres: new Set(), sort: "popular" };
+const state = { search: "", genreQuery: "", genres: new Set(), sort: "popular", status: "all" };
 let BOOKS = [];
 
 function searchMatches(book) {
@@ -132,30 +126,18 @@ function genreRank(book) {
     return best;
 }
 function statusFilter(book) {
-    if (state.sort === "ongoing") return book.status === "Ongoing";
-    if (state.sort === "completed") return book.status === "Completed";
-    if (state.sort === "new") return book.daysAgo <= NEW_DAYS;
+    if (state.status === "ongoing") return book.status === "Ongoing";
+    if (state.status === "completed") return book.status === "Completed";
     return true;
 }
 function sortTie(a, b) {
     if (state.sort === "rating") return b.rating - a.rating;
-    if (state.sort === "newest" || state.sort === "new") return a.daysAgo - b.daysAgo;
+    if (state.sort === "newest") return a.daysAgo - b.daysAgo;
     if (state.sort === "az") return a.title.localeCompare(b.title);
     return b.followers - a.followers;
 }
-function hasCover(book) {
-    return Boolean(peekCoverSrc(book.coverUrl));
-}
-
 function sortBooks(list) {
-    return [...list].sort((a, b) => {
-        if (state.sort === "popular" || state.sort === "rating") {
-            const cover = Number(hasCover(b)) - Number(hasCover(a));
-            if (cover) return cover;
-        }
-        const rank = genreRank(a) - genreRank(b);
-        return rank || sortTie(a, b);
-    });
+    return [...list].sort((a, b) => genreRank(a) - genreRank(b) || sortTie(a, b) || a.title.localeCompare(b.title));
 }
 
 function coverImg(book, crop) {
@@ -163,33 +145,27 @@ function coverImg(book, crop) {
     if (!url) return "";
     const frame = cropFrameStyle(crop || book.coverCrop);
     const style = frame ? ` style="${frame}"` : "";
-    return `<img class="lib-cover-img" src="${escapeHtml(url)}" alt="" decoding="async"${style} />`;
+    return `<img class="lib-cover-img" src="${escapeHtml(url)}" alt="" decoding="async" loading="lazy"${style} />`;
 }
 
-function ratingBadge(book) {
-    if (!book.rating) return "";
-    return `<span class="lib-rating">${escapeHtml(book.rating.toFixed(1))}</span>`;
-}
-
-function cardHtml(book) {
-    const ribbon = book.continuing
-        ? `<span class="lib-progress">${book.continuing.progress}%</span>`
-        : "";
+function cardHtml(book, compact = false) {
     const img = coverImg(book);
+    const progress = book.continuing ? Math.max(0, Math.min(100, book.continuing.progress)) : null;
     return `
-    <a class="lib-card" href="/book?id=${encodeURIComponent(book.id)}" style="--dot:${genreColor(book.genre)}" data-id="${escapeHtml(book.id)}" aria-label="${escapeHtml(book.title)} by ${escapeHtml(book.author)}">
-        <div class="lib-cover${img ? " has-img" : ""}">
-            ${img}
-            ${ribbon}
-            ${ratingBadge(book)}
-            <h3 class="lib-title">${escapeHtml(book.title)}</h3>
-            <p class="lib-author">${escapeHtml(book.author)}</p>
+    <article class="lib-book${compact ? " is-compact" : ""}"><a class="lib-card" href="/book?id=${encodeURIComponent(book.id)}" style="--dot:${genreColor(book.genre)}" data-id="${escapeHtml(book.id)}">
+        <div class="lib-cover${img ? " has-img" : ""}">${img || `<span class="lib-cover-placeholder" aria-hidden="true"><span>ALYSUM LIBRARY</span><strong>${escapeHtml(book.title)}</strong><small>${escapeHtml(book.author)}</small></span>`}</div>
+        <div class="lib-card-body">
+            <div class="lib-card-top"><span class="lib-status${book.status === "Completed" ? " is-complete" : ""}">${escapeHtml(book.status)}</span>${book.rating ? `<span class="lib-rating" aria-label="Rating ${escapeHtml(book.rating.toFixed(1))}">★ ${escapeHtml(book.rating.toFixed(1))}</span>` : ""}</div>
+            <h3 class="lib-title">${escapeHtml(book.title)}</h3><p class="lib-author">by ${escapeHtml(book.author)}</p>
+            <p class="lib-blurb">${escapeHtml(book.blurb || "No description available.")}</p>
+            <div class="lib-tags">${book.genres.slice(0, 3).map((key) => `<span>${escapeHtml(genreLabel(key))}</span>`).join("")}</div>
+            <div class="lib-card-footer"><span>${book.chapters} chapters</span><span class="lib-read-link">${getShelf(book) === "finished" ? "Read again" : progress !== null ? `Continue · ${progress}%` : "View book"} <span aria-hidden="true">→</span></span></div>
         </div>
-        <div class="lib-info">
-            <span class="lib-genre"><span class="dot" style="--dot:${genreColor(book.genre)}"></span>${escapeHtml(genreLabel(book.genre))}</span>
-            <span>${escapeHtml(book.status)}</span>
-        </div>
-    </a>`;
+    </a>
+        ${compact && book.continuing && getShelf(book) === "reading" ? `<div class="lib-reading-progress"><div role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}"><span style="width:${progress}%"></span></div><span>${progress}% read</span></div>` : ""}
+        <div class="lib-shelf-picker"><label class="lib-visually-hidden" for="shelf-${compact ? "personal" : "catalog"}-${escapeHtml(book.id)}">Shelf for ${escapeHtml(book.title)}</label>
+        <select id="shelf-${compact ? "personal" : "catalog"}-${escapeHtml(book.id)}" data-shelf-id="${escapeHtml(book.id)}">${Object.entries(SHELF_LABELS).map(([value, label]) => `<option value="${value}"${getShelf(book) === value ? " selected" : ""}>${label}</option>`).join("")}</select></div>
+    </article>`;
 }
 
 function genreCounts() {
@@ -232,7 +208,6 @@ function seedPinned() {
 
 function addPinnedGenre(key) {
     if (!key || pinnedGenres.includes(key)) return;
-    if (pinnedGenres.length >= SHELF_LIMIT) pinnedGenres.pop();
     pinnedGenres.push(key);
     renderGenreTabs();
     renderMorePanel();
@@ -240,7 +215,7 @@ function addPinnedGenre(key) {
 
 function genreTabHtml(key, counts) {
     const def = genreMeta(key);
-    return `<button type="button" class="lib-genre-tab${state.genres.has(key) ? " active" : ""}" style="--dot:${def.color}" data-genre="${key}">
+    return `<button type="button" class="lib-genre-tab${state.genres.has(key) ? " active" : ""}" aria-pressed="${state.genres.has(key)}" style="--dot:${def.color}" data-genre="${key}">
         <span class="dot"></span>${escapeHtml(def.label)}<span class="count">${counts[key] || 0}</span>
     </button>`;
 }
@@ -250,23 +225,15 @@ function renderGenreTabs() {
     const counts = genreCounts();
     const el = document.getElementById("genreTabs");
     if (!el) return;
-    let offset = 0;
-    const rows = SHELF_ROWS.map((size, index) => {
-        const slice = pinnedGenres.slice(offset, offset + size);
-        offset += size;
-        const more = index === SHELF_ROWS.length - 1
-            ? `<button type="button" class="lib-genre-more-btn" id="genreMoreBtn" aria-label="More genres" title="More genres">+</button>`
-            : "";
-        return `<div class="lib-genre-row">${slice.map((key) => genreTabHtml(key, counts)).join("")}${more}</div>`;
-    }).join("");
     const panel = document.getElementById("genreMorePanel");
-    el.innerHTML = rows;
+    const isOpen = !!panel?.classList.contains("open");
+    el.innerHTML = pinnedGenres.map((key) => genreTabHtml(key, counts)).join("")
+        + `<button type="button" class="lib-genre-more-btn" id="genreMoreBtn" aria-controls="genreMorePanel" aria-expanded="${isOpen}">More genres <span aria-hidden="true">+</span></button>`;
     const moreBtn = document.getElementById("genreMoreBtn");
-    moreBtn?.classList.toggle("active", !!panel?.classList.contains("open"));
     moreBtn?.addEventListener("click", (event) => {
         event.stopPropagation();
         const open = panel?.classList.toggle("open");
-        moreBtn.classList.toggle("active", !!open);
+        moreBtn.setAttribute("aria-expanded", String(!!open));
         if (open) document.getElementById("genreSearch")?.focus();
     });
 }
@@ -277,17 +244,17 @@ function renderMorePanel() {
     const pinned = new Set(pinnedGenres);
     const remaining = matchingGenreKeys(state.genreQuery).filter((key) => !pinned.has(key));
     if (!remaining.length) {
-        list.innerHTML = `<p class="lib-genre-empty">That's every genre on the shelf.</p>`;
+        list.innerHTML = `<p class="lib-genre-empty">No other genres found.</p>`;
         return;
     }
     list.innerHTML = remaining.map((key) => {
         const def = genreMeta(key);
-        return `<div class="lib-genre-chip" draggable="true" data-genre="${key}" style="--dot:${def.color}">
+        return `<button type="button" class="lib-genre-chip" draggable="true" data-genre="${key}" style="--dot:${def.color}">
             <span class="dot"></span>${escapeHtml(def.label)}
-        </div>`;
+        </button>`;
     }).join("");
     list.querySelectorAll(".lib-genre-chip").forEach((chip) => {
-        chip.addEventListener("click", () => addPinnedGenre(chip.dataset.genre));
+        chip.addEventListener("click", () => { addPinnedGenre(chip.dataset.genre); toggleGenre(chip.dataset.genre); });
         chip.addEventListener("dragstart", (event) => {
             event.dataTransfer.setData("text/genre", chip.dataset.genre);
             event.dataTransfer.effectAllowed = "copy";
@@ -295,112 +262,65 @@ function renderMorePanel() {
     });
 }
 
-const CONTINUE_READING_MAX = 4;
+function readSavedShelves() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(SHELVES_KEY) || "{}");
+        return stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
+    } catch { return {}; }
+}
 
-function continueReadingBooks() {
-    return BOOKS.filter((book) => book.continuing).slice(0, CONTINUE_READING_MAX);
+function getShelf(book) {
+    const saved = savedShelves[book.id];
+    if (Object.hasOwn(SHELF_LABELS, saved)) return saved;
+    if (book.continuing) return book.continuing.progress >= 100 ? "finished" : "reading";
+    return "none";
 }
 
 function renderContinue() {
-    const row = document.getElementById("continueRow");
-    const section = document.getElementById("continueSection");
-    const items = continueReadingBooks();
-    section.hidden = !items.length;
-    row.innerHTML = items.map(cardHtml).join("");
-    attachCardHandlers(row);
-}
-
-function renderGrid() {
-    const continueIds = new Set(continueReadingBooks().map((book) => book.id));
-    const sorted = sortBooks(BOOKS.filter((book) => !continueIds.has(book.id) && statusFilter(book) && searchMatches(book) && genreMatches(book)));
-    const grid = document.getElementById("bookGrid");
-    const empty = document.getElementById("emptyState");
-    grid.innerHTML = sorted.map(cardHtml).join("");
-    empty.hidden = sorted.length > 0;
-    attachCardHandlers(grid);
-}
-
-function canHoverPreview() {
-    return window.matchMedia("(hover: hover) and (min-width: 761px)").matches;
-}
-
-function attachCardHandlers(container) {
-    container.querySelectorAll(".lib-card").forEach((card) => {
-        card.addEventListener("mouseenter", () => {
-            if (canHoverPreview()) showPreview(card);
-        });
-        card.addEventListener("mouseleave", hidePreview);
+    const shelves = [
+        { key: "reading", row: "continueRow", count: "readingCount", title: "Nothing in progress", detail: "Select Currently reading from a book’s shelf menu." },
+        { key: "want", row: "wantRow", count: "wantCount", title: "No saved books", detail: "Select Want to read from a book’s shelf menu." },
+        { key: "finished", row: "finishedRow", count: "finishedCount", title: "No finished books", detail: "Select Finished from a book’s shelf menu." },
+    ];
+    shelves.forEach((shelf) => {
+        const items = BOOKS.filter((book) => getShelf(book) === shelf.key);
+        document.getElementById(shelf.count).textContent = String(items.length);
+        const row = document.getElementById(shelf.row);
+        row.classList.toggle("is-empty", !items.length);
+        row.innerHTML = items.length ? items.map((book) => cardHtml(book, true)).join("")
+            : `<div class="lib-shelf-placeholder"><div><h4>${shelf.title}</h4><p>${shelf.detail}</p></div><a href="#catalogHeading">Browse books <span aria-hidden="true">→</span></a></div>`;
     });
 }
 
-const previewEl = document.getElementById("hoverPreview");
-function showPreview(card) {
-    const book = BOOKS.find((row) => row.id === card.dataset.id);
-    if (!book || !previewEl) return;
-    const hoverCrop = book.coverMini || (book.coverCrop ? defaultCrops().coverMini : null);
-    const cover = coverImg(book, hoverCrop)
-        ? `<div class="lib-hover-cover has-img">${coverImg(book, hoverCrop)}</div>`
-        : "";
-    previewEl.innerHTML = `
-        ${cover}
-        <h4>${escapeHtml(book.title)}</h4>
-        <p>${escapeHtml(genreLabel(book.genre))} · ${book.chapters} chapters</p>
-        <p>${escapeHtml((book.blurb || "").slice(0, 120))}${(book.blurb || "").length > 120 ? "…" : ""}</p>`;
-    previewEl.hidden = false;
-    const face = card.querySelector(".lib-cover") || card;
-    const rect = face.getBoundingClientRect();
-    const left = Math.max(12, Math.min(rect.left + rect.width / 2 - 134, window.innerWidth - 280));
-    previewEl.style.left = `${left}px`;
-    previewEl.style.top = `${rect.bottom + 6}px`;
-}
-function hidePreview() {
-    if (previewEl) previewEl.hidden = true;
+function renderGrid() {
+    const sorted = sortBooks(BOOKS.filter((book) => statusFilter(book) && searchMatches(book) && genreMatches(book)));
+    const grid = document.getElementById("bookGrid");
+    const empty = document.getElementById("emptyState");
+    grid.innerHTML = sorted.map((book) => cardHtml(book)).join("");
+    empty.hidden = sorted.length > 0;
+    grid.setAttribute("aria-busy", "false");
+    document.getElementById("resultCount").textContent = `${sorted.length} ${sorted.length === 1 ? "book" : "books"}${state.search || state.genres.size || state.status !== "all" ? " found" : ""}`;
 }
 
-/* Shelf ledges: drag sideways to scroll their shelf. Never opens a book. */
-function setupLedgeDrag(ledgeId, rowId) {
-    const ledge = document.getElementById(ledgeId);
-    const row = document.getElementById(rowId);
-    if (!ledge || !row) return;
-    let isDown = false;
-    let startX = 0;
-    let startScroll = 0;
-    const start = (x) => {
-        isDown = true;
-        startX = x;
-        startScroll = row.scrollLeft;
-        ledge.style.cursor = "grabbing";
-    };
-    const move = (x) => {
-        if (!isDown) return;
-        row.scrollLeft = startScroll - (x - startX) * 2.2;
-    };
-    const end = () => {
-        isDown = false;
-        ledge.style.cursor = "grab";
-    };
-    ledge.addEventListener("mousedown", (event) => { start(event.clientX); event.preventDefault(); });
-    window.addEventListener("mousemove", (event) => move(event.clientX));
-    window.addEventListener("mouseup", end);
-    ledge.addEventListener("touchstart", (event) => start(event.touches[0].clientX), { passive: true });
-    ledge.addEventListener("touchmove", (event) => { move(event.touches[0].clientX); event.preventDefault(); }, { passive: false });
-    ledge.addEventListener("touchend", end);
-}
-
-function showToast(msg) {
-    const toast = document.getElementById("toast");
-    if (!toast) return;
-    toast.textContent = msg;
-    toast.hidden = false;
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(() => { toast.hidden = true; }, 2200);
+function resetFilters() {
+    state.search = "";
+    state.genres.clear();
+    state.genreQuery = "";
+    document.getElementById("genreSearch").value = "";
+    state.status = "all";
+    document.getElementById("searchInput").value = "";
+    document.getElementById("statusSelect").value = "all";
+    renderGenreTabs();
+    renderMorePanel();
+    renderGrid();
 }
 
 async function boot() {
+    bindControls();
     initWorkspaceShell({
         lead: "The ",
         accent: "Library",
-        subtitle: "A reading room, catalogued with care",
+        subtitle: "",
     });
     const session = await resolveStudioSession(supabase);
     if (session.mode !== "none") {
@@ -408,7 +328,7 @@ async function boot() {
         initWorkspaceShell({
             lead: "The ",
             accent: "Library",
-            subtitle: "A reading room, catalogued with care",
+            subtitle: "",
             name: profile.name,
             imageUrl: profile.imageUrl,
         });
@@ -417,7 +337,7 @@ async function boot() {
             initWorkspaceShell({
                 lead: "The ",
                 accent: "Library",
-                subtitle: "A reading room, catalogued with care",
+                subtitle: "",
                 name: next.name,
                 imageUrl: next.imageUrl,
             });
@@ -432,10 +352,31 @@ async function boot() {
     renderMorePanel();
     renderContinue();
     renderGrid();
-    setupLedgeDrag("browseLedgeTop", "bookGrid");
-    setupLedgeDrag("browseLedgeBottom", "bookGrid");
     rememberCovers(BOOKS.map((book) => book.coverUrl)).then(() => {
         renderContinue();
+        renderGrid();
+    });
+}
+
+function bindControls() {
+    document.addEventListener("change", (event) => {
+        const picker = event.target.closest("select[data-shelf-id]");
+        if (!picker || !Object.hasOwn(SHELF_LABELS, picker.value)) return;
+        const bookId = picker.dataset.shelfId;
+        const book = BOOKS.find((item) => item.id === bookId);
+        if (!book) return;
+        savedShelves[bookId] = picker.value;
+        try { localStorage.setItem(SHELVES_KEY, JSON.stringify(savedShelves)); } catch { /* Keep selections available for this visit. */ }
+        renderContinue();
+        renderGrid();
+        document.getElementById("shelfNotice").textContent = picker.value === "none" ? `${book.title} removed from shelves` : `${book.title} moved to ${SHELF_LABELS[picker.value]}`;
+        const next = Array.from(document.querySelectorAll("#bookGrid select[data-shelf-id]")).find((select) => select.dataset.shelfId === bookId);
+        next?.focus({ preventScroll: true });
+    });
+    document.getElementById("clearFilters").addEventListener("click", resetFilters);
+    document.getElementById("emptyReset").addEventListener("click", resetFilters);
+    document.getElementById("statusSelect").addEventListener("change", (event) => {
+        state.status = event.target.value;
         renderGrid();
     });
     document.getElementById("searchInput")?.addEventListener("input", (event) => {
@@ -472,14 +413,13 @@ async function boot() {
         const btn = document.getElementById("genreMoreBtn");
         if (panel?.classList.contains("open") && !panel.contains(event.target) && event.target !== btn) {
             panel.classList.remove("open");
-            btn?.classList.remove("active");
+            btn?.setAttribute("aria-expanded", "false");
         }
     });
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
-            hidePreview();
             document.getElementById("genreMorePanel")?.classList.remove("open");
-            document.getElementById("genreMoreBtn")?.classList.remove("active");
+            document.getElementById("genreMoreBtn")?.setAttribute("aria-expanded", "false");
         }
     });
 }

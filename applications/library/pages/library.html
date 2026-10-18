@@ -54,7 +54,7 @@
             </div>
             <div class="wd-welcome-copy">
                 <h1 class="wd-welcome-title" id="welcomeTitle">The <span class="wd-name">Library</span></h1>
-                <p class="wd-welcome-sub" id="welcomeSubtitle">A reading room, catalogued with care</p>
+                <p class="wd-welcome-sub" id="welcomeSubtitle"></p>
             </div>
         </div>
     </header>
@@ -65,54 +65,60 @@
             <a href="/library" class="is-active">Library</a>
         </div>
     </nav>
-    <div class="lib-page">
-        <section class="lib-hero">
-            <div class="lib-search panel">
-                <label class="lib-search-label" for="searchInput">Find a book</label>
-                <div class="lib-search-row">
-                    <input id="searchInput" type="search" placeholder="Find a book by title, author, or genre…" autocomplete="off" />
+    <main class="lib-page">
+        <div class="lib-heading">
+            <div><h2 class="lib-display-title">Your library</h2>
+            </div>
+            <div class="lib-search">
+                <label for="searchInput">Search the library</label>
+                <input id="searchInput" type="search" placeholder="Title, author, or genre…" autocomplete="off" />
+            </div>
+        </div>
+        <section class="lib-reading-space" aria-labelledby="readingSpaceHeading">
+            <div class="lib-personal-head"><div><h2 id="readingSpaceHeading" class="lib-display-title">Your shelves</h2></div><a class="lib-browse-link" href="#catalogHeading">Browse books <span aria-hidden="true">↗</span></a></div>
+            <p class="lib-personal-note">Shelves are saved on this device.</p>
+            <section class="lib-personal-shelf" aria-labelledby="readingHeading">
+                <div class="lib-shelf-head"><div class="lib-shelf-title"><span class="lib-shelf-icon" aria-hidden="true">◷</span><h3 id="readingHeading" class="lib-display-title">Currently reading</h3><span class="lib-shelf-count" id="readingCount">0</span></div></div>
+                <div class="lib-shelf-row" id="continueRow"></div>
+            </section>
+            <section class="lib-personal-shelf" aria-labelledby="wantHeading">
+                <div class="lib-shelf-head"><div class="lib-shelf-title"><span class="lib-shelf-icon" aria-hidden="true">＋</span><h3 id="wantHeading" class="lib-display-title">Want to read</h3><span class="lib-shelf-count" id="wantCount">0</span></div></div>
+                <div class="lib-shelf-row" id="wantRow"></div>
+            </section>
+            <section class="lib-personal-shelf" aria-labelledby="finishedHeading">
+                <div class="lib-shelf-head"><div class="lib-shelf-title"><span class="lib-shelf-icon" aria-hidden="true">✓</span><h3 id="finishedHeading" class="lib-display-title">Finished</h3><span class="lib-shelf-count" id="finishedCount">0</span></div></div>
+                <div class="lib-shelf-row" id="finishedRow"></div>
+            </section>
+        </section>
+        <div class="lib-layout">
+            <aside class="lib-filters" aria-labelledby="filtersHeading">
+                <div class="lib-filter-head"><h2 id="filtersHeading" class="lib-display-title">Filters</h2><button type="button" id="clearFilters">Reset</button></div>
+                <label class="lib-field-label" for="statusSelect">Book status</label>
+                <select id="statusSelect"><option value="all">All books</option><option value="ongoing">Ongoing</option><option value="completed">Completed</option></select>
+                <section class="lib-genres" aria-labelledby="genresHeading">
+                    <h3 id="genresHeading" class="lib-display-title">Genres</h3><p class="lib-filter-hint">Select one or more genres.</p>
+                    <div class="lib-genre-tabs" id="genreTabs"></div>
+                    <div class="lib-genre-more" id="genreMorePanel">
+                        <label class="lib-field-label" for="genreSearch">Find a genre</label>
+                        <input id="genreSearch" type="search" placeholder="Search genres…" autocomplete="off" />
+                        <div id="genreMoreList"></div>
+                    </div>
+                </section>
+            </aside>
+            <section class="lib-catalog" aria-labelledby="catalogHeading">
+                <div class="lib-shelf-head lib-catalog-head">
+                    <div><h2 id="catalogHeading" class="lib-display-title">All books</h2><p id="resultCount" role="status" aria-live="polite">Loading books…</p></div>
+                    <div class="lib-sort"><label for="sortSelect">Sort by</label><select id="sortSelect">
+                        <option value="popular">Most popular</option><option value="rating">Highest rated</option>
+                        <option value="newest">Newest arrivals</option><option value="az">Title A–Z</option>
+                    </select></div>
                 </div>
-            </div>
-        </section>
-        <section class="lib-genres">
-            <div class="lib-genre-head">
-                <p class="lib-eyebrow">Browse by genre · tap to combine</p>
-            </div>
-            <div class="lib-genre-tabs" id="genreTabs"></div>
-            <div class="lib-genre-more" id="genreMorePanel">
-                <input id="genreSearch" type="search" placeholder="Search genres…" autocomplete="off" />
-                <p>Drag onto the shelf, or tap to add</p>
-                <div id="genreMoreList"></div>
-            </div>
-        </section>
-        <section class="lib-shelf" id="continueSection" hidden>
-            <div class="lib-shelf-head">
-                <h2>Continue reading</h2>
-                <span class="lib-shelf-aside">picked up where you left off</span>
-            </div>
-            <div class="lib-shelf-row" id="continueRow"></div>
-        </section>
-        <section class="lib-shelf">
-            <div class="lib-shelf-head">
-                <h2>Browse the stacks</h2>
-                <select id="sortSelect" aria-label="Sort and filter books">
-                    <option value="popular">All · Most popular</option>
-                    <option value="rating">All · Highest rated</option>
-                    <option value="newest">All · Newest arrivals</option>
-                    <option value="az">All · Title A–Z</option>
-                    <option value="ongoing">Ongoing</option>
-                    <option value="completed">Completed</option>
-                    <option value="new">New arrivals</option>
-                </select>
-            </div>
-            <div class="lib-ledge" id="browseLedgeTop" title="Drag to scroll"></div>
-            <div class="lib-grid" id="bookGrid"></div>
-            <div class="lib-ledge" id="browseLedgeBottom" title="Drag to scroll"></div>
-            <p class="lib-empty" id="emptyState" hidden>This shelf is empty — try clearing a filter or searching another way.</p>
-        </section>
-    </div>
-    <div class="lib-toast" id="toast" hidden></div>
-    <div class="lib-hover" id="hoverPreview" hidden></div>
+                <div class="lib-grid" id="bookGrid" aria-busy="true"></div>
+                <div class="lib-empty" id="emptyState" hidden><h3 class="lib-display-title">No books found</h3><p>Try a different search or reset your filters.</p><button type="button" id="emptyReset">Reset filters</button></div>
+            </section>
+        </div>
+    </main>
+    <p id="shelfNotice" class="lib-visually-hidden" role="status" aria-live="polite"></p>
     <script src="/js/pwa-register.js?v=5" defer></script>
     <script type="module" src="/js/library/page.js?v=33"></script>
 </body>
