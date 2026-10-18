@@ -108,6 +108,7 @@ export function insertBook(payload) {
     published_chapter_ids: Array.isArray(payload.published_chapter_ids) ? payload.published_chapter_ids : [],
     is_published: Boolean(payload.is_published ?? payload.isPublished),
     media_format: payload.media_format || payload.mediaFormat || "novel",
+    ...(payload.draft_parent_id ? { draft_parent_id: String(payload.draft_parent_id), draft_label: String(payload.draft_label || "New draft") } : {}),
   };
   state.books.unshift(book);
   writeState(state);
@@ -129,7 +130,7 @@ export function updateBook(id, patch) {
 
 export function deleteBook(id) {
   const state = readState();
-  state.books = state.books.filter((b) => b.id !== id);
+  state.books = state.books.filter((b) => b.id !== id).map(book => book.draft_parent_id === id ? { ...book, draft_parent_id: null } : book);
   writeState(state);
 }
 
