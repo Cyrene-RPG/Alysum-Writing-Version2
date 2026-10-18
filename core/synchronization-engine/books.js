@@ -7,9 +7,10 @@ import {
     getBook as getLocalBook,
     insertBook as insertLocalBook,
     listBooks as listLocalBooks,
+    promoteBookDraft,
     updateBook as updateLocalBook,
 } from "./local-adapter.js";
-import * as cloud from "./cloud-adapter.js?v=5";
+import * as cloud from "./cloud-adapter.js?v=6";
 import { removeLocalListing } from "../publishing/post-work.js";
 import {
     createEmptyBook,
@@ -183,6 +184,7 @@ function newOfflineBookId() {
 function localApi() {
     return {
         mode: "local",
+        async promoteDraft(id) { return promoteBookDraft(id); },
         peekDrafts(rootId) { return draftSummaries(listLocalBooks(), rootId); },
         async listDrafts(rootId) { return draftSummaries(listLocalBooks(), rootId); },
         readFromCache() {
@@ -288,6 +290,18 @@ export function createBooksApi(session, supabase) {
 
     return {
         mode: "cloud",
+        async promoteDraft(id) {
+            requireOnline();
+            const cached=readCache(userId);
+            const source=cached.find(book=>String(book.id)===String(id)) || await cloudGet(id);
+            if(source&&readCache(userId).some(book=>(String(book.id)===String(id)||String(book.id)===String(source.draft_parent_id))&&cacheIsPending(book)))throw new Error('Save pending edits to this revision and the main draft before promoting.');
+            const result=await cloud.promoteDraft(supabase,userId,id);
+            upsertCache(userId,withoutPending(result.backup));
+            const pendingMain=readCache(userId).find(book=>String(book.id)===String(result.main.id));
+            if(cacheIsPending(pendingMain))throw new Error('The main draft has newer local edits. Your revision and previous-main backup are saved; review the main draft before retrying.');
+            upsertCache(userId,withoutPending(result.main));
+            return result;
+        },
         peekDrafts(rootId) { return draftSummaries(readCache(userId), rootId); },
         async listDrafts(rootId) {
             const cached = () => draftSummaries(readCache(userId), rootId);

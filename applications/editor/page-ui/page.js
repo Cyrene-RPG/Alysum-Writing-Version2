@@ -6,7 +6,7 @@ import { createExcerptApi } from "/core/publishing/excerpts.js";
 import { mountSnippetSharing } from "./snippets.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
-import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=13";
+import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=14";
 import {
     countBookChapters,
     countBookFolders,

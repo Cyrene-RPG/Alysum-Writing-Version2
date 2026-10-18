@@ -1,3 +1,4 @@
+import { needsPromotedChapterSelection } from "/core/writing-engine/promote-draft.js";
 import {
     MIN_PUBLISH_WORDS,
     publishWordCount,
@@ -142,6 +143,10 @@ export async function runPublishSave({
             paintPostError(postError, resolved.error);
             return;
         }
+        if (needsPromotedChapterSelection(book, resolved.chapterIds)) {
+            paintPostError(postError, "Choose chapters from your new main draft before publishing. Your current listing has not changed.");
+            return;
+        }
         form.chapterIds = resolved.chapterIds;
         if (resolved.note) paintPostError(postError, resolved.note);
         if (resolved.unlist) {
@@ -175,7 +180,7 @@ export async function runPublishSave({
     }
     const patch = {
         title: title || book.title || "Untitled",
-        publish_meta: publishMetaFromForm(form),
+        publish_meta: { ...publishMetaFromForm(form), ...(!isPublished && book.publish_meta?.revisionNeedsPublishReview ? { revisionNeedsPublishReview: true } : {}) },
     };
     if (isPublished || !book.is_published) {
         patch.published_chapter_ids = form.chapterIds;

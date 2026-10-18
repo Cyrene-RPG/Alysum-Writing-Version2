@@ -23,7 +23,7 @@ import { readPublishDraft } from "@alysum/publishing/publish-meta.js?v=7";
 import { fetchLibraryListingId, isLibraryListed, readLocalLibraryListings } from "@alysum/publishing/post-work.js?v=13";
 import { bindPageLook, paintPageLook, readPageLook } from "./page-look.js?v=14";
 import { bindWarningPicker } from "./warning-picker.js?v=5";
-import { paintPostError, runPublishSave } from "./publish-save.js?v=8";
+import { paintPostError, runPublishSave } from "./publish-save.js?v=9";
 import {
     CROP_ASPECT,
     applyPreview,
