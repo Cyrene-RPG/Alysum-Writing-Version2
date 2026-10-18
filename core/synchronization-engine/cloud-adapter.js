@@ -165,3 +165,17 @@ export async function deleteBook(supabase, userId, id) {
     if (error) throw error;
     if (!data?.length) throw new Error("Could not delete this book.");
 }
+
+/** Names and grouping only: opening a draft menu must not download manuscripts. */
+export async function listDraftSummaries(supabase, userId, rootId) {
+    if (!String(userId || '').trim() || !String(rootId || '').trim()) return [];
+    const columns = 'id,title,draft_parent_id,draft_label,created';
+    const query = () => supabase.from('books').select(columns).eq('user_id', userId);
+    const [original, revisions] = await Promise.all([
+        query().eq('id', rootId),
+        query().eq('draft_parent_id', rootId),
+    ]);
+    if (original.error) throw original.error;
+    if (revisions.error) throw revisions.error;
+    return [...(original.data || []), ...(revisions.data || [])];
+}

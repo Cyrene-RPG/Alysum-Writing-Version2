@@ -9,7 +9,7 @@ import {
     listBooks as listLocalBooks,
     updateBook as updateLocalBook,
 } from "./local-adapter.js";
-import * as cloud from "./cloud-adapter.js?v=4";
+import * as cloud from "./cloud-adapter.js?v=5";
 import { removeLocalListing } from "../publishing/post-work.js";
 import {
     createEmptyBook,
@@ -168,6 +168,11 @@ function applyChoice(cached, cloudBook) {
     return { book: withPending(choice.book, pending), pending, action: choice.action };
 }
 
+function draftSummaries(books, rootId) {
+    return books.filter(book => String(book.id) === String(rootId) || String(book.draft_parent_id || '') === String(rootId))
+        .map(book => ({ id: book.id, title: book.title, draft_parent_id: book.draft_parent_id || null, draft_label: book.draft_label || null, created: book.created }));
+}
+
 function newOfflineBookId() {
     if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
         return crypto.randomUUID();
@@ -178,6 +183,8 @@ function newOfflineBookId() {
 function localApi() {
     return {
         mode: "local",
+        peekDrafts(rootId) { return draftSummaries(listLocalBooks(), rootId); },
+        async listDrafts(rootId) { return draftSummaries(listLocalBooks(), rootId); },
         readFromCache() {
             return false;
         },
@@ -281,6 +288,19 @@ export function createBooksApi(session, supabase) {
 
     return {
         mode: "cloud",
+        peekDrafts(rootId) { return draftSummaries(readCache(userId), rootId); },
+        async listDrafts(rootId) {
+            const cached = () => draftSummaries(readCache(userId), rootId);
+            if (!isProbablyOnline()) return cached();
+            try {
+                const rows = await withTimeout(cloud.listDraftSummaries(supabase, userId, String(rootId)), CLOUD_READ_MS, 'draft-list-timeout');
+                const pending = readCache(userId).filter(row => cacheIsPending(row) || isLocalOnlyId(row.id));
+                const merged = new Map(rows.map(row => [String(row.id), row]));
+                for (const row of draftSummaries(pending, rootId)) merged.set(String(row.id), row);
+                // Never replace manuscript cache rows with these metadata-only records.
+                return [...merged.values()];
+            } catch { return cached(); }
+        },
         readFromCache() {
             return lastReadFromCache;
         },

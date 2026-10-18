@@ -75,3 +75,7 @@ export async function saveBeforeRevisionNavigation(saveCurrent, navigate, url) {
     if (status === 'error') throw new Error('Your current edits could not be saved. Stay here and try again.');
     navigate(url);
 }
+
+export function chapterContentChanged(stored, html) {
+    return String(stored?.content || '') !== String(html || '');
+}

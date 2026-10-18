@@ -26,3 +26,7 @@ Run `node --test core/tests/writing-engine/draft-revisions.test.js core/tests/pu
 ## Direct draft switching
 
 The editor always shows an Editing label and a Switch draft button above the document. The switcher lists the main/original draft and sibling revisions for that book, marks the current draft, saves before navigating and returns to the normal single-pane editor. It does not require opening reference mode or creating a snapshot.
+
+## Switching performance
+
+The switcher renders cached draft names immediately and refreshes only the current family’s ID/title/grouping metadata. It no longer fetches every manuscript to open the menu or overwrites manuscript caches with partial rows. Uncached target drafts can prefetch when pointed at or focused. A pending refresh cannot replace controls during saving. Identical chapter HTML skips redundant save scheduling; changed content and formatting still flush before navigation.

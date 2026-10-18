@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { blankRevisionPayload, referenceSnapshot, groupRevisionBooks, revisionChapterList, saveBeforeRevisionNavigation, draftSwitchChoices, draftSwitchUrl } from '../../writing-engine/draft-revisions.js';
+import { blankRevisionPayload, referenceSnapshot, groupRevisionBooks, revisionChapterList, saveBeforeRevisionNavigation, draftSwitchChoices, draftSwitchUrl, chapterContentChanged } from '../../writing-engine/draft-revisions.js';
 import { createBooksApi } from '../../synchronization-engine/books.js';
 import { LOCAL_STUDIO_STORAGE_KEY } from '../../synchronization-engine/local-adapter.js';
 import { createBookVersion, getBookVersion } from '../../writing-engine/version-api.js';
@@ -87,4 +87,25 @@ test('direct draft switch lists the original first, siblings only, and the curre
 test('direct draft switch returns to single editor without losing other URL options',()=>{
     const url=new URL(draftSwitchUrl('https://alysumwriting.com/editor?book=revision&referenceBook=original&referenceVersion=snapshot&theme=dark','original'));
     assert.equal(url.searchParams.get('book'),'original');assert.equal(url.searchParams.has('referenceBook'),false);assert.equal(url.searchParams.has('referenceVersion'),false);assert.equal(url.searchParams.get('theme'),'dark');
+});
+
+test('unchanged chapter HTML does not need another save, while formatting and deletions still do',()=>{
+    const chapter={content:'<p>Saved words.</p>'};
+    assert.equal(chapterContentChanged(chapter,'<p>Saved words.</p>'),false);
+    assert.equal(chapterContentChanged(chapter,'<p><strong>Saved words.</strong></p>'),true);
+    assert.equal(chapterContentChanged(chapter,''),true);
+    assert.equal(chapterContentChanged({content:''},''),false);
+});
+test('draft-name refresh requests only metadata and never replaces cached manuscript content',async()=>{
+    globalThis.localStorage=storage();globalThis.window={setTimeout:(fn,ms)=>{const timer=setTimeout(fn,ms);timer.unref();return timer;}};
+    const calls=[];const originalRow={...original(),user_id:'owner',created:10,updated:10};
+    const revisionRow={...originalRow,id:'revision',draft_parent_id:'original',draft_label:'Draft 2'};
+    const supabase={from:()=>({select(columns){const filters={};const query={eq(name,value){filters[name]=value;return query;},then(resolve,reject){calls.push({columns,filters});const rows=filters.id?[originalRow]:[revisionRow];return Promise.resolve({data:rows.map(({id,title,draft_parent_id,draft_label,created})=>({id,title,draft_parent_id,draft_label,created}))}).then(resolve,reject);}};return query;}})};
+    const api=createBooksApi({mode:'cloud',user:{id:'owner'}},supabase);
+    api.stashBook(originalRow.id,originalRow);
+    const before=structuredClone(api.peekBook(originalRow.id));
+    assert.equal(api.peekDrafts('original')[0].sections,undefined);
+    const summaries=await api.listDrafts('original');assert.equal(summaries.length,2);assert.equal(calls.length,2);
+    assert.ok(calls.every(call=>!call.columns.includes('sections')&&call.columns!=='*'&&call.filters.user_id==='owner'));
+    assert.deepEqual(api.peekBook(originalRow.id),before);
 });
