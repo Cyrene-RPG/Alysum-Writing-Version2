@@ -2,6 +2,7 @@ import { STORAGE_KEY, createDemo, restoreState, resolveDraft, resolveChapter, sa
 const $ = id => document.getElementById(id);
 let state;
 try { state = restoreState(localStorage.getItem(STORAGE_KEY)); } catch { state = createDemo(); }
+let sidebarCollapsed = false, mobileSidebar = false;
 let saveTimer, targetMode = 'existing', focusAfterSetup = false;
 const editor = $('writing-text');
 const dialog = $('setup-dialog');
@@ -20,6 +21,7 @@ function rememberScroll(role) { scrollPositions.set(`${role}/${key(state[role])}
 function renderPane(role) {
     const {book,draft,chapter} = resolveChapter(state,state[role]);
     $(role+'-book').textContent = book.title;
+    $(role+'-book').hidden = book.id === state.writing.bookId;
     $(role+'-draft').textContent = draft.name;
     options($(role+'-chapter'),draft.chapters,state[role].chapterId);
     const element = $(role+'-text');
@@ -27,6 +29,7 @@ function renderPane(role) {
     else element.textContent = chapter.text || 'This reference chapter is empty.';
     $(role+'-count').textContent = `${wordCount(chapter.text).toLocaleString()} words`;
     element.scrollTop = scrollPositions.get(`${role}/${key(state[role])}`) || 0;
+    if(role === 'writing') renderEditorChrome();
 }
 function renderLayout() {
     const mobile = matchMedia('(max-width: 800px)').matches;
@@ -42,6 +45,13 @@ function renderLayout() {
     }
     document.documentElement.style.setProperty('--font-size',state.fontSize+'px');
     $('smaller').disabled = state.fontSize <= 16; $('larger').disabled = state.fontSize >= 26;
+    document.documentElement.dataset.previewTheme = state.previewTheme === 'paper' ? 'paper' : 'dark';
+    $('preview-theme').value = state.previewTheme === 'paper' ? 'paper' : 'dark';
+    $('editor-font').value = state.fontFamily === 'serif' ? 'serif' : 'sans';
+    document.documentElement.style.setProperty('--writer-font',state.fontFamily === 'serif' ? 'Georgia, serif' : '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif');
+    const spacing = ['1.3','1.65','2.1'].includes(state.leading) ? state.leading : '1.65';
+    $('editor-spacing').value=spacing;document.documentElement.style.setProperty('--writer-leading',spacing);
+    renderSidebarLayout();
 }
 function render() {
     renderPane('reference');renderPane('writing');renderLayout();
@@ -50,6 +60,7 @@ function render() {
 editor.addEventListener('input',()=>{
     setWritingText(state,editor.value);
     $('writing-count').textContent = `${wordCount(editor.value).toLocaleString()} words`;
+    updateToolbarCount();
     $('save-status').textContent = 'Saving on this device…';
     clearTimeout(saveTimer);saveTimer=setTimeout(persist,350);
 });
@@ -152,3 +163,55 @@ $('reset-demo').addEventListener('click',()=>{
     state=createDemo();scrollPositions.clear();render();persist();
 });
 render();
+
+function updateToolbarCount() {
+    const {draft,chapter}=resolveChapter(state,state.writing);
+    $('toolbar-count').textContent=`${wordCount(chapter.text)} / ${draft.chapters.reduce((count,item)=>count+wordCount(item.text),0)}`;
+}
+function renderEditorChrome() {
+    const {book,draft,chapter}=resolveChapter(state,state.writing);
+    $('welcome-book').textContent=book.title;$('editor-book-title').textContent=book.title;$('editor-chapter-title').textContent=chapter.title;
+    $('sidebar-draft').textContent=draft.name;$('sidebar-book').textContent=book.title;
+    $('chapter-list').replaceChildren(...draft.chapters.map((item,index)=>{
+        const row=document.createElement('li');row.className='writer-tree-item'+(item.id===chapter.id?' is-active':'');
+        const button=document.createElement('button');button.type='button';button.className='demo-chapter-button';
+        if(item.id===chapter.id)button.setAttribute('aria-current','page');
+        const number=document.createElement('span');number.className='chapter-number';number.textContent='CH '+(index+1);
+        const title=document.createElement('span');title.textContent=item.title.replace(/^\d+\s*[·.]\s*/, '');button.append(number,title);row.append(button);
+        button.addEventListener('click',()=>{rememberScroll('writing');state.writing.chapterId=item.id;state.mobilePane='writing';mobileSidebar=false;renderPane('writing');renderLayout();persist();});
+        return row;
+    }));
+    $('sidebar-versions').replaceChildren(...book.drafts.map(item=>{
+        const button=document.createElement('button');button.type='button';button.className='sidebar-version';button.textContent=item.name;
+        if(sameDraft({bookId:book.id,draftId:item.id},state.reference)){button.disabled=true;button.textContent+=' · Reference';}
+        else if(item.id===draft.id)button.textContent+=' · Writing';
+        button.addEventListener('click',()=>{rememberScroll('writing');if(item.id!==state.writing.draftId)state.writing={bookId:book.id,draftId:item.id,chapterId:item.chapters[0].id};state.mobilePane='writing';render();persist();});return button;
+    }));
+    updateToolbarCount();
+}
+function renderSidebarLayout(){
+    const mobile=matchMedia('(max-width: 800px)').matches;
+    $('editor-shell').classList.toggle('sidebar-collapsed',!mobile&&sidebarCollapsed);
+    $('editor-shell').classList.toggle('sidebar-open',mobile&&mobileSidebar);
+    $('chapter-backdrop').hidden=!mobile||!mobileSidebar;
+    $('toggle-chapters').setAttribute('aria-expanded',String(mobile?mobileSidebar:!sidebarCollapsed));
+}
+function closeSidebar(){if(matchMedia('(max-width: 800px)').matches)mobileSidebar=false;else sidebarCollapsed=true;renderSidebarLayout();}
+$('toggle-chapters').addEventListener('click',()=>{if(matchMedia('(max-width: 800px)').matches)mobileSidebar=!mobileSidebar;else sidebarCollapsed=!sidebarCollapsed;renderSidebarLayout();});
+$('close-chapters').addEventListener('click',closeSidebar);$('chapter-backdrop').addEventListener('click',closeSidebar);
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&mobileSidebar){closeSidebar();$('toggle-chapters').focus();}});
+function selectSidebar(tab){
+    $('chapter-panel').hidden=tab!=='chapters';$('book-panel').hidden=tab!=='book';
+    for(const key of ['chapters','book']){$(key+'-tab').classList.toggle('is-active',key===tab);$(key+'-tab').setAttribute('aria-selected',String(key===tab));}
+}
+$('chapters-tab').addEventListener('click',()=>selectSidebar('chapters'));$('book-tab').addEventListener('click',()=>selectSidebar('book'));
+$('sidebar-setup').addEventListener('click',()=>{mobileSidebar=false;renderSidebarLayout();openSetup('writing');});
+$('add-chapter').addEventListener('click',()=>{
+    const {draft}=resolveDraft(state,state.writing);const title=prompt('Chapter title',`Chapter ${draft.chapters.length+1}`);
+    if(!title?.trim())return;
+    const chapter={id:crypto.randomUUID(),title:title.trim().slice(0,120),text:''};draft.chapters.push(chapter);state.writing.chapterId=chapter.id;
+    state.mobilePane='writing';mobileSidebar=false;render();persist();editor.focus();
+});
+$('editor-font').addEventListener('change',()=>{state.fontFamily=$('editor-font').value;renderLayout();persist();});
+$('editor-spacing').addEventListener('change',()=>{state.leading=$('editor-spacing').value;renderLayout();persist();});
+$('preview-theme').addEventListener('change',()=>{state.previewTheme=$('preview-theme').value;renderLayout();persist();});
