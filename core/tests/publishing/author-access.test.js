@@ -145,3 +145,35 @@ test('real Supabase adapter requests a JSON representation when saving the conne
     assert.equal(response.status,200);assert.match((await response.json()).webhookUrl,/api\/author-access/);
     const stored=JSON.parse(calls.find(call=>call.options.method==='POST').options.body);assert.equal(stored.verifier_hash,await sha256(secret));assert.equal(JSON.stringify(stored).includes(secret),false);
 });
+
+async function loadPublishSave() {
+    let code=await readFile(new URL('../../../applications/studio/page-ui/publish-save.js',import.meta.url),'utf8');
+    code=code.replace(/(["'])(@alysum\/publishing\/|\/core\/writing-engine\/)([^"']+)\1/g,(_match,_quote,prefix,tail)=>JSON.stringify(new URL((prefix.startsWith('@')?'../../publishing/':'../../writing-engine/')+tail,import.meta.url).href));
+    return import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
+}
+test('short locked chapters give a named error before any write or automatic takedown',async()=>{
+    const {runPublishSave}=await loadPublishSave();
+    for(const chapters of [[{id:'locked',title:'Chapter 2',content:'short '.repeat(100)}],[{id:'free',title:'Sample',content:'word '.repeat(600)},{id:'locked',title:'Chapter 2',content:'short '.repeat(100)}]]) {
+        const postError={};
+        await runPublishSave({isPublished:true,listed:true,session:{mode:'cloud',user:{id:owner}},book:source,chapters,
+            readForm:()=>({title:'Book',genres:['fantasy'],rating:'general',chapterIds:chapters.map(ch=>ch.id),lockedChapterIds:['locked']}),
+            saveChapterAccess(){assert.fail('Must not configure');},api:{updateBook(){assert.fail('Must not save');}},supabase:{from(){assert.fail('Must not update or unlist');}},postError});
+        assert.match(postError.textContent,/Chapter 2/);assert.match(postError.textContent,/100 \/ 500/);assert.match(postError.textContent,/listing has not changed/);
+    }
+});
+test('a lock missing from the publication selection gives the chapter name before writes',async()=>{
+    const {runPublishSave}=await loadPublishSave();const postError={};
+    await runPublishSave({isPublished:true,listed:true,session:{mode:'cloud',user:{id:owner}},book:source,chapters:source.sections.body,
+        readForm:()=>({title:'Book',genres:['fantasy'],rating:'general',chapterIds:['free'],lockedChapterIds:['locked']}),
+        saveChapterAccess(){assert.fail('Must not configure');},api:{updateBook(){assert.fail('Must not save');}},supabase:{from(){assert.fail('Must not publish');}},postError});
+    assert.match(postError.textContent,/Private chapter/);assert.match(postError.textContent,/Manuscript/);
+});
+test('restored locks select publication, and unpublishing clears the lock control',async()=>{
+    let code=await readFile(new URL('../../../applications/studio/page-ui/publish-access.js',import.meta.url),'utf8');
+    code=code.replace(/from '(\/core\/[^']+)'/g,(_match,path)=>'from '+JSON.stringify(new URL('../..'+path.slice(5),import.meta.url).href));
+    const {bindLockSelection}=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
+    class Checkbox extends EventTarget {constructor(checked){super();this.checked=checked;}}
+    const publish=new Checkbox(false),lock=new Checkbox(true);bindLockSelection(publish,lock);assert.equal(publish.checked,true);
+    publish.checked=false;publish.dispatchEvent(new Event('change'));assert.equal(lock.checked,false);
+    lock.checked=true;lock.dispatchEvent(new Event('change'));assert.equal(publish.checked,true);
+});

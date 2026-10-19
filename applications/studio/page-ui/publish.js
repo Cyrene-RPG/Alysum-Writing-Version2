@@ -240,13 +240,14 @@ async function boot() {
             .map((part) => part.trim())
             .filter(Boolean);
         const selected = [...document.querySelectorAll("[data-chapter-id]:checked")].map((el) => el.dataset.chapterId);
+        const access = chapterAccess?.read() || {lockedChapterIds: []};
         return {
             title: document.getElementById("workTitle")?.value || book.title,
             author: book._author || "",
             summary: document.getElementById("workSummary")?.value || "",
             purchaseUrl: document.getElementById("purchaseUrl")?.value || "",
-            chapterAccess: chapterAccess?.read() || {lockedChapterIds: []},
-            lockedChapterIds: chapterAccess?.read().lockedChapterIds || [],
+            chapterAccess: access,
+            lockedChapterIds: access.lockedChapterIds,
             notesBefore: draft.notesBefore || "",
             notesAfter: document.getElementById("workNotesAfter")?.value || "",
             genre: selectedGenres[0] || "",

@@ -148,6 +148,20 @@ export async function runPublishSave({
             paintPostError(postError, "Pick at least one chapter to post.");
             return;
         }
+        const locked = new Set(form.lockedChapterIds || []);
+        const selected = new Set(form.chapterIds || []);
+        for (const chapterId of locked) {
+            const chapter = chapters.find(item => String(item.id) === String(chapterId));
+            if (!chapter || !selected.has(String(chapterId))) {
+                paintPostError(postError, `Select “${chapter?.title || 'Locked chapter'}” under Manuscript, or turn off its lock.`);
+                return;
+            }
+            const words = publishWordCount(chapter);
+            if (words != null && words < MIN_PUBLISH_WORDS) {
+                paintPostError(postError, `${shortChapterError(chapter)} Locked chapters cannot be posted below this minimum. Your listing has not changed.`);
+                return;
+            }
+        }
         const resolved = resolvePublishChapters({
             listed,
             selectedIds: form.chapterIds,

@@ -83,7 +83,12 @@ export async function handleAuthorAccess(request, env, injected = {}) {
             if (source.media_format && !['novel','fiction','prose'].includes(source.media_format)) fail(400,'Chapter locks currently support prose books.');
             const chapterIds = [...new Set((Array.isArray(body.chapterIds) ? body.chapterIds : []).map(String))];
             const selectedIds = [...new Set((Array.isArray(body.selectedIds) ? body.selectedIds : []).map(String))];
-            if (chapterIds.length > 500 || chapterIds.some(ch=>!selectedIds.includes(ch))) fail(400,'Select each locked chapter for publication.');
+            if (chapterIds.length > 500) fail(400,'Select up to 500 locked chapters.');
+            const missingSelection = chapterIds.filter(ch=>!selectedIds.includes(ch));
+            if (missingSelection.length) {
+                const missingNames = listBodyChapters(source.sections).filter(ch=>missingSelection.includes(String(ch.id))).map(ch=>String(ch.title || 'Untitled')).join(', ');
+                fail(400,`Select these locked chapters under Manuscript, or turn off their locks: ${missingNames || missingSelection.join(', ')}.`);
+            }
             const manuscript = listBodyChapters(source.sections);
             if (chapterIds.length && chapterIds.length === manuscript.length && body.complete !== true) fail(400,'Mark the book complete before locking every chapter, or leave a free sample.');
             const chapters = manuscript.filter(ch=>chapterIds.includes(String(ch.id))).map(ch=>({id:String(ch.id),title:String(ch.title || 'Untitled').slice(0,300),text:manuscriptPlainText(ch.content || ''),wordCount:countWordsInHtml(ch.content || '')}));

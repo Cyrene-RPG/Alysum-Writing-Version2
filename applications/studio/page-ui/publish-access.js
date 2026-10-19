@@ -1,5 +1,17 @@
 import { authorAccessRequest } from '/core/publishing/author-access-client.js';
 import { normalizeProductKey } from '/core/publishing/author-access.js';
+export function bindLockSelection(publish, lock) {
+    if (!publish) return;
+    const selectPublished = () => {
+        if (lock.checked && !publish.checked) {
+            publish.checked=true;
+            publish.dispatchEvent(new Event('change',{bubbles:true}));
+        }
+    };
+    selectPublished();
+    lock.addEventListener('change',selectPublished);
+    publish.addEventListener('change',()=>{if (!publish.checked) lock.checked=false;});
+}
 export async function bindChapterAccess({supabase,book,chapters}) {
     const $=id=>document.getElementById(id);
     let ready=false, loaded=false, config=null, failure='';
@@ -25,19 +37,14 @@ export async function bindChapterAccess({supabase,book,chapters}) {
     for(const chapter of chapters) {
         const label=document.createElement('label');label.className='pub-chapter';
         const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.dataset.lockChapterId=String(chapter.id);checkbox.checked=locked.has(String(chapter.id));
-        checkbox.addEventListener('change',()=>{
-            if(checkbox.checked) {
-                const publish=[...document.querySelectorAll('[data-chapter-id]')].find(el=>el.dataset.chapterId===String(chapter.id));
-                if(publish && !publish.checked) { publish.checked=true;publish.dispatchEvent(new Event('change',{bubbles:true})); }
-            }
-        });
+        const publish=[...document.querySelectorAll('[data-chapter-id]')].find(el=>el.dataset.chapterId===String(chapter.id));
+        bindLockSelection(publish,checkbox);
         label.append(checkbox,document.createTextNode(`Lock: ${chapter.title || 'Untitled'}`));list.append(label);
     }
     $('chapterShopSettings').href=`/applications/studio/pages/connected-payments?book=${encodeURIComponent(book.id)}`;
     return {
         read() {
-            const selected=new Set([...document.querySelectorAll('[data-chapter-id]:checked')].map(el=>el.dataset.chapterId));
-            return {lockedChapterIds:[...document.querySelectorAll('[data-lock-chapter-id]:checked')].map(el=>el.dataset.lockChapterId).filter(id=>selected.has(id)),
+            return {lockedChapterIds:[...document.querySelectorAll('[data-lock-chapter-id]:checked')].map(el=>el.dataset.lockChapterId),
                 connectionId:$('chapterConnection').value,productUrl:$('chapterProduct').value.trim(),minimum:$('chapterMinimum').value.trim(),currency:$('chapterCurrency').value};
         },
         async save(form) {
