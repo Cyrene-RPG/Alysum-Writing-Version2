@@ -39,3 +39,17 @@
 }
 .paid-access button:disabled, #stripeConnect:disabled, #editionCreate:disabled { opacity: .5; cursor: default; }
 .paid-access button:focus-visible, #stripeConnect:focus-visible, #editionCreate:focus-visible, #copyPaymentSql:focus-visible { outline: 2px solid var(--accent, currentColor); outline-offset: 3px; }
+.payment-page [hidden] { display: none !important; }
+.payment-page .pub-card h2 { text-transform: none; letter-spacing: normal; font-size: 18px; color: var(--text); }
+.payment-step { display: grid; place-items: center; width: 30px; height: 30px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 50%; font-size: 14px; font-weight: 700; color: var(--text); }
+.payment-page p { line-height: 1.6; }
+.payment-page summary { cursor: pointer; padding: 10px 0; font-weight: 600; }
+.payment-link-button { display: inline-block; text-decoration: none; padding: 10px 16px; border-radius: 8px; }
+.payment-setting { padding: 14px 0; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.payment-setting p { margin: 6px 0; }
+.payment-setting small { color: var(--muted); }
+.payment-page #paidChapters label span { flex: 1; }
+.payment-page #paidChapters small { color: var(--muted); font-weight: 400; }
+#checkPaymentSetup { min-height: 44px; padding: 10px 16px; border-radius: 8px; font: inherit; font-weight: 700; cursor: pointer; }
+
+.payment-fields { border: 0; padding: 0; margin: 0; min-width: 0; }

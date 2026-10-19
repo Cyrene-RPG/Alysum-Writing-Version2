@@ -85,6 +85,7 @@
       { "source": "/js/studio/cover-crop.js", "destination": "/applications/studio/page-ui/cover-crop.js" },
       { "source": "/js/studio/page-look.js", "destination": "/applications/studio/page-ui/page-look.js" },
       { "source": "/js/studio/warning-picker.js", "destination": "/applications/studio/page-ui/warning-picker.js" },
+      { "source": "/js/studio/payment-setup.js", "destination": "/applications/studio/page-ui/payment-setup.js" },
       { "source": "/js/studio/connected-payments.js", "destination": "/applications/studio/page-ui/connected-payments.js" },
       { "source": "/js/library/paid-reader.js", "destination": "/applications/library/page-ui/paid-reader.js" },
       { "source": "/css/studio/paid-access.css", "destination": "/applications/studio/studio-css/paid-access.css" },

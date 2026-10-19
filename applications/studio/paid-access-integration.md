@@ -4,7 +4,7 @@ This is the real Stripe Connect implementation. Live purchases charge the author
 
 ## Required setup on main
 
-1. Open `/applications/studio/pages/connected-payments` on Alysum. Click **Copy Supabase SQL** and run that exact script in Supabase SQL Editor. It creates private payment tables and upgrades an earlier sandbox schema if present. Existing sandbox rows stay sandbox rows. It does not rewrite books, public Library data or existing publishing policies.
+1. Open the site-owner setup page `/applications/studio/pages/payment-setup` on Alysum. Click **Copy Supabase SQL** and run that exact script in Supabase SQL Editor. It creates private payment tables and upgrades an earlier sandbox schema if present. Existing sandbox rows stay sandbox rows. It does not rewrite books, public Library data or existing publishing policies.
 2. Set these in Cloudflare Pages → `alysum-writing-version2` → **Production** environment. Secret values belong there, never in chat or GitHub.
 
 | Setting | Value |
@@ -31,7 +31,7 @@ If your Stripe platform does not offer Standard OAuth, its onboarding must be ad
 
 Subscribe to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `charge.refunded`, `charge.dispute.created`, `account.updated`, and `account.application.deauthorized`. Events must come from connected accounts and use v1 event payloads with `account`, `livemode`, `type` and `data.object`. Store that endpoint's signing secret above.
 
-5. Redeploy main after setting environment values. The setup page enables **Continue to Stripe** only after configuration and database checks succeed. Each author connects their own Stripe account through Stripe; they do not paste payment credentials into Alysum.
+5. Redeploy main after setting environment values. The author payments page enables **Connect Stripe** only after configuration and database checks succeed. Each author connects their own Stripe account through Stripe; they do not paste payment credentials into Alysum.
 
 ## Publishing and reading
 

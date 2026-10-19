@@ -30,46 +30,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow">
-    <title>Connected payments — Alysum</title>
+    <title>Get paid — Alysum</title>
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
     <link rel="stylesheet" href="/css/editor/document.css?v=11" />
     <link rel="stylesheet" href="/css/editor/scene-breaks.css?v=2" />
     <link rel="stylesheet" href="/css/studio/publish.css?v=26" />
     <link rel="stylesheet" href="/css/studio/paid-access.css">
 </head>
-<body><main class="pub-page">
-    <p><a class="payment-back" href="/studio">← Back to Studio</a></p>
-    <h1>Connected payments</h1>
-    <p class="pub-sub" id="paymentMode">Direct author payments · Stripe</p>
-    <section class="pub-card">
-        <h2>Stripe</h2>
-        <p>Readers pay into your connected Stripe account. Alysum checks payment and manages reading access.</p>
-        <p class="pub-hint">Stripe handles account authorization. Your Stripe password and card details never go into an Alysum form. This connection authorizes Alysum to create payments on your connected Standard account.</p>
-        <p id="stripeConnection">No account connected.</p>
-        <button type="button" class="pub-primary" id="stripeConnect" disabled>Continue to Stripe</button>
-        <a id="paymentLogin" hidden>Sign in to Alysum</a>
-        <div id="setupDetails"><h3>Server setup needed</h3><p class="pub-hint">These settings belong in Cloudflare’s production environment. Do not paste secrets into this page or chat.</p><ul id="setupMissing"></ul>
-        <p><a href="/applications/studio/paid-access-integration.md">Open setup instructions</a></p>
-        <button type="button" class="pub-ghost" id="copyPaymentSql">Copy Supabase SQL</button>
-        <textarea id="paymentSql" aria-label="Author payments Supabase SQL" readonly hidden></textarea><p id="sqlCopyStatus" role="status"></p></div>
+<body><main class="pub-page payment-page">
+    <p><a class="payment-back" href="/studio">← Studio</a></p>
+    <h1>Get paid for your writing</h1>
+    <p class="pub-sub">Readers pay you directly through Stripe.</p>
+    <section class="pub-card" id="paymentAvailability" aria-live="polite">
+        <h2 id="availabilityTitle">Checking payments…</h2>
+        <p id="paymentStatus" role="status">Checking availability.</p>
+        <a class="payment-back" id="ownerSetupLink" href="/applications/studio/pages/payment-setup" hidden>Site owner? Set up payments</a>
+        <a class="pub-primary payment-link-button" id="paymentLogin" hidden>Sign in to Alysum</a>
     </section>
-    <section class="pub-card" id="yourEditions" hidden>
-        <h2>Your paid editions</h2><div id="createdEditions"></div>
-        <h2>Your purchases</h2><div id="purchasedEditions"></div>
+    <section class="pub-card" id="connectCard" hidden>
+        <div class="payment-step">1</div><h2>Connect Stripe</h2>
+        <p id="stripeConnection">Connect the account where you want to receive payments.</p>
+        <p class="pub-hint">Stripe will handle sign-in and payment details.</p>
+        <button type="button" class="pub-primary" id="stripeConnect">Connect Stripe</button>
     </section>
-    <section class="pub-card">
-        <h2>Create a paid edition</h2>
-        <p class="pub-hint">This saves a separate snapshot of an unpublished prose draft. Its link is unlisted. It does not post to Library or change the source draft. Previously public chapters are excluded from this first release.</p>
-        <label for="paymentBook">Saved draft</label><select id="paymentBook"><option value="">Choose an unpublished draft</option></select>
-        <p id="completeBookNote" class="pub-hint"></p>
-        <details><summary>Chapters to include</summary><div class="payment-chapters" id="editionChapters"></div></details>
-        <label for="editionMode">Sell as</label><select id="editionMode"><option value="bundle">Chapter bundle</option><option value="chapter">Individual chapters</option><option value="book">Complete book</option></select>
-        <fieldset id="paidChapterPicker"><legend>Paid chapters</legend><p class="pub-hint">Keep at least one chapter free for readers to try. Full-book purchases keep the first chapter free.</p><div class="payment-chapters" id="paidChapters"></div></fieldset>
-        <label for="editionPrice" id="editionPriceLabel">Bundle price</label><input id="editionPrice" type="text" inputmode="decimal" value="3.00">
-        <label for="editionCurrency">Currency</label><select id="editionCurrency"><option value="usd">USD</option><option value="gbp">GBP</option><option value="eur">EUR</option><option value="cad">CAD</option><option value="aud">AUD</option></select>
-        <p class="pub-hint">One-time purchase. Stripe pays the author directly. This release supports prose as plain text; memberships and other providers will follow.</p>
-        <button type="button" class="pub-primary" id="editionCreate" disabled>Create paid edition</button>
+    <section class="pub-card" id="publishCard" hidden>
+        <div class="payment-step">2</div><h2>Choose a book and price</h2>
+        <fieldset class="payment-fields" id="paidBookFields">
+        <label for="paymentBook">Book</label><select id="paymentBook"><option value="">Choose a saved book</option></select>
+        <label for="editionMode">What are you selling?</label><select id="editionMode"><option value="bundle">A chapter bundle</option><option value="chapter">Individual chapters</option><option value="book">The finished book</option></select>
+        <p id="completeBookNote" class="pub-hint" hidden></p>
+        <fieldset id="paidChapterPicker"><legend>Which chapters are paid?</legend><p class="pub-hint">Checked chapters are paid. Unchecked chapters are free samples.</p><div class="payment-chapters" id="paidChapters"></div></fieldset>
+        <div id="editionChapters" hidden></div>
+        <div class="access-grid"><div><label for="editionPrice" id="editionPriceLabel">Bundle price</label><input id="editionPrice" type="text" inputmode="decimal" placeholder="Enter a price"></div>
+        <div><label for="editionCurrency">Currency</label><select id="editionCurrency"><option value="usd">USD</option><option value="gbp">GBP</option><option value="eur">EUR</option><option value="cad">CAD</option><option value="aud">AUD</option></select></div></div>
+        <p class="pub-hint" id="bookSampleNote" hidden>The first chapter stays free as a sample.</p>
+        </fieldset>
+        <p class="pub-hint">Your paid book will have a shareable link. Paid books do not appear in Library yet.</p>
+        <button type="button" class="pub-primary" id="editionCreate" disabled>Publish paid book</button>
         <div id="editionResult" role="status"></div>
     </section>
-    <p class="pub-status" id="paymentStatus" role="status">Checking server setup…</p><p class="pub-error" id="paymentError" role="alert" hidden></p>
+    <section class="pub-card" id="yourEditions" hidden>
+        <h2>Your paid books</h2><div id="createdEditions"></div>
+        <h2>Your purchases</h2><div id="purchasedEditions"></div>
+    </section>
+    <p class="pub-error" id="paymentError" role="alert" hidden></p>
 </main><script type="module" src="/js/studio/connected-payments.js"></script></body></html>

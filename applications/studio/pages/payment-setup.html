@@ -1,0 +1,72 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/",
+        "@alysum/statistics/": "/core/statistics/"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=8" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes-dim/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=10" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=12" />
+    <script src="/site-appearance/js-runtime/body-background-presets-data.js?v=3"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/boot.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow">
+    <title>Payment setup — Alysum</title>
+    <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
+    <link rel="stylesheet" href="/css/editor/document.css?v=11" />
+    <link rel="stylesheet" href="/css/editor/scene-breaks.css?v=2" />
+    <link rel="stylesheet" href="/css/studio/publish.css?v=26" />
+    <link rel="stylesheet" href="/css/studio/paid-access.css">
+</head>
+<body><main class="pub-page payment-page">
+    <p><a class="payment-back" href="/applications/studio/pages/connected-payments">← Author payments</a></p>
+    <h1>Set up payments for Alysum</h1>
+    <p class="pub-sub">One-time setup for the site owner. Authors will only need to connect their own Stripe accounts.</p>
+    <p class="pub-status" id="setupStatus" role="status">Checking setup…</p>
+    <section class="pub-card">
+        <div class="payment-step">1</div><h2>Prepare Supabase</h2>
+        <p>Copy this script into <strong>Supabase → SQL Editor → New query</strong>, then select <strong>Run</strong>.</p>
+        <p class="pub-hint">It adds private payment tables. Existing books and Library listings stay as they are.</p>
+        <button type="button" class="pub-primary" id="copyPaymentSql">Copy Supabase SQL</button>
+        <p id="sqlCopyStatus" role="status"></p><textarea id="paymentSql" aria-label="Author payments Supabase SQL" readonly hidden></textarea>
+    </section>
+    <section class="pub-card">
+        <div class="payment-step">2</div><h2>Set up Stripe Connect</h2>
+        <p>Alysum needs a Stripe Connect platform connection so each author can receive their own payments.</p>
+        <p><a class="payment-back" href="https://dashboard.stripe.com/settings/connect" target="_blank" rel="noopener noreferrer">Open Stripe Connect settings ↗</a></p>
+        <details><summary>Connection addresses to use in Stripe</summary>
+            <label for="stripeReturn">OAuth redirect address</label><input id="stripeReturn" type="text" readonly>
+            <label for="stripeWebhook">Connected-account webhook address</label><input id="stripeWebhook" type="text" readonly>
+            <p class="pub-hint">Use live mode and Standard-account OAuth. Select connected-account events for completed payments, refunds, disputes, account updates and disconnects.</p>
+            <p><a class="payment-back" href="/applications/studio/paid-access-integration.md">Full Stripe setup instructions</a></p>
+        </details>
+    </section>
+    <section class="pub-card">
+        <div class="payment-step">3</div><h2>Save the server settings</h2>
+        <p>In <strong>Cloudflare → Pages → alysum-writing-version2 → Settings</strong>, add these to the <strong>Production</strong> environment.</p>
+        <p class="pub-hint">Keep Stripe keys in Cloudflare. This page never asks you to paste them here.</p>
+        <details><summary>Show the settings to add</summary><div id="environmentSettings"></div></details>
+        <p>Redeploy main after saving, then check setup below.</p>
+        <button type="button" class="pub-primary" id="checkPaymentSetup">Check setup</button>
+    </section>
+    <p><a class="payment-back" href="/applications/studio/pages/connected-payments">Return to author payments →</a></p>
+</main><script type="module" src="/js/studio/payment-setup.js"></script></body></html>
