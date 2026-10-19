@@ -92,3 +92,49 @@ test("short-story layout omits a separate title page and can show the first head
     assert.ok(elements(body, "titlePg").every(element => attr(element, "val") === "false" || attr(element, "val") === "0"));
     assert.ok(elements(styles, "rFonts").some(font => attr(font, "ascii") === "Times New Roman"));
 });
+
+test("short-story contact name shares a line with a right-edge word count; title and byline stay centered above the story", async () => {
+    const manuscript = prepareManuscript(sampleBook, {});
+    const document = createManuscriptDocument(manuscript, { layout: "story", legalName: "Contact Name", authorName: "Pen Name", address: "123 Example Street", email: "sample@example.test" }, library);
+    const archive = await JSZip.loadAsync(await library.Packer.toBuffer(document));
+    const body = xml(await archive.file("word/document.xml").async("string"));
+    const header = xml(await archive.file("word/header1.xml").async("string"));
+    const paragraphs = elements(body, "p");
+    assert.match(textOf(paragraphs[0]), /^Contact Nameabout .* words$/);
+    assert.equal(elements(paragraphs[0], "tab").length, 2); // stop definition plus tab character
+    const stop = elements(paragraphs[0], "tabs")[0].firstElementChild;
+    assert.equal(attr(stop, "val"), "right");
+    assert.equal(attr(stop, "pos"), "9360");
+    const titleIndex = paragraphs.findIndex(paragraph => textOf(paragraph) === manuscript.title);
+    const bylineIndex = paragraphs.findIndex(paragraph => textOf(paragraph) === "by Pen Name");
+    const storyIndex = paragraphs.findIndex(paragraph => textOf(paragraph).startsWith("The lantern glowed"));
+    assert.ok(titleIndex > 0 && bylineIndex === titleIndex + 1 && storyIndex === bylineIndex + 1);
+    assert.ok(!textOf(paragraphs[0]).includes("Pen Name"));
+    for (const index of [titleIndex, bylineIndex]) assert.equal(attr(elements(paragraphs[index], "jc")[0], "val"), "center");
+    assert.equal(attr(elements(header, "jc")[0], "val"), "right");
+    for (const paragraph of paragraphs.slice(storyIndex).filter(paragraph => textOf(paragraph).startsWith("The lantern") || textOf(paragraph).startsWith("A second") || textOf(paragraph).startsWith("After the break"))) {
+        assert.equal(attr(elements(paragraph, "ind")[0], "firstLine"), "720");
+        assert.equal(attr(elements(paragraph, "spacing")[0], "line"), "480");
+        assert.equal(attr(elements(paragraph, "spacing")[0], "lineRule"), "auto");
+    }
+});
+
+test("pasted leading tabs across formatting runs become real half-inch indents without mutating source text", async () => {
+    const source = structuredClone(sampleBook);
+    source.sections.body[0].children[0].content = '<p> \t<span>\t </span><em> First words.</em></p><p>\tSecond paragraph.</p>';
+    const before = JSON.stringify(source);
+    const manuscript = prepareManuscript(source, {});
+    const modelBefore = JSON.stringify(manuscript);
+    const document = createManuscriptDocument(manuscript, { layout: "story" }, library);
+    const archive = await JSZip.loadAsync(await library.Packer.toBuffer(document));
+    const body = xml(await archive.file("word/document.xml").async("string"));
+    const paragraphs = elements(body, "p");
+    for (const text of ["First words.", "Second paragraph."]) {
+        const paragraph = paragraphs.find(paragraph => textOf(paragraph) === text);
+        assert.ok(paragraph, text);
+        assert.equal(attr(elements(paragraph, "ind")[0], "firstLine"), "720");
+        assert.equal(attr(elements(paragraph, "spacing")[0], "line"), "480");
+    }
+    assert.equal(JSON.stringify(source), before);
+    assert.equal(JSON.stringify(manuscript), modelBefore);
+});
