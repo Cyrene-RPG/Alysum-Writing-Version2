@@ -129,3 +129,19 @@ test('a failed private snapshot save stops publication before any public write',
         loadDraftCoverFile:async()=>null,saveChapterAccess:async()=>{throw Error('Private save unavailable');},
         api:{updateBook(){assert.fail('Must not save');}},supabase:{from(){assert.fail('Must not publish');}},postError:{}}),/Private save unavailable/);
 });
+
+test('real Supabase adapter requests a JSON representation when saving the connection',async()=>{
+    const calls=[];
+    const fetcher=async(url,options)=>{
+        calls.push({url:String(url),options});
+        if(String(url).endsWith('/auth/v1/user'))return Response.json({id:owner,email:'owner@example.com',email_confirmed_at:'now'});
+        if(options.method==='POST') {
+            assert.match(options.headers.Prefer,/return=representation/);
+            return Response.json([JSON.parse(options.body)],{status:201});
+        }
+        return Response.json([]);
+    };
+    const response=await handleAuthorAccess(request('connect',{method:'POST',body:{provider:'kofi',secret}}),{SUPABASE_SERVICE_ROLE_KEY:'server-test-key'},{fetcher});
+    assert.equal(response.status,200);assert.match((await response.json()).webhookUrl,/api\/author-access/);
+    const stored=JSON.parse(calls.find(call=>call.options.method==='POST').options.body);assert.equal(stored.verifier_hash,await sha256(secret));assert.equal(JSON.stringify(stored).includes(secret),false);
+});

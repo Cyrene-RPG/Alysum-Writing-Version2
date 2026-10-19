@@ -66,7 +66,7 @@ export async function handleAuthorAccess(request, env, injected = {}) {
             if (secret.length < 16 || secret.length > 1024) fail(400,'Paste the verification token or API key from your own service.');
             const [existing] = await db('author_access_connections',{query:{owner_id:`eq.${owner.id}`,provider:`eq.${body.provider}`,limit:1}});
             const connectionId = existing?.id || crypto.randomUUID();
-            await db('author_access_connections',{method:'POST',query:{on_conflict:'owner_id,provider'},preference:'resolution=merge-duplicates,return=minimal',body:{id:connectionId,owner_id:owner.id,provider:body.provider,verifier_hash:await sha256(secret),enabled:true,verified_at:null}});
+            await db('author_access_connections',{method:'POST',query:{on_conflict:'owner_id,provider'},preference:'resolution=merge-duplicates,return=representation',body:{id:connectionId,owner_id:owner.id,provider:body.provider,verifier_hash:await sha256(secret),enabled:true,verified_at:null}});
             return reply({id:connectionId,webhookUrl:`${url.origin}/api/author-access?action=webhook&connection=${connectionId}`});
         }
         if (action === 'book' && request.method === 'GET') {
