@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="connect-src 'self'; form-action 'self'">
+<title>Alysum editor test</title>
+<style>
+body{max-width:640px;margin:10vh auto;padding:24px;background:#15151b;color:#eee;font:17px/1.6 system-ui}
+button,a{font:inherit;color:inherit}button{padding:12px 18px;background:#503a8d;border:0;border-radius:8px;cursor:pointer}
+</style>
+<h1>Editor test branch</h1>
+<p>This preview uses separate local test storage and disables cloud access. Use synthetic writing here.</p>
+<p>Open the sample book to try lists, headings, undo/redo, spacing, saving, and manuscript export in Book → Settings → Export.</p>
+<button id="open-sample">Open sample book</button>
+<p id="error" role="alert"></p>
+<script type="module">
+import { IS_EDITOR_TEST } from "/core/desktop/test-mode.js";
+import { getBook, insertBook } from "/core/synchronization-engine/local-adapter.js";
+import { sampleBook } from "./sample-book.js";
+document.querySelector("#open-sample").onclick = () => {
+    try {
+        if (!IS_EDITOR_TEST) throw new Error("This page requires editor test mode.");
+        // Never reset a sample that already contains a tester's edits.
+        if (!getBook(sampleBook.id)) insertBook(structuredClone(sampleBook));
+        location.href = `/editor?book=${sampleBook.id}`;
+    } catch (error) { document.querySelector("#error").textContent = error.message; }
+};
+</script>
+</html>

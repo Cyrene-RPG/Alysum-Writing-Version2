@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alysum formatting checks</title>
+<script type="importmap">{"imports":{"@alysum/statistics/":"/core/statistics/"}}</script>
+<link rel="stylesheet" href="../editor-css/document.css">
+<style>body{max-width:1000px;margin:30px auto;padding:20px;font:16px/1.5 system-ui}button{margin:3px;padding:8px}#test-toolbar{display:flex;flex-wrap:wrap}.writer-tool-dropdown[hidden]{display:none}.writer-tool-dropdown{max-height:240px;overflow:auto}.writer-tool-dropdown button{display:block}#test-page{border:1px solid #888;min-height:120px}#report{white-space:pre-wrap}</style>
+<h1>Isolated editor checks</h1>
+<p>Only synthetic writing is used. No account or cloud access is needed.</p>
+<button id="run-checks">Run checks</button><button id="download-test">Download test DOCX</button>
+<input id="outside" aria-label="Outside editor" placeholder="Focus test">
+<pre id="report" role="status"></pre>
+<div id="test-toolbar" class="writer-toolbar"></div>
+<div id="test-page" class="writer-page"></div>
+<script type="module" src="./formatting.js"></script>
+</html>
