@@ -58,3 +58,6 @@
 #shopWebhook { overflow-wrap: anywhere; }
 #connectionList button, #shopSalesList button, #copyAccessSql, #connectShop { min-height: 44px; }
 #accessSql { width: 100%; min-height: 240px; box-sizing: border-box; }
+.payment-page button { padding: 10px 16px; min-height: 44px; border-radius: 8px; font: inherit; font-weight: 700; cursor: pointer; }
+.payment-page button:disabled { opacity: .6; cursor: default; }
+.payment-page button:focus-visible { outline: 2px solid var(--accent, currentColor); outline-offset: 3px; }
