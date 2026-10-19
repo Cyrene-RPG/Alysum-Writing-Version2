@@ -31,6 +31,9 @@ test('each reading link has its own first-sentence preview in the initial HTML, 
 test('first sentences handle whitespace, punctuation, no punctuation, and long Unicode text', () => {
     assert.equal(firstExcerptSentence('  A first sentence.\n\nA second sentence. '), 'A first sentence.');
     assert.equal(firstExcerptSentence('你好。下一句。'), '你好。');
+    assert.equal(firstExcerptSentence('Dr. Mira waited by the harbor. Then she left.'), 'Dr. Mira waited by the harbor.');
+    assert.equal(firstExcerptSentence('A. R. Vale opened the door. Then he stopped.'), 'A. R. Vale opened the door.');
+    assert.equal(firstExcerptSentence('She said, “Run!” Then silence.'), 'She said, “Run!”');
     assert.equal(firstExcerptSentence('A sentence without punctuation'), 'A sentence without punctuation');
     assert.equal(Array.from(firstExcerptSentence('🌙'.repeat(300))).length, 240);
     assert.ok(firstExcerptSentence('x'.repeat(300)).endsWith('…'));

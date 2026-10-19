@@ -8,7 +8,14 @@ export function firstExcerptSentence(text, limit = 240) {
     const normalized = String(text || '').replace(/\s+/gu, ' ').trim();
     if (!normalized) return 'Read a shared writing excerpt on Alysum.';
     const segments = new Intl.Segmenter(undefined, { granularity: 'sentence' }).segment(normalized);
-    const sentence = segments[Symbol.iterator]().next().value.segment.trim();
+    let sentence = '';
+    for (const part of segments) {
+        sentence += part.segment;
+        const end = sentence.trimEnd();
+        // Keep names together when sentence segmentation stops at a title or initial.
+        if (!/\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|e\.g|i\.e)\.$/iu.test(end) && !/(?:^|\s)\p{L}\.$/u.test(end)) break;
+    }
+    sentence = sentence.trim();
     const characters = Array.from(sentence);
     return characters.length > limit ? characters.slice(0, limit - 1).join('').trimEnd() + '…' : sentence;
 }
