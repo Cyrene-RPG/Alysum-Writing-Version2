@@ -86,6 +86,17 @@ export function normalizeTextColor(value) {
     return /^[a-z0-9-]{1,40}$/i.test(id) ? id : "";
 }
 
+/** Public purchase links never execute script or include embedded credentials. */
+export function normalizePurchaseUrl(raw) {
+    const value = String(raw ?? "").trim();
+    if (!value || value.length > 2000) return "";
+    try {
+        const url = new URL(value);
+        if (url.protocol !== "https:" || !url.hostname || url.username || url.password) return "";
+        return url.href;
+    } catch { return ""; }
+}
+
 export function readPublishDraft(book) {
     const raw = book?.publish_meta && typeof book.publish_meta === "object" && !Array.isArray(book.publish_meta)
         ? book.publish_meta
@@ -96,6 +107,7 @@ export function readPublishDraft(book) {
     return {
         author: String(raw.author || ""),
         synopsis: String(raw.synopsis || ""),
+        purchaseUrl: normalizePurchaseUrl(raw.purchaseUrl),
         tags: split.tags,
         warnings: asStringList(raw.warnings),
         cover_url: String(raw.cover_url || raw.coverUrl || ""),

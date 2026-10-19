@@ -91,7 +91,8 @@ function paintChapterSummary() {
 
 async function boot() {
     if (new URLSearchParams(window.location.search).get('paidAccessTest') === '1') {
-        window.location.replace('/applications/studio/pages/connected-payments'); return;
+        const url = new URL(window.location.href); url.searchParams.delete('paidAccessTest');
+        window.location.replace(url.href); return;
     }
     const status = document.getElementById("pubStatus");
     const session = await requireStudioSession(supabase, "/publish");
@@ -241,6 +242,7 @@ async function boot() {
             title: document.getElementById("workTitle")?.value || book.title,
             author: book._author || "",
             summary: document.getElementById("workSummary")?.value || "",
+            purchaseUrl: document.getElementById("purchaseUrl")?.value || "",
             notesBefore: draft.notesBefore || "",
             notesAfter: document.getElementById("workNotesAfter")?.value || "",
             genre: selectedGenres[0] || "",
@@ -330,6 +332,7 @@ async function boot() {
     bindPageLook(document);
     const workTitle = document.getElementById("workTitle");
     if (workTitle) workTitle.value = book.title || "";
+    document.getElementById("purchaseUrl").value = draft.purchaseUrl;
     const workSummary = document.getElementById("workSummary");
     if (workSummary) workSummary.value = draft.synopsis || "";
     const workNotesAfter = document.getElementById("workNotesAfter");
@@ -492,14 +495,7 @@ async function boot() {
         paintStrip();
     });
     paintStrip();
-    const payments = document.createElement('section'); payments.className = 'pub-card';
-    const title = document.createElement('h2'); title.textContent = 'Access & pricing';
-    const note = document.createElement('p'); note.className = 'pub-hint';
-    note.textContent = 'Post free chapters below, or create a paid edition with free samples and purchases paid directly to your Stripe account.';
-    const link = document.createElement('a'); link.className = 'payment-back';
-    link.href = `/applications/studio/pages/connected-payments?book=${encodeURIComponent(book.id)}`;
-    link.textContent = 'Set up paid chapters or a complete book';
-    payments.append(title,note,link); document.querySelector('.pub-strip').before(payments);
+
 }
 
 boot().catch((error) => {

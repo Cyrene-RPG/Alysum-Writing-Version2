@@ -11,6 +11,7 @@ import { normalizeGenreList, partitionGenresAndTags } from "../publishing/genres
 import { normalizeCrop } from "../publishing/cover-upload.js";
 import {
     DEFAULT_PAGE_LOOK,
+    normalizePurchaseUrl,
     normalizeHexColor,
     normalizePageBgId,
     normalizePageLook,
@@ -197,6 +198,7 @@ export function normalizePublishedBookPreview(row) {
         coverWide: normalizeCrop(data.coverWide || data.cover_wide),
         coverWideEnabled: Boolean(data.coverWideEnabled ?? data.cover_wide_enabled),
         summary: String(data.summary || "").trim(),
+        purchaseUrl: normalizePurchaseUrl(data.purchaseUrl),
         chapterCount: serialization.chapterCount,
         publishedChapterCount: serialization.publishedCount,
         serializationStatus: serialization.status,

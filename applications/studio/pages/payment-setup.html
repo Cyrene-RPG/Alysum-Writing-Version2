@@ -38,35 +38,9 @@
     <link rel="stylesheet" href="/css/studio/paid-access.css">
 </head>
 <body><main class="pub-page payment-page">
-    <p><a class="payment-back" href="/applications/studio/pages/connected-payments">← Author payments</a></p>
-    <h1>Set up payments for Alysum</h1>
-    <p class="pub-sub">One-time setup for the site owner. Authors will only need to connect their own Stripe accounts.</p>
-    <p class="pub-status" id="setupStatus" role="status">Checking setup…</p>
-    <section class="pub-card">
-        <div class="payment-step">1</div><h2>Prepare Supabase</h2>
-        <p>Copy this script into <strong>Supabase → SQL Editor → New query</strong>, then select <strong>Run</strong>.</p>
-        <p class="pub-hint">It adds private payment tables. Existing books and Library listings stay as they are.</p>
-        <button type="button" class="pub-primary" id="copyPaymentSql">Copy Supabase SQL</button>
-        <p id="sqlCopyStatus" role="status"></p><textarea id="paymentSql" aria-label="Author payments Supabase SQL" readonly hidden></textarea>
-    </section>
-    <section class="pub-card">
-        <div class="payment-step">2</div><h2>Set up Stripe Connect</h2>
-        <p>Alysum needs a Stripe Connect platform connection so each author can receive their own payments.</p>
-        <p><a class="payment-back" href="https://dashboard.stripe.com/settings/connect" target="_blank" rel="noopener noreferrer">Open Stripe Connect settings ↗</a></p>
-        <details><summary>Connection addresses to use in Stripe</summary>
-            <label for="stripeReturn">OAuth redirect address</label><input id="stripeReturn" type="text" readonly>
-            <label for="stripeWebhook">Connected-account webhook address</label><input id="stripeWebhook" type="text" readonly>
-            <p class="pub-hint">Use live mode and Standard-account OAuth. Select connected-account events for completed payments, refunds, disputes, account updates and disconnects.</p>
-            <p><a class="payment-back" href="/applications/studio/paid-access-integration.md">Full Stripe setup instructions</a></p>
-        </details>
-    </section>
-    <section class="pub-card">
-        <div class="payment-step">3</div><h2>Save the server settings</h2>
-        <p>In <strong>Cloudflare → Pages → alysum-writing-version2 → Settings</strong>, add these to the <strong>Production</strong> environment.</p>
-        <p class="pub-hint">Keep Stripe keys in Cloudflare. This page never asks you to paste them here.</p>
-        <details><summary>Show the settings to add</summary><div id="environmentSettings"></div></details>
-        <p>Redeploy main after saving, then check setup below.</p>
-        <button type="button" class="pub-primary" id="checkPaymentSetup">Check setup</button>
-    </section>
-    <p><a class="payment-back" href="/applications/studio/pages/connected-payments">Return to author payments →</a></p>
-</main><script type="module" src="/js/studio/payment-setup.js"></script></body></html>
+    <p><a class="payment-back" href="/studio">← Studio</a></p>
+    <h1>No platform payment setup needed</h1>
+    <section class="pub-card"><p>Authors can add their own shop or membership link in their book’s Publish settings.</p>
+    <p>Readers buy and access paid content on the author’s linked service. Purchases do not unlock chapters on Alysum.</p>
+    <a class="payment-back" href="/applications/studio/pages/connected-payments">How to add a purchase link →</a></section>
+</main></body></html>

@@ -1,3 +1,4 @@
+import { normalizePurchaseUrl } from "@alysum/publishing/publish-meta.js";
 import { needsPromotedChapterSelection } from "/core/writing-engine/promote-draft.js";
 import {
     MIN_PUBLISH_WORDS,
@@ -73,6 +74,7 @@ export function publishMetaFromForm(form) {
     return {
         author: form.author,
         synopsis: form.summary,
+        purchaseUrl: normalizePurchaseUrl(form.purchaseUrl),
         tags: form.tags,
         warnings: form.warnings,
         cover_url: form.coverUrl,
@@ -118,6 +120,10 @@ export async function runPublishSave({
     paintPostError(postError, "");
     const form = { ...readForm(), isPublished };
     const title = String(form.title || "").trim();
+    if (String(form.purchaseUrl || "").trim() && !normalizePurchaseUrl(form.purchaseUrl)) {
+        paintPostError(postError, "Enter a complete https:// purchase link without a username or password, or leave it blank.");
+        return;
+    }
     if (isPublished) {
         if (session.mode !== "cloud" || !session.user?.id) {
             paintPostError(postError, "Sign in and save this book to your account before posting.");

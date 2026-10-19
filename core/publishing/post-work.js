@@ -9,6 +9,7 @@ import { normalizeGenreList, partitionGenresAndTags } from "./genres.js";
 import { normalizeCrop } from "./cover-upload.js";
 import {
     DEFAULT_PAGE_LOOK,
+    normalizePurchaseUrl,
     normalizeHexColor,
     normalizePageBgId,
     normalizePageLook,
@@ -121,6 +122,7 @@ export function buildLibraryPayload(book, form) {
         title: String(form.title || book.title || "Untitled").trim() || "Untitled",
         author: String(form.author || "").trim() || "Unknown",
         summary: String(form.summary || "").trim(),
+        purchaseUrl: normalizePurchaseUrl(form.purchaseUrl),
         notesBefore: String(form.notesBefore || "").trim(),
         notesAfter: String(form.notesAfter || "").trim(),
         genre: split.genres[0] || "",

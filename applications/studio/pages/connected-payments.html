@@ -39,39 +39,13 @@
 </head>
 <body><main class="pub-page payment-page">
     <p><a class="payment-back" href="/studio">← Studio</a></p>
-    <h1>Get paid for your writing</h1>
-    <p class="pub-sub">Readers pay you directly through Stripe.</p>
-    <section class="pub-card" id="paymentAvailability" aria-live="polite">
-        <h2 id="availabilityTitle">Checking payments…</h2>
-        <p id="paymentStatus" role="status">Checking availability.</p>
-        <a class="payment-back" id="ownerSetupLink" href="/applications/studio/pages/payment-setup" hidden>Site owner? Set up payments</a>
-        <a class="pub-primary payment-link-button" id="paymentLogin" hidden>Sign in to Alysum</a>
+    <h1>Sell through your own page</h1>
+    <p class="pub-sub">Use your own shop or membership service for payments and paid content.</p>
+    <section class="pub-card">
+        <h2>Add a purchase link</h2>
+        <p>Open a book in Studio, choose Publish, and add your shop or membership address under “Sell through your own page”.</p>
+        <p>Readers will see “Buy from author” on your book page. Only select chapters you want to make free on Alysum.</p>
+        <p class="pub-hint">Purchases happen on your linked service and do not unlock chapters on Alysum. There is no Stripe connection or payment setup required here.</p>
+        <a class="pub-primary payment-link-button" id="openPublish" href="/studio">Choose a book in Studio</a>
     </section>
-    <section class="pub-card" id="connectCard" hidden>
-        <div class="payment-step">1</div><h2>Connect Stripe</h2>
-        <p id="stripeConnection">Connect the account where you want to receive payments.</p>
-        <p class="pub-hint">Stripe will handle sign-in and payment details.</p>
-        <button type="button" class="pub-primary" id="stripeConnect">Connect Stripe</button>
-    </section>
-    <section class="pub-card" id="publishCard" hidden>
-        <div class="payment-step">2</div><h2>Choose a book and price</h2>
-        <fieldset class="payment-fields" id="paidBookFields">
-        <label for="paymentBook">Book</label><select id="paymentBook"><option value="">Choose a saved book</option></select>
-        <label for="editionMode">What are you selling?</label><select id="editionMode"><option value="bundle">A chapter bundle</option><option value="chapter">Individual chapters</option><option value="book">The finished book</option></select>
-        <p id="completeBookNote" class="pub-hint" hidden></p>
-        <fieldset id="paidChapterPicker"><legend>Which chapters are paid?</legend><p class="pub-hint">Checked chapters are paid. Unchecked chapters are free samples.</p><div class="payment-chapters" id="paidChapters"></div></fieldset>
-        <div id="editionChapters" hidden></div>
-        <div class="access-grid"><div><label for="editionPrice" id="editionPriceLabel">Bundle price</label><input id="editionPrice" type="text" inputmode="decimal" placeholder="Enter a price"></div>
-        <div><label for="editionCurrency">Currency</label><select id="editionCurrency"><option value="usd">USD</option><option value="gbp">GBP</option><option value="eur">EUR</option><option value="cad">CAD</option><option value="aud">AUD</option></select></div></div>
-        <p class="pub-hint" id="bookSampleNote" hidden>The first chapter stays free as a sample.</p>
-        </fieldset>
-        <p class="pub-hint">Your paid book will have a shareable link. Paid books do not appear in Library yet.</p>
-        <button type="button" class="pub-primary" id="editionCreate" disabled>Publish paid book</button>
-        <div id="editionResult" role="status"></div>
-    </section>
-    <section class="pub-card" id="yourEditions" hidden>
-        <h2>Your paid books</h2><div id="createdEditions"></div>
-        <h2>Your purchases</h2><div id="purchasedEditions"></div>
-    </section>
-    <p class="pub-error" id="paymentError" role="alert" hidden></p>
 </main><script type="module" src="/js/studio/connected-payments.js"></script></body></html>

@@ -433,3 +433,6 @@ body {
     .book-title-block h1 { font-size: 22px; }
     .book-hero-bottom { gap: 12px; }
 }
+
+#bookPurchaseBlock[hidden] { display: none !important; }
+#bookPurchaseBlock .book-cta { margin-top: 16px; }

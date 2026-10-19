@@ -1,3 +1,4 @@
+import { normalizePurchaseUrl } from "@alysum/publishing/publish-meta.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
@@ -243,6 +244,13 @@ async function boot() {
         more.textContent = open ? "Show more" : "Show less";
         fade.hidden = !open;
     });
+
+    const purchaseUrl = normalizePurchaseUrl(work.purchaseUrl);
+    const purchaseBlock = document.getElementById("bookPurchaseBlock");
+    const purchaseLink = document.getElementById("buyFromAuthor");
+    purchaseBlock.hidden = !purchaseUrl;
+    if (purchaseUrl) purchaseLink.href = purchaseUrl;
+    else purchaseLink.removeAttribute("href");
 
     const notesText = String(work.notesAfter || "").trim();
     const notesBlock = document.getElementById("bookNotesBlock");
