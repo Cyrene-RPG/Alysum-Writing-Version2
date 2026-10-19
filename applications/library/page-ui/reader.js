@@ -224,6 +224,10 @@ async function boot() {
     }
 
     function persist(ratio) {
+        const url = new URL(window.location.href);
+        url.searchParams.set("id", work.id);
+        url.searchParams.set("chapter", work.chapters[index].id);
+        history.replaceState(null, "", `${url.pathname}${url.search}`);
         if (access?.locked(work.chapters[index]?.id)) return;
         const total = work.chapters.length;
         const progress = Math.round(((index + ratio) / total) * 100);
@@ -235,10 +239,6 @@ async function boot() {
         writeJson(READ_KEY, progressMap);
         document.getElementById("progressPct").textContent = `${progress}%`;
         document.getElementById("progressFill").style.width = `${progress}%`;
-        const url = new URL(window.location.href);
-        url.searchParams.set("id", work.id);
-        url.searchParams.set("chapter", work.chapters[index].id);
-        history.replaceState(null, "", `${url.pathname}${url.search}`);
         if (atEnd()) {
             markFinished();
             syncLocks();
