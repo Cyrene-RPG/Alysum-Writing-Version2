@@ -6,6 +6,7 @@ import {
     sourceLabel,
 } from "@alysum/writing-engine/version-api.js";
 import { downloadBookZip } from "./export-zip.js";
+import { openManuscriptDialog } from "./manuscript-dialog.js";
 
 let editorsApiPromise = null;
 function editorsModule() {
@@ -71,6 +72,7 @@ export function mountBookSettings({
             <div class="s-block-head"><h2>Export</h2></div>
             <p class="s-sub">One .doc file per chapter, packed into a zip.</p>
             <button type="button" class="export-btn" id="exportZipBtn">Download as .zip</button>
+            <button type="button" class="export-btn" id="exportManuscriptBtn">Manuscript .docx…</button>
             <p class="export-note" id="exportNote"></p>
         </article>
         <article class="s-block">
@@ -275,6 +277,10 @@ export function mountBookSettings({
         } catch (err) {
             exportNote.textContent = String(err?.message || err || "Couldn't export.");
         }
+    });
+
+    mount.querySelector("#exportManuscriptBtn")?.addEventListener("click", () => {
+        openManuscriptDialog({ getBook, flushSave });
     });
 
     mount.querySelector("#libraryPreviewBtn")?.addEventListener("click", () => onLibraryPreview?.());
