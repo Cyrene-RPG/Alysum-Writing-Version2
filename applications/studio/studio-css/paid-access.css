@@ -53,3 +53,8 @@
 #checkPaymentSetup { min-height: 44px; padding: 10px 16px; border-radius: 8px; font: inherit; font-weight: 700; cursor: pointer; }
 
 .payment-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+#chapterAccessCard [hidden] { display: none !important; }
+#chapterAccessCard input:not([type="checkbox"]), #chapterAccessCard select { width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--alysum-ui-chrome); color: var(--text); font: inherit; }
+#shopWebhook { overflow-wrap: anywhere; }
+#connectionList button, #shopSalesList button, #copyAccessSql, #connectShop { min-height: 44px; }
+#accessSql { width: 100%; min-height: 240px; box-sizing: border-box; }

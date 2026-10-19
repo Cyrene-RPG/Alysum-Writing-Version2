@@ -185,7 +185,7 @@ async function boot() {
 
     function markFinished() {
         const id = work.chapters[index]?.id;
-        if (!id || finished[id]) return;
+        if (!id || work.chapters[index]?.locked || finished[id]) return;
         finished[id] = true;
         writeFinished(work.id, finished);
     }
@@ -201,14 +201,14 @@ async function boot() {
     function canOpen(i) {
         if (i <= index) return true;
         for (let k = index; k < i; k += 1) {
-            if (!finished[work.chapters[k].id]) return false;
+            if (!work.chapters[k].locked && !finished[work.chapters[k].id]) return false;
         }
         return true;
     }
 
     function syncLocks() {
         const last = index >= work.chapters.length - 1;
-        const unlocked = last || Boolean(finished[work.chapters[index]?.id]) || atEnd();
+        const unlocked = last || work.chapters[index]?.locked || Boolean(finished[work.chapters[index]?.id]) || atEnd();
         if (unlocked && !last) markFinished();
         document.getElementById("nextBtn").disabled = last || !unlocked;
         document.querySelectorAll("#chapterPicker [data-index]").forEach((btn) => {
@@ -243,9 +243,32 @@ async function boot() {
         const words = chapter.wordCount || countWordsInHtml(chapter.content);
         document.getElementById("chapterTitle").textContent = chapter.title;
         document.getElementById("chapterMeta").textContent =
-            `${minutesFor(words)} min · ${formatWords(words)}`;
+            chapter.locked ? "Locked · purchase required" : `${minutesFor(words)} min · ${formatWords(words)}`;
         const body = document.getElementById("chapterBody");
-        body.innerHTML = chapterHtml(chapter.content);
+        body.replaceChildren();
+        if (chapter.locked) {
+            const heading=document.createElement('h2');heading.textContent='This chapter is locked';
+            const note=document.createElement('p');note.textContent='Buy the author’s shop product to unlock these chapters here. Use the same email as your verified Alysum account at checkout.';
+            body.append(heading,note);
+            if (chapter.purchaseUrl) {
+                const buy=document.createElement('a');buy.href=chapter.purchaseUrl;buy.target='_blank';buy.rel='noopener noreferrer external';buy.textContent='Buy from author ↗';buy.className='reader-step';body.append(buy);
+            }
+            const status=document.createElement('p');status.textContent=session?.user ? 'Already bought it? Check access below. Sale confirmations may take a moment.' : 'Sign in to Alysum to receive access after buying.';body.append(status);
+            if (!session?.user) { const login=document.createElement('a');login.href=`/login.html?next=${encodeURIComponent(window.location.pathname+window.location.search)}`;login.textContent='Sign in to Alysum';body.append(login); }
+            const refresh=document.createElement('button');refresh.type='button';refresh.className='reader-step';refresh.textContent='Check my access';
+            refresh.addEventListener('click',async()=>{
+                refresh.disabled=true;status.textContent='Checking your access…';
+                try {
+                    const next=await fetchPublishedWork(supabase,work.id);
+                    const updated=next?.chapters?.find(ch=>ch.id===chapter.id);
+                    if(updated && !updated.locked) {work.chapters=next.chapters;render();}
+                    else status.textContent='No purchase found for this account yet. Check your checkout email, wait a moment, then try again.';
+                } catch {status.textContent='Could not check access. Try again.';}
+                finally {refresh.disabled=false;}
+            });body.append(document.createElement('br'),refresh);
+        } else if (chapter.privateText) {
+            for (const paragraph of String(chapter.content).split(/\n{2,}/)) {const p=document.createElement('p');p.textContent=paragraph;body.append(p);}
+        } else body.innerHTML = chapterHtml(chapter.content);
         applyAuthorIndents(body);
         document.getElementById("pickerLabel").textContent =
             `Chapter ${index + 1} of ${work.chapters.length}`;
@@ -253,12 +276,13 @@ async function boot() {
         document.getElementById("nextBtn").disabled =
             index >= work.chapters.length - 1 || !finished[chapter.id];
         document.getElementById("chapterPicker").innerHTML = work.chapters.map((item, i) =>
-            `<button type="button" role="option" data-index="${i}" class="${i === index ? "is-on" : ""}">${escapeHtml(item.title)}</button>`
+            `<button type="button" role="option" data-index="${i}" class="${i === index ? "is-on" : ""}">${item.locked ? "🔒 " : ""}${escapeHtml(item.title)}</button>`
         ).join("");
         scrollEl.scrollTop = 0;
         persist(0);
         setPicker(false);
-        mountReaderEnd({
+        document.getElementById("readerEnd").hidden=Boolean(chapter.locked);
+        if (!chapter.locked) mountReaderEnd({
             work,
             chapterId: chapter.id,
             supabase,

@@ -1,3 +1,4 @@
+import { bindChapterAccess } from "./publish-access.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=11";
@@ -108,6 +109,7 @@ async function boot() {
         if (status) status.textContent = "Book not found.";
         return;
     }
+    let chapterAccess = null;
     const profile = peekWorkspaceProfile(session);
     const draft = readPublishDraft(book);
     const listed = Boolean(await fetchLibraryListingId(supabase, book.id)) || isLibraryListed(book);
@@ -243,6 +245,8 @@ async function boot() {
             author: book._author || "",
             summary: document.getElementById("workSummary")?.value || "",
             purchaseUrl: document.getElementById("purchaseUrl")?.value || "",
+            chapterAccess: chapterAccess?.read() || {lockedChapterIds: []},
+            lockedChapterIds: chapterAccess?.read().lockedChapterIds || [],
             notesBefore: draft.notesBefore || "",
             notesAfter: document.getElementById("workNotesAfter")?.value || "",
             genre: selectedGenres[0] || "",
@@ -261,10 +265,19 @@ async function boot() {
         };
     }
 
+    let isSaving = false;
     async function save(isPublished) {
+        if (isSaving) return;
+        isSaving = true;
+        const buttons = [document.getElementById('saveDraftBtn'),document.getElementById('postBtn')];
+        buttons.forEach(button => { if(button) button.disabled=true; });
         try {
             await runPublishSave({
                 isPublished,
+                saveChapterAccess: (form) => {
+                    if (!chapterAccess) throw new Error("Chapter access is still loading. Try again in a moment.");
+                    return chapterAccess.save(form);
+                },
                 listed,
                 session,
                 supabase,
@@ -282,6 +295,8 @@ async function boot() {
         } catch (error) {
             if (status) status.textContent = "";
             paintPostError(postError, error?.message || "Could not save this listing.");
+        } finally {
+            isSaving=false;buttons.forEach(button => {if(button) button.disabled=false;});
         }
     }
     document.getElementById("saveDraftBtn")?.addEventListener("click", () => { void save(false); });
@@ -480,6 +495,7 @@ async function boot() {
         }).join("");
         select.addEventListener("change", () => paintPreview(shown[Number(select.value)]));
     }
+    chapterAccess = await bindChapterAccess({supabase,book,chapters});
     paintPreview(shown[0]);
     paintChapterSummary();
     document.getElementById("workComplete")?.addEventListener("change", (event) => {

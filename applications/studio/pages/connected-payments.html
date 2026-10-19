@@ -38,14 +38,37 @@
     <link rel="stylesheet" href="/css/studio/paid-access.css">
 </head>
 <body><main class="pub-page payment-page">
-    <p><a class="payment-back" href="/studio">← Studio</a></p>
-    <h1>Sell through your own page</h1>
-    <p class="pub-sub">Use your own shop or membership service for payments and paid content.</p>
-    <section class="pub-card">
-        <h2>Add a purchase link</h2>
-        <p>Open a book in Studio, choose Publish, and add your shop or membership address under “Sell through your own page”.</p>
-        <p>Readers will see “Buy from author” on your book page. Only select chapters you want to make free on Alysum.</p>
-        <p class="pub-hint">Purchases happen on your linked service and do not unlock chapters on Alysum. There is no Stripe connection or payment setup required here.</p>
-        <a class="pub-primary payment-link-button" id="openPublish" href="/studio">Choose a book in Studio</a>
+    <p><a class="payment-back" id="backToBook" href="/studio">← Studio</a></p>
+    <h1>Connect your shop</h1>
+    <p class="pub-sub">Readers pay you on your own service. Confirmed purchases unlock chapters in Alysum.</p>
+    <p id="shopStatus" role="status">Checking chapter access…</p>
+    <a id="shopLogin" class="payment-back" href="/login" hidden>Sign in to Alysum</a>
+    <a id="shopSetup" class="payment-back" href="/applications/studio/pages/payment-setup" hidden>Site owner: prepare chapter access</a>
+    <section class="pub-card" id="shopConnectCard" hidden>
+        <h2>1. Choose your service</h2>
+        <label for="shopProvider">Payment service</label><select id="shopProvider"><option value="kofi">Ko-fi</option><option value="payhip">Payhip</option></select>
+        <p id="shopInstructions">In Ko-fi, open API → Webhooks → Advanced and copy your Verification Token.</p>
+        <p><a class="payment-back" id="providerSettings" href="https://ko-fi.com/manage/webhooks" target="_blank" rel="noopener noreferrer">Open your service settings ↗</a></p>
+        <label id="shopSecretLabel" for="shopSecret">Ko-fi verification token</label>
+        <input id="shopSecret" type="password" autocomplete="off" maxlength="1024" spellcheck="false">
+        <p class="pub-hint">Enter it here, never in chat. Alysum stores only a verifier, not your service password.</p>
+        <button id="connectShop" class="pub-primary" type="button">Save connection</button>
+        <p id="shopError" class="pub-error" role="alert" hidden></p>
+    </section>
+    <section class="pub-card" id="shopWebhookCard" hidden>
+        <h2>2. Add this address to your service</h2>
+        <p>Paste the address below into your service’s Webhook URL field and save it. For Payhip, enable Paid and Refunded events.</p>
+        <label for="shopWebhook">Your Alysum webhook address</label><input id="shopWebhook" readonly>
+        <button id="copyShopWebhook" type="button" class="pub-ghost">Copy address</button><p id="webhookCopyStatus" role="status"></p>
+        <p class="pub-hint">This is a one-time connection. Then open a book’s Publish settings, select Locked chapters and paste the exact shop product link.</p>
+        <a class="payment-back" id="openPublish" href="/studio">Choose a book in Studio →</a>
+    </section>
+    <section class="pub-card" id="shopConnections" hidden><h2>Your connections</h2><div id="connectionList"></div></section>
+    <section class="pub-card" id="shopSales" hidden>
+        <h2>Recent unlocks</h2><p class="pub-hint">Ko-fi doesn’t notify Alysum about refunds. Revoke access here after a refund. Payhip refund notifications revoke access automatically.</p><div id="shopSalesList"></div>
+    </section>
+    <section class="pub-card"><h2>What works automatically?</h2>
+        <p>One-time Ko-fi Shop and Payhip product purchases. Each product can unlock selected chapters or every chapter of a finished book.</p>
+        <p class="pub-hint">Readers must use their verified Alysum email at checkout. Tips, gifts, memberships and other services are not connected for automatic access yet. Keep using a purchase link for those services.</p>
     </section>
 </main><script type="module" src="/js/studio/connected-payments.js"></script></body></html>

@@ -130,7 +130,7 @@ function paintChapters(work, owner, saved) {
                 <span class="book-drag" aria-hidden="true">⠿</span>
                 <div class="book-toc-main">
                     <span class="book-ch-name">${escapeHtml(chapter.title)}</span>
-                    <span class="book-ch-sub">Chapter ${index + 1}</span>
+                    <span class="book-ch-sub">Chapter ${index + 1}${chapter.locked ? " · Locked" : ""}</span>
                 </div>
                 <div class="book-toc-actions">
                     <a class="book-preview-btn" href="${readHref(work.id, chapter.id)}">Preview</a>
@@ -143,8 +143,8 @@ function paintChapters(work, owner, saved) {
         const read = currentIx >= 0 && index < currentIx;
         const current = chapter.id === currentId;
         const state = current ? "current" : read ? "read" : "";
-        const mark = current ? String(index + 1) : read ? "✓" : String(index + 1);
-        const sub = current ? `Chapter ${index + 1} · reading now` : `Chapter ${index + 1}`;
+        const mark = chapter.locked ? "🔒" : current ? String(index + 1) : read ? "✓" : String(index + 1);
+        const sub = chapter.locked ? `Chapter ${index + 1} · Locked` : current ? `Chapter ${index + 1} · reading now` : `Chapter ${index + 1}`;
         return `
             <a class="book-ch-row${current ? " current" : ""}" href="${readHref(work.id, chapter.id)}">
                 <span class="book-ch-status ${state}">${mark}</span>

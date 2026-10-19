@@ -97,12 +97,17 @@ export function buildLibraryPayload(book, form) {
     const chapters = listBodyChapters(book?.sections);
     const byId = new Map(chapters.map((ch) => [String(ch.id), ch]));
     const posted = [];
+    const locked = new Set(form.lockedChapterIds || []);
     const seen = new Set();
     for (const id of form.chapterIds || []) {
         const ch = byId.get(String(id));
         if (!ch || seen.has(String(ch.id))) continue;
         if (!chapterMeetsPublishLength(ch)) continue;
         seen.add(String(ch.id));
+        if (locked.has(String(ch.id))) {
+            posted.push({id:ch.id,title:ch.title || 'Untitled',content:'',wordCount:countWordsInHtml(ch.content || ''),locked:true,purchaseUrl:normalizePurchaseUrl(form.chapterAccess?.productUrl)});
+            continue;
+        }
         const content = stripReviewMarks(String(ch.content || ""));
         posted.push({
             id: ch.id,

@@ -108,6 +108,7 @@ export function readPublishDraft(book) {
         author: String(raw.author || ""),
         synopsis: String(raw.synopsis || ""),
         purchaseUrl: normalizePurchaseUrl(raw.purchaseUrl),
+        lockedChapterIds: asIdList(raw.lockedChapterIds),
         tags: split.tags,
         warnings: asStringList(raw.warnings),
         cover_url: String(raw.cover_url || raw.coverUrl || ""),

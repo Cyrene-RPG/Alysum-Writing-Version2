@@ -91,6 +91,7 @@
       { "source": "/css/studio/paid-access.css", "destination": "/applications/studio/studio-css/paid-access.css" },
       { "source": "/css/library/paid-access.css", "destination": "/applications/library/library-css/paid-access.css" },
       { "source": "/js/studio/publish.js", "destination": "/applications/studio/page-ui/publish.js" },
+      { "source": "/js/studio/publish-access.js", "destination": "/applications/studio/page-ui/publish-access.js" },
       { "source": "/js/studio/publish-save.js", "destination": "/applications/studio/page-ui/publish-save.js" },
       { "source": "/css/studio/publish.css", "destination": "/applications/studio/studio-css/publish.css" },
       { "source": "/editor.html", "destination": "/applications/editor/pages/editor.html" },

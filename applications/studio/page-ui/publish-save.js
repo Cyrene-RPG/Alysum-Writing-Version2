@@ -75,6 +75,14 @@ export function publishMetaFromForm(form) {
         author: form.author,
         synopsis: form.summary,
         purchaseUrl: normalizePurchaseUrl(form.purchaseUrl),
+        lockedChapterIds: form.lockedChapterIds || [],
+        chapterAccessPending: !form.isPublished,
+        chapterAccess: form.chapterAccess ? {
+            connectionId: String(form.chapterAccess.connectionId || ''),
+            productUrl: normalizePurchaseUrl(form.chapterAccess.productUrl),
+            minimum: String(form.chapterAccess.minimum || ''),
+            currency: String(form.chapterAccess.currency || 'USD'),
+        } : null,
         tags: form.tags,
         warnings: form.warnings,
         cover_url: form.coverUrl,
@@ -103,6 +111,7 @@ export function publishMetaFromForm(form) {
 
 export async function runPublishSave({
     isPublished,
+    saveChapterAccess,
     listed,
     session,
     supabase,
@@ -182,6 +191,7 @@ export async function runPublishSave({
         }
     }
     if (isPublished) {
+        await saveChapterAccess?.(form);
         await saveLibraryListing(supabase, session.user.id, book, form);
     }
     const patch = {

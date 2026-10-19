@@ -149,7 +149,7 @@
 
         <section class="pub-card">
             <h2>Manuscript</h2>
-            <p class="pub-hint">Every selected chapter will be free to read on Alysum. Uncheck any chapters you sell elsewhere or want to keep private.</p>
+            <p class="pub-hint">Select the chapters to post. They are free unless you check them under Locked chapters. Unchecked chapters stay private.</p>
             <details class="pub-chapters" id="chapterDetails">
                 <summary id="chapterSummary">Chapters to post (0)</summary>
                 <div id="chapterList"></div>
@@ -163,6 +163,23 @@
                 </div>
                 <div class="pub-preview-body writer-page" id="previewBody">Select a chapter.</div>
             </div>
+        </section>
+
+        <section class="pub-card" id="chapterAccessCard">
+            <h2>Locked chapters</h2>
+            <p class="pub-hint">Readers buy a product from your shop, then read its chapters here. Use one product to unlock the chapters checked below.</p>
+            <p id="chapterAccessUnavailable" role="status">Checking chapter access…</p>
+            <a id="chapterAccessSetup" class="payment-back" href="/applications/studio/pages/payment-setup" hidden>Site owner: prepare chapter access</a>
+            <fieldset id="chapterAccessFields" class="payment-fields" hidden>
+                <p><a class="payment-back" id="chapterShopSettings" href="/applications/studio/pages/connected-payments">Connect or manage your shop →</a></p>
+                <label for="chapterConnection">Your connected shop</label><select id="chapterConnection"><option value="">Choose your connected shop</option></select>
+                <label for="chapterProduct">Product link</label><input id="chapterProduct" type="url" placeholder="https://ko-fi.com/s/your-product" maxlength="2000">
+                <div class="access-grid"><div><label for="chapterMinimum">Product price</label><input id="chapterMinimum" inputmode="decimal" placeholder="3.00"></div>
+                <div><label for="chapterCurrency">Currency</label><select id="chapterCurrency"><option>USD</option><option>GBP</option><option>EUR</option><option>CAD</option><option>AUD</option></select></div></div>
+                <p class="pub-hint">Use a one-time shop product. Tips, gifts and memberships do not unlock chapters. Discounts below this price will not unlock access.</p>
+                <div id="chapterLocks" class="payment-chapters"></div>
+                <p class="pub-hint">Checked chapters are locked when you post or update. Readers must use their verified Alysum email at checkout. Each purchase unlocks the chapters included at that time.</p>
+            </fieldset>
         </section>
 
         <section class="pub-card" id="purchaseLinkCard">

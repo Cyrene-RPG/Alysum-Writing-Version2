@@ -38,9 +38,16 @@
     <link rel="stylesheet" href="/css/studio/paid-access.css">
 </head>
 <body><main class="pub-page payment-page">
-    <p><a class="payment-back" href="/studio">← Studio</a></p>
-    <h1>No platform payment setup needed</h1>
-    <section class="pub-card"><p>Authors can add their own shop or membership link in their book’s Publish settings.</p>
-    <p>Readers buy and access paid content on the author’s linked service. Purchases do not unlock chapters on Alysum.</p>
-    <a class="payment-back" href="/applications/studio/pages/connected-payments">How to add a purchase link →</a></section>
-</main></body></html>
+    <p><a class="payment-back" href="/applications/studio/pages/connected-payments">← Author shops</a></p>
+    <h1>Prepare chapter access</h1>
+    <p class="pub-sub">One database update for private chapters and purchase confirmations. No Stripe platform account or payment keys needed from the site owner.</p>
+    <section class="pub-card"><h2>1. Run the chapter-access script</h2>
+        <p>Copy this script into Supabase → SQL Editor → New query, then select Run.</p>
+        <button class="pub-primary" type="button" id="copyAccessSql">Copy chapter-access SQL</button>
+        <p id="accessSqlStatus" role="status"></p><textarea id="accessSql" aria-label="Chapter-access SQL" readonly hidden></textarea>
+    </section>
+    <section class="pub-card"><h2>2. Check it here</h2><p>Alysum uses its existing private server connection to Supabase.</p>
+        <button type="button" class="pub-ghost" id="checkAccessSetup">Check setup</button><p id="accessSetupStatus" role="status">Checking…</p>
+        <a class="payment-back" href="/applications/studio/pages/connected-payments">Connect your Ko-fi or Payhip shop →</a>
+    </section>
+</main><script type="module" src="/js/studio/payment-setup.js"></script></body></html>
