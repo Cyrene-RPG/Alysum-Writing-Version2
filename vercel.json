@@ -157,6 +157,10 @@
       "destination": "/applications/word-wars/pages/word-wars.html"
     },
     {
+      "source": "/shared-section/:token",
+      "destination": "/api/shared-section?token=:token"
+    },
+    {
       "source": "/shared-section",
       "destination": "/applications/excerpts/pages/read.html"
     },

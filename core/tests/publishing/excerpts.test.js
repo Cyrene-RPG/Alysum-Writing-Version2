@@ -16,7 +16,7 @@ test('limits enforce both words and characters',()=>{
 });
 test('URLs contain only an unguessable token, not the section or manuscript id',()=>{
  const url=new URL(excerptUrl(token,'https://alysum.example/editor?book=private'));
- assert.equal(url.pathname,'/shared-section');assert.equal(url.search,'');assert.equal(url.hash,'#'+token);
+ assert.equal(url.pathname,`/shared-section/${token}`);assert.equal(url.search,'');assert.equal(url.hash,'');
  assert.throws(()=>excerptUrl('../books','https://alysum.example'));
 });
 test('create sends only the selected snapshot and maps storage fields at the API boundary',async()=>{
@@ -24,7 +24,7 @@ test('create sends only the selected snapshot and maps storage fields at the API
  const share=await api.create('book-1',{excerpt:longText,title:'Section',author:'Writer',privateChapter:'SECRET'});
  assert.equal(calls[0].name,'create_wip_excerpt');assert.equal(calls[0].args.p_excerpt,longText);
  assert.equal(JSON.stringify(calls).includes('SECRET'),false);assert.equal(share.wordCount,4500);
- assert.equal(share.url,`https://alysum.example/shared-section#${token}`);assert.equal('word_count' in share,false);
+ assert.equal(share.url,`https://alysum.example/shared-section/${token}`);assert.equal('word_count' in share,false);
 });
 test('reader returns no section after revocation and rejects malformed tokens before RPC',async()=>{
  let revoked=false,calls=0;
