@@ -65,7 +65,7 @@ test("submission title can differ from the project title without renaming the sa
 test("real DOCX archive contains all manuscript text, margins, spacing, indents, italics and numbered header", async () => {
     const before = JSON.stringify(sampleBook);
     const manuscript = prepareManuscript(sampleBook, {});
-    const document = createManuscriptDocument(manuscript, { authorName: "Sample Writer", headerName: "Writer", shortTitle: "Lantern", layout: "novel" }, library);
+    const document = createManuscriptDocument(manuscript, { authorName: "Sample Writer", headerName: "Writer", shortTitle: "Lantern" }, library);
     const buffer = await library.Packer.toBuffer(document);
     assert.equal(buffer.subarray(0, 2).toString(), "PK");
     const archive = await JSZip.loadAsync(buffer);
@@ -89,9 +89,9 @@ test("real DOCX archive contains all manuscript text, margins, spacing, indents,
     assert.equal(JSON.stringify(sampleBook), before);
 });
 
-test("short-story layout omits a separate title page and can show the first header with Times New Roman", async () => {
+test("formatting controls can omit a separate title page and show the first header with Times New Roman", async () => {
     const manuscript = prepareManuscript(sampleBook, {});
-    const document = createManuscriptDocument(manuscript, { layout: "story", hideFirstHeader: false, font: "Times New Roman" }, library);
+    const document = createManuscriptDocument(manuscript, { separateTitlePage: false, includeChapterHeadings: false, hideFirstHeader: false, font: "Times New Roman" }, library);
     const archive = await JSZip.loadAsync(await library.Packer.toBuffer(document));
     const body = xml(await archive.file("word/document.xml").async("string"));
     const styles = xml(await archive.file("word/styles.xml").async("string"));
@@ -100,9 +100,9 @@ test("short-story layout omits a separate title page and can show the first head
     assert.ok(elements(styles, "rFonts").some(font => attr(font, "ascii") === "Times New Roman"));
 });
 
-test("short-story contact name shares a line with a right-edge word count; title and byline stay centered above the story", async () => {
+test("contact name shares a line with a right-edge word count; title and byline stay centered above the text", async () => {
     const manuscript = prepareManuscript(sampleBook, {});
-    const document = createManuscriptDocument(manuscript, { layout: "story", legalName: "Contact Name", authorName: "Pen Name", address: "123 Example Street", email: "sample@example.test" }, library);
+    const document = createManuscriptDocument(manuscript, { separateTitlePage: false, includeChapterHeadings: false, legalName: "Contact Name", authorName: "Pen Name", address: "123 Example Street", email: "sample@example.test" }, library);
     const archive = await JSZip.loadAsync(await library.Packer.toBuffer(document));
     const body = xml(await archive.file("word/document.xml").async("string"));
     const header = xml(await archive.file("word/header1.xml").async("string"));
@@ -132,7 +132,7 @@ test("pasted leading tabs across formatting runs become real half-inch indents w
     const before = JSON.stringify(source);
     const manuscript = prepareManuscript(source, {});
     const modelBefore = JSON.stringify(manuscript);
-    const document = createManuscriptDocument(manuscript, { layout: "story" }, library);
+    const document = createManuscriptDocument(manuscript, { separateTitlePage: false, includeChapterHeadings: false }, library);
     const archive = await JSZip.loadAsync(await library.Packer.toBuffer(document));
     const body = xml(await archive.file("word/document.xml").async("string"));
     const paragraphs = elements(body, "p");
@@ -144,4 +144,23 @@ test("pasted leading tabs across formatting runs become real half-inch indents w
     }
     assert.equal(JSON.stringify(source), before);
     assert.equal(JSON.stringify(manuscript), modelBefore);
+});
+
+test("title-page, chapter-heading and chapter-break controls work independently in one export", async () => {
+    const manuscript = prepareManuscript(sampleBook, {});
+    for (const [separateTitlePage, includeChapterHeadings, pageBreakBeforeChapters, breaks] of [
+        [false, false, false, 0], [true, false, false, 1],
+        [false, false, true, 1], [false, true, false, 0], [true, true, true, 2],
+    ]) {
+        const before = JSON.stringify(manuscript);
+        const document = createManuscriptDocument(manuscript, { separateTitlePage, includeChapterHeadings, pageBreakBeforeChapters }, library);
+        const archive = await JSZip.loadAsync(await library.Packer.toBuffer(document));
+        const body = xml(await archive.file("word/document.xml").async("string"));
+        assert.equal(elements(body, "pageBreakBefore").length, breaks);
+        const text = textOf(body);
+        assert.equal(text.includes("The Arrival"), includeChapterHeadings);
+        assert.equal(text.includes("The List"), includeChapterHeadings);
+        assert.ok(text.includes("The lantern glowed") && text.includes("Final words"));
+        assert.equal(JSON.stringify(manuscript), before);
+    }
 });

@@ -21,7 +21,7 @@ Choose **Open sample book**. The sample contains synthetic chapters, nested list
 
 The Spacing menu adds exact 1.0, 1.5 and 2.0 line heights, quarter-inch and half-inch first-line indents, and 0/6/12 pt paragraph gaps. These are writing-view preferences. The existing auto-indent switch still controls whether new paragraphs are indented. Export has separate formatting settings.
 
-Under Book → Settings → Export, choose **Manuscript .docx…**. Pick novel or short-story layout, Courier New or Times New Roman, and optional submission details. Contact details are used for this download only. Headers use the surname, short title and a live Word page-number field. The first-page header can be hidden. Front/back matter are opt-in; chapter notes are excluded. This preset retains italics and does not claim to cover every recipient's submission rules.
+Under Book → Settings → Export, choose **Manuscript .docx…**. Choose the font, title-page placement, chapter headings, chapter page breaks, and optional submission details. There is one manuscript export with independent formatting controls. Contact details are used for this download only. Headers use the surname, short title and a live Word page-number field. The first-page header can be hidden. Front/back matter are opt-in; chapter notes are excluded. This preset retains italics and does not claim to cover every recipient's submission rules.
 
 ## Verification
 
@@ -52,6 +52,6 @@ Also manually check mobile touch, keyboard-only toolbar navigation, typing after
 
 Automated storage regression and DOCX archive checks pass. All nine hosted browser checks and a real browser DOCX download passed. Two synthetic multi-page short stories were rendered in LibreOffice, in Courier New and Times New Roman, and all seven pages were visually inspected: contact name and right-edge word count share a line; title/byline are centered above the story; subsequent headers are right aligned; body text is double spaced with half-inch paragraph indents. Native Word rendering, mobile touch and the original reported file remain unverified.
 
-The follow-up export fixes are on this test branch only. Pasted leading indentation is normalized in the download without changing saved HTML. The dialog requires an explicit short-story/novel choice, separates submission title from project title, and labels the byline and contact-name positions. The existing chapter ZIP is labeled separately from manuscript export.
+The follow-up export fixes are on this test branch only. Pasted leading indentation is normalized in the download without changing saved HTML. The dialog has no short-story/novel selector. It separates submission title from project title, labels the byline and contact-name positions, and provides independent formatting controls for a separate title page, chapter headings and chapter page breaks. The existing chapter ZIP is labeled separately from manuscript export.
 
 The existing browser editing engine still uses `execCommand`, preserving native undo/redo while this incremental change is evaluated. The screenshots' reported toolbar failures are not all reproduced or claimed resolved. Replacing the editor engine is a separate decision after browser testing.

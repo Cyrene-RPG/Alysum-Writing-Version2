@@ -24,15 +24,17 @@ export function createManuscriptDocument(manuscript, details, library) {
     children.push(paragraph(manuscript.title, { alignment: AlignmentType.CENTER, keepNext: true, spacing: { before: 1800, after: 240 } }));
     children.push(paragraph(`by ${details.authorName || details.legalName || "Anonymous"}`, { alignment: AlignmentType.CENTER, keepNext: true, spacing: { after: 480 } }));
     manuscript.chapters.forEach((chapter, index) => {
-        const showHeading = details.layout !== "story" || index > 0;
+        const showHeading = details.includeChapterHeadings !== false;
+        const pageBreakBefore = index === 0 ? details.separateTitlePage !== false : details.pageBreakBeforeChapters !== false;
         if (showHeading) children.push(paragraph(chapter.title, {
-            pageBreakBefore: true,
+            pageBreakBefore: pageBreakBefore || undefined,
             alignment: AlignmentType.CENTER,
             spacing: { before: 1440, after: 480 },
         }));
-        chapter.paragraphs.forEach(block => {
+        chapter.paragraphs.forEach((block, blockIndex) => {
+            const blockBreak = !showHeading && blockIndex === 0 && pageBreakBefore;
             if (block.sceneBreak) {
-                children.push(paragraph("#", { alignment: AlignmentType.CENTER }));
+                children.push(paragraph("#", { alignment: AlignmentType.CENTER, pageBreakBefore: blockBreak || undefined }));
             } else {
                 // Replace pasted paragraph-leading tabs/spaces with the preset's
                 // real indent, without changing the stored HTML or the source runs.
@@ -44,6 +46,7 @@ export function createManuscriptDocument(manuscript, details, library) {
                     return { ...item, text };
                 });
                 children.push(new Paragraph({
+                    pageBreakBefore: blockBreak || undefined,
                     alignment: AlignmentType.LEFT,
                     indent: { firstLine: 720, left: 0, right: 0 },
                     spacing: doubleSpacing,

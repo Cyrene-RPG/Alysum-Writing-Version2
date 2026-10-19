@@ -8,8 +8,7 @@ export function openManuscriptDialog({ getBook, flushSave }) {
         <form>
             <header><h2 id="manuscript-export-title">Manuscript export</h2><button type="button" data-close aria-label="Close">×</button></header>
             <p>Download a text manuscript with 12-point type, double spacing, half-inch paragraph indents, one-inch margins, and numbered headers. Your saved book stays unchanged.</p>
-            <label>Layout<select name="layout" required><option value="" disabled selected>Choose short story or novel</option><option value="story">Short story — title, byline and story on the first page</option><option value="novel">Novel — separate title page and chapter breaks</option></select></label>
-            <label>Manuscript / story title<input name="title" maxlength="200" required autocomplete="off"></label>
+            <label>Manuscript title<input name="title" maxlength="200" required autocomplete="off"></label>
             <label>Font<select name="font"><option>Courier New</option><option>Times New Roman</option></select></label>
             <label>Byline / pen name (under the title)<input name="authorName" maxlength="160" autocomplete="off"></label>
             <label>Contact name (top left, optional)<input name="legalName" maxlength="160" autocomplete="off"></label>
@@ -17,6 +16,9 @@ export function openManuscriptDialog({ getBook, flushSave }) {
             <label>Contact email (optional)<input name="email" type="email" maxlength="254" autocomplete="off"></label>
             <label>Surname for the header<input name="headerName" maxlength="100" autocomplete="off"></label>
             <label>Short title for the header<input name="shortTitle" maxlength="100" autocomplete="off"></label>
+            <label class="manuscript-check"><input type="checkbox" name="separateTitlePage" checked> Separate title page</label>
+            <label class="manuscript-check"><input type="checkbox" name="includeChapterHeadings" checked> Include chapter headings</label>
+            <label class="manuscript-check"><input type="checkbox" name="pageBreakBeforeChapters" checked> Start each chapter on a new page</label>
             <label class="manuscript-check"><input type="checkbox" name="hideFirstHeader" checked> Hide header on the first page</label>
             <label class="manuscript-check"><input type="checkbox" name="includeMatter"> Include front and back matter</label>
             <p>Italics stay; headings and lists become paragraphs; scene breaks become a centered #. Contact details are used for this download only. Check your recipient’s submission rules.</p>
@@ -40,6 +42,9 @@ export function openManuscriptDialog({ getBook, flushSave }) {
         const details = Object.fromEntries(new FormData(form));
         details.hideFirstHeader = form.elements.hideFirstHeader.checked;
         details.includeMatter = form.elements.includeMatter.checked;
+        details.separateTitlePage = form.elements.separateTitlePage.checked;
+        details.includeChapterHeadings = form.elements.includeChapterHeadings.checked;
+        details.pageBreakBeforeChapters = form.elements.pageBreakBeforeChapters.checked;
         try {
             const status = await flushSave?.();
             if (status === "error") throw new Error("The book could not be saved. Please retry before exporting.");
