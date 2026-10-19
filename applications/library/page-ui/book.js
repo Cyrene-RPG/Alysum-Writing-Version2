@@ -1,3 +1,4 @@
+import { openReadingState } from "/core/library/reading-state.js";
 import { normalizePurchaseUrl } from "@alysum/publishing/publish-meta.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
@@ -8,7 +9,7 @@ import { genreLabel } from "@alysum/publishing/genres.js?v=4";
 import { applyVisitListingLook, applyVisitSiteAccent, applyVisitTitleColor, applyVisitWelcomeChrome } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=11";
 import { initWorkspaceShell } from "/js/studio/shell.js?v=9";
 
-const READ_KEY = "alysum:library:read-position";
+let readingState = null;
 const WELCOME = {
     lead: "The ",
     accent: "Library",
@@ -38,13 +39,7 @@ function bookIdFromUrl() {
 }
 
 function readProgress(id) {
-    try {
-        const raw = JSON.parse(localStorage.getItem(READ_KEY) || "{}");
-        const row = raw && typeof raw === "object" ? raw[id] : null;
-        return row && typeof row === "object" ? row : null;
-    } catch {
-        return null;
-    }
+    return readingState?.read('read-position')[id] || null;
 }
 
 function readHref(id, chapterId) {
@@ -158,10 +153,17 @@ function paintChapters(work, owner, saved) {
 }
 
 async function boot() {
-    const session = await resolveStudioSession(supabase);
+    const initial=await resolveStudioSession(supabase);
+    const opened=await openReadingState(supabase,{local:initial.mode==='local',onAccountChange(){
+        document.getElementById('bookPage').hidden=true;window.location.reload();
+    }});
+    readingState=opened.state;const session=opened.session;
+    window.addEventListener('pageshow',event=>{if(event.persisted)window.location.reload();});
+    window.addEventListener('pagehide',()=>{document.body.hidden=true;});
     initBookWelcome(session);
     const id = bookIdFromUrl();
     const work = id ? await fetchPublishedWork(supabase, id) : null;
+    if(!readingState.active)return;
     if (!work) {
         showEmpty();
         return;

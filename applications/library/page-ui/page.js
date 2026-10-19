@@ -1,3 +1,4 @@
+import { openReadingState } from "/core/library/reading-state.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
@@ -7,11 +8,11 @@ import { readLocalLibraryListings } from "@alysum/publishing/post-work.js?v=8";
 import { genreColor, genreDef, genreLabel, matchingGenreKeys, normalizeGenreList } from "@alysum/publishing/genres.js?v=4";
 import { cropFrameStyle, peekCoverSrc, rememberCovers } from "@alysum/publishing/cover-upload.js?v=4";
 
-const SHELVES_KEY = "alysum:library:shelves";
+let readingState = null;
 const SHELF_LABELS = { none: "Add to shelf", reading: "Currently reading", want: "Want to read", finished: "Finished" };
-let savedShelves = readSavedShelves();
+let savedShelves = {};
 
-const READ_KEY = "alysum:library:read-position";
+
 const SHELF_LIMIT = 11;
 const DEFAULT_SHELF = [
     "fantasy", "isekai", "litrpg", "scifi", "romance",
@@ -28,12 +29,7 @@ function escapeHtml(str) {
 }
 
 function readProgress() {
-    try {
-        const raw = JSON.parse(localStorage.getItem(READ_KEY) || "{}");
-        return raw && typeof raw === "object" ? raw : {};
-    } catch {
-        return {};
-    }
+    return readingState?.read('read-position') || {};
 }
 
 function parseListedMs(value) {
@@ -164,7 +160,7 @@ function cardHtml(book, compact = false) {
     </a>
         ${compact && book.continuing && getShelf(book) === "reading" ? `<div class="lib-reading-progress"><div role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}"><span style="width:${progress}%"></span></div><span>${progress}% read</span></div>` : ""}
         <div class="lib-shelf-picker"><label class="lib-visually-hidden" for="shelf-${compact ? "personal" : "catalog"}-${escapeHtml(book.id)}">Shelf for ${escapeHtml(book.title)}</label>
-        <select id="shelf-${compact ? "personal" : "catalog"}-${escapeHtml(book.id)}" data-shelf-id="${escapeHtml(book.id)}">${Object.entries(SHELF_LABELS).map(([value, label]) => `<option value="${value}"${getShelf(book) === value ? " selected" : ""}>${label}</option>`).join("")}</select></div>
+        <select ${readingState?.persistent ? "" : 'disabled title="Sign in to save books to your shelves"'} id="shelf-${compact ? "personal" : "catalog"}-${escapeHtml(book.id)}" data-shelf-id="${escapeHtml(book.id)}">${Object.entries(SHELF_LABELS).map(([value, label]) => `<option value="${value}"${getShelf(book) === value ? " selected" : ""}>${label}</option>`).join("")}</select></div>
     </article>`;
 }
 
@@ -263,10 +259,7 @@ function renderMorePanel() {
 }
 
 function readSavedShelves() {
-    try {
-        const stored = JSON.parse(localStorage.getItem(SHELVES_KEY) || "{}");
-        return stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
-    } catch { return {}; }
+    return readingState?.read('shelves') || {};
 }
 
 function getShelf(book) {
@@ -322,7 +315,22 @@ async function boot() {
         accent: "Library",
         subtitle: "",
     });
-    const session = await resolveStudioSession(supabase);
+    const initial = await resolveStudioSession(supabase);
+    const opened = await openReadingState(supabase,{local:initial.mode==='local',onAccountChange(){
+        BOOKS=[];savedShelves={};renderContinue();renderGrid();window.location.reload();
+    }});
+    readingState=opened.state;
+    const session=opened.session;
+    savedShelves=readSavedShelves();
+    document.querySelector('.lib-personal-note').textContent=readingState.persistent?'Shelves are saved for this account on this device.':'Sign in to save your shelves and reading progress.';
+    window.addEventListener('pageshow',event=>{if(event.persisted)window.location.reload();});
+    window.addEventListener('pagehide',()=>{document.body.hidden=true;});
+    window.addEventListener('storage',event=>{
+        if(!readingState.ownsStorageKey(event.key))return;
+        savedShelves=readSavedShelves();const progress=readProgress();
+        for(const book of BOOKS)book.continuing=progress[book.id]?{progress:Math.round(Number(progress[book.id].progress)||0)}:null;
+        renderContinue();renderGrid();
+    });
     if (session.mode !== "none") {
         let profile = peekWorkspaceProfile(session);
         initWorkspaceShell({
@@ -365,8 +373,9 @@ function bindControls() {
         const bookId = picker.dataset.shelfId;
         const book = BOOKS.find((item) => item.id === bookId);
         if (!book) return;
-        savedShelves[bookId] = picker.value;
-        try { localStorage.setItem(SHELVES_KEY, JSON.stringify(savedShelves)); } catch { /* Keep selections available for this visit. */ }
+        if(!readingState?.active || !readingState.persistent)return;
+        readingState.update('shelves',bookId,picker.value);
+        savedShelves=readSavedShelves();
         renderContinue();
         renderGrid();
         document.getElementById("shelfNotice").textContent = picker.value === "none" ? `${book.title} removed from shelves` : `${book.title} moved to ${SHELF_LABELS[picker.value]}`;

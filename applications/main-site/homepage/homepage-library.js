@@ -1,3 +1,4 @@
+import { openReadingState } from "/core/library/reading-state.js";
 import { fetchLibraryCatalogWithChapters, fetchLibraryReadCounts } from "@alysum/library/catalog-rows.js";
 import { genreColor, genreLabel } from "@alysum/publishing/genres.js";
 import { cropFrameStyle, safeCoverUrl } from "@alysum/publishing/cover-upload.js";
@@ -7,7 +8,7 @@ import { renderHeroBlurbs } from "/js/hero-blurbs.js";
 
 /** Same keys the Library page shows on its default genre shelf. */
 const SHELF_GENRES = ["fantasy", "isekai", "litrpg", "scifi", "romance", "horror", "mystery", "slice", "action", "drama", "adventure"];
-const READ_KEY = "alysum:library:read-position";
+let readingState = null;
 const SORT_LABELS = { popular: "Most popular", rating: "Highest rated", newest: "Newest arrivals", az: "Title A–Z" };
 const RAIL_LIMIT = 12;
 const TOP_LIMIT = 10;
@@ -27,12 +28,7 @@ function escapeHtml(value) {
 }
 
 function readProgress() {
-    try {
-        const raw = JSON.parse(localStorage.getItem(READ_KEY) || "{}");
-        return raw && typeof raw === "object" ? raw : {};
-    } catch {
-        return {};
-    }
+    return readingState?.read('read-position') || {};
 }
 
 function bookHref(book) {
@@ -358,8 +354,13 @@ async function loadCatalog(supabase) {
     renderCatalog();
 }
 
-export function startHomepageLibrary(supabase) {
+export async function startHomepageLibrary(supabase) {
     wireControls();
     renderLoading();
+    const opened=await openReadingState(supabase,{onAccountChange(){renderCatalog();window.location.reload();}});
+    readingState=opened.state;
+    window.addEventListener('pageshow',event=>{if(event.persisted)window.location.reload();});
+    window.addEventListener('pagehide',()=>{document.body.hidden=true;});
+    window.addEventListener('storage',event=>{if(readingState.ownsStorageKey(event.key))renderCatalog();});
     void loadCatalog(supabase);
 }

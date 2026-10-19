@@ -1,3 +1,4 @@
+import { openReadingState } from "/core/library/reading-state.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
 import { fetchPublishedWork } from "@alysum/library/work.js?v=2";
@@ -5,9 +6,7 @@ import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
 import { mountReaderThemes } from "./reader-theme.js?v=6";
 import { mountReaderEnd } from "./reader-end.js?v=4";
 
-const READ_KEY = "alysum:library:read-position";
-const DONE_KEY = "alysum:library:finished-chapters";
-const BOOK_KEY = "alysum:library:bookmarks";
+let readingState = null;
 const PREF_KEY = "alysum:reader:prefs";
 const SIZE_MIN = 80;
 const SIZE_MAX = 140;
@@ -108,15 +107,15 @@ function setPicker(open) {
 }
 
 function isBookmarked(id) {
-    const map = readJson(BOOK_KEY, {});
+    const map = readingState?.read('bookmarks') || {};
     return Boolean(map[id]);
 }
 
 function toggleBookmark(id) {
-    const map = readJson(BOOK_KEY, {});
+    const map = readingState?.read('bookmarks') || {};
     if (map[id]) delete map[id];
     else map[id] = true;
-    writeJson(BOOK_KEY, map);
+    readingState?.write('bookmarks', map);
     return Boolean(map[id]);
 }
 
@@ -133,15 +132,15 @@ function scrollRatio(el) {
 }
 
 function readFinished(bookId) {
-    const map = readJson(DONE_KEY, {});
+    const map = readingState?.read('finished-chapters') || {};
     const row = map[bookId];
     return row && typeof row === "object" ? { ...row } : {};
 }
 
 function writeFinished(bookId, done) {
-    const map = readJson(DONE_KEY, {});
+    const map = readingState?.read('finished-chapters') || {};
     map[bookId] = done;
-    writeJson(DONE_KEY, map);
+    readingState?.write('finished-chapters', map);
 }
 
 function showEmpty(id) {
@@ -155,8 +154,16 @@ async function boot() {
     const prefs = readPrefs();
     applyPrefs(prefs);
 
+    const initial=await resolveStudioSession(supabase);
+    const opened=await openReadingState(supabase,{local:initial.mode==='local',onAccountChange(){
+        document.getElementById('readerRoot').hidden=true;window.location.reload();
+    }});
+    readingState=opened.state;const session=opened.session;
+    window.addEventListener('pageshow',event=>{if(event.persisted)window.location.reload();});
+    window.addEventListener('pagehide',()=>{document.body.hidden=true;});
     const id = bookIdFromUrl();
     const work = id ? await fetchPublishedWork(supabase, id) : null;
+    if(!readingState.active)return;
     if (!work || !work.chapters?.length) {
         showEmpty(id);
         return;
@@ -168,10 +175,11 @@ async function boot() {
     const back = document.getElementById("readerBack");
     if (back) back.href = `/book?id=${encodeURIComponent(work.id)}`;
     paintBookmark(isBookmarked(work.id));
+    const bookmarkButton=document.getElementById('bookmarkBtn');bookmarkButton.disabled=!readingState.persistent;
+    if(!readingState.persistent)bookmarkButton.title='Sign in to save bookmarks';
     mountReaderThemes(document.getElementById("themeSwatches"), work);
-    const session = await resolveStudioSession(supabase);
 
-    const progressMap = readJson(READ_KEY, {});
+    const progressMap = readingState.read('read-position');
     const saved = progressMap[work.id] || {};
     const fromUrl = chapterFromUrl();
     let index = work.chapters.findIndex((chapter) => chapter.id === fromUrl);
@@ -185,7 +193,7 @@ async function boot() {
 
     function markFinished() {
         const id = work.chapters[index]?.id;
-        if (!id || work.chapters[index]?.locked || finished[id]) return;
+        if (!readingState.active || !id || work.chapters[index]?.locked || finished[id]) return;
         finished[id] = true;
         writeFinished(work.id, finished);
     }
@@ -218,6 +226,7 @@ async function boot() {
     }
 
     function persist(ratio) {
+        if(!readingState.active)return;
         const total = work.chapters.length;
         const progress = Math.round(((index + ratio) / total) * 100);
         progressMap[work.id] = {
@@ -225,7 +234,7 @@ async function boot() {
             chapterId: work.chapters[index].id,
             updated: Date.now(),
         };
-        writeJson(READ_KEY, progressMap);
+        readingState.update('read-position',work.id,progressMap[work.id]);
         document.getElementById("progressPct").textContent = `${progress}%`;
         document.getElementById("progressFill").style.width = `${progress}%`;
         const url = new URL(window.location.href);
