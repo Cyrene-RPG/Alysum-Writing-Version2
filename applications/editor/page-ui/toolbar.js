@@ -14,15 +14,22 @@ import {
 } from "./editor-google-fonts.js";
 import { SCENE_BREAK_PRESETS, buildSceneBreakHtml } from "./scene-breaks.js";
 import { bindToolbarOverflow, placeMorePanel } from "./toolbar-overflow.js";
+import { IS_EDITOR_TEST } from "../../../core/desktop/test-mode.js";
 
-const INDENT_KEY = "alysum:editor:auto-indent";
-const SPACE_KEY = "alysum:editor:line-spacing";
-const LINE_SPACES = ["book", "compact", "comfortable", "relaxed"];
+const STORAGE_PREFIX = IS_EDITOR_TEST ? "alysum:editor-test:" : "alysum:editor:";
+const INDENT_KEY = STORAGE_PREFIX + "auto-indent";
+const SPACE_KEY = STORAGE_PREFIX + "line-spacing";
+const INDENT_SIZES = ["1.5em", "0.25in", "0.5in"];
+const PARAGRAPH_GAPS = ["preset", "0pt", "6pt", "12pt"];
+const LINE_SPACES = ["book", "compact", "comfortable", "relaxed", "single", "one-half", "double"];
 const SPACE_LABELS = {
     book: "Book",
     compact: "Compact",
     comfortable: "Comfortable",
-    relaxed: "Relaxed"
+    relaxed: "Relaxed",
+    single: "1.0 — Single",
+    "one-half": "1.5",
+    double: "2.0 — Double"
 };
 const DEFAULT_LINE_SPACE = "comfortable";
 
@@ -107,6 +114,10 @@ function sizeMenuHtml() {
 function spacingMenuHtml() {
     return LINE_SPACES.map((value) => (
         `<button type="button" class="writer-menu-item writer-line-space" data-line-space="${value}">${SPACE_LABELS[value]}</button>`
+    )).join("") + `<p class="writer-font-group-label">First-line indent</p>` + INDENT_SIZES.map(value => (
+        `<button type="button" class="writer-menu-item" data-indent-size="${value}">${value === "1.5em" ? "Book default" : value.replace("in", " inch")}</button>`
+    )).join("") + `<p class="writer-font-group-label">Space after paragraphs</p>` + PARAGRAPH_GAPS.map(value => (
+        `<button type="button" class="writer-menu-item" data-paragraph-gap="${value}">${value === "preset" ? "Use spacing preset" : value.replace("pt", " pt")}</button>`
     )).join("");
 }
 
@@ -153,6 +164,16 @@ export function mountToolbar({
     // In-session source of truth — stays correct even where localStorage throws.
     let currentSpacing = readLineSpacing();
     if (pageEl) pageEl.dataset.writerSpace = currentSpacing;
+    function setViewPreference(name, value, options) {
+        if (!options.includes(value)) return;
+        if (pageEl) pageEl.dataset[name] = value;
+        try { localStorage.setItem(STORAGE_PREFIX + name, value); } catch { /* view remains usable */ }
+    }
+    for (const [name, values] of [["writerIndent", INDENT_SIZES], ["writerGap", PARAGRAPH_GAPS]]) {
+        let value;
+        try { value = localStorage.getItem(STORAGE_PREFIX + name); } catch { /* default */ }
+        setViewPreference(name, values.includes(value) ? value : values[0], values);
+    }
     void loadEditorGoogleFontBootstrap();
 
     const wordcount = mount.querySelector(".writer-wordcount");
@@ -164,7 +185,7 @@ export function mountToolbar({
         )),
         menuBlock("font", "Font", "Font", fontMenuHtml()),
         menuBlock("size", "Size", "Text size", sizeMenuHtml()),
-        menuBlock("spacing", "Spacing", "Line spacing", spacingMenuHtml()),
+        menuBlock("spacing", "Spacing", "Writing view spacing — manuscript export has separate settings", spacingMenuHtml()),
         menuBlock("breaks", "Breaks", "Scene break", breakMenuHtml()),
         `<button type="button" class="writer-tool writer-tool--find" data-find-toggle title="Find" aria-label="Find">${SEARCH_ICON}</button>`,
         `<button type="button" class="writer-tool writer-tool--type" data-typewriter title="Typewriter mode" aria-label="Typewriter mode">Type</button>`,
@@ -185,6 +206,11 @@ export function mountToolbar({
         mount.querySelectorAll(".writer-line-space").forEach((btn) => {
             btn.classList.toggle("is-active", btn.dataset.lineSpace === currentSpacing);
         });
+        for (const [attribute, name] of [["data-indent-size", "writerIndent"], ["data-paragraph-gap", "writerGap"]]) {
+            mount.querySelectorAll(`[${attribute}]`).forEach(button => {
+                button.classList.toggle("is-active", button.getAttribute(attribute) === pageEl?.dataset[name]);
+            });
+        }
     }
 
     function setMoreOpen(open) {
@@ -225,7 +251,12 @@ export function mountToolbar({
         if (event.target.closest(".writer-tool, .writer-tool-dropdown")) event.preventDefault();
     });
 
+    // Touch and keyboard navigation can move focus before click fires. Preserve
+    // the writer's range rather than formatting wherever focus happens to land.
+    mount.addEventListener("pointerdown", () => editor.rememberSelection?.());
+
     mount.addEventListener("click", (event) => {
+        editor.restoreSelection?.();
         const indentBtn = event.target.closest("[data-indent-toggle]");
         if (indentBtn) {
             closeMenus();
@@ -280,6 +311,15 @@ export function mountToolbar({
                 if (pageEl) pageEl.dataset.writerSpace = value;
                 paintSpacing();
             }
+            closeMenus();
+            return;
+        }
+        const indentSize = event.target.closest("[data-indent-size]");
+        const paragraphGap = event.target.closest("[data-paragraph-gap]");
+        if (indentSize || paragraphGap) {
+            if (indentSize) setViewPreference("writerIndent", indentSize.dataset.indentSize, INDENT_SIZES);
+            if (paragraphGap) setViewPreference("writerGap", paragraphGap.dataset.paragraphGap, PARAGRAPH_GAPS);
+            paintSpacing();
             closeMenus();
             return;
         }

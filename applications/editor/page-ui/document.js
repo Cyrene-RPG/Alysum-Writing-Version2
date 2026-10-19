@@ -23,6 +23,24 @@ export function mountDocument({ pageEl, onInput }) {
     pageEl.setAttribute("aria-multiline", "true");
 
     let mute = false;
+    let savedRange = null;
+
+    function rememberSelection() {
+        const selection = window.getSelection();
+        if (selection?.rangeCount && pageEl.contains(selection.anchorNode) && pageEl.contains(selection.focusNode)) {
+            savedRange = selection.getRangeAt(0).cloneRange();
+        }
+    }
+
+    function restoreSelection() {
+        if (!savedRange || !pageEl.contains(savedRange.startContainer) || !pageEl.contains(savedRange.endContainer)) return;
+        pageEl.focus();
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(savedRange.cloneRange());
+    }
+
+    document.addEventListener("selectionchange", rememberSelection);
 
     function stampSavedIndents(root) {
         root.querySelectorAll(":scope > p").forEach((p) => {
@@ -339,12 +357,17 @@ export function mountDocument({ pageEl, onInput }) {
     initSceneBreakEditorBehavior(pageEl);
 
     return {
+        rememberSelection,
+        restoreSelection,
         setHtml(html) {
             const cleaned = stripReviewMarks(String(html || ""));
             const next = cleaned.trim() ? cleaned : "<p><br></p>";
             mute = true;
             try {
-                if (pageEl.innerHTML !== next) pageEl.innerHTML = next;
+                if (pageEl.innerHTML !== next) {
+                    savedRange = null;
+                    pageEl.innerHTML = next;
+                }
                 stripPastedFormatting(pageEl);
                 ensureEditorTailAfterSceneBreaks(pageEl);
                 ensureTailAfterBlockquote();
