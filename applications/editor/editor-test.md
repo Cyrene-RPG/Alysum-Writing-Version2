@@ -50,6 +50,8 @@ Also manually check mobile touch, keyboard-only toolbar navigation, typing after
 
 ## Current validation limits
 
-The automated storage regression and DOCX archive checks passed in the implementation environment. Interactive browser checks remain pending: the test browser could not reach the local server, and its URL policy does not allow opening a local file. Therefore list behavior across browsers, touch selection, the complete settings dialog flow, and visual pagination in Word/LibreOffice have not been verified here. Keep this branch in testing until those checks pass.
+Automated storage regression and DOCX archive checks pass. All nine hosted browser checks and a real browser DOCX download passed. Two synthetic multi-page short stories were rendered in LibreOffice, in Courier New and Times New Roman, and all seven pages were visually inspected: contact name and right-edge word count share a line; title/byline are centered above the story; subsequent headers are right aligned; body text is double spaced with half-inch paragraph indents. Native Word rendering, mobile touch and the original reported file remain unverified.
+
+The follow-up export fixes are on this test branch only. Pasted leading indentation is normalized in the download without changing saved HTML. The dialog requires an explicit short-story/novel choice, separates submission title from project title, and labels the byline and contact-name positions. The existing chapter ZIP is labeled separately from manuscript export.
 
 The existing browser editing engine still uses `execCommand`, preserving native undo/redo while this incremental change is evaluated. The screenshots' reported toolbar failures are not all reproduced or claimed resolved. Replacing the editor engine is a separate decision after browser testing.

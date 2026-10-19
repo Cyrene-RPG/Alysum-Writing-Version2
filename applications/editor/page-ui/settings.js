@@ -70,9 +70,10 @@ export function mountBookSettings({
         </article>
         <article class="s-block">
             <div class="s-block-head"><h2>Export</h2></div>
-            <p class="s-sub">One .doc file per chapter, packed into a zip.</p>
-            <button type="button" class="export-btn" id="exportZipBtn">Download as .zip</button>
+            <p class="s-sub">Submission manuscript with double spacing, paragraph indents, numbered headers and a title/byline.</p>
             <button type="button" class="export-btn" id="exportManuscriptBtn">Manuscript .docx…</button>
+            <p class="s-sub">Separate chapter files: one .doc per chapter, packed into a zip. Manuscript layout is available in the .docx option above.</p>
+            <button type="button" class="export-btn" id="exportZipBtn">Download chapters (.zip)</button>
             <p class="export-note" id="exportNote"></p>
         </article>
         <article class="s-block">

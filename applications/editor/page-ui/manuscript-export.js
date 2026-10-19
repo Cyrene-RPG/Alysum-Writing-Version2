@@ -44,14 +44,14 @@ export function parseManuscriptHtml(html) {
     return paragraphs;
 }
 
-export function prepareManuscript(book, details) {
+export function prepareManuscript(book, details = {}) {
     const keys = details.includeMatter ? ["front", "body", "back"] : ["body"];
     const chapters = keys.flatMap(key => walkBookChapters(book?.sections?.[key] || []))
         .map(chapter => ({ title: String(chapter.title || ""), paragraphs: parseManuscriptHtml(chapter.content) }));
     if (!chapters.length) throw new Error("There are no chapters to export.");
     const text = chapters.flatMap(chapter => chapter.paragraphs.filter(p => !p.sceneBreak)
         .flatMap(p => p.runs.map(run => run.break ? " " : run.text).join(""))).join(" ");
-    return { title: String(book?.title || "Untitled Book"), words: text.trim().split(/\s+/).filter(Boolean).length, chapters };
+    return { title: String(details.title || "").trim() || String(book?.title || "Untitled Book"), words: text.trim().split(/\s+/).filter(Boolean).length, chapters };
 }
 
 let libraryPromise;

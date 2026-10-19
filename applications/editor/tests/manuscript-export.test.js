@@ -55,6 +55,13 @@ test("media and empty manuscripts fail explicitly without mutating their source"
     assert.throws(() => prepareManuscript({ sections: {} }, {}), /no chapters/);
 });
 
+test("submission title can differ from the project title without renaming the saved book", () => {
+    const before = JSON.stringify(sampleBook);
+    assert.equal(prepareManuscript(sampleBook, { title: "  Harbor at Dusk  " }).title, "Harbor at Dusk");
+    assert.equal(prepareManuscript(sampleBook, { title: "  " }).title, sampleBook.title);
+    assert.equal(JSON.stringify(sampleBook), before);
+});
+
 test("real DOCX archive contains all manuscript text, margins, spacing, indents, italics and numbered header", async () => {
     const before = JSON.stringify(sampleBook);
     const manuscript = prepareManuscript(sampleBook, {});
