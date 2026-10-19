@@ -42,6 +42,7 @@
 /book-invite  /applications/editor/pages/book-invite  200
 /word-wars-lobby  /applications/word-wars/pages/word-wars-lobby  200
 /word-wars  /applications/word-wars/pages/word-wars  200
+# Preview-enabled reading links use functions/shared-section/[token].js.
 /shared-section  /applications/excerpts/pages/read  200
 /library  /applications/library/pages/library  200
 /roadmap  /applications/main-site/pages/roadmap-handoff  200

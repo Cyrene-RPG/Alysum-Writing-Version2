@@ -14,8 +14,7 @@ export function normalizeExcerpt(value) {
 }
 export function excerptUrl(token, origin) {
     if (!/^[a-f0-9]{48}$/.test(String(token))) throw new Error("Invalid reading link.");
-    const url = new URL("/shared-section", origin);
-    url.hash = token;
+    const url = new URL(`/shared-section/${token}`, origin);
     return url.href;
 }
 function readableError(error) {
