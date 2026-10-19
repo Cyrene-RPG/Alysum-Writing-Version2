@@ -1,3 +1,5 @@
+import { isPaidAccessTest, TEST_BOOK_ID } from '/core/publishing/paid-access-test.js';
+import { testReaderWork, mountTestReader } from './paid-access-test.js';
 import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
 import { fetchPublishedWork } from "@alysum/library/work.js?v=2";
@@ -156,7 +158,8 @@ async function boot() {
     applyPrefs(prefs);
 
     const id = bookIdFromUrl();
-    const work = id ? await fetchPublishedWork(supabase, id) : null;
+    const accessTest = isPaidAccessTest(window.location) && id === TEST_BOOK_ID;
+    const work = accessTest ? testReaderWork() : id ? await fetchPublishedWork(supabase, id) : null;
     if (!work || !work.chapters?.length) {
         showEmpty(id);
         return;
@@ -166,10 +169,11 @@ async function boot() {
     document.getElementById("bookTitle").textContent = work.title || "Untitled";
     document.getElementById("readerRoot").hidden = false;
     const back = document.getElementById("readerBack");
-    if (back) back.href = `/book?id=${encodeURIComponent(work.id)}`;
+    if (back) back.href = accessTest ? "/publish?book=paid-access-sample&paidAccessTest=1" : `/book?id=${encodeURIComponent(work.id)}`;
     paintBookmark(isBookmarked(work.id));
     mountReaderThemes(document.getElementById("themeSwatches"), work);
-    const session = await resolveStudioSession(supabase);
+    const session = accessTest ? null : await resolveStudioSession(supabase);
+    const access = accessTest ? mountTestReader(work, () => render()) : null;
 
     const progressMap = readJson(READ_KEY, {});
     const saved = progressMap[work.id] || {};
@@ -184,6 +188,7 @@ async function boot() {
     const DONE = 0.97;
 
     function markFinished() {
+        if (access?.locked(work.chapters[index]?.id)) return;
         const id = work.chapters[index]?.id;
         if (!id || finished[id]) return;
         finished[id] = true;
@@ -199,6 +204,7 @@ async function boot() {
     }
 
     function canOpen(i) {
+        if (accessTest) return true;
         if (i <= index) return true;
         for (let k = index; k < i; k += 1) {
             if (!finished[work.chapters[k].id]) return false;
@@ -208,7 +214,7 @@ async function boot() {
 
     function syncLocks() {
         const last = index >= work.chapters.length - 1;
-        const unlocked = last || Boolean(finished[work.chapters[index]?.id]) || atEnd();
+        const unlocked = accessTest || last || Boolean(finished[work.chapters[index]?.id]) || atEnd();
         if (unlocked && !last) markFinished();
         document.getElementById("nextBtn").disabled = last || !unlocked;
         document.querySelectorAll("#chapterPicker [data-index]").forEach((btn) => {
@@ -218,6 +224,7 @@ async function boot() {
     }
 
     function persist(ratio) {
+        if (access?.locked(work.chapters[index]?.id)) return;
         const total = work.chapters.length;
         const progress = Math.round(((index + ratio) / total) * 100);
         progressMap[work.id] = {
@@ -245,19 +252,24 @@ async function boot() {
         document.getElementById("chapterMeta").textContent =
             `${minutesFor(words)} min · ${formatWords(words)}`;
         const body = document.getElementById("chapterBody");
-        body.innerHTML = chapterHtml(chapter.content);
+        if (access?.locked(chapter.id)) access.paintGate(body, chapter);
+        else body.innerHTML = chapterHtml(chapter.content);
         applyAuthorIndents(body);
         document.getElementById("pickerLabel").textContent =
             `Chapter ${index + 1} of ${work.chapters.length}`;
         document.getElementById("prevBtn").disabled = index <= 0;
         document.getElementById("nextBtn").disabled =
-            index >= work.chapters.length - 1 || !finished[chapter.id];
+            index >= work.chapters.length - 1 || (!accessTest && !finished[chapter.id]);
         document.getElementById("chapterPicker").innerHTML = work.chapters.map((item, i) =>
-            `<button type="button" role="option" data-index="${i}" class="${i === index ? "is-on" : ""}">${escapeHtml(item.title)}</button>`
+            `<button type="button" role="option" data-index="${i}" class="${i === index ? "is-on" : ""}">${escapeHtml(item.title)}${access ? " · " + access.label(item.id) : ""}</button>`
         ).join("");
         scrollEl.scrollTop = 0;
         persist(0);
         setPicker(false);
+        if (accessTest) {
+            document.getElementById("readerEnd").hidden = true;
+            return;
+        }
         mountReaderEnd({
             work,
             chapterId: chapter.id,

@@ -1,3 +1,5 @@
+import { isPaidAccessTest, sampleBook, TEST_BOOK_ID, readTestState } from '/core/publishing/paid-access-test.js';
+import { mountPaidAccessTest } from './paid-access-test.js';
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=11";
@@ -91,22 +93,31 @@ function paintChapterSummary() {
 
 async function boot() {
     const status = document.getElementById("pubStatus");
-    const session = await requireStudioSession(supabase, "/publish");
+    const accessTest = isPaidAccessTest(window.location) && bookIdFromUrl() === TEST_BOOK_ID;
+    const session = accessTest ? { mode: "local" } : await requireStudioSession(supabase, "/publish");
     if (!session) return;
     const bookId = bookIdFromUrl();
     if (!bookId) {
         window.location.replace("/studio");
         return;
     }
-    const api = createBooksApi(session, supabase);
-    const book = await api.getBook(bookId);
+    const api = accessTest ? null : createBooksApi(session, supabase);
+    const book = accessTest ? sampleBook() : await api.getBook(bookId);
     if (!book) {
         if (status) status.textContent = "Book not found.";
         return;
     }
-    const profile = peekWorkspaceProfile(session);
+    if (accessTest) {
+        const snapshot = readTestState(localStorage).snapshot;
+        if (snapshot?.id === TEST_BOOK_ID && Array.isArray(snapshot.chapters)) {
+            book.title = snapshot.title || book.title;
+            book.publish_meta.complete = Boolean(snapshot.complete);
+            book.publish_meta.draftChapterIds = snapshot.chapters.map(ch => ch.id);
+        }
+    }
+    const profile = accessTest ? null : peekWorkspaceProfile(session);
     const draft = readPublishDraft(book);
-    const listed = Boolean(await fetchLibraryListingId(supabase, book.id)) || isLibraryListed(book);
+    const listed = accessTest ? false : Boolean(await fetchLibraryListingId(supabase, book.id)) || isLibraryListed(book);
     const postError = document.getElementById("postError");
     book._author = draft.author || profile?.name || "";
     const heading = document.querySelector(".pub-page h1");
@@ -256,7 +267,12 @@ async function boot() {
         };
     }
 
+    let accessPanel;
     async function save(isPublished) {
+        if (accessTest) {
+            if (accessPanel.save({ preview: isPublished }) && !isPublished) status.textContent = "Test settings saved on this device. Your live listings have not changed.";
+            return;
+        }
         try {
             await runPublishSave({
                 isPublished,
@@ -489,6 +505,14 @@ async function boot() {
         paintStrip();
     });
     paintStrip();
+    if (accessTest) {
+        document.title = 'Access & pricing test — Alysum';
+        heading.textContent = 'Post work';
+        sub.textContent = 'Payment test · Sample book · No charges. Your live books and listings are unchanged.';
+        postBtn.textContent = 'Open reader preview';
+        document.getElementById('saveDraftBtn').textContent = 'Save test settings';
+        accessPanel = mountPaidAccessTest({ book, chapters, readForm });
+    }
 }
 
 boot().catch((error) => {
