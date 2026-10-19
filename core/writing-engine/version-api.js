@@ -3,8 +3,9 @@
  * Versions are kept forever; nothing is auto-deleted or pruned.
  */
 
-export const LOCAL_VERSIONS_KEY = "alysum-local-book-versions-v1";
-const AUTO_META_KEY = "alysum-book-version-auto-meta-v1";
+import { IS_EDITOR_TEST } from "../desktop/test-mode.js";
+export const LOCAL_VERSIONS_KEY = IS_EDITOR_TEST ? "alysum:editor-test:versions" : "alysum-local-book-versions-v1";
+const AUTO_META_KEY = IS_EDITOR_TEST ? "alysum:editor-test:version-meta" : "alysum-book-version-auto-meta-v1";
 export const AUTO_INTERVAL_MS = 6 * 60 * 60 * 1000;
 export const AUTO_MIN_WORD_DELTA = 100;
 

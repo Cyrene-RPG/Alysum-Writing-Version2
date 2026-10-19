@@ -1,4 +1,5 @@
 import { prepareDraftPromotion } from "../writing-engine/promote-draft.js";
+import { IS_EDITOR_TEST } from "../desktop/test-mode.js";
 /**
  * Local-only Studio data (books + profile) for desktop "Host Local Version".
  * Same shapes as Supabase rows; persisted in localStorage on this device.
@@ -11,7 +12,7 @@ export const LOCAL_GUEST_USER = { id: LOCAL_GUEST_USER_ID, email: null };
 /** Vault + scratch + editor notes when hosting locally */
 export const LOCAL_VAULT_STORAGE_KEY = "alysum-local-host-vault";
 
-export const LOCAL_STUDIO_STORAGE_KEY = "alysum-local-studio-v1";
+export const LOCAL_STUDIO_STORAGE_KEY = IS_EDITOR_TEST ? "alysum:editor-test:studio" : "alysum-local-studio-v1";
 const STORAGE_KEY = LOCAL_STUDIO_STORAGE_KEY;
 const DEFAULT_GOAL = DEFAULT_DAILY_WORD_GOAL;
 

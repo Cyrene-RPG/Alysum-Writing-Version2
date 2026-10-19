@@ -1,6 +1,7 @@
 /**
  * Desktop app auth routing — use the in-app sign-in gate, not the website login page.
  */
+import { IS_EDITOR_TEST } from "./test-mode.js";
 export const DESKTOP_LOGIN_PATH = "/desktop/home.html";
 export const DESKTOP_LOCAL_PATH = "/desktop/local.html";
 export const DESKTOP_LOCAL_HOST_KEY = "alysum-desktop-local-host";
@@ -10,6 +11,7 @@ export function isAlysumDesktop() {
 }
 
 export function isDesktopLocalHost() {
+  if (IS_EDITOR_TEST) return true;
   try {
     return localStorage.getItem(DESKTOP_LOCAL_HOST_KEY) === "1";
   } catch {
