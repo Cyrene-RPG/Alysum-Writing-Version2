@@ -1,5 +1,5 @@
 /**
- * Compact public author facts for the reader end card. No support links.
+ * Public author facts and author-saved tip destinations for the reader end card.
  */
 import { fetchAuthorById, fetchPublishedWorksForAuthor } from "./author-profile.js";
 import { fetchFollowState } from "./author-follow.js";
@@ -47,6 +47,7 @@ export async function fetchReaderAuthorCard(supabase, { ownerUserId, viewerId })
         displayName: profile.displayName,
         profileImageUrl: profile.profileImageUrl,
         bio: profile.bio,
+        supportLinks: profile.supportLinks,
         fictionCount,
         followers: follow.count,
         following: follow.following,

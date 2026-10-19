@@ -194,3 +194,16 @@
     .reader-author-top { flex-wrap: wrap; }
     .reader-follow { margin-left: auto; }
 }
+
+.reader-tip-box { margin: 20px 0; padding: 20px; border: 1px solid var(--reader-line); border-radius: 14px; background: color-mix(in srgb, var(--reader-chrome) 80%, transparent); color: var(--reader-ink); font-family: var(--reader-ui); }
+.reader-tip-box h3 { margin: 0 0 8px; font: 700 18px var(--reader-ui); color: var(--reader-title); }
+.reader-tip-box p { font: 14px/1.6 var(--reader-ui); margin: 8px 0 16px; }
+.reader-tip-box a { color: var(--reader-title); text-underline-offset: 3px; overflow-wrap: anywhere; }
+.reader-tip-box button { min-height: 44px; }
+.reader-tip-panel { margin-top: 16px; }
+.reader-tip-panel[hidden] { display: none !important; }
+.reader-tip-box label { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; font: 600 14px var(--reader-ui); }
+.reader-tip-box input, .reader-tip-box select { width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px; border: 1px solid var(--reader-line); border-radius: 8px; background: var(--reader-chrome); color: var(--reader-ink); font: inherit; }
+.reader-tip-box input:focus-visible, .reader-tip-box select:focus-visible, .reader-tip-box button:focus-visible, .reader-tip-box a:focus-visible { outline: 2px solid var(--reader-accent); outline-offset: 3px; }
+.reader-tip-frame { width: 100%; height: 720px; border: 0; border-radius: 10px; background: #fff; display: block; margin-bottom: 14px; }
+@media(max-width:480px) { .reader-tip-box { padding: 16px; } .reader-tip-frame { height: 760px; } }

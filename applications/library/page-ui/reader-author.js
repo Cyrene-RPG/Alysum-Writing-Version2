@@ -1,3 +1,4 @@
+import { mountReaderTips } from "./reader-tips.js";
 import { fetchReaderAuthorCard } from "@alysum/library/author-card.js?v=4";
 import { setFollowing } from "@alysum/library/author-follow.js?v=1";
 import { authorInitial } from "@alysum/library/author-profile.js?v=3";
@@ -40,7 +41,7 @@ function metric(value, label) {
     return `<li><span class="reader-author-num">${escapeHtml(String(value ?? 0))}</span><span class="reader-author-cap">${escapeHtml(label)}</span></li>`;
 }
 
-export async function mountReaderAuthor(root, { work, supabase, session }) {
+export async function mountReaderAuthor(root, { work, supabase, session, onLayout }) {
     const viewerId = session?.mode === "cloud" ? String(session.user?.id || "").trim() : "";
     let card = fallbackCard(work);
     root.innerHTML = `<div class="reader-author-skel" aria-hidden="true"></div>`;
@@ -94,6 +95,8 @@ export async function mountReaderAuthor(root, { work, supabase, session }) {
             </ul>
         </div>`;
 
+    mountReaderTips(root,{supportLinks:card.supportLinks,isOwner:mine,onLayout});
+
     const bioEl = root.querySelector("#readerAuthorBio");
     const more = root.querySelector("#readerAuthorMore");
     if (bioEl && more && bioEl.scrollHeight > bioEl.clientHeight + 4) {
@@ -130,7 +133,7 @@ export async function mountReaderAuthor(root, { work, supabase, session }) {
             });
             card.following = next.following;
             card.followers = next.count;
-            void mountReaderAuthor(root, { work, supabase, session });
+            void mountReaderAuthor(root, { work, supabase, session, onLayout });
         } catch (error) {
             if (hintEl) {
                 hintEl.hidden = false;

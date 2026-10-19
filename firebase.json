@@ -71,6 +71,7 @@
       { "source": "/js/library/page.js", "destination": "/applications/library/page-ui/page.js" },
       { "source": "/js/library/reader.js", "destination": "/applications/library/page-ui/reader.js" },
       { "source": "/js/library/reader-end.js", "destination": "/applications/library/page-ui/reader-end.js" },
+      { "source": "/js/library/reader-tips.js", "destination": "/applications/library/page-ui/reader-tips.js" },
       { "source": "/js/library/reader-author.js", "destination": "/applications/library/page-ui/reader-author.js" },
       { "source": "/js/library/comment-editor.js", "destination": "/applications/library/page-ui/comment-editor.js" },
       { "source": "/js/library/comment-html.js", "destination": "/applications/library/page-ui/comment-html.js" },
