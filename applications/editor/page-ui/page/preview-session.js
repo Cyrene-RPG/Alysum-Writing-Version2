@@ -62,6 +62,7 @@ export function mountPreviewSession({
         enterPreview();
     }
     mountBookSettings({
+        defaultAuthor,
         mount: document.getElementById("settingsScroll"),
         bookId,
         session,

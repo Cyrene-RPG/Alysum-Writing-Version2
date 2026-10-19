@@ -6,6 +6,7 @@ import {
     sourceLabel,
 } from "@alysum/writing-engine/version-api.js";
 import { downloadBookZip } from "./export-zip.js";
+import { mountManuscriptExport } from "./manuscript-export-form.js";
 
 let editorsApiPromise = null;
 function editorsModule() {
@@ -44,6 +45,7 @@ export function mountBookSettings({
     updateBook,
     flushSave,
     onLibraryPreview,
+    defaultAuthor = "",
 }) {
     if (!mount) return { refresh() {} };
     const isLocal = session?.mode !== "cloud";
@@ -69,8 +71,11 @@ export function mountBookSettings({
         </article>
         <article class="s-block">
             <div class="s-block-head"><h2>Export</h2></div>
-            <p class="s-sub">One .doc file per chapter, packed into a zip.</p>
-            <button type="button" class="export-btn" id="exportZipBtn">Download as .zip</button>
+            <p class="manuscript-export-description">Download this draft as one Word manuscript with submission formatting, headers and page numbers.</p>
+            <button type="button" class="export-btn" id="manuscriptExportBtn">Manuscript .docx…</button>
+            <details class="manuscript-legacy-export"><summary>Original chapter export</summary>
+            <p class="s-sub">One HTML-based .doc file per chapter, packed into a zip.</p>
+            <button type="button" class="export-btn" id="exportZipBtn">Download chapter .zip</button></details>
             <p class="export-note" id="exportNote"></p>
         </article>
         <article class="s-block">
@@ -83,6 +88,8 @@ export function mountBookSettings({
             </button>
         </article>
     `;
+
+    mountManuscriptExport({button:mount.querySelector('#manuscriptExportBtn'),getBook,getAuthor:()=>defaultAuthor,flushSave,storageScope:session?.mode==='cloud'?userId:'local'});
 
     const collabList = mount.querySelector("#collabList");
     const inviteBtn = mount.querySelector("#inviteBtn");
