@@ -29,3 +29,13 @@
 #paymentLogin { display: block; margin-top: 12px; }
 #paymentLogin[hidden], #setupDetails[hidden], #paidChapterPicker[hidden] { display: none; }
 #editionPrice { width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; color: var(--text); background: var(--alysum-ui-chrome); font: inherit; }
+.paid-access button, #stripeConnect, #editionCreate, #copyPaymentSql {
+    padding: 10px 16px;
+    border-radius: 8px;
+    min-height: 44px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+.paid-access button:disabled, #stripeConnect:disabled, #editionCreate:disabled { opacity: .5; cursor: default; }
+.paid-access button:focus-visible, #stripeConnect:focus-visible, #editionCreate:focus-visible, #copyPaymentSql:focus-visible { outline: 2px solid var(--accent, currentColor); outline-offset: 3px; }
