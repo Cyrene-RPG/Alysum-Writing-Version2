@@ -207,3 +207,8 @@
 .reader-tip-box input:focus-visible, .reader-tip-box select:focus-visible, .reader-tip-box button:focus-visible, .reader-tip-box a:focus-visible { outline: 2px solid var(--reader-accent); outline-offset: 3px; }
 .reader-tip-frame { width: 100%; height: 720px; border: 0; border-radius: 10px; background: #fff; display: block; margin-bottom: 14px; }
 @media(max-width:480px) { .reader-tip-box { padding: 16px; } .reader-tip-frame { height: 760px; } }
+
+.reader-tip-services { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.reader-tip-services .reader-follow { min-width: 0; margin: 0; }
+.reader-tip-services [aria-pressed="false"] { background: transparent; border-color: var(--reader-line); }
+.reader-tip-services [aria-pressed="true"] { border-width: 2px; }

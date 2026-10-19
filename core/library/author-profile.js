@@ -72,7 +72,10 @@ export function normalizeSupportLinks(raw) {
                 })()
               : {};
     for (const kind of AUTHOR_SUPPORT_LINK_KINDS) {
-        const url = sanitizeSupportUrl(source[kind.id]);
+        const input = String(source[kind.id] || '').trim();
+        const shortCashTag = kind.id === 'cashapp' && (input.match(/^(\$[a-z0-9_]+)$/i) || input.match(/^https?:\/\/(\$[a-z0-9_]+)\/?$/i));
+        const raw = shortCashTag ? `https://cash.app/${shortCashTag[1]}` : source[kind.id];
+        const url = sanitizeSupportUrl(raw);
         if (url) out[kind.id] = url;
     }
     return out;
@@ -138,7 +141,10 @@ export function supportLinksPayloadFromDraft(draftMap) {
     const source = draftMap && typeof draftMap === "object" ? draftMap : {};
     for (const kind of AUTHOR_SUPPORT_LINK_KINDS) {
         if (!SUPPORT_KIND_IDS.has(kind.id)) continue;
-        const url = sanitizeSupportUrl(source[kind.id]);
+        const input = String(source[kind.id] || '').trim();
+        const shortCashTag = kind.id === 'cashapp' && (input.match(/^(\$[a-z0-9_]+)$/i) || input.match(/^https?:\/\/(\$[a-z0-9_]+)\/?$/i));
+        const raw = shortCashTag ? `https://cash.app/${shortCashTag[1]}` : source[kind.id];
+        const url = sanitizeSupportUrl(raw);
         if (url) cleaned[kind.id] = url;
     }
     return cleaned;

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {authorTipOptions,paypalTipUrl} from '../../library/author-tips.js';
+import {authorTipOptions,paypalTipUrl,cashAppTip} from '../../library/author-tips.js';
 
 test('Ko-fi uses the author-saved profile for its real embedded tip panel',()=>{
     const [option]=authorTipOptions({kofi:'https://ko-fi.com/Author_Name?ref=profile'});
@@ -27,4 +27,15 @@ test('Cash App is recognized without pretending to submit a payment',()=>{
 test('unconfigured authors and unrelated social links do not create tip buttons',()=>{
     assert.deepEqual(authorTipOptions({social:'https://example.com',website:'https://example.com',patreon:'https://patreon.com/example'}),[]);
     assert.deepEqual(authorTipOptions(null),[]);
+});
+
+test('Cash App supports saved cashtags, encoded dollar signs and amount links',()=>{
+    for(const raw of ['$Writer','https://$Writer','https://cash.app/%24Writer','https://cash.app/$Writer/5.00']) {
+        assert.equal(authorTipOptions({cashapp:raw})[0]?.url,'https://cash.app/$Writer');
+    }
+});
+test('Cash App amount entry copies USD without inventing an unsupported checkout URL',()=>{
+    assert.deepEqual(cashAppTip('https://cash.app/$Writer','2.5'),{url:'https://cash.app/$Writer',amount:'2.50',currency:'USD'});
+    for(const amount of ['','0','-5','1e3','1.234','10001','1,50'])assert.equal(cashAppTip('https://cash.app/$Writer',amount),null);
+    assert.equal(cashAppTip('https://cash.app.evil.example/$Writer','5'),null);
 });

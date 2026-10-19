@@ -1,3 +1,4 @@
+import { saveAuthorSupportLinks } from "@alysum/account/support-links.js";
 import { els } from "/js/settings/elements.js";
 import { state } from "/js/settings/state.js";
 import { showMsg, hideMsg, normalizeDisplayName, writeStoredAboutMe, writeStoredSupportLinks } from "/js/settings/helpers.js";
@@ -273,10 +274,15 @@ export function wireSettingsSaves() {
             return;
         }
         const payload = supportLinksPayloadFromDraft(readSupportLinkDraft());
-        writeStoredSupportLinks(user.id, payload);
-        showMsg(msg, "Saved.", true);
-        void supabase.from("users").update({ support_links: payload }).eq("id", user.id);
-        void supabase.auth.updateUser({ data: { support_links: payload } });
+        saveSupportBtn.disabled=true;
+        try {
+            await saveAuthorSupportLinks(supabase,user.id,payload);
+            writeStoredSupportLinks(user.id,payload);
+            void supabase.auth.updateUser({data:{support_links:payload}}).catch(()=>{});
+            showMsg(msg,"Saved.",true);
+        } catch(error) {
+            showMsg(msg,error?.message || "Could not save your support links.",false);
+        } finally {saveSupportBtn.disabled=false;}
     });
 
     saveDisplayBtn?.addEventListener("click", async (event) => {
