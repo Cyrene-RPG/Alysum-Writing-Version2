@@ -512,6 +512,12 @@ async function boot() {
         postBtn.textContent = 'Open reader preview';
         document.getElementById('saveDraftBtn').textContent = 'Save test settings';
         accessPanel = mountPaidAccessTest({ book, chapters, readForm });
+    } else if (/^[a-z0-9-]+\.alysum-writing-version2\.pages\.dev$/.test(window.location.hostname)) {
+        const note = document.createElement('p'); note.className = 'pub-note';
+        const link = document.createElement('a'); link.className = 'payment-back';
+        link.href = `/applications/studio/pages/connected-payments?book=${encodeURIComponent(book.id)}`;
+        link.textContent = 'Set up a private Stripe payment test';
+        note.append(link); document.querySelector('.pub-actions').before(note);
     }
 }
 

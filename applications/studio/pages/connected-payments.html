@@ -1,0 +1,71 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/",
+        "@alysum/statistics/": "/core/statistics/"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=8" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes-dim/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=10" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=12" />
+    <script src="/site-appearance/js-runtime/body-background-presets-data.js?v=3"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/boot.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow">
+    <title>Connected payments — Alysum test</title>
+    <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
+    <link rel="stylesheet" href="/css/editor/document.css?v=11" />
+    <link rel="stylesheet" href="/css/editor/scene-breaks.css?v=2" />
+    <link rel="stylesheet" href="/css/studio/publish.css?v=26" />
+    <link rel="stylesheet" href="/css/studio/paid-access-test.css">
+</head>
+<body><main class="pub-page">
+    <p><a class="payment-back" href="/publish?book=paid-access-sample&amp;paidAccessTest=1#accessPricing">← Back to the screen preview</a></p>
+    <h1>Connected payments</h1>
+    <p class="pub-sub">Stripe test mode · No real charges · Test branch only</p>
+    <section class="pub-card">
+        <h2>Stripe</h2>
+        <p>Readers pay into your connected Stripe account. Alysum checks payment and manages reading access.</p>
+        <p class="pub-hint">Stripe handles account authorization. Your Stripe password and card details never go into an Alysum form. This connection authorizes Alysum to create test payments on your connected Standard account.</p>
+        <p id="stripeConnection">No account connected.</p>
+        <button type="button" class="pub-primary" id="stripeConnect" disabled>Continue to Stripe</button>
+        <a id="paymentLogin" hidden>Sign in to Alysum</a>
+        <div id="setupDetails"><h3>Server setup needed</h3><p class="pub-hint">These settings belong in Cloudflare’s preview environment. Do not paste secrets into this page or chat.</p><ul id="setupMissing"></ul>
+        <p><a href="/applications/studio/paid-access-integration.md">Open setup instructions</a></p>
+        <button type="button" class="pub-ghost" id="copyPaymentSql">Copy Supabase SQL</button>
+        <textarea id="paymentSql" aria-label="Payment test Supabase SQL" readonly hidden></textarea><p id="sqlCopyStatus" role="status"></p></div>
+    </section>
+    <section class="pub-card">
+        <h2>Create a private test edition</h2>
+        <p class="pub-hint">This saves a separate snapshot of an unpublished prose draft. Its link is unlisted. It does not post to Library or change the source draft. Previously public chapters are excluded from this first test.</p>
+        <label for="paymentBook">Saved draft</label><select id="paymentBook"><option value="">Choose an unpublished draft</option></select>
+        <p id="completeBookNote" class="pub-hint"></p>
+        <details><summary>Chapters to include</summary><div class="payment-chapters" id="editionChapters"></div></details>
+        <label for="editionMode">Sell as</label><select id="editionMode"><option value="bundle">Chapter bundle</option><option value="chapter">Individual chapters</option><option value="book">Complete book</option></select>
+        <fieldset id="paidChapterPicker"><legend>Paid chapters</legend><p class="pub-hint">Keep at least one chapter free for readers to try. Full-book purchases keep the first chapter free.</p><div class="payment-chapters" id="paidChapters"></div></fieldset>
+        <label for="editionPrice" id="editionPriceLabel">Bundle price</label><input id="editionPrice" type="text" inputmode="decimal" value="3.00">
+        <label for="editionCurrency">Currency</label><select id="editionCurrency"><option value="usd">USD</option><option value="gbp">GBP</option><option value="eur">EUR</option><option value="cad">CAD</option><option value="aud">AUD</option></select>
+        <p class="pub-hint">One-time purchase. This first integration presents prose as plain text. PayPal, Ko-fi, Patreon, memberships and live payments are not enabled.</p>
+        <button type="button" class="pub-primary" id="editionCreate" disabled>Create private test edition</button>
+        <div id="editionResult" role="status"></div>
+    </section>
+    <p class="pub-status" id="paymentStatus" role="status">Checking server setup…</p><p class="pub-error" id="paymentError" role="alert" hidden></p>
+</main><script type="module" src="/js/studio/connected-payments.js"></script></body></html>

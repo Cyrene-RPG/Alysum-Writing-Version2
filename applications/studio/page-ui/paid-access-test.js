@@ -30,7 +30,7 @@ export function mountPaidAccessTest({ book, chapters, readForm }) {
         <div class="access-summary" id="accessSummary" aria-live="polite"></div>
         <p class="pub-error" id="accessError" role="alert" hidden></p>
         <div class="access-toolbar"><button type="button" class="pub-primary" id="accessPreview">Preview as reader</button><button type="button" class="pub-ghost" id="accessReset">Reset test purchases</button></div>
-        <p class="pub-hint">Membership access will follow later. Nothing here changes a live listing.</p>`;
+        <p class="pub-hint">Membership access will follow later. Nothing here changes a live listing.</p><p><a class="payment-back" href="/applications/studio/pages/connected-payments">Set up the Stripe test integration →</a></p>`;
     document.querySelector('.pub-strip').before(card);
     card.querySelector(`[name="accessMode"][value="${plan.mode}"]`).checked = true;
     for (const [id, key] of [['accessProvider','provider'],['accessSale','sale'],['accessPrice','price'],['accessCurrency','currency']]) card.querySelector(`#${id}`).value = plan[key];

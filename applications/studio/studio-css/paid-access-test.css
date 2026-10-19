@@ -20,3 +20,12 @@
 .access-toolbar button { min-height: 44px; white-space: normal; }
 
 @media (max-width: 480px) { .access-grid { grid-template-columns: minmax(0,1fr); gap: 6px; } .access-connect { padding-top: 10px; } .paid-access.pub-card { padding: 18px 14px; } .access-toolbar { align-items: stretch; } .access-toolbar button { flex: 1 1 150px; } }
+
+.payment-back, #setupDetails a, #editionResult a, #paymentLogin { color: var(--text); text-underline-offset: 3px; }
+.payment-chapters label { display: flex; gap: 8px; align-items: center; min-height: 38px; }
+#paidChapterPicker { margin: 18px 0; padding: 12px; border: 1px solid var(--border); border-radius: 10px; }
+#setupMissing { overflow-wrap: anywhere; font-size: 14px; line-height: 1.8; }
+#stripeConnect, #editionCreate { margin-top: 14px; min-height: 44px; }
+#paymentLogin { display: block; margin-top: 12px; }
+#paymentLogin[hidden], #setupDetails[hidden], #paidChapterPicker[hidden] { display: none; }
+#editionPrice { width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; color: var(--text); background: var(--alysum-ui-chrome); font: inherit; }
