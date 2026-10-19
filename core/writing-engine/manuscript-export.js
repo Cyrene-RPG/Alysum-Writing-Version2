@@ -61,8 +61,8 @@ export function createManuscriptDocument(model,docx) {
         // A single story can share its first page with its submission heading.
         const showHeading=o.titlePage||model.chapters.length>1;
         if(showHeading)body.push(para([run(chapter.title)],{pageBreakBefore:index>0,alignment:AlignmentType.CENTER,indent:{firstLine:0},spacing:{before:1440,after:480,line:480},keepNext:true}));
-        chapter.blocks.forEach(block=>{
-            if(block.kind==='scene')body.push(para([run('#')],{alignment:AlignmentType.CENTER,indent:{firstLine:0},keepNext:true}));
+        chapter.blocks.forEach((block,blockIndex)=>{
+            if(block.kind==='scene')body.push(para([run('#')],{alignment:AlignmentType.CENTER,indent:{firstLine:0},keepNext:blockIndex<chapter.blocks.length-1}));
             else {
                 const runs=[];
                 for(const part of block.runs) {
