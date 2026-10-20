@@ -425,6 +425,41 @@
     display: none;
 }
 
+/* Saved themes expand inside the account menu instead of the navigation row. */
+.wd-pfp-dropdown {
+    max-height: calc(100dvh - 120px);
+    overflow-y: auto;
+}
+
+.wd-pfp-dropdown .wd-loadout-menu {
+    width: 100%;
+    margin: 0 0 4px;
+}
+
+.wd-pfp-dropdown .wd-loadout-btn {
+    display: flex;
+    justify-content: space-between;
+}
+
+.wd-pfp-dropdown .wd-loadout-dropdown {
+    position: static;
+    min-width: 0;
+    width: 100%;
+    max-height: min(40vh, 280px);
+    overflow-y: auto;
+    padding: 4px 0 8px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.wd-pfp-dropdown .wd-loadout-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-left: 18px;
+}
+
 .wd-loadout-item {
     display: flex;
     align-items: center;
@@ -761,7 +796,7 @@ button.fh-has-new-badge .fh-target-new,
 @media (max-width: 900px) {
     .wd-nav-wrap { display: flex; align-items: center; min-width: 0; touch-action: pan-x pan-y; }
 
-    /* Scroll the tabs, while keeping the Themes dropdown outside the clip. */
+    /* The profile menu lives above this horizontally scrolling tab row. */
     .wd-nav-wrap > .wd-nav {
         flex: 1 1 auto;
         width: 0;
@@ -772,11 +807,6 @@ button.fh-has-new-badge .fh-target-new,
         overscroll-behavior-x: contain;
         touch-action: pan-x pan-y;
         scrollbar-width: thin;
-    }
-
-    .wd-nav-wrap > .wd-loadout-menu {
-        flex: 0 0 auto;
-        margin: 0 12px 0 4px;
     }
 
     .wd-welcome-bar { min-height: 76px; }
