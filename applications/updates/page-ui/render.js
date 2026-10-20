@@ -7,6 +7,7 @@ export function renderAnnouncement(post, { detail = false, authorName = "Author"
     category.className = "update-category";
     category.textContent = UPDATE_CATEGORIES[post.category] || "Announcement";
     const heading = document.createElement("h2");
+    heading.className = "updates-display-title";
     if (detail) heading.textContent = post.title;
     else {
         const link = document.createElement("a");

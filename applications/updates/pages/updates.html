@@ -2,6 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/",
+        "@alysum/statistics/": "/core/statistics/"
+      }
+    }
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/site-appearance/css-styles/theme.css">
     <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css">
@@ -13,29 +30,55 @@
     <script src="/site-appearance/js-runtime/boot.js"></script>
     <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js" defer></script>
+    <link rel="stylesheet" href="/css/site-responsive.css">
+    <link rel="stylesheet" href="/css/workspace-nav.css">
     <link rel="stylesheet" href="/applications/updates/updates-css/page.css">
     <title>What’s New — Alysum</title>
     <meta name="description" content="The latest Alysum improvements, fixes, and announcements.">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
-<header class="updates-header">
-    <a class="updates-brand" href="/" aria-label="Alysum home">Alysum</a>
-    <nav aria-label="Main navigation">
-        <a href="/library">Library</a>
-        <a href="/studio">Studio</a>
-        <a href="/updates">What’s New</a>
-        <a href="/write-update">Write an update</a>
+    <header class="wd-welcome-bar ui-bar" aria-label="Welcome">
+        <div class="wd-welcome-inner">
+            <div class="wd-pfp-menu" id="welcomePfpMenu">
+                <button type="button" class="wd-pfp-btn" id="welcomePfpBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="welcomePfpDropdown" aria-label="Account menu">
+                    <span class="wd-pfp" id="welcomePfp">
+                        <img id="welcomePfpImg" alt="" hidden />
+                        <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true">A</span>
+                    </span>
+                </button>
+                <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
+                    <a role="menuitem" href="/library" data-close-pfp-menu>Home</a>
+                    <a role="menuitem" href="/overview" data-close-pfp-menu>Profile</a>
+                    <a role="menuitem" href="/settings" data-close-pfp-menu>Settings</a>
+                    <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
+                </div>
+            </div>
+            <div class="wd-welcome-copy">
+                <h1 class="wd-welcome-title" id="welcomeTitle">What’s <span class="wd-name">New</span></h1>
+                <p class="wd-welcome-sub" id="welcomeSubtitle"></p>
+            </div>
+        </div>
+    </header>
+    <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
+        <div class="wd-nav">
+            <a href="/studio">Studio</a>
+            <a href="/word-wars-lobby">Word Wars</a>
+            <a href="/library">Library</a>
+            <a href="/updates" class="is-active" aria-current="page">What’s New</a>
+        </div>
     </nav>
-</header>
 <main id="main" class="updates-page">
+    <div class="updates-heading-row">
     <div class="updates-intro">
         <p class="eyebrow" id="page-kicker">From the Alysum team</p>
-        <h1 id="page-heading">What’s New</h1>
-        <p id="page-description">New features, thoughtful improvements, and the little fixes that make writing better.</p>
+        <h1 class="updates-display-title" id="page-heading">Latest updates</h1>
+        <p id="page-description">Features, fixes, and announcements from Alysum.</p>
+    </div>
+    <a class="updates-action" id="write-update-link" href="/write-update" hidden>Write an update <span aria-hidden="true">↗</span></a>
     </div>
     <div class="updates-toolbar">
-        <label id="category-label" for="category-filter">Show
+        <label id="category-label" for="category-filter">Category
             <select id="category-filter">
                 <option value="">All updates</option>
                 <option value="new">New</option>
@@ -48,9 +91,15 @@
     </div>
     <p id="feed-status" role="status" aria-live="polite">Loading updates…</p>
     <button id="retry-feed" type="button" hidden>Try again</button>
+    <section id="empty-updates" class="updates-empty" hidden aria-labelledby="empty-heading">
+        <span class="updates-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></span>
+        <h2 class="updates-display-title" id="empty-heading">No updates yet</h2>
+        <p id="empty-copy">Published announcements will appear here.</p>
+    </section>
     <section id="update-feed" aria-label="Published updates" aria-busy="true"></section>
     <button id="load-more" type="button" hidden>Load more updates</button>
 </main>
+<script type="module" src="/applications/updates/page-ui/shell.js"></script>
 <script type="module" src="/applications/updates/page-ui/feed.js"></script>
 </body>
 </html>
