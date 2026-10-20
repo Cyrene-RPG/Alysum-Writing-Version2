@@ -1,0 +1,24 @@
+/* Shared workspace bell; uses the current header and UI ink. */
+.notification-bell[hidden], .notification-bell [hidden] { display: none !important; }
+.notification-bell { position: relative; margin-left: auto; flex: 0 0 auto; }
+.notification-bell-button { position: relative; display: grid; place-items: center; width: 42px; height: 42px; padding: 9px; border: 1px solid color-mix(in srgb, currentColor 24%, transparent); border-radius: 50%; color: var(--chrome-text, #fff); background: color-mix(in srgb, var(--alysum-ui-panel, #141b29) 30%, transparent); cursor: pointer; }
+.notification-bell-button svg { width: 22px; height: 22px; }
+.notification-bell-button:focus-visible, .notification-bell :is(button, a):focus-visible { outline: 2px solid var(--accent, #a78bfa); outline-offset: 3px; }
+.notification-bell-badge { position: absolute; top: -5px; right: -6px; min-width: 19px; height: 19px; padding: 0 4px; border: 2px solid var(--theme-header-mid, #141b29); border-radius: 999px; background: #dc2626; color: #fff; font: 700 10px/15px system-ui; text-align: center; }
+.notification-bell-panel { --text: var(--ui-text, #fff); --muted: var(--ui-muted, #c8c8c8); position: absolute; z-index: 70; top: calc(100% + 12px); right: 0; width: min(380px, calc(100vw - 32px)); max-height: min(70dvh, 600px); overflow: auto; border: 1px solid var(--border, #ffffff1a); border-radius: var(--glass-radius, 14px); background: var(--alysum-ui-panel, #141b29); color: var(--text); box-shadow: 0 18px 40px #0005; }
+.notification-bell-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px 10px; }
+.notification-bell-heading h2 { margin: 0; font: 600 21px "Cormorant Garamond", Georgia, serif; }
+.notification-bell-close { display: grid; place-items: center; min-width: 32px; min-height: 32px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: inherit; font: 24px/1 system-ui; cursor: pointer; }
+.notification-bell-status { margin: 0; padding: 8px 18px 16px; color: var(--muted); font: 12px/1.6 system-ui; }
+.notification-bell-status:empty { display: none; }
+.notification-bell-item { position: relative; display: flex; flex-direction: column; gap: 5px; width: 100%; padding: 14px 28px 14px 18px; border: 0; border-top: 1px solid var(--border, #ffffff1a); border-radius: 0; color: inherit; background: transparent; text-align: left; cursor: pointer; white-space: normal; }
+.notification-bell-item:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+.notification-bell-item:disabled { opacity: .6; cursor: wait; }
+.notification-bell-item strong { font: 600 12px/1.5 system-ui; overflow-wrap: anywhere; }
+.notification-bell-item span { font: 12px/1.6 system-ui; overflow-wrap: anywhere; }
+.notification-bell-item time { font: 10px/1.5 system-ui; color: var(--muted); }
+.notification-bell-item.is-unread { background: color-mix(in srgb, var(--accent, #a78bfa) 7%, transparent); }
+.notification-bell-item.is-unread::after { content: ""; position: absolute; right: 14px; top: 20px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent, #a78bfa); }
+.notification-bell-footer { display: flex; justify-content: space-between; gap: 12px; padding: 14px 18px; border-top: 1px solid var(--border, #ffffff1a); }
+.notification-bell-footer a { color: inherit; font: 600 11px/1.5 system-ui; text-underline-offset: 3px; }
+@media (max-width: 600px) { .notification-bell-panel { width: calc(100vw - 32px); max-height: calc(100dvh - 104px); } }

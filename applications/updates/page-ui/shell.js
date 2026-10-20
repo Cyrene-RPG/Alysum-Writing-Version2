@@ -1,3 +1,6 @@
+import { supabase as notificationSupabase } from "/core/authentication/client.js";
+import { createNotificationService } from "/core/notifications/service.js";
+import { mountNotificationBell } from "/site-appearance/js-runtime/notification-bell.js";
 import { supabase } from "/core/authentication/client.js";
 import { resolveStudioSession } from "/core/desktop/studio-session.js";
 import { peekWorkspaceProfile, loadWorkspaceProfile } from "/core/account/workspace-profile.js";
@@ -75,6 +78,7 @@ function setWelcomeAvatar(imageUrl, name) {
 wireLogoutButtons(document);
 wirePfpMenu();
 initAppearanceLoadoutMenu({ openRoadmap });
+mountNotificationBell({ service: createNotificationService(notificationSupabase) });
 
 async function refreshProfile() {
     const generation = ++profileGeneration;

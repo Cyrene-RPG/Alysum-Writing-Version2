@@ -1,3 +1,6 @@
+import { supabase as notificationSupabase } from "/core/authentication/client.js";
+import { createNotificationService } from "/core/notifications/service.js";
+import { mountNotificationBell } from "/site-appearance/js-runtime/notification-bell.js";
 /**
  * Welcome bar + logout for the editor. Do not import main-site or studio modules.
  */
@@ -94,6 +97,7 @@ export function initWorkspaceShell({ lead, accent, title, subtitle, name, imageU
     wireLogoutButtons(document);
     wirePfpMenu();
     initAppearanceLoadoutMenu({ openRoadmap });
+    mountNotificationBell({ service: createNotificationService(notificationSupabase) });
     if (lead != null || accent != null || title != null || subtitle != null) {
         setWelcomeCopy({
             lead: lead ?? "",
