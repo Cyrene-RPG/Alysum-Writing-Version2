@@ -28,6 +28,20 @@ function toggleMenu(menu) {
     panel.hidden = !open;
 }
 
+function placeMenu(nav, menu) {
+    const wrapper = nav.closest(".wd-nav-wrap");
+    if (!wrapper || menu.dataset.mobilePlacementReady === "1") return;
+    menu.dataset.mobilePlacementReady = "1";
+    const mobile = window.matchMedia("(max-width: 900px)");
+    const place = () => {
+        closeMenu(menu);
+        // A sibling menu can open below the bar without being clipped by tab scrolling.
+        (mobile.matches ? wrapper : nav).appendChild(menu);
+    };
+    mobile.addEventListener("change", place);
+    place();
+}
+
 function renderItems(panel) {
     const slots = readAppearanceLoadouts();
     panel.innerHTML = "";
@@ -62,7 +76,7 @@ function renderItems(panel) {
 }
 
 function ensureMenu(nav) {
-    let menu = nav.querySelector(".wd-loadout-menu");
+    let menu = (nav.closest(".wd-nav-wrap") || nav).querySelector(".wd-loadout-menu");
     if (menu) return menu;
     menu = document.createElement("div");
     menu.className = "wd-loadout-menu";
@@ -86,6 +100,7 @@ export function initAppearanceLoadoutMenu(opts = {}) {
     const nav = document.querySelector(".wd-nav");
     if (!nav) return;
     const menu = ensureMenu(nav);
+    placeMenu(nav, menu);
     if (menu.dataset.ready === "1") {
         const existing = menu.querySelector(".wd-loadout-btn");
         if (existing) existing.textContent = "Themes";

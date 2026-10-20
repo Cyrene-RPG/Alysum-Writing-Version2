@@ -759,6 +759,26 @@ button.fh-has-new-badge .fh-target-new,
 .fh-spotlight-dismiss:hover { filter: brightness(1.06); }
 
 @media (max-width: 900px) {
+    .wd-nav-wrap { display: flex; align-items: center; min-width: 0; touch-action: pan-x pan-y; }
+
+    /* Scroll the tabs, while keeping the Themes dropdown outside the clip. */
+    .wd-nav-wrap > .wd-nav {
+        flex: 1 1 auto;
+        width: 0;
+        min-width: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        touch-action: pan-x pan-y;
+        scrollbar-width: thin;
+    }
+
+    .wd-nav-wrap > .wd-loadout-menu {
+        flex: 0 0 auto;
+        margin: 0 12px 0 4px;
+    }
+
     .wd-welcome-bar { min-height: 76px; }
     .wd-pfp-btn { width: 56px; height: 56px; }
     .wd-pfp { width: 48px; height: 48px; }
