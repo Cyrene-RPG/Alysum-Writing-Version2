@@ -84,7 +84,7 @@
                     <button type="button" id="view-unread" aria-pressed="false">Unread</button>
                 </div>
                 <label class="inbox-category" for="inbox-category">Category
-                    <select id="inbox-category"><option value="">All categories</option><option value="follower">Followers</option><option value="author_announcement">Author announcements</option><option value="site_update">Alysum updates</option></select>
+                    <select id="inbox-category"><option value="">All categories</option><option value="follower">Followers</option><option value="author_announcement">Author announcements</option><option value="site_update">Alysum updates</option><option value="new_book">New books</option><option value="new_chapter">New chapters</option></select>
                 </label>
                 <button id="refresh-inbox" type="button">Refresh</button>
             </div>
@@ -100,6 +100,8 @@
                     <fieldset id="preferences-fields" disabled>
                         <label><input id="pref-followers" type="checkbox"><span><strong>New followers</strong><small>When someone follows you.</small></span></label>
                         <label><input id="pref-authors" type="checkbox"><span><strong>Author announcements</strong><small>Posts from authors you follow.</small></span></label>
+                        <label><input id="pref-books" type="checkbox"><span><strong>New books</strong><small>Books published by authors you follow.</small></span></label>
+                        <label><input id="pref-chapters" type="checkbox"><span><strong>New chapters</strong><small>Chapter releases for books you subscribe to.</small></span></label>
                         <label><input id="pref-site" type="checkbox"><span><strong>Alysum updates</strong><small>Changelogs and site announcements.</small></span></label>
                         <p>These settings apply to future on-site notifications. Email subscriptions will be separate.</p>
                         <button class="inbox-primary" type="submit">Save preferences</button>

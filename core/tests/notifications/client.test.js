@@ -43,13 +43,13 @@ test("read mutations pass no recipient or editable content and mark-all retains 
 });
 test("preference defaults opt out of site updates and explicit saves use the authenticated RPC", async () => {
     assert.deepEqual(await getNotificationPreferences(clientFor({ data: null }), "me"), {
-        newFollowers: true, authorAnnouncements: true, siteUpdates: false,
+        newFollowers: true, authorAnnouncements: true, siteUpdates: false, newBooks: true, newChapters: true,
     });
     const client = clientFor({ data: [{ new_followers: false, author_announcements: true, site_updates: true }] });
-    assert.deepEqual(await saveNotificationPreferences(client, { newFollowers: false, authorAnnouncements: true, siteUpdates: true }), {
-        newFollowers: false, authorAnnouncements: true, siteUpdates: true,
+    assert.deepEqual(await saveNotificationPreferences(client, { newFollowers: false, authorAnnouncements: true, siteUpdates: true, newBooks: true, newChapters: true }), {
+        newFollowers: false, authorAnnouncements: true, siteUpdates: true, newBooks: true, newChapters: true,
     });
-    assert.deepEqual(client.calls[0][2], { p_new_followers: false, p_author_announcements: true, p_site_updates: true });
+    assert.deepEqual(client.calls[0][2], { p_new_followers: false, p_author_announcements: true, p_site_updates: true, p_new_books: true, p_new_chapters: true });
     await assert.rejects(saveNotificationPreferences(client, { siteUpdates: true }), /every category/);
 });
 test("follower entries have no invented profile destination and removed announcements stay unavailable", async () => {

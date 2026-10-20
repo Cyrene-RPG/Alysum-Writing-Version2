@@ -78,7 +78,7 @@ export function mountNotificationBell({ service, host = document.querySelector("
             status.textContent = "";
         }
         const nextSignature = JSON.stringify([state.userId, state.loading, state.error, state.unreadCount,
-            state.recent.map(item => [item.id, item.readAt, item.announcementId])]);
+            state.recent.map(item => [item.id, item.readAt, item.announcementId, item.bookId, item.chapterId])]);
         if (signature === nextSignature) return;
         signature = nextSignature;
         button.setAttribute("aria-label", "Notifications" + (state.unreadCount ? ", " + state.unreadCount + " unread" : ""));

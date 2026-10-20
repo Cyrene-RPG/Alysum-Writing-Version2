@@ -9,6 +9,8 @@ import { genreLabel } from "@alysum/publishing/genres.js?v=4";
 import { applyVisitListingLook, applyVisitSiteAccent, applyVisitTitleColor, applyVisitWelcomeChrome } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=11";
 import { initWorkspaceShell } from "/js/studio/shell.js?v=9";
 
+import { mountBookSubscription } from "./subscription.js";
+
 let readingState = null;
 const WELCOME = {
     lead: "The ",
@@ -169,6 +171,7 @@ async function boot() {
         return;
     }
     const owner = isOwner(work, session);
+    void mountBookSubscription({client:supabase, work, session, isActive:() => readingState.active});
     const saved = readProgress(work.id);
     const chapters = work.chapters || [];
     const current = chapters.find((chapter) => chapter.id === saved?.chapterId) || chapters[0];

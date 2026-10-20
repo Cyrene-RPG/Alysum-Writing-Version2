@@ -436,3 +436,16 @@ body {
 
 #bookPurchaseBlock[hidden] { display: none !important; }
 #bookPurchaseBlock .book-cta { margin-top: 16px; }
+
+.book-subscription { margin-top: 20px; }
+.book-subscription[hidden] { display: none !important; }
+.book-subscribe {
+    display: block; width: 100%; min-height: 44px; padding: 12px 18px;
+    border: 1px solid var(--border); border-radius: var(--glass-radius, 16px);
+    background: var(--alysum-ui-panel, transparent); color: var(--text);
+    font: inherit; font-weight: 700; cursor: pointer;
+}
+.book-subscribe[aria-pressed="true"] { border-color: var(--book-site-accent, var(--accent)); }
+.book-subscribe:disabled { cursor: wait; opacity: .6; }
+.book-subscribe:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.book-subscription .book-cta-cap { margin-bottom: 8px; }
