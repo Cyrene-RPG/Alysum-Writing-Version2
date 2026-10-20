@@ -24,6 +24,9 @@
 /terms-of-service.html  /terms-of-service  308
 /statistics-spec.html  /statistics-spec  308
 
+/updates.html  /updates  308
+/write-update.html  /write-update  308
+
 # Pages and files (vercel.json "rewrites")
 /  /applications/main-site/pages/  200
 /sw.js  /applications/main-site/public/sw.js  200
@@ -58,6 +61,9 @@
 /privacy-policy  /applications/main-site/pages/privacy-policy  200
 /terms-of-service  /applications/main-site/pages/terms-of-service  200
 /statistics-spec  /applications/main-site/pages/statistics-spec  200
+
+/updates  /applications/updates/pages/updates  200
+/write-update  /applications/updates/pages/write-update  200
 
 # Folders (wildcards go last so exact lines match first)
 /js/signup/*  /applications/main-site/signup/:splat  200

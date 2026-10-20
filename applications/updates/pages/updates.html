@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes-dim/index.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css">
+    <script src="/site-appearance/js-runtime/body-background-presets-data.js"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js"></script>
+    <script src="/site-appearance/js-runtime/boot.js"></script>
+    <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
+    <script src="/site-appearance/js-runtime/gradient-theme-sync.js" defer></script>
+    <link rel="stylesheet" href="/applications/updates/updates-css/page.css">
+    <title>What’s New — Alysum</title>
+    <meta name="description" content="The latest Alysum improvements, fixes, and announcements.">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="updates-header">
+    <a class="updates-brand" href="/" aria-label="Alysum home">Alysum</a>
+    <nav aria-label="Main navigation">
+        <a href="/library">Library</a>
+        <a href="/studio">Studio</a>
+        <a href="/updates">What’s New</a>
+        <a href="/write-update">Write an update</a>
+    </nav>
+</header>
+<main id="main" class="updates-page">
+    <div class="updates-intro">
+        <p class="eyebrow" id="page-kicker">From the Alysum team</p>
+        <h1 id="page-heading">What’s New</h1>
+        <p id="page-description">New features, thoughtful improvements, and the little fixes that make writing better.</p>
+    </div>
+    <div class="updates-toolbar">
+        <label id="category-label" for="category-filter">Show
+            <select id="category-filter">
+                <option value="">All updates</option>
+                <option value="new">New</option>
+                <option value="improved">Improved</option>
+                <option value="fixed">Fixed</option>
+                <option value="announcement">Announcements</option>
+            </select>
+        </label>
+        <a href="/updates" id="all-updates-link" hidden>Back to What’s New</a>
+    </div>
+    <p id="feed-status" role="status" aria-live="polite">Loading updates…</p>
+    <button id="retry-feed" type="button" hidden>Try again</button>
+    <section id="update-feed" aria-label="Published updates" aria-busy="true"></section>
+    <button id="load-more" type="button" hidden>Load more updates</button>
+</main>
+<script type="module" src="/applications/updates/page-ui/feed.js"></script>
+</body>
+</html>

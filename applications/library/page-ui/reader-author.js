@@ -85,6 +85,7 @@ export async function mountReaderAuthor(root, { work, supabase, session, onLayou
                     ${follow}
                 </div>
                 ${bio}
+                ${card.ownerId ? `<a class="reader-author-more" href="/updates?author=${encodeURIComponent(card.ownerId)}">Author updates</a>` : ""}
                 <button type="button" class="reader-author-more" id="readerAuthorMore" hidden>More</button>
                 ${bar}
                 <p class="reader-author-note" id="readerFollowHint" role="status"${followError ? "" : " hidden"}>${escapeHtml(followError)}</p>

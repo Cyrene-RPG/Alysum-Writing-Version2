@@ -4,6 +4,8 @@
     { "source": "/:page.html", "destination": "/:page", "permanent": true }
   ],
   "rewrites": [
+      {"source":"/updates","destination":"/applications/updates/pages/updates.html"},
+      {"source":"/write-update","destination":"/applications/updates/pages/write-update.html"},
     {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap.xml"
