@@ -10,6 +10,7 @@ const feed = document.getElementById("update-feed");
 const more = document.getElementById("load-more");
 const retry = document.getElementById("retry-feed");
 const filter = document.getElementById("category-filter");
+const empty = document.getElementById("empty-updates");
 let offset = 0;
 let generation = 0;
 let isLoading = false;
@@ -31,6 +32,7 @@ async function load(reset = false) {
     const start = offset;
     more.disabled = true;
     retry.hidden = true;
+    empty.hidden = true;
     status.textContent = "Loading updates…";
     feed.setAttribute("aria-busy", "true");
     try {
@@ -43,8 +45,14 @@ async function load(reset = false) {
         feed.append(...articles);
         offset = start + rows.length;
         more.hidden = Boolean(postId) || rows.length < UPDATE_PAGE_SIZE;
-        status.textContent = rows.length || start
-            ? "" : postId ? "This update is unavailable or has not been published." : "No updates published yet. Check back soon.";
+        status.textContent = "";
+        empty.hidden = Boolean(rows.length || start);
+        if (!empty.hidden) {
+            document.getElementById("empty-heading").textContent = postId ? "Update unavailable" : "No updates yet";
+            document.getElementById("empty-copy").textContent = postId
+                ? "This update is unavailable or has not been published."
+                : filter.value ? "There are no published updates in this category." : "Published announcements will appear here.";
+        }
         if (postId && rows[0]) document.title = rows[0].title + " — Alysum";
     } catch (error) {
         if (request !== generation) return;
