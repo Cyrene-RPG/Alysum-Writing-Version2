@@ -1,5 +1,5 @@
 /**
- * Named loadout picker in the workspace top bar.
+ * Named loadout picker inside the profile-image menu.
  */
 import {
     applyAppearanceLoadout,
@@ -28,20 +28,6 @@ function toggleMenu(menu) {
     panel.hidden = !open;
 }
 
-function placeMenu(nav, menu) {
-    const wrapper = nav.closest(".wd-nav-wrap");
-    if (!wrapper || menu.dataset.mobilePlacementReady === "1") return;
-    menu.dataset.mobilePlacementReady = "1";
-    const mobile = window.matchMedia("(max-width: 900px)");
-    const place = () => {
-        closeMenu(menu);
-        // A sibling menu can open below the bar without being clipped by tab scrolling.
-        (mobile.matches ? wrapper : nav).appendChild(menu);
-    };
-    mobile.addEventListener("change", place);
-    place();
-}
-
 function renderItems(panel) {
     const slots = readAppearanceLoadouts();
     panel.innerHTML = "";
@@ -64,6 +50,12 @@ function renderItems(panel) {
         b.addEventListener("click", () => {
             applyAppearanceLoadout(slot);
             closeMenu(panel.closest(".wd-loadout-menu"));
+            const profile = document.getElementById("welcomePfpDropdown");
+            const profileButton = document.getElementById("welcomePfpBtn");
+            const profileMenu = document.getElementById("welcomePfpMenu");
+            if (profile) profile.hidden = true;
+            profileButton?.setAttribute("aria-expanded", "false");
+            profileMenu?.classList.remove("is-open");
         });
         panel.appendChild(b);
     });
@@ -75,19 +67,20 @@ function renderItems(panel) {
     }
 }
 
-function ensureMenu(nav) {
-    let menu = (nav.closest(".wd-nav-wrap") || nav).querySelector(".wd-loadout-menu");
+function ensureMenu(profilePanel) {
+    let menu = profilePanel.querySelector(".wd-loadout-menu");
     if (menu) return menu;
     menu = document.createElement("div");
     menu.className = "wd-loadout-menu";
     menu.id = "wdLoadoutMenu";
     menu.innerHTML = `
-        <button type="button" class="wd-loadout-btn" id="wdLoadoutBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="wdLoadoutDropdown">
+        <button type="button" class="wd-loadout-btn" id="wdLoadoutBtn" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-controls="wdLoadoutDropdown">
             Themes
         </button>
-        <div class="wd-loadout-dropdown" id="wdLoadoutDropdown" role="menu" hidden></div>
+        <div class="wd-loadout-dropdown" id="wdLoadoutDropdown" role="group" aria-label="Saved themes" hidden></div>
     `;
-    nav.appendChild(menu);
+    const logout = profilePanel.querySelector("[data-logout-btn]");
+    profilePanel.insertBefore(menu, logout?.parentElement === profilePanel ? logout : null);
     return menu;
 }
 
@@ -97,10 +90,12 @@ export function refreshAppearanceLoadoutMenu() {
 }
 
 export function initAppearanceLoadoutMenu(opts = {}) {
-    const nav = document.querySelector(".wd-nav");
-    if (!nav) return;
-    const menu = ensureMenu(nav);
-    placeMenu(nav, menu);
+    const profilePanel = document.getElementById("welcomePfpDropdown");
+    if (!profilePanel) {
+        initRoadmapLink(opts);
+        return;
+    }
+    const menu = ensureMenu(profilePanel);
     if (menu.dataset.ready === "1") {
         const existing = menu.querySelector(".wd-loadout-btn");
         if (existing) existing.textContent = "Themes";
@@ -119,6 +114,7 @@ export function initAppearanceLoadoutMenu(opts = {}) {
         if (panel.hidden) renderItems(panel);
         toggleMenu(menu);
     });
+    document.getElementById("welcomePfpBtn")?.addEventListener("click", () => closeMenu(menu));
     document.addEventListener("click", (e) => {
         if (!menu.contains(e.target)) closeMenu(menu);
     });
