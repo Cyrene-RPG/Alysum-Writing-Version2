@@ -1,0 +1,15 @@
+import {mountBookSubscription} from "../../../applications/library/page-ui/subscription.js";
+const el=id=>document.getElementById(id);
+el("bookPage").hidden=false;
+el("bookTitle").textContent="The Lantern Keeper";
+el("bookAuthor").textContent="Sample Author";
+el("bookMeta").textContent="3 chapters published";
+el("bookSynopsis").textContent="Sample book page for checking the free subscription button. No live account or notification data is read or written.";
+el("readCta").textContent="Start reading";
+el("chapterCount").textContent="3 chapters";
+el("chapterList").textContent="Chapter 1 · The Lantern";
+let subscribed=false;
+const q={};for(const method of ["select","eq","maybeSingle"])q[method]=()=>q;
+q.then=(yes,no)=>Promise.resolve({data:subscribed?{book_id:"sample"}:null}).then(yes,no);
+const client={from:()=>q,async rpc(name,args){subscribed=args.p_subscribed;return {data:subscribed};}};
+mountBookSubscription({client,work:{id:"sample",ownerUserId:"sample-author"},session:{mode:"cloud",user:{id:"sample-reader"}}});

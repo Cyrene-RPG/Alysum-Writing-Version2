@@ -1,16 +1,16 @@
-import { getBookSubscription, setBookSubscription } from "/core/library/subscriptions.js";
+import { getBookSubscription, setBookSubscription } from "../../../core/library/subscriptions.js";
 
 export async function mountBookSubscription({client, work, session, isActive = () => true}) {
     const block = document.getElementById("book-subscription");
     const button = document.getElementById("subscribe-book");
     const status = document.getElementById("subscription-status");
-    if (!block || work.ownerUserId === session?.user?.id || session?.mode === "local") return;
+    if (!block || (work.ownerUserId && work.ownerUserId === session?.user?.id) || session?.mode === "local") return;
     block.hidden = false;
     const viewerId = session?.user?.id || "";
     let subscribed = false, busy = true, loaded = false;
     function draw() {
         button.disabled = busy;
-        button.textContent = subscribed ? "Unsubscribe" : "Subscribe";
+        button.textContent = !busy && !loaded ? "Retry subscription" : subscribed ? "Unsubscribe" : "Subscribe";
         button.setAttribute("aria-pressed",String(subscribed));
     }
     button.addEventListener("click",async () => {
