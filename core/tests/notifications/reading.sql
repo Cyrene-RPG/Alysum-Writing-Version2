@@ -68,10 +68,10 @@ UPDATE public.library SET data=jsonb_set(data,'{isPublished}','true') WHERE id='
 SELECT public.test_inbox_assert((SELECT count(*)=1 FROM public.inbox_notifications WHERE kind='new_book' AND book_id='subscription-new' AND recipient_id='10000000-0000-0000-0000-000000000003'),'republish not a new book');
 SET ROLE authenticated;
 RESET ROLE;
-SELECT min(id) AS other_notification_id FROM public.inbox_notifications WHERE kind='new_chapter' \\gset
+SELECT min(id) AS other_notification_id FROM public.inbox_notifications WHERE kind='new_chapter' \gset
 SET ROLE authenticated;
 SET request.jwt.claim.sub='10000000-0000-0000-0000-000000000004';
-SELECT public.test_inbox_assert(NOT EXISTS(SELECT 1 FROM public.get_reading_notification_target(:'other_notification_id'::bigint))),'other recipient cannot resolve target');
+SELECT public.test_inbox_assert(NOT EXISTS(SELECT 1 FROM public.get_reading_notification_target(:'other_notification_id'::bigint)),'other recipient cannot resolve target');
 SET request.jwt.claim.sub='10000000-0000-0000-0000-000000000002';
 DO $$ BEGIN
     BEGIN PERFORM public.set_book_subscription('subscription-new',true);
