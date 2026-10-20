@@ -45,6 +45,10 @@
       }
     ],
     "rewrites": [
+      {"source":"/updates","destination":"/applications/updates/pages/updates.html"},
+      {"source":"/write-update","destination":"/applications/updates/pages/write-update.html"},
+      {"source":"/updates.html","destination":"/applications/updates/pages/updates.html"},
+      {"source":"/write-update.html","destination":"/applications/updates/pages/write-update.html"},
       { "source": "/", "destination": "/applications/main-site/pages/index.html" },
       { "source": "/index.html", "destination": "/applications/main-site/pages/index.html" },
       { "source": "/login.html", "destination": "/applications/main-site/pages/login.html" },

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes-dim/index.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css">
+    <script src="/site-appearance/js-runtime/body-background-presets-data.js"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js"></script>
+    <script src="/site-appearance/js-runtime/boot.js"></script>
+    <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
+    <script src="/site-appearance/js-runtime/gradient-theme-sync.js" defer></script>
+    <link rel="stylesheet" href="/applications/updates/updates-css/page.css">
+    <title>Write an update — Alysum</title>
+    <meta name="robots" content="noindex, nofollow">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="updates-header">
+    <a class="updates-brand" href="/" aria-label="Alysum home">Alysum</a>
+    <nav aria-label="Main navigation">
+        <a href="/library">Library</a>
+        <a href="/studio">Studio</a>
+        <a href="/updates">What’s New</a>
+        <a href="/write-update">Write an update</a>
+    </nav>
+</header>
+<main id="main" class="updates-page">
+    <div class="updates-intro">
+        <p class="eyebrow">A note to your readers</p>
+        <h1>Write an update</h1>
+        <p>Keep readers in the loop. Start with a private draft, preview it, then publish when you’re ready.</p>
+    </div>
+    <p id="access-status" role="status" aria-live="polite">Checking your account…</p>
+    <p id="sign-in-note" hidden><a href="/login?next=%2Fwrite-update">Sign in to write updates</a></p>
+    <div id="publisher" class="publisher-grid" hidden>
+        <section class="update-card" aria-labelledby="composer-heading">
+            <h2 id="composer-heading">New update</h2>
+            <p id="publication-note">Drafts are visible only to you. Published posts are public.</p>
+            <form id="update-form">
+                <label for="update-scope">Audience</label>
+                <select id="update-scope" required></select>
+                <p id="audience-note"></p>
+                <label for="update-category">Category</label>
+                <select id="update-category" required>
+                    <option value="announcement">Announcement</option>
+                    <option value="new">New</option>
+                    <option value="improved">Improved</option>
+                    <option value="fixed">Fixed</option>
+                </select>
+                <label for="update-title">Title</label>
+                <input id="update-title" type="text" maxlength="160" required autocomplete="off">
+                <label for="update-body">Update</label>
+                <textarea id="update-body" rows="12" maxlength="12000" required aria-describedby="body-help"></textarea>
+                <p class="muted" id="body-help">Plain text, up to 12,000 characters. Line breaks are preserved.</p>
+                <div id="book-field">
+                    <label for="update-book">Link a book (optional)</label>
+                    <select id="update-book"><option value="">No book link</option></select>
+                    <p id="books-status" class="muted"></p>
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="preview-update">Preview</button>
+                    <button type="submit" id="save-update" name="action" value="draft">Save draft</button>
+                    <button type="submit" id="publish-update" name="action" value="publish" class="primary">Publish update</button>
+                </div>
+            </form>
+            <p id="save-status" role="status" aria-live="polite"></p>
+            <a id="published-link" hidden>View published update</a>
+            <section id="preview-panel" class="preview-panel" aria-labelledby="preview-heading" hidden>
+                <h3 id="preview-heading">Preview — not published</h3>
+                <div id="preview-content"></div>
+            </section>
+        </section>
+        <aside class="update-card" aria-labelledby="saved-heading">
+            <div class="saved-heading"><h2 id="saved-heading">Your updates</h2><button id="new-update" type="button">New update</button></div>
+            <p id="saved-status" role="status"></p>
+            <button id="refresh-saved" type="button">Refresh list</button>
+            <div id="saved-updates"></div>
+            <button id="more-saved" type="button" hidden>Load more</button>
+        </aside>
+    </div>
+</main>
+<script type="module" src="/applications/updates/page-ui/compose.js"></script>
+</body>
+</html>
