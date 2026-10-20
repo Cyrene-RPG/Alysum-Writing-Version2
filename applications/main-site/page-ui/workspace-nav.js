@@ -20,6 +20,7 @@ function detectActivePage() {
     if (key === "editor") return "editor";
     if (key === "word-wars-lobby" || key === "word-wars") return "word-wars";
     if (key === "library") return "library";
+    if (key === "updates") return "updates";
     if (key === "index" || key === "") return "index";
     if (key === "login") return "login";
     return "";
@@ -54,6 +55,7 @@ function renderNavHtml(active) {
                 <a href="${navHref("/studio")}"${activeClass("studio", active)}>Studio</a>
                 <a href="${navHref("/word-wars-lobby")}"${activeClass("word-wars", active)}>Word Wars</a>
                 <a href="${navHref("/library")}"${activeClass("library", active)}>Library</a>
+                <a href="${navHref("/updates")}"${activeClass("updates", active)}>What’s New</a>
             </div>
         </nav>
     `;
