@@ -4,6 +4,7 @@
     { "source": "/:page.html", "destination": "/:page", "permanent": true }
   ],
   "rewrites": [
+      {"source":"/inbox","destination":"/applications/notifications/pages/inbox.html"},
       {"source":"/updates","destination":"/applications/updates/pages/updates.html"},
       {"source":"/write-update","destination":"/applications/updates/pages/write-update.html"},
     {

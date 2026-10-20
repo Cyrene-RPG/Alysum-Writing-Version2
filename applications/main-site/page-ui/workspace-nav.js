@@ -1,3 +1,6 @@
+import { supabase as notificationSupabase } from "/core/authentication/client.js";
+import { createNotificationService } from "/core/notifications/service.js";
+import { mountNotificationBell } from "/site-appearance/js-runtime/notification-bell.js";
 import { wireLogoutButtons } from "@alysum/authentication/logout.js";
 import { openRoadmap } from "@alysum/authentication/open-roadmap.js";
 import { initWelcomePfpMenu } from "/js/welcome-bar.js";
@@ -82,6 +85,7 @@ export function initWorkspaceNav() {
     wireLogoutButtons(document);
     initWelcomePfpMenu();
     initAppearanceLoadoutMenu({ openRoadmap });
+    mountNotificationBell({ service: createNotificationService(notificationSupabase) });
     return navWrap;
 }
 

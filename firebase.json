@@ -45,6 +45,8 @@
       }
     ],
     "rewrites": [
+      {"source":"/inbox","destination":"/applications/notifications/pages/inbox.html"},
+      {"source":"/inbox.html","destination":"/applications/notifications/pages/inbox.html"},
       {"source":"/updates","destination":"/applications/updates/pages/updates.html"},
       {"source":"/write-update","destination":"/applications/updates/pages/write-update.html"},
       {"source":"/updates.html","destination":"/applications/updates/pages/updates.html"},

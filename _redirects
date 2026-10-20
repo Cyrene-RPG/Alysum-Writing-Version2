@@ -27,6 +27,8 @@
 /updates.html  /updates  308
 /write-update.html  /write-update  308
 
+/inbox.html  /inbox  308
+
 # Pages and files (vercel.json "rewrites")
 /  /applications/main-site/pages/  200
 /sw.js  /applications/main-site/public/sw.js  200
@@ -64,6 +66,8 @@
 
 /updates  /applications/updates/pages/updates  200
 /write-update  /applications/updates/pages/write-update  200
+
+/inbox  /applications/notifications/pages/inbox  200
 
 # Folders (wildcards go last so exact lines match first)
 /js/signup/*  /applications/main-site/signup/:splat  200

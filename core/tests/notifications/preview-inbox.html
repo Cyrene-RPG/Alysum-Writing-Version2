@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/",
+        "@alysum/statistics/": "/core/statistics/"
+      }
+    }
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes-dim/index.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css">
+    <script src="/site-appearance/js-runtime/body-background-presets-data.js"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js"></script>
+    <script src="/site-appearance/js-runtime/boot.js"></script>
+    <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
+    <script src="/site-appearance/js-runtime/gradient-theme-sync.js" defer></script>
+    <link rel="stylesheet" href="/css/site-responsive.css">
+    <link rel="stylesheet" href="/css/workspace-nav.css">
+    <link rel="stylesheet" href="/applications/notifications/notifications-css/page.css">
+    <title>Inbox — Alysum</title>
+    <meta name="robots" content="noindex, nofollow">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+    <header class="wd-welcome-bar ui-bar" aria-label="Welcome">
+        <div class="wd-welcome-inner">
+            <div class="wd-pfp-menu" id="welcomePfpMenu">
+                <button type="button" class="wd-pfp-btn" id="welcomePfpBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="welcomePfpDropdown" aria-label="Account menu">
+                    <span class="wd-pfp" id="welcomePfp">
+                        <img id="welcomePfpImg" alt="" hidden />
+                        <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true">A</span>
+                    </span>
+                </button>
+                <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
+                    <a role="menuitem" href="/library" data-close-pfp-menu>Home</a>
+                    <a role="menuitem" href="/overview" data-close-pfp-menu>Profile</a>
+                    <a role="menuitem" href="/settings" data-close-pfp-menu>Settings</a>
+                    <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
+                </div>
+            </div>
+            <div class="wd-welcome-copy">
+                <h1 class="wd-welcome-title" id="welcomeTitle">Your <span class="wd-name">Inbox</span></h1>
+                <p class="wd-welcome-sub" id="welcomeSubtitle"></p>
+            </div>
+        </div>
+    </header>
+    <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
+        <div class="wd-nav">
+            <a href="/studio">Studio</a>
+            <a href="/word-wars-lobby">Word Wars</a>
+            <a href="/library">Library</a>
+            <a href="/updates">What’s New</a>
+        </div>
+    </nav>
+
+<main id="main" class="inbox-page">
+    <div class="inbox-heading">
+        <div><p class="inbox-eyebrow">Your private inbox</p><h1 class="inbox-display-title">Notifications</h1><p id="inbox-unread-count"></p></div>
+        <button id="mark-all-read" type="button" disabled>Mark all read</button>
+    </div>
+    <p id="inbox-status" role="status" aria-live="polite">Checking your inbox…</p>
+    <p id="inbox-sign-in" hidden><a href="/login?next=%2Finbox">Sign in to open your inbox</a></p>
+    <div id="inbox-content" class="inbox-layout" hidden>
+        <section class="inbox-main" aria-label="Notifications">
+            <div class="inbox-toolbar">
+                <div class="inbox-view" role="group" aria-label="Read status">
+                    <button type="button" id="view-all" aria-pressed="true">All</button>
+                    <button type="button" id="view-unread" aria-pressed="false">Unread</button>
+                </div>
+                <label class="inbox-category" for="inbox-category">Category
+                    <select id="inbox-category"><option value="">All categories</option><option value="follower">Followers</option><option value="author_announcement">Author announcements</option><option value="site_update">Alysum updates</option></select>
+                </label>
+                <button id="refresh-inbox" type="button">Refresh</button>
+            </div>
+            <button type="button" id="new-notifications" hidden>New notifications — refresh</button>
+            <div id="inbox-list" aria-busy="false"></div>
+            <div id="inbox-empty" class="inbox-empty" hidden><span aria-hidden="true">✓</span><h2 class="inbox-display-title" id="inbox-empty-heading">No notifications yet</h2><p id="inbox-empty-copy">New follows and announcements will appear here.</p></div>
+            <button type="button" id="inbox-more" hidden>Load more notifications</button>
+        </section>
+        <aside class="inbox-preferences" id="preferences">
+            <details id="preferences-panel">
+                <summary>Notification preferences</summary>
+                <form id="notification-preferences-form">
+                    <fieldset id="preferences-fields" disabled>
+                        <label><input id="pref-followers" type="checkbox"><span><strong>New followers</strong><small>When someone follows you.</small></span></label>
+                        <label><input id="pref-authors" type="checkbox"><span><strong>Author announcements</strong><small>Posts from authors you follow.</small></span></label>
+                        <label><input id="pref-site" type="checkbox"><span><strong>Alysum updates</strong><small>Changelogs and site announcements.</small></span></label>
+                        <p>These settings apply to future on-site notifications. Email subscriptions will be separate.</p>
+                        <button class="inbox-primary" type="submit">Save preferences</button>
+                    </fieldset>
+                </form>
+                <p id="preferences-status" role="status" aria-live="polite"></p>
+            </details>
+        </aside>
+    </div>
+</main>
+<script type="module" src="/core/tests/notifications/preview-service.js"></script>
+</body></html>
