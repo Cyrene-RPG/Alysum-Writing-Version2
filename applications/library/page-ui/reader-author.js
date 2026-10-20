@@ -37,13 +37,14 @@ function titleName(card, work) {
     return source.split(/\s+/)[0] || "Author";
 }
 
-function metric(value, label) {
-    return `<li><span class="reader-author-num">${escapeHtml(String(value ?? 0))}</span><span class="reader-author-cap">${escapeHtml(label)}</span></li>`;
+function metric(value, label, id = "") {
+    return `<li${id ? ` id="${id}"` : ""}><span class="reader-author-num">${escapeHtml(String(value ?? 0))}</span><span class="reader-author-cap">${escapeHtml(label)}</span></li>`;
 }
 
 export async function mountReaderAuthor(root, { work, supabase, session, onLayout }) {
     const viewerId = session?.mode === "cloud" ? String(session.user?.id || "").trim() : "";
     let card = fallbackCard(work);
+    let followError = "";
     root.innerHTML = `<div class="reader-author-skel" aria-hidden="true"></div>`;
     try {
         const live = await fetchReaderAuthorCard(supabase, {
@@ -52,8 +53,8 @@ export async function mountReaderAuthor(root, { work, supabase, session, onLayou
         });
         if (live) card = live;
         else if (work?.author) card = { ...card, displayName: work.author };
-    } catch {
-        /* keep fallback */
+    } catch (error) {
+        followError = error?.message || "Could not load follow status. Please try again.";
     }
 
     const name = titleName(card, work);
@@ -63,7 +64,7 @@ export async function mountReaderAuthor(root, { work, supabase, session, onLayou
         : "";
     const follow = mine || !card.ownerId
         ? ""
-        : `<button type="button" class="reader-follow${card.following ? " is-on" : ""}" id="readerFollowBtn">${card.following ? "Following" : "Follow"}</button>`;
+        : `<button type="button" class="reader-follow${card.following ? " is-on" : ""}" id="readerFollowBtn">${followError ? "Retry follow status" : card.following ? "Following" : "Follow"}</button>`;
     const bio = card.bio
         ? `<p class="reader-author-bio" id="readerAuthorBio">${escapeHtml(card.bio)}</p>`
         : `<p class="reader-author-bio is-empty">This author has not written a bio yet.</p>`;
@@ -86,11 +87,11 @@ export async function mountReaderAuthor(root, { work, supabase, session, onLayou
                 ${bio}
                 <button type="button" class="reader-author-more" id="readerAuthorMore" hidden>More</button>
                 ${bar}
-                <p class="reader-author-note" id="readerFollowHint" hidden></p>
+                <p class="reader-author-note" id="readerFollowHint" role="status"${followError ? "" : " hidden"}>${escapeHtml(followError)}</p>
             </div>
             <ul class="reader-author-metrics">
                 ${metric(card.fictionCount, card.fictionCount === 1 ? "Fiction" : "Fictions")}
-                ${metric(card.followers, card.followers === 1 ? "Follower" : "Followers")}
+                ${metric(followError ? "—" : card.followers, card.followers === 1 ? "Follower" : "Followers", "reader-follower-metric")}
                 ${metric(card.level || 0, "Level")}
             </ul>
         </div>`;
@@ -109,10 +110,10 @@ export async function mountReaderAuthor(root, { work, supabase, session, onLayou
 
     const followBtn = root.querySelector("#readerFollowBtn");
     followBtn?.addEventListener("mouseenter", () => {
-        if (card.following) followBtn.textContent = "Unfollow";
+        if (!followError && card.following) followBtn.textContent = "Unfollow";
     });
     followBtn?.addEventListener("mouseleave", () => {
-        if (card.following) followBtn.textContent = "Following";
+        if (!followError && card.following) followBtn.textContent = "Following";
     });
     followBtn?.addEventListener("click", async () => {
         const hintEl = root.querySelector("#readerFollowHint");
@@ -125,6 +126,11 @@ export async function mountReaderAuthor(root, { work, supabase, session, onLayou
         }
         const btn = root.querySelector("#readerFollowBtn");
         if (btn) btn.disabled = true;
+        if (hintEl) hintEl.hidden = true;
+        if (followError) {
+            await mountReaderAuthor(root, { work, supabase, session, onLayout });
+            return;
+        }
         try {
             const next = await setFollowing(supabase, {
                 authorId: card.ownerId,
@@ -133,13 +139,27 @@ export async function mountReaderAuthor(root, { work, supabase, session, onLayou
             });
             card.following = next.following;
             card.followers = next.count;
-            void mountReaderAuthor(root, { work, supabase, session, onLayout });
+            if (btn) {
+                btn.classList.toggle("is-on", card.following);
+                btn.textContent = card.following ? "Following" : "Follow";
+                btn.disabled = false;
+            }
+            const followerMetric = root.querySelector("#reader-follower-metric");
+            if (followerMetric) {
+                followerMetric.querySelector(".reader-author-num").textContent = String(card.followers);
+                followerMetric.querySelector(".reader-author-cap").textContent = card.followers === 1 ? "Follower" : "Followers";
+            }
         } catch (error) {
+            followError = error?.message || "Could not confirm follow status. Please try again.";
             if (hintEl) {
                 hintEl.hidden = false;
-                hintEl.textContent = error?.message || "Could not follow.";
+                hintEl.textContent = followError;
             }
-            if (btn) btn.disabled = false;
+            if (btn) {
+                btn.textContent = "Retry follow status";
+                btn.disabled = false;
+            }
         }
     });
 }
+
