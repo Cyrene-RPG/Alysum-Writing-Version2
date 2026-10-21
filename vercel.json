@@ -1,12 +1,33 @@
 {
   "redirects": [
-    { "source": "/index.html", "destination": "/", "permanent": true },
-    { "source": "/:page.html", "destination": "/:page", "permanent": true }
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/:page.html",
+      "destination": "/:page",
+      "permanent": true
+    }
   ],
   "rewrites": [
-      {"source":"/inbox","destination":"/applications/notifications/pages/inbox.html"},
-      {"source":"/updates","destination":"/applications/updates/pages/updates.html"},
-      {"source":"/write-update","destination":"/applications/updates/pages/write-update.html"},
+    {
+      "source": "/author",
+      "destination": "/applications/library/pages/author.html"
+    },
+    {
+      "source": "/inbox",
+      "destination": "/applications/notifications/pages/inbox.html"
+    },
+    {
+      "source": "/updates",
+      "destination": "/applications/updates/pages/updates.html"
+    },
+    {
+      "source": "/write-update",
+      "destination": "/applications/updates/pages/write-update.html"
+    },
     {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap.xml"

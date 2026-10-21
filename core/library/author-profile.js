@@ -1,3 +1,4 @@
+import { authorProfileUrl } from "./author-links.js";
 /**
  * Public author profiles: biography pages and reader/library author links.
  */
@@ -38,7 +39,7 @@ const SUPPORT_KIND_IDS = new Set(AUTHOR_SUPPORT_LINK_KINDS.map((k) => k.id));
 export function authorPageUrl(username) {
     const handle = String(username ?? "").trim();
     if (!handle) return null;
-    return `author.html?u=${encodeURIComponent(handle)}`;
+    return authorProfileUrl({username:handle});
 }
 
 /** Allow only http(s) URLs for public tip/social links. */

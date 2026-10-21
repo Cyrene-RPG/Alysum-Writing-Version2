@@ -44,6 +44,7 @@ EXACT = {
 }
 
 PAGES = {
+    "/author": "applications/library/pages/author.html",
     "/inbox": "applications/notifications/pages/inbox.html",
     "/updates": "applications/updates/pages/updates.html",
     "/write-update": "applications/updates/pages/write-update.html",

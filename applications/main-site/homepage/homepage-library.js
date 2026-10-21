@@ -1,3 +1,5 @@
+import { authorProfileUrl } from "/core/library/author-links.js";
+import { authorNameHtml } from "/site-appearance/js-runtime/author-link.js";
 import { openReadingState } from "/core/library/reading-state.js";
 import { fetchLibraryCatalogWithChapters, fetchLibraryReadCounts } from "@alysum/library/catalog-rows.js";
 import { genreColor, genreLabel } from "@alysum/publishing/genres.js";
@@ -101,12 +103,12 @@ function tileHtml(book, { rank = 0, wide = false, progress = null } = {}) {
     const href = progress ? readHref(book, progress.chapterId) : bookHref(book);
     const crop = wide ? (book.coverWideEnabled ? book.coverWide : null) : undefined;
     const num = rank ? `<span class="num" aria-hidden="true">${rank}</span>` : "";
-    return `<a class="tile" href="${href}" aria-label="${escapeHtml(book.title)} by ${escapeHtml(book.author)}">${num}
-        <div class="tile-body">
+    return `<article class="tile">${num}
+        <div class="tile-body"><a class="tile-book-link" href="${href}" aria-label="${escapeHtml(book.title)}">
             <div class="cv">${coverHtml(book, { width: wide ? 640 : 400, crop })}${tag}<span class="play" aria-hidden="true">▶</span>${bar}</div>
-            <p class="t-title">${escapeHtml(book.title)}</p>
-            <p class="t-meta">${escapeHtml(book.author)}</p>
-        </div></a>`;
+            <p class="t-title">${escapeHtml(book.title)}</p></a>
+            <p class="t-meta">${authorNameHtml({url:authorProfileUrl({userId:book.ownerUserId,anonymous:book.isAnonymous}),label:book.author})}</p>
+        </div></article>`;
 }
 
 function skeletonTiles(count) {
@@ -154,7 +156,7 @@ function renderBillboard() {
     el.querySelector(".bb-copy").innerHTML = `
         <span class="mono-label bb-kicker">Featured${genre ? ` · ${escapeHtml(genreLabel(genre))}` : ""}</span>
         <h3>${escapeHtml(book.title)}</h3>
-        <p class="by">${escapeHtml(book.author)}</p>
+        <p class="by">${authorNameHtml({url:authorProfileUrl({userId:book.ownerUserId,anonymous:book.isAnonymous}),label:book.author})}</p>
         ${summary ? `<p class="blurb">${escapeHtml(summary)}</p>` : ""}
         ${meta ? `<div class="bb-meta">${escapeHtml(meta)}</div>` : ""}
         <div class="bb-actions"><a class="btn btn-paper" href="${readHref(book)}">▶ Start reading</a><a class="btn btn-line" href="${bookHref(book)}">View book</a></div>`;
@@ -252,7 +254,7 @@ function renderNowReading() {
     el.querySelector(".now-cover").innerHTML = coverHtml(book, { width: 120 });
     el.querySelector(".now-info").innerHTML = `
         <b>${escapeHtml(book.title)}</b>
-        <span>${escapeHtml([book.author, chapter?.title].filter(Boolean).join(" · "))}</span>
+        <span>${authorNameHtml({url:authorProfileUrl({userId:book.ownerUserId,anonymous:book.isAnonymous}),label:book.author})}${chapter?.title ? " · "+escapeHtml(chapter.title) : ""}</span>
         <div class="now-track"><span>${pct}%</span><span class="line"><i style="width:${pct}%"></i></span><span>${escapeHtml(book.chapterProgressLabel || "")}</span></div>`;
     el.querySelector(".now-play").href = readHref(book, progress.chapterId);
 }

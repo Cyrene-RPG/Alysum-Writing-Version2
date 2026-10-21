@@ -1,3 +1,5 @@
+import { authorProfileUrl } from "/core/library/author-links.js";
+import { authorNameHtml } from "/site-appearance/js-runtime/author-link.js";
 import { mountReaderTips } from "./reader-tips.js";
 import { fetchReaderAuthorCard } from "@alysum/library/author-card.js?v=4";
 import { setFollowing } from "@alysum/library/author-follow.js?v=1";
@@ -81,7 +83,7 @@ export async function mountReaderAuthor(root, { work, supabase, session, onLayou
             </div>
             <div class="reader-author-copy">
                 <div class="reader-author-top">
-                    <h2>${escapeHtml(name)}</h2>
+                    <h2>${authorNameHtml({url:authorProfileUrl({userId:card.ownerId,username:card.username,anonymous:work?.isAnonymous}),label:card.displayName || work?.author || name})}</h2>
                     ${follow}
                 </div>
                 ${bio}

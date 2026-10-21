@@ -112,3 +112,9 @@
 .now-track .line { flex: 1; height: 4px; border-radius: 4px; background: var(--rule-2); overflow: hidden; }
 .now-track .line i { display: block; height: 100%; background: var(--accent); }
 .now-play { width: 46px; height: 46px; border-radius: 50%; background: var(--paper); color: #1a1426; display: grid; place-items: center; font-size: 16px; }
+
+.tile-book-link {display:block;color:inherit;text-decoration:none}
+.t-meta a,.by a,.now-info a {color:inherit;text-decoration:none}
+.t-meta a:hover,.by a:hover,.now-info a:hover {text-decoration:underline}
+.tile-book-link:focus-visible,.t-meta a:focus-visible,.by a:focus-visible,.now-info a:focus-visible {outline:2px solid var(--accent);outline-offset:4px}
+.tile:focus-within .cv {box-shadow:0 0 0 2px var(--accent)}

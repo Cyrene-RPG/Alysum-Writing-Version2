@@ -212,3 +212,7 @@
 .reader-tip-services .reader-follow { min-width: 0; margin: 0; }
 .reader-tip-services [aria-pressed="false"] { background: transparent; border-color: var(--reader-line); }
 .reader-tip-services [aria-pressed="true"] { border-width: 2px; }
+
+.reader-author-top .author-link {color:inherit;text-decoration:none}
+.reader-author-top .author-link:hover {text-decoration:underline}
+.reader-author-top .author-link:focus-visible {outline:2px solid var(--accent);outline-offset:3px}

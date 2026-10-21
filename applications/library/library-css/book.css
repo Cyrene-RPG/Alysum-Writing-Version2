@@ -449,3 +449,7 @@ body {
 .book-subscribe:disabled { cursor: wait; opacity: .6; }
 .book-subscribe:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .book-subscription .book-cta-cap { margin-bottom: 8px; }
+
+.book-by .author-link {color:inherit;text-decoration:none}
+.book-by .author-link:hover {text-decoration:underline}
+.book-by .author-link:focus-visible {outline:2px solid var(--accent);outline-offset:3px}

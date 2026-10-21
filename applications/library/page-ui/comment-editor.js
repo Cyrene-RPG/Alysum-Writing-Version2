@@ -1,3 +1,5 @@
+import { authorProfileUrl } from "/core/library/author-links.js";
+import { authorNameHtml } from "/site-appearance/js-runtime/author-link.js";
 import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
 import { COMMENT_HTML_MAX, deleteChapterComment, fetchChapterComments, postChapterComment } from "@alysum/library/book-comments.js?v=3";
 import { authorInitial } from "@alysum/library/author-profile.js?v=3";
@@ -80,7 +82,7 @@ function commentCard(row, { viewerId, ownerId }) {
             <div class="reader-comment-head">
                 <span class="reader-comment-av" aria-hidden="true">${escapeHtml(authorInitial(name))}</span>
                 <div class="reader-comment-who">
-                    <strong>${escapeHtml(name)}</strong>
+                    <strong>${row.userId === ownerId ? authorNameHtml({url:authorProfileUrl({userId:ownerId}),label:name}) : escapeHtml(name)}</strong>
                     <time>${escapeHtml(formatWhen(row.createdAt))}</time>
                 </div>
                 ${del}

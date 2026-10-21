@@ -1,3 +1,5 @@
+import { authorProfileUrl } from "/core/library/author-links.js";
+import { authorNameHtml } from "/site-appearance/js-runtime/author-link.js";
 import { openReadingState } from "/core/library/reading-state.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
@@ -61,6 +63,7 @@ function toCard(book) {
         id: book.id,
         title: book.title || "Untitled",
         author: book.author || "Unknown",
+        ownerUserId:book.ownerUserId || "", isAnonymous:Boolean(book.isAnonymous),
         genre: genres[0] || "",
         genres,
         coverUrl: book.coverUrl || book.cover_url || "",
@@ -148,16 +151,16 @@ function cardHtml(book, compact = false) {
     const img = coverImg(book);
     const progress = book.continuing ? Math.max(0, Math.min(100, book.continuing.progress)) : null;
     return `
-    <article class="lib-book${compact ? " is-compact" : ""}"><a class="lib-card" href="/book?id=${encodeURIComponent(book.id)}" style="--dot:${genreColor(book.genre)}" data-id="${escapeHtml(book.id)}">
+    <article class="lib-book${compact ? " is-compact" : ""}"><div class="lib-card" style="--dot:${genreColor(book.genre)}" data-id="${escapeHtml(book.id)}">
         <div class="lib-cover${img ? " has-img" : ""}">${img || `<span class="lib-cover-placeholder" aria-hidden="true"><span>ALYSUM LIBRARY</span><strong>${escapeHtml(book.title)}</strong><small>${escapeHtml(book.author)}</small></span>`}</div>
         <div class="lib-card-body">
             <div class="lib-card-top"><span class="lib-status${book.status === "Completed" ? " is-complete" : ""}">${escapeHtml(book.status)}</span>${book.rating ? `<span class="lib-rating" aria-label="Rating ${escapeHtml(book.rating.toFixed(1))}">★ ${escapeHtml(book.rating.toFixed(1))}</span>` : ""}</div>
-            <h3 class="lib-title">${escapeHtml(book.title)}</h3><p class="lib-author">by ${escapeHtml(book.author)}</p>
+            <h3 class="lib-title"><a href="/book?id=${encodeURIComponent(book.id)}">${escapeHtml(book.title)}</a></h3><p class="lib-author">by ${authorNameHtml({url:authorProfileUrl({userId:book.ownerUserId,anonymous:book.isAnonymous}),label:book.author})}</p>
             <p class="lib-blurb">${escapeHtml(book.blurb || "No description available.")}</p>
             <div class="lib-tags">${book.genres.slice(0, 3).map((key) => `<span>${escapeHtml(genreLabel(key))}</span>`).join("")}</div>
             <div class="lib-card-footer"><span>${book.chapters} chapters</span><span class="lib-read-link">${getShelf(book) === "finished" ? "Read again" : progress !== null ? `Continue · ${progress}%` : "View book"} <span aria-hidden="true">→</span></span></div>
         </div>
-    </a>
+    </div>
         ${compact && book.continuing && getShelf(book) === "reading" ? `<div class="lib-reading-progress"><div role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}"><span style="width:${progress}%"></span></div><span>${progress}% read</span></div>` : ""}
         <div class="lib-shelf-picker"><label class="lib-visually-hidden" for="shelf-${compact ? "personal" : "catalog"}-${escapeHtml(book.id)}">Shelf for ${escapeHtml(book.title)}</label>
         <select ${readingState?.persistent ? "" : 'disabled title="Sign in to save books to your shelves"'} id="shelf-${compact ? "personal" : "catalog"}-${escapeHtml(book.id)}" data-shelf-id="${escapeHtml(book.id)}">${Object.entries(SHELF_LABELS).map(([value, label]) => `<option value="${value}"${getShelf(book) === value ? " selected" : ""}>${label}</option>`).join("")}</select></div>

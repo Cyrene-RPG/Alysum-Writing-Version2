@@ -11,6 +11,7 @@
 /word-wars.html  /word-wars  308
 /library.html  /library  308
 /roadmap.html  /roadmap  308
+/author.html  /author  308
 /book.html  /book  308
 /read.html  /read  308
 /publish.html  /publish  308
@@ -51,6 +52,7 @@
 /shared-section  /applications/excerpts/pages/read  200
 /library  /applications/library/pages/library  200
 /roadmap  /applications/main-site/pages/roadmap-handoff  200
+/author  /applications/library/pages/author  200
 /book  /applications/library/pages/book  200
 /read  /applications/library/pages/read  200
 /publish  /applications/studio/pages/publish  200
