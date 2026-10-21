@@ -7,6 +7,12 @@ function createClient(rows = new Set(), options = {}) {
     const calls = [];
     return {
         calls,
+        async rpc(name,args) {
+            assert.equal(name,"get_author_follower_count");
+            calls.push({operation:"count",authorId:args.p_author_id});
+            if(options.error)return {error:options.error};
+            return {data:[...rows].filter(key=>key.split(":")[1]===args.p_author_id).length};
+        },
         from(table) {
             assert.equal(table, "author_follows");
             let operation = "select";

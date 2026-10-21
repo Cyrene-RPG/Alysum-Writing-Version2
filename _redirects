@@ -28,6 +28,7 @@
 /updates.html  /updates  308
 /write-update.html  /write-update  308
 
+/connections.html  /connections  308
 /inbox.html  /inbox  308
 
 # Pages and files (vercel.json "rewrites")
@@ -69,6 +70,7 @@
 /updates  /applications/updates/pages/updates  200
 /write-update  /applications/updates/pages/write-update  200
 
+/connections  /applications/connections/pages/connections  200
 /inbox  /applications/notifications/pages/inbox  200
 
 # Folders (wildcards go last so exact lines match first)

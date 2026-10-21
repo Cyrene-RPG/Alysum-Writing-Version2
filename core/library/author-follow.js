@@ -3,7 +3,7 @@
  */
 function throwFollowError(error) {
     const message = String(error?.message || error || "");
-    if (/author_follows/i.test(message) && /does not exist|schema cache/i.test(message)) {
+    if (/author_follows|get_author_follower_count/i.test(message) && /does not exist|schema cache/i.test(message)) {
         throw new Error("Author following is temporarily unavailable. Please try again later.");
     }
     throw error;
@@ -14,11 +14,9 @@ export async function fetchFollowState(supabase, { authorId, viewerId }) {
     const viewer = String(viewerId || "").trim();
     if (!author) return { count: 0, following: false, localOnly: false };
     if (!supabase) throw new Error("Could not connect to author following. Please try again.");
-    const { count, error } = await supabase
-        .from("author_follows")
-        .select("follower_id", { count: "exact", head: true })
-        .eq("author_id", author);
+    const { data: count, error } = await supabase.rpc("get_author_follower_count", { p_author_id: author });
     if (error) throwFollowError(error);
+    if (count == null || !Number.isFinite(Number(count))) throw new Error("Could not load follower count. Please try again.");
     let following = false;
     if (viewer && viewer !== author) {
         const mine = await supabase
@@ -30,7 +28,7 @@ export async function fetchFollowState(supabase, { authorId, viewerId }) {
         if (mine.error) throwFollowError(mine.error);
         following = Boolean(mine.data);
     }
-    return { count: count || 0, following, localOnly: false };
+    return { count: Math.max(0,Number(count)), following, localOnly: false };
 }
 
 export async function setFollowing(supabase, { authorId, viewerId, follow }) {

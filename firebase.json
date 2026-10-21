@@ -45,6 +45,8 @@
       }
     ],
     "rewrites": [
+      {"source":"/connections","destination":"/applications/connections/pages/connections.html"},
+      {"source":"/connections.html","destination":"/applications/connections/pages/connections.html"},
       {
         "source": "/author",
         "destination": "/applications/library/pages/author.html"
