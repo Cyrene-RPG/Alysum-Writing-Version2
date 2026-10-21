@@ -221,8 +221,7 @@ export function mountBookSettings({
 
     versionPills.addEventListener("click", (event) => {
         const btn = event.target.closest("[data-filter]");
-        if (!btn || btn.disabled || !collaboratorsReady || !collaborators.isOwner) return;
-        btn.disabled = true;
+        if (!btn) return;
         filter = btn.dataset.filter;
         paintPills();
         paintVersions();
@@ -293,7 +292,8 @@ export function mountBookSettings({
 
     collabList.addEventListener("click", async (event) => {
         const btn = event.target.closest("[data-revoke]");
-        if (!btn) return;
+        if (!btn || btn.disabled || !collaboratorsReady || !collaborators.isOwner) return;
+        btn.disabled = true;
         try {
             const collab = await editorsModule();
             if (!collab) throw new Error("Invites are not available yet.");
