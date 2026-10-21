@@ -1,5 +1,5 @@
 import {compareDrafts,changedText} from '/core/screenplays/compare.js';
-import {ELEMENTS,escape,textOf,sceneDetails} from '/core/screenplays/model.js?v=2';
+import {ELEMENTS,escape,textOf,sceneDetails,sliceRuns} from '/core/screenplays/model.js?v=2';
 import {readScreenplay} from './screenplay-io.js?v=2';
 import {styledText} from './screenplay-paper.js';
 
@@ -24,7 +24,7 @@ export function openDraftComparison({dialog,getDocument,api,id}) {
     function render() {
         if(!baseline||!alive())return;
         const result=compareDrafts(baseline,current),counts=result.counts;
-        const changes=result.changes.filter(c=>(showUnchanged||c.kind!=='unchanged'||c.moved)&&(!filter||[c.before?textOf(c.before):'',c.after?textOf(c.after):'',c.kind].join(' ').toLowerCase().includes(filter)));
+        const changes=result.changes.filter(c=>(showUnchanged||c.kind!=='unchanged'||c.moved)&&(!filter||[c.before?textOf(c.before):'',c.after?textOf(c.after):'',JSON.stringify(c.before?.outline||{}),JSON.stringify(c.after?.outline||{}),c.kind].join(' ').toLowerCase().includes(filter)));
         const pages=Math.max(1,Math.ceil(changes.length/50));page=Math.max(0,Math.min(page,pages-1));
         content.innerHTML=`<div class="script-comparison-summary"><h3>${escape(label)} → Current snapshot</h3><p>${counts.added} added · ${counts.removed} removed · ${counts.changed} edited · ${counts.moved} moved · ${counts.outline} outline changes</p></div>
           <div class="script-comparison-controls"><label><input type="checkbox" data-show-unchanged ${showUnchanged?'checked':''}> Include unchanged elements</label><label>Find a change<input type="search" data-compare-find value="${escape(filter)}" placeholder="Search text…"></label></div>
@@ -43,7 +43,8 @@ export function openDraftComparison({dialog,getDocument,api,id}) {
                 const block=change[side];
                 if(!block){cell.classList.add('script-comparison-empty');cell.textContent=side==='before'?'Not in earlier draft':'Removed from current draft';}
                 else if(change.kind==='changed'&&textOf(change.before)!==textOf(change.after)) {
-                    for(const token of difference){if(side==='before'&&token.kind==='added'||side==='after'&&token.kind==='removed')continue;const node=document.createElement(token.kind==='same'?'span':side==='before'?'del':'ins');node.textContent=token.text;cell.append(node);}
+                    let offset=0;
+                    for(const token of difference){if(side==='before'&&token.kind==='added'||side==='after'&&token.kind==='removed')continue;const node=document.createElement(token.kind==='same'?'span':side==='before'?'del':'ins');styledText(node,sliceRuns(block.runs,offset,offset+token.text.length));offset+=token.text.length;cell.append(node);}
                 }else styledText(cell,block.runs);
                 if(block){const detail=document.createElement('p');detail.className='script-comparison-format';detail.textContent=ELEMENTS[block.type]+(block.dual?' · Dual dialogue':'')+(change.moved?` · Element ${(side==='before'?change.beforeIndex:change.afterIndex)+1}`:'');cell.append(detail);}
                 grid.append(cell);

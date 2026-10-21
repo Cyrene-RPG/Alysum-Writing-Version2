@@ -38,9 +38,9 @@ export function normalize(value={}) {
 export function nextType(type,empty=false) {return empty?'action':({scene:'action',action:'action',character:'dialogue',dialogue:'character',parenthetical:'dialogue',transition:'scene',shot:'action'}[type]||'action');}
 export function cycleType(type,back=false) {const order=['action','character','dialogue','parenthetical','transition','scene','shot'];return order[(order.indexOf(type)+(back?6:1))%order.length];}
 export function scenes(doc) {
-    const result=[];let scene;
+    const result=[];let scene,number=0;
     for(const item of doc.blocks) {
-        if(item.type==='scene'){scene={id:item.id,title:textOf(item)||'Untitled scene',number:result.filter(s=>s.number>0).length+1,outline:sceneDetails(item.outline),blocks:[]};result.push(scene);}
+        if(item.type==='scene'){scene={id:item.id,title:textOf(item)||'Untitled scene',number:++number,outline:sceneDetails(item.outline),blocks:[]};result.push(scene);}
         if(!scene){scene={id:item.id,title:'Before first scene',number:0,blocks:[]};result.push(scene);}
         scene.blocks.push(item);
     }
