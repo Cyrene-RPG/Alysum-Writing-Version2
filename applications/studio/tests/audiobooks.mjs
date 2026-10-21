@@ -71,14 +71,14 @@ try{
   await page.getByLabel('I have permission',{exact:false}).check();await page.getByRole('button',{name:'Save details'}).click();
   await page.waitForFunction(()=>document.querySelector('[data-details-status]').textContent==='Details saved.');
   assert.equal(await page.evaluate(()=>window.calls.saved[0].narrator),'Commissioned narrator');
-  await page.locator('input[type=file]').setInputFiles({name:'chapter.wav',mimeType:'audio/wav',buffer:wav()});
+  await page.locator('input[name=recording]').setInputFiles({name:'chapter.wav',mimeType:'audio/wav',buffer:wav()});
   await page.getByLabel('Recording title').fill('Chapter one');await page.evaluate(()=>window.failUpload=true);
   await page.getByRole('button',{name:'Upload recording',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('[data-upload-status]').textContent.includes('interrupted'));
-  assert.equal(await page.locator('input[type=file]').evaluate(el=>el.files.length),1,'Failure retains the selected file');
+  assert.equal(await page.locator('input[name=recording]').evaluate(el=>el.files.length),1,'Failure retains the selected file');
   await page.getByRole('button',{name:'Upload recording',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('[data-upload-status]').textContent.includes('remains private'));
-  assert.equal(await page.locator('.audio-track').count(),1);assert.equal(await page.locator('input[type=file]').evaluate(el=>el.files.length),0);
+  assert.equal(await page.locator('.audio-track').count(),1);assert.equal(await page.locator('input[name=recording]').evaluate(el=>el.files.length),0);
   await page.evaluate(bytes=>window.wavBytes=new Uint8Array(bytes),[...wav()]);
   await page.getByRole('button',{name:'Preview recording'}).click();assert.equal(await page.locator('.audio-track audio').count(),1);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'No horizontal overflow');
@@ -105,7 +105,7 @@ try{
   await page.locator('#preview-editor h1').waitFor();assert.equal(await page.locator('#preview-editor h1').textContent(),'Demo recording project');
   await page.getByLabel('I have permission',{exact:false}).check();await page.getByRole('button',{name:'Save details',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('[data-details-status]').textContent==='Details saved.');
-  await page.locator('input[type=file]').setInputFiles({name:'demo.wav',mimeType:'audio/wav',buffer:wav()});
+  await page.locator('input[name=recording]').setInputFiles({name:'demo.wav',mimeType:'audio/wav',buffer:wav()});
   await page.getByRole('button',{name:'Upload recording',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('[data-upload-status]').textContent.includes('remains private'));
   await page.getByRole('button',{name:'Preview recording'}).click();
