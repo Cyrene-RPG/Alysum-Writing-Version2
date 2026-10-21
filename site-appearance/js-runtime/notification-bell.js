@@ -19,7 +19,7 @@ export function mountNotificationBell({ service, host = document.querySelector("
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></svg>
             <span class="notification-bell-badge" hidden></span>
         </button>
-        <section class="notification-bell-panel" id="notification-bell-panel" aria-label="Recent notifications" hidden>
+        <section class="notification-bell-panel" id="notification-bell-panel" aria-label="Unread notifications" hidden>
             <div class="notification-bell-heading"><h2>Notifications</h2><button class="notification-bell-close" type="button" aria-label="Close notifications">×</button></div>
             <p class="notification-bell-status" role="status" aria-live="polite"></p>
             <div class="notification-bell-list"></div>
@@ -77,16 +77,17 @@ export function mountNotificationBell({ service, host = document.querySelector("
             list.replaceChildren();
             status.textContent = "";
         }
+        const unread = state.recent.filter(item => !item.readAt);
         const nextSignature = JSON.stringify([state.userId, state.loading, state.error, state.unreadCount,
-            state.recent.map(item => [item.id, item.readAt, item.announcementId, item.bookId, item.chapterId])]);
+            unread.map(item => [item.id, item.readAt, item.announcementId, item.bookId, item.chapterId])]);
         if (signature === nextSignature) return;
         signature = nextSignature;
         button.setAttribute("aria-label", "Notifications" + (state.unreadCount ? ", " + state.unreadCount + " unread" : ""));
         badge.hidden = !state.unreadCount;
         badge.textContent = state.unreadCount > 99 ? "99+" : String(state.unreadCount);
-        status.textContent = state.error || (state.loading ? "Loading notifications…" : state.recent.length ? "" : "You’re all caught up.");
+        status.textContent = state.error || (state.loading ? "Loading notifications…" : unread.length ? "" : "You’re all caught up.");
         list.replaceChildren();
-        for (const item of state.recent) {
+        for (const item of unread) {
             const row = document.createElement("button");
             row.type = "button";
             row.className = "notification-bell-item" + (!item.readAt ? " is-unread" : "");

@@ -27,7 +27,7 @@ function fixture() {
             let owner = "";
             const q = {
                 select() { return q; }, eq(key, value) { if (key === "recipient_id" || key === "user_id") owner = value; return q; },
-                order() { return q; }, limit() { return q; }, maybeSingle() { return q; }, in() { return q; },
+                is() { return q; }, order() { return q; }, limit() { return q; }, maybeSingle() { return q; }, in() { return q; },
                 then(resolve, reject) {
                     const result = table === "notification_preferences" ? { data: null } : { data: [
                         { id: 1, kind: "follower", title: owner + " private", message: owner, created_at: "2026-10-20T12:00:00Z" },

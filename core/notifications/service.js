@@ -29,7 +29,7 @@ export function createNotificationService(client, { isEnabled = () => !isDesktop
         try {
             const [summary, recent, preferences] = await Promise.all([
                 getNotificationSummary(client),
-                listNotifications(client, { userId, limit: 8 }),
+                listNotifications(client, { userId, limit: 8, unreadOnly: true }),
                 getNotificationPreferences(client, userId),
             ]);
             if (account !== epoch || sequence !== request) return;
