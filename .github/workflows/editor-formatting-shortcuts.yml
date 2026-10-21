@@ -1,0 +1,27 @@
+name: Editor formatting shortcuts
+on:
+  push:
+    branches: [fix/editor-formatting-shortcuts]
+  pull_request:
+    paths:
+      - 'applications/editor/page-ui/document.js'
+      - 'applications/editor/page-ui/formatting-shortcuts.js'
+      - 'applications/editor/page-ui/toolbar.js'
+      - 'applications/editor/tests/formatting-shortcuts.mjs'
+      - '.github/workflows/editor-formatting-shortcuts.yml'
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser
+        run: |
+          npm install --prefix "$RUNNER_TEMP/editor-browser" --no-audit --no-fund playwright@1.61.1
+          "$RUNNER_TEMP/editor-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Check real editor shortcuts
+        run: PLAYWRIGHT_MODULE_PATH="$RUNNER_TEMP/editor-browser/node_modules/playwright/index.mjs" node applications/editor/tests/formatting-shortcuts.mjs

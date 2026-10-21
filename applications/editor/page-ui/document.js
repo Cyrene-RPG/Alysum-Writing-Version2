@@ -1,3 +1,4 @@
+import { bindFormattingShortcuts } from "./formatting-shortcuts.js";
 /**
  * Contenteditable page. Commands go through execCommand so the toolbar can stay vanilla.
  */
@@ -356,7 +357,7 @@ export function mountDocument({ pageEl, onInput }) {
 
     initSceneBreakEditorBehavior(pageEl);
 
-    return {
+    const controller = {
         rememberSelection,
         restoreSelection,
         setHtml(html) {
@@ -456,4 +457,6 @@ export function mountDocument({ pageEl, onInput }) {
             emit();
         }
     };
+    bindFormattingShortcuts(pageEl, (command) => controller.command(command));
+    return controller;
 }
