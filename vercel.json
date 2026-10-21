@@ -13,6 +13,14 @@
   ],
   "rewrites": [
     {
+      "source": "/screenplay-studio",
+      "destination": "/applications/studio/pages/screenplay-studio.html"
+    },
+    {
+      "source": "/screenplay-preview",
+      "destination": "/applications/studio/pages/screenplay-preview.html"
+    },
+    {
       "source": "/audiobook-studio",
       "destination": "/applications/studio/pages/audiobook-studio.html"
     },
@@ -320,3 +328,4 @@
     }
   ]
 }
+

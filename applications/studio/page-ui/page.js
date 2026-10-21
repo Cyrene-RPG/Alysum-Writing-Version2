@@ -1,3 +1,4 @@
+import { createScreenplaysApi } from "/core/screenplays/client.js?v=2";
 import { createAudiobooksApi } from "/core/audiobooks/client.js";
 import { mountBookFormatChoice } from "./book-format-choice.js";
 import { groupRevisionBooks } from "/core/writing-engine/draft-revisions.js";
@@ -204,7 +205,7 @@ function bookCoverHtml(book) {
     return `<img class="studio-book-art" src="${escapeHtml(src)}" alt="" decoding="async"${attr} />`;
 }
 
-function renderBooks(mount, books, audioBooks = []) {
+function renderBooks(mount, books, audioBooks = [], scripts = []) {
     const newCard = `<button type="button" class="studio-new-card" id="newBookCard"><span class="studio-plus" aria-hidden="true">+</span><span>New book</span></button>`;
     const importCard = `<button type="button" class="studio-new-card studio-import-card" id="importBookCard"><span class="studio-plus" aria-hidden="true">↥</span><span>Upload book</span></button>`;
     mount.innerHTML = newCard + importCard + groupRevisionBooks(sortBooksByLastWorked(books))
@@ -225,7 +226,7 @@ function renderBooks(mount, books, audioBooks = []) {
             <a class="studio-book studio-book-${index % 5}" href="/audiobook-studio?id=${encodeURIComponent(book.id)}" data-audiobook="${escapeHtml(book.id)}">
                 <h2 class="studio-book-title">${escapeHtml(book.title)}</h2>
                 <p class="studio-book-meta">Audiobook · Private draft</p>
-            </a>`).join("");
+            </a>`).join("") + scripts.map((script,index)=>`<a class="studio-book studio-book-${index % 5}" href="/screenplay-studio?id=${encodeURIComponent(script.id)}" data-screenplay="${escapeHtml(script.id)}"><h2 class="studio-book-title">${escapeHtml(script.title||script.document?.title||"Untitled screenplay")}</h2><p class="studio-book-meta">Screenplay · Private draft</p></a>`).join("");
 }
 
 function initShelf(shelf, dots, prev, next) {
@@ -318,6 +319,7 @@ async function boot() {
     const api = createBooksApi(session, supabase);
     let books = api.peekBooks?.() || [];
     let audioBooks = [];
+    let scripts = [];
     let audioLoadError = "";
 
     function paintStudioStatus() {
@@ -340,13 +342,13 @@ async function boot() {
             if (src) draftCoverSrc.set(id, src);
         }));
         if (!books.some((book) => bookCoverSrc(book))) return;
-        renderBooks(list, books, audioBooks);
+        renderBooks(list, books, audioBooks, scripts);
         window.__alysumTextInk?.scheduleChromeInk?.();
     }
 
     function paintShelf() {
-        renderBooks(list, books, audioBooks);
-        const total = books.length + audioBooks.length;
+        renderBooks(list, books, audioBooks, scripts);
+        const total = books.length + audioBooks.length + scripts.length;
         document.getElementById("shelfCount").textContent = `${total} book${total === 1 ? "" : "s"}`;
         paintTotals();
         paintStudioStatus();
@@ -456,11 +458,13 @@ async function boot() {
     });
     importer.bindDrop(document.body);
     const audioApi = createAudiobooksApi(session.mode === "cloud" ? supabase : null, session.mode === "cloud" ? session.user.id : "");
+    const scriptApi = createScreenplaysApi(session.mode === "cloud" ? supabase : null, session.user.id);
     const formatChoice = mountBookFormatChoice({
         session, getBooks: () => books,
         createWritten: () => api.insertBook(createEmptyBook()),
         importWritten: () => importer.open(),
         createAudio: details => audioApi.save(null, details),
+        createScript: details => scriptApi.create(details),
     });
     async function refreshAudiobooks() {
         if (session.mode !== "cloud") return;
@@ -468,6 +472,12 @@ async function boot() {
         catch (error) { audioLoadError = error.message || "Could not load audiobooks."; }
         paintShelf();
     }
+    async function refreshScripts() {
+        try { scripts = await scriptApi.list(); } catch { scripts = scriptApi.cached(); }
+        paintShelf();
+    }
+    void refreshScripts();
+    window.addEventListener("focus", () => void refreshScripts());
     void refreshAudiobooks();
     window.addEventListener("focus", () => void refreshAudiobooks());
 
@@ -497,4 +507,5 @@ boot().catch((err) => {
         loading.textContent = "Couldn't load Studio. Try reloading.";
     }
 });
+
 

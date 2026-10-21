@@ -1,3 +1,5 @@
+/screenplay-studio  /applications/studio/pages/screenplay-studio.html  200
+/screenplay-preview  /applications/studio/pages/screenplay-preview.html  200
 # Cloudflare Pages routing. Mirrors the redirects and rewrites in vercel.json.
 # Vercel ignores this file; Cloudflare ignores vercel.json. Change both together.
 # First matching line wins. A 200 serves the target file without changing the URL.
@@ -96,4 +98,5 @@
 /css/statistics-ui/*  /applications/main-site/statistics-ui/:splat  200
 /css/*  /applications/main-site/pages-css/:splat  200
 /assets/*  /applications/main-site/assets/:splat  200
+
 
