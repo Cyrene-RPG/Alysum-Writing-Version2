@@ -5,8 +5,11 @@ export function screenplayError(error) {
     return Error(error?.message||'Could not save online. Your device copy is retained.');
 }
 /** Backups are isolated by account, including in preview and local desktop mode. */
-export function createScreenplaysApi(client,userId,{storage=globalThis.localStorage}={}) {
+export function createScreenplaysApi(client,userId,options={}) {
     if(!userId)throw Error('Sign in to open your screenplays.');
+    let storage=options.storage;
+    if(!storage)try{storage=globalThis.localStorage;}catch{}
+    storage ||= {length:0,key:()=>null,getItem:()=>null,setItem(){throw Error('Device storage is unavailable.');},removeItem(){}};
     const prefix='alysum:screenplay:v1:'+userId+':',recoveryPrefix=prefix+'recovery:',deviceId=uid();
     function read(id){try{return JSON.parse(storage.getItem(prefix+id)||'null');}catch{return null;}}
     function backup(id,document,baseVersion,requestId=uid()) {
@@ -21,7 +24,7 @@ export function createScreenplaysApi(client,userId,{storage=globalThis.localStor
         return entry;
     }
     async function query(builder){const {data,error}=await builder;if(error)throw screenplayError(error);return data;}
-    function cached(){const rows=[];for(let i=0;i<storage.length;i++){const key=storage.key(i);if(key?.startsWith(prefix)&&!key.startsWith(recoveryPrefix)){const row=read(key.slice(prefix.length));if(row)rows.push(row);}}return rows;}
+    function cached(){const rows=[];try{for(let i=0;i<storage.length;i++){const key=storage.key(i);if(key?.startsWith(prefix)&&!key.startsWith(recoveryPrefix)){const row=read(key.slice(prefix.length));if(row)rows.push(row);}}}catch{}return rows;}
     function deviceCopies(id){const rows=[];for(let i=0;i<storage.length;i++){const key=storage.key(i);if(key?.startsWith(recoveryPrefix+id+':')){try{const entry=JSON.parse(storage.getItem(key));if(entry?.document)rows.push({key,entry});}catch{}}}return rows.sort((a,b)=>b.entry.updated_at.localeCompare(a.entry.updated_at));}
     return {
         local:!client,backup,cached,read,deviceCopies,
