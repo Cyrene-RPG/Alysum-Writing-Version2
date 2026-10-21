@@ -87,7 +87,7 @@ try{
   page.on('request',request=>{if(/supabase|\/core\/authentication\//i.test(request.url())||!['GET','HEAD'].includes(request.method()))external.push(request.url());});
   page.on('pageerror',error=>errors.push(error.message));
   await page.goto(base.replace('/fixture','/audiobook-preview'));
-  await page.click('#preview-new');await page.getByRole('button',{name:'Audiobook',exact:false}).click();
+  await page.click('#preview-new');await page.locator('dialog [data-format=audio]').click();
   await page.getByLabel('Title',{exact:true}).fill('Demo recording project');await page.getByRole('button',{name:'Create audiobook',exact:true}).click();
   await page.locator('#preview-editor h1').waitFor();assert.equal(await page.locator('#preview-editor h1').textContent(),'Demo recording project');
   await page.getByLabel('I have permission',{exact:false}).check();await page.getByRole('button',{name:'Save details',exact:true}).click();
