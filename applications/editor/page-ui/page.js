@@ -19,14 +19,14 @@ import {
 } from "@alysum/writing-engine/manuscript.js?v=5";
 import { countWordsInHtml, countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { createAutosave } from "./autosave.js";
-import { mountDocument } from "./document.js?v=10";
+import { mountDocument } from "./document.js?v=11";
 import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=9";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { recordTypedWords, getWritingStats } from "@alysum/account/writing-stats.js";
 import { countedWordDelta } from "@alysum/statistics/typed-input.js";
 import { reviewSentencesForXp, recordPastedRegion } from "@alysum/statistics/sentence-review.js";
 import { isProbablyOnline, onReconnect } from "@alysum/synchronization-engine/network.js";
-import { mountToolbar } from "./toolbar.js?v=8";
+import { mountToolbar } from "./toolbar.js?v=9";
 import { bindManuscriptNav } from "./page/manuscript-nav.js?v=1";
 import {
     applyChapterTypographyStyles,

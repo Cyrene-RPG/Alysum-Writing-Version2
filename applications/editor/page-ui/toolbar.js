@@ -33,9 +33,9 @@ const SPACE_LABELS = {
 const DEFAULT_LINE_SPACE = "comfortable";
 
 const ACTIONS = [
-    { command: "bold", label: "B", title: "Bold" },
-    { command: "italic", label: "I", title: "Italic" },
-    { command: "underline", label: "U", title: "Underline" },
+    { command: "bold", label: "B", title: "Bold (Ctrl+B / ⌘B)", shortcut: "Control+b Meta+b" },
+    { command: "italic", label: "I", title: "Italic (Ctrl+I / ⌘I)", shortcut: "Control+i Meta+i" },
+    { command: "underline", label: "U", title: "Underline (Ctrl+U / ⌘U)", shortcut: "Control+u Meta+u" },
     { command: "strikeThrough", label: "S", title: "Strikethrough" },
     { command: "formatBlock", value: "h1", label: "H1", title: "Heading 1" },
     { command: "formatBlock", value: "h2", label: "H2", title: "Heading 2" },
@@ -180,7 +180,7 @@ export function mountToolbar({
         `<div class="writer-toolbar-cluster">`,
         `<button type="button" class="writer-tool" data-indent-toggle aria-pressed="${indentOn ? "true" : "false"}" title="Auto indent" aria-label="Auto indent">Indent</button>`,
         ...ACTIONS.map((action) => (
-            `<button type="button" class="writer-tool" data-command="${action.command}" data-value="${action.value || ""}" title="${action.title}" aria-label="${action.title}">${action.label}</button>`
+            `<button type="button" class="writer-tool" data-command="${action.command}" data-value="${action.value || ""}" title="${action.title}" aria-label="${action.title}"${action.shortcut ? ` aria-keyshortcuts="${action.shortcut}"` : ""}>${action.label}</button>`
         )),
         menuBlock("font", "Font", "Font", fontMenuHtml()),
         menuBlock("size", "Size", "Text size", sizeMenuHtml()),
