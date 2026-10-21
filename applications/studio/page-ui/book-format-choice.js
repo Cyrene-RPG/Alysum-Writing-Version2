@@ -6,7 +6,7 @@ export function loadAudiobookStyles() {
 }
 
 /** Shared entry point for New book and Upload book. Written-book behavior is delegated. */
-export function mountBookFormatChoice({session,getBooks,createWritten,importWritten,createAudio,navigate=url=>window.location.assign(url)}) {
+export function mountBookFormatChoice({session,getBooks,createWritten,importWritten,createAudio,createScript,navigate=url=>window.location.assign(url)}) {
     loadAudiobookStyles();
     const dialog=document.createElement('dialog');dialog.className='audio-dialog';dialog.setAttribute('aria-labelledby','format-title');
     document.body.append(dialog);
@@ -17,6 +17,7 @@ export function mountBookFormatChoice({session,getBooks,createWritten,importWrit
         dialog.innerHTML=header(entry==='upload'?'What would you like to upload?':'What would you like to create?')+`
           <p class="audio-muted">Choose a format to get started.</p><div class="audio-format-options">
           <button type="button" data-format="written"><strong>Written book</strong><span>${entry==='upload'?'Upload a manuscript':'Start with a blank book'}</span></button>
+          <button type="button" data-format="script"><strong>Script</strong><span>${entry==='upload'?'Import an FDX, Fountain or Alysum screenplay':'Write a film or television screenplay'}</span></button>
           <button type="button" data-format="audio"><strong>Audiobook</strong><span>${entry==='upload'?'Set up an audiobook and upload recordings':'Create an audiobook and add recordings when ready'}</span></button></div>
           <p class="audio-error" data-error role="alert" hidden></p>`;
     }
@@ -37,6 +38,13 @@ export function mountBookFormatChoice({session,getBooks,createWritten,importWrit
         if(event.target.closest('[data-back]')){choose();return;}
         const format=event.target.closest('[data-format]')?.dataset.format;
         if(!format)return;
+        if(format==='script'){
+            busy=true;for(const button of dialog.querySelectorAll('button'))button.disabled=true;
+            try{const created=await createScript({title:'Untitled screenplay'});dialog.close();navigate(`/screenplay-studio?id=${encodeURIComponent(created.id)}${entry==='upload'?'&import=1':''}`);}
+            catch(error){message(error);}
+            finally{busy=false;for(const button of dialog.querySelectorAll('button'))button.disabled=false;}
+            return;
+        }
         if(format==='audio'){
             if(session.mode!=='cloud'){message('Sign in online to create and upload audiobooks. Written books still work on this device.');return;}
             audioSetup();return;
@@ -60,3 +68,4 @@ export function mountBookFormatChoice({session,getBooks,createWritten,importWrit
     dialog.addEventListener('close',()=>trigger?.focus());
     return {open(mode='new',button,audio=false){if(dialog.open)return;entry=mode;trigger=button;choose();dialog.showModal();if(audio&&session.mode==='cloud')audioSetup();}};
 }
+
