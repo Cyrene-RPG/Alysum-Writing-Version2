@@ -1,10 +1,14 @@
 name: Notification inbox checks
 on:
   push:
-    branches: [feature/private-notification-inbox, feature/book-subscriptions, feature/notification-confirmations]
+    branches: [feature/private-notification-inbox, feature/book-subscriptions, feature/notification-confirmations, feature/private-connections]
   pull_request:
     paths:
       - 'core/notifications/**'
+      - 'core/account/connections.js'
+      - 'applications/connections/**'
+      - 'core/library/author-follow.js'
+      - 'supabase/live-site/supabase-private-connections.sql'
       - 'core/library/subscriptions.js'
       - 'applications/library/page-ui/subscription.js'
       - 'core/tests/notifications/**'
@@ -40,7 +44,7 @@ jobs:
         with:
           node-version: '22'
       - name: JavaScript behavior
-        run: node --test core/tests/notifications/*.test.js
+        run: node --test core/tests/notifications/*.test.js core/tests/library/author-follow.test.js
       - name: Create disposable Supabase-like schemas
         run: |
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/notifications/setup.sql
@@ -59,3 +63,7 @@ jobs:
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-notification-confirmations.sql
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-notification-confirmations.sql
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/notifications/confirmations.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/notifications/connections-baseline.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-private-connections.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-private-connections.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/notifications/connections.sql

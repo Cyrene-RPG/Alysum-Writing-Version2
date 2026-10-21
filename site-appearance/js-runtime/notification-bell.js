@@ -54,6 +54,16 @@ export function mountNotificationBell({ service, host = document.querySelector("
         const settings = profilePanel.querySelector('a[href="/settings"], a[href^="settings"]');
         profilePanel.insertBefore(inboxLink, settings || null);
     }
+    let connectionsLink=document.getElementById("profile-connections-link");
+    if(profilePanel && !connectionsLink){
+        connectionsLink=document.createElement("a");
+        connectionsLink.id="profile-connections-link";
+        connectionsLink.href="/connections";
+        connectionsLink.textContent="Following & subscriptions";
+        connectionsLink.setAttribute("role","menuitem");
+        connectionsLink.addEventListener("click",closeProfile);
+        profilePanel.insertBefore(connectionsLink,inboxLink || null);
+    }
     button.addEventListener("click", () => {
         const opening = panel.hidden;
         closeProfile();
@@ -71,6 +81,7 @@ export function mountNotificationBell({ service, host = document.querySelector("
     service.subscribe(state => {
         root.hidden = !state.userId;
         if (inboxLink) inboxLink.hidden = !state.userId;
+        if (connectionsLink) connectionsLink.hidden = !state.userId;
         if (account !== state.userId) {
             account = state.userId;
             close();
