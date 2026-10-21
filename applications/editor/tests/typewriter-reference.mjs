@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
-import {pathToFileURL} from 'node:url';
 
 // Real editor/reference modules and styles; invented local data, no live accounts.
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
@@ -40,8 +39,10 @@ try{
   const page=await browser.newPage({viewport:{width,height:900}}),errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   await page.goto(`http://127.0.0.1:${server.address().port}/fixture?book=sample&referenceBook=sample`);
-  await page.locator('.draft-reference').waitFor({state:'visible'});
+  await page.locator('.draft-reference').waitFor({state:'attached'});
+  if(width<=720)await page.locator('.draft-mobile-tabs [data-pane=reference]').click();
   await page.selectOption('.draft-reference select','two');
+  if(width<=720)await page.locator('.draft-mobile-tabs [data-pane=write]').click();
   await page.locator('.draft-divider').evaluate(el=>el.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true})));
   const split=await page.locator('.draft-divider').getAttribute('aria-valuenow');
   for(let cycle=0;cycle<3;cycle++){
