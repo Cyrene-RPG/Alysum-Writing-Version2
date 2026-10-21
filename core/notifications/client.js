@@ -5,6 +5,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES = Object.freeze({
 export const NOTIFICATION_KINDS = Object.freeze({
     follower: "Followers", author_announcement: "Author announcements", site_update: "Alysum updates",
     new_book: "New books", new_chapter: "New chapters",
+    follow_confirmation: "Follow confirmations", subscription_confirmation: "Subscription confirmations",
 });
 const COLUMNS = "id,kind,actor_id,announcement_id,book_id,chapter_id,title,message,created_at,read_at";
 
@@ -110,8 +111,8 @@ export async function markNotificationsRead(client, throughId) {
     return Number(data) || 0;
 }
 export async function resolveNotificationDestination(client, entry) {
-    if (entry.kind === "follower") return null;
-    if (entry.kind === "new_book" || entry.kind === "new_chapter") {
+    if (["follower", "follow_confirmation"].includes(entry.kind)) return null;
+    if (entry.kind === "new_book" || entry.kind === "new_chapter" || entry.kind === "subscription_confirmation") {
         const { data, error } = await client.rpc("get_reading_notification_target", {
             p_notification_id: requireId(entry.id),
         });
@@ -120,7 +121,7 @@ export async function resolveNotificationDestination(client, entry) {
         if (!target?.book_id || (entry.kind === "new_chapter" && !target.chapter_id)) {
             throw new Error("This book or chapter is no longer available.");
         }
-        return entry.kind === "new_book" ? "/book?id=" + encodeURIComponent(target.book_id)
+        return entry.kind !== "new_chapter" ? "/book?id=" + encodeURIComponent(target.book_id)
             : "/read?id=" + encodeURIComponent(target.book_id) + "&chapter=" + encodeURIComponent(target.chapter_id);
     }
     if (!entry.announcementId) throw new Error("This update is no longer available.");

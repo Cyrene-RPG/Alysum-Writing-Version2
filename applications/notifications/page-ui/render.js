@@ -7,7 +7,7 @@ export function renderNotification(entry, { onOpen, onToggle }) {
     const icon = document.createElement("span");
     icon.className = "inbox-notification-icon";
     icon.setAttribute("aria-hidden", "true");
-    icon.textContent = ["new_book", "new_chapter"].includes(entry.kind) ? "▤" : entry.kind === "follower" ? "+" : entry.kind === "site_update" ? "◇" : "✎";
+    icon.textContent = ["follow_confirmation", "subscription_confirmation"].includes(entry.kind) ? "✓" : ["new_book", "new_chapter"].includes(entry.kind) ? "▤" : entry.kind === "follower" ? "+" : entry.kind === "site_update" ? "◇" : "✎";
     const content = document.createElement("div");
     content.className = "inbox-notification-content";
     const open = document.createElement("button");

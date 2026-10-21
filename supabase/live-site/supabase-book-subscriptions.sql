@@ -14,7 +14,7 @@ ALTER TABLE public.inbox_notifications ADD COLUMN IF NOT EXISTS book_id text REF
 ALTER TABLE public.inbox_notifications ADD COLUMN IF NOT EXISTS chapter_id text;
 ALTER TABLE public.inbox_notifications DROP CONSTRAINT IF EXISTS inbox_notifications_kind_check;
 ALTER TABLE public.inbox_notifications ADD CONSTRAINT inbox_notifications_kind_check
-    CHECK(kind IN ('follower','author_announcement','site_update','new_book','new_chapter'));
+    CHECK(kind IN ('follower','author_announcement','site_update','new_book','new_chapter','follow_confirmation','subscription_confirmation'));
 
 CREATE TABLE IF NOT EXISTS public.book_subscriptions (
     subscriber_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -106,10 +106,10 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
     SELECT l.id, n.chapter_id FROM public.inbox_notifications n
     JOIN public.library l ON l.id = n.book_id
     WHERE n.id = p_notification_id AND n.recipient_id = auth.uid()
-        AND n.kind IN ('new_book','new_chapter')
+        AND n.kind IN ('new_book','new_chapter','subscription_confirmation')
         AND COALESCE(l.data->>'isPublished','true') <> 'false'
         AND NOT EXISTS(SELECT 1 FROM public.library_book_moderation m WHERE m.book_id=l.id AND m.visibility IN ('hidden','removed'))
-        AND (n.kind='new_book' OR EXISTS(SELECT 1 FROM public.notification_released_chapters(l.data) c WHERE c.chapter_id=n.chapter_id));
+        AND (n.kind<>'new_chapter' OR EXISTS(SELECT 1 FROM public.notification_released_chapters(l.data) c WHERE c.chapter_id=n.chapter_id));
 $$;
 
 CREATE OR REPLACE FUNCTION public.deliver_reading_notifications()
