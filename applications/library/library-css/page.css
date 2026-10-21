@@ -177,3 +177,10 @@ body {
 @media (max-width:700px) { .lib-shelf-row .lib-cover-placeholder strong { font-size: 20px; } .lib-grid .lib-cover-placeholder { inset: 6px; padding: 8px 4px; gap: 8px; } .lib-grid .lib-cover-placeholder strong { font-size: 14px; } }
 
 .wd-welcome-sub:empty { display: none; }
+
+.lib-card {position:relative}
+.lib-title a {color:inherit;text-decoration:none}
+.lib-title a::after {content:"";position:absolute;inset:0}
+.lib-author a {position:relative;z-index:1;color:inherit;text-decoration:none}
+.lib-author a:hover {text-decoration:underline}
+.lib-title a:focus-visible,.lib-author a:focus-visible {outline:2px solid var(--accent);outline-offset:3px}

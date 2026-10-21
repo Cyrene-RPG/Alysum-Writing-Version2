@@ -1,0 +1,32 @@
+name: Author profile checks
+on:
+  push:
+    branches: [feature/author-profile-links]
+  pull_request:
+    paths:
+      - 'core/library/author*.js'
+      - 'applications/library/**'
+      - 'applications/main-site/homepage/**'
+      - 'applications/updates/page-ui/render.js'
+      - 'site-appearance/js-runtime/author-link.js'
+      - 'core/tests/library/author*.test.js'
+      - 'core/tests/library/reader-author.test.js'
+      - '.github/workflows/author-profile-tests.yml'
+permissions:
+  contents: read
+jobs:
+  author-profile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Profile, author links and persistent follows
+        run: node --test core/tests/library/author-profile.test.js core/tests/library/author-cards.test.js core/tests/library/author-follow.test.js core/tests/library/reader-author.test.js
+      - name: Existing notification behavior
+        run: node --test core/tests/notifications/*.test.js
+      - name: Route configuration
+        run: |
+          python3 -m py_compile core/server/dev.py
+          python3 -c 'import json; json.load(open("vercel.json")); json.load(open("firebase.json"))'

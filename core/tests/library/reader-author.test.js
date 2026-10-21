@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {authorProfileUrl} from "../../library/author-links.js";
+import {authorNameHtml} from "../../../site-appearance/js-runtime/author-link.js";
 import { readFile } from "node:fs/promises";
 
 class Element {
@@ -44,13 +46,13 @@ const options = {
 
 async function fixture(fetchCard, setFollow, run) {
     const source = await readFile(new URL("../../../applications/library/page-ui/reader-author.js", import.meta.url), "utf8");
-    const stubs = { mountReaderTips() {}, fetchReaderAuthorCard: fetchCard, setFollowing: setFollow, authorInitial: () => "W" };
+    const stubs = { authorProfileUrl, authorNameHtml, mountReaderTips() {}, fetchReaderAuthorCard: fetchCard, setFollowing: setFollow, authorInitial: () => "W" };
     // Inject only the four dependencies; execute the actual event handlers.
     globalThis.readerAuthorTestDependencies = stubs;
     const injected = source.replace(/^import .*;\n/gm, "")
         + "\n//# sourceURL=reader-author-fixture.js";
     const module = await import("data:text/javascript;base64," + Buffer.from(
-        "const { mountReaderTips, fetchReaderAuthorCard, setFollowing, authorInitial } = globalThis.readerAuthorTestDependencies;\n" + injected
+        "const { authorProfileUrl, authorNameHtml, mountReaderTips, fetchReaderAuthorCard, setFollowing, authorInitial } = globalThis.readerAuthorTestDependencies;\n" + injected
     ).toString("base64") + "#" + Math.random());
     try { await run(module.mountReaderAuthor, new Root()); }
     finally { delete globalThis.readerAuthorTestDependencies; }

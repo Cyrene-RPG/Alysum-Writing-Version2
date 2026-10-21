@@ -1,3 +1,4 @@
+import { authorProfileUrl } from "../../../core/library/author-links.js";
 import { UPDATE_CATEGORIES, announcementUrl, authorUpdatesUrl } from "../../../core/publishing/announcements.js";
 
 export function renderAnnouncement(post, { detail = false, authorName = "Author" } = {}) {
@@ -17,7 +18,11 @@ export function renderAnnouncement(post, { detail = false, authorName = "Author"
     }
     const meta = document.createElement("p");
     meta.className = "update-meta";
-    meta.append(post.scope === "site" ? "Alysum" : authorName);
+    if (post.scope === "author" && post.authorId) {
+        const author=document.createElement("a");
+        author.href=authorProfileUrl({userId:post.authorId});
+        author.textContent=authorName;meta.append(author);
+    } else meta.append(post.scope === "site" ? "Alysum" : authorName);
     if (post.publishedAt) {
         const date = new Date(post.publishedAt);
         if (!Number.isNaN(date.getTime())) {

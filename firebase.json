@@ -45,204 +45,806 @@
       }
     ],
     "rewrites": [
-      {"source":"/inbox","destination":"/applications/notifications/pages/inbox.html"},
-      {"source":"/inbox.html","destination":"/applications/notifications/pages/inbox.html"},
-      {"source":"/updates","destination":"/applications/updates/pages/updates.html"},
-      {"source":"/write-update","destination":"/applications/updates/pages/write-update.html"},
-      {"source":"/updates.html","destination":"/applications/updates/pages/updates.html"},
-      {"source":"/write-update.html","destination":"/applications/updates/pages/write-update.html"},
-      { "source": "/", "destination": "/applications/main-site/pages/index.html" },
-      { "source": "/index.html", "destination": "/applications/main-site/pages/index.html" },
-      { "source": "/login.html", "destination": "/applications/main-site/pages/login.html" },
-      { "source": "/login", "destination": "/applications/main-site/pages/login.html" },
-      { "source": "/signup.html", "destination": "/applications/main-site/pages/signup.html" },
-      { "source": "/signup", "destination": "/applications/main-site/pages/signup.html" },
-      { "source": "/settings.html", "destination": "/applications/main-site/pages/settings.html" },
-      { "source": "/settings", "destination": "/applications/main-site/pages/settings.html" },
-      { "source": "/overview.html", "destination": "/applications/main-site/pages/overview.html" },
-      { "source": "/overview", "destination": "/applications/main-site/pages/overview.html" },
-      { "source": "/statistics-spec.html", "destination": "/applications/main-site/pages/statistics-spec.html" },
-      { "source": "/studio", "destination": "/applications/studio/pages/studio.html" },
-      { "source": "/studio.html", "destination": "/applications/studio/pages/studio.html" },
-      { "source": "/editor", "destination": "/applications/editor/pages/editor.html" },
-      { "source": "/word-wars-lobby", "destination": "/applications/word-wars/pages/word-wars-lobby.html" },
-      { "source": "/word-wars", "destination": "/applications/word-wars/pages/word-wars.html" },
-      { "source": "/shared-section", "destination": "/applications/excerpts/pages/read.html" },
-      { "source": "/library", "destination": "/applications/library/pages/library.html" },
-      { "source": "/roadmap", "destination": "/applications/main-site/pages/roadmap-handoff.html" },
-      { "source": "/roadmap.html", "destination": "/applications/main-site/pages/roadmap-handoff.html" },
-      { "source": "/book", "destination": "/applications/library/pages/book.html" },
-      { "source": "/read", "destination": "/applications/library/pages/read.html" },
-      { "source": "/publish", "destination": "/applications/studio/pages/publish.html" },
-      { "source": "/js/library/page.js", "destination": "/applications/library/page-ui/page.js" },
-      { "source": "/js/library/reader.js", "destination": "/applications/library/page-ui/reader.js" },
-      { "source": "/js/library/reader-end.js", "destination": "/applications/library/page-ui/reader-end.js" },
-      { "source": "/js/library/reader-tips.js", "destination": "/applications/library/page-ui/reader-tips.js" },
-      { "source": "/js/library/reader-author.js", "destination": "/applications/library/page-ui/reader-author.js" },
-      { "source": "/js/library/comment-editor.js", "destination": "/applications/library/page-ui/comment-editor.js" },
-      { "source": "/js/library/comment-html.js", "destination": "/applications/library/page-ui/comment-html.js" },
-      { "source": "/js/library/reader-theme.js", "destination": "/applications/library/page-ui/reader-theme.js" },
-      { "source": "/js/library/book.js", "destination": "/applications/library/page-ui/book.js" },
-      { "source": "/css/library/page.css", "destination": "/applications/library/library-css/page.css" },
-      { "source": "/css/library/reader.css", "destination": "/applications/library/library-css/reader.css" },
-      { "source": "/css/library/reader-end.css", "destination": "/applications/library/library-css/reader-end.css" },
-      { "source": "/css/library/reader-author.css", "destination": "/applications/library/library-css/reader-author.css" },
-      { "source": "/css/library/reader-comments.css", "destination": "/applications/library/library-css/reader-comments.css" },
-      { "source": "/css/library/book.css", "destination": "/applications/library/library-css/book.css" },
-      { "source": "/js/studio/cover-crop.js", "destination": "/applications/studio/page-ui/cover-crop.js" },
-      { "source": "/js/studio/page-look.js", "destination": "/applications/studio/page-ui/page-look.js" },
-      { "source": "/js/studio/warning-picker.js", "destination": "/applications/studio/page-ui/warning-picker.js" },
-      { "source": "/js/studio/payment-setup.js", "destination": "/applications/studio/page-ui/payment-setup.js" },
-      { "source": "/js/studio/connected-payments.js", "destination": "/applications/studio/page-ui/connected-payments.js" },
-      { "source": "/js/library/paid-reader.js", "destination": "/applications/library/page-ui/paid-reader.js" },
-      { "source": "/css/studio/paid-access.css", "destination": "/applications/studio/studio-css/paid-access.css" },
-      { "source": "/css/library/paid-access.css", "destination": "/applications/library/library-css/paid-access.css" },
-      { "source": "/js/studio/publish.js", "destination": "/applications/studio/page-ui/publish.js" },
-      { "source": "/js/studio/publish-access.js", "destination": "/applications/studio/page-ui/publish-access.js" },
-      { "source": "/js/studio/publish-save.js", "destination": "/applications/studio/page-ui/publish-save.js" },
-      { "source": "/css/studio/publish.css", "destination": "/applications/studio/studio-css/publish.css" },
-      { "source": "/editor.html", "destination": "/applications/editor/pages/editor.html" },
-      { "source": "/book-invite.html", "destination": "/applications/editor/pages/book-invite.html" },
-      { "source": "/word-wars-lobby.html", "destination": "/applications/word-wars/pages/word-wars-lobby.html" },
-      { "source": "/word-wars.html", "destination": "/applications/word-wars/pages/word-wars.html" },
-      { "source": "/reset-password.html", "destination": "/applications/main-site/pages/reset-password.html" },
-      { "source": "/privacy-policy.html", "destination": "/applications/main-site/pages/privacy-policy.html" },
-      { "source": "/terms-of-service.html", "destination": "/applications/main-site/pages/terms-of-service.html" },
-      { "source": "/sw.js", "destination": "/applications/main-site/public/sw.js" },
-      { "source": "/manifest.webmanifest", "destination": "/applications/main-site/public/manifest.webmanifest" },
-      { "source": "/robots.txt", "destination": "/applications/main-site/public/robots.txt" },
-      { "source": "/Alysum-3.png", "destination": "/applications/main-site/public/Alysum-3.png" },
-      { "source": "/discord-logo.png", "destination": "/applications/main-site/public/discord-logo.png" },
-      { "source": "/assets/discord-logo.png", "destination": "/applications/main-site/assets/discord-logo.png" },
-      { "source": "/js/pwa-register.js", "destination": "/applications/main-site/page-ui/pwa-register.js" },
-      { "source": "/js/vercel-analytics.js", "destination": "/applications/main-site/page-ui/vercel-analytics.js" },
-      { "source": "/js/seo-meta.js", "destination": "/applications/main-site/page-ui/seo-meta.js" },
-      { "source": "/js/workspace-nav.js", "destination": "/applications/main-site/page-ui/workspace-nav.js" },
-      { "source": "/js/welcome-bar.js", "destination": "/applications/main-site/page-ui/welcome-bar.js" },
-      { "source": "/js/welcome-lines.js", "destination": "/applications/main-site/page-ui/welcome-lines.js" },
-      { "source": "/js/homepage-auth-nav.js", "destination": "/applications/main-site/homepage/homepage-auth-nav.js" },
-      { "source": "/js/homepage.js", "destination": "/applications/main-site/homepage/homepage.js" },
-      { "source": "/js/homepage-library.js", "destination": "/applications/main-site/homepage/homepage-library.js" },
-      { "source": "/js/user-backup.js", "destination": "/applications/main-site/page-ui/user-backup.js" },
-      { "source": "/js/backup-zip.js", "destination": "/applications/main-site/page-ui/backup-zip.js" },
-      { "source": "/js/prompt.js", "destination": "/applications/main-site/page-ui/prompt.js" },
-      { "source": "/js/login.js", "destination": "/applications/main-site/login/login.js" },
-      { "source": "/js/login-ui.js", "destination": "/applications/main-site/login/login-ui.js" },
-      { "source": "/js/login-reset.js", "destination": "/applications/main-site/login/login-reset.js" },
-      { "source": "/js/feature-highlights.js", "destination": "/applications/main-site/page-ui/feature-highlights.js" },
-      { "source": "/js/overview.js", "destination": "/applications/main-site/page-ui/overview.js" },
-      { "source": "/js/statistics-ui/badge.js", "destination": "/applications/main-site/statistics-ui/badge.js" },
-      { "source": "/js/statistics-ui/spec-render.js", "destination": "/applications/main-site/statistics-ui/spec-render.js" },
-      { "source": "/js/statistics-ui/review-highlight.js", "destination": "/applications/main-site/statistics-ui/review-highlight.js" },
-      { "source": "/css/statistics-ui/badge.css", "destination": "/applications/main-site/statistics-ui/badge.css" },
-      { "source": "/css/statistics-ui/review-marks.css", "destination": "/applications/main-site/statistics-ui/review-marks.css" },
-      { "source": "/js/studio/page.js", "destination": "/applications/studio/page-ui/page.js" },
-      { "source": "/js/studio/book-menu.js", "destination": "/applications/studio/page-ui/book-menu.js" },
-      { "source": "/js/studio/shell.js", "destination": "/applications/studio/page-ui/shell.js" },
-      { "source": "/js/editor/page.js", "destination": "/applications/editor/page-ui/page.js" },
-      { "source": "/js/editor/page/helpers.js", "destination": "/applications/editor/page-ui/page/helpers.js" },
-      { "source": "/js/editor/page/folder-view.js", "destination": "/applications/editor/page-ui/page/folder-view.js" },
-      { "source": "/js/editor/page/chrome.js", "destination": "/applications/editor/page-ui/page/chrome.js" },
-      { "source": "/js/editor/page/typewriter.js", "destination": "/applications/editor/page-ui/page/typewriter.js" },
-      { "source": "/js/editor/page/manuscript-nav.js", "destination": "/applications/editor/page-ui/page/manuscript-nav.js" },
-      { "source": "/js/editor/page/preview-session.js", "destination": "/applications/editor/page-ui/page/preview-session.js" },
-      { "source": "/js/editor/page/persist-hooks.js", "destination": "/applications/editor/page-ui/page/persist-hooks.js" },
-      { "source": "/js/editor/shell.js", "destination": "/applications/editor/page-ui/shell.js" },
-      { "source": "/js/editor/tree.js", "destination": "/applications/editor/page-ui/tree.js" },
-      { "source": "/js/editor/sortable.js", "destination": "/applications/editor/page-ui/sortable.js" },
-      { "source": "/js/editor/sortable/state.js", "destination": "/applications/editor/page-ui/sortable/state.js" },
-      { "source": "/js/editor/sortable/babel.js", "destination": "/applications/editor/page-ui/sortable/babel.js" },
-      { "source": "/js/editor/sortable/utils.js", "destination": "/applications/editor/page-ui/sortable/utils.js" },
-      { "source": "/js/editor/sortable/animation.js", "destination": "/applications/editor/page-ui/sortable/animation.js" },
-      { "source": "/js/editor/sortable/plugin-manager.js", "destination": "/applications/editor/page-ui/sortable/plugin-manager.js" },
-      { "source": "/js/editor/sortable/detect.js", "destination": "/applications/editor/page-ui/sortable/detect.js" },
-      { "source": "/js/editor/sortable/constructor.js", "destination": "/applications/editor/page-ui/sortable/constructor.js" },
-      { "source": "/js/editor/sortable/drag-start.js", "destination": "/applications/editor/page-ui/sortable/drag-start.js" },
-      { "source": "/js/editor/sortable/drag-over.js", "destination": "/applications/editor/page-ui/sortable/drag-over.js" },
-      { "source": "/js/editor/sortable/drop.js", "destination": "/applications/editor/page-ui/sortable/drop.js" },
-      { "source": "/js/editor/sortable/move-helpers.js", "destination": "/applications/editor/page-ui/sortable/move-helpers.js" },
-      { "source": "/js/editor/sortable/index.js", "destination": "/applications/editor/page-ui/sortable/index.js" },
-      { "source": "/js/editor/sortable/plugins/auto-scroll.js", "destination": "/applications/editor/page-ui/sortable/plugins/auto-scroll.js" },
-      { "source": "/js/editor/sortable/plugins/on-spill.js", "destination": "/applications/editor/page-ui/sortable/plugins/on-spill.js" },
-      { "source": "/js/editor/sortable/plugins/swap.js", "destination": "/applications/editor/page-ui/sortable/plugins/swap.js" },
-      { "source": "/js/editor/sortable/plugins/multi-drag.js", "destination": "/applications/editor/page-ui/sortable/plugins/multi-drag.js" },
-      { "source": "/js/editor/toolbar.js", "destination": "/applications/editor/page-ui/toolbar.js" },
-      { "source": "/js/editor/toolbar-overflow.js", "destination": "/applications/editor/page-ui/toolbar-overflow.js" },
-      { "source": "/js/editor/document.js", "destination": "/applications/editor/page-ui/document.js" },
-      { "source": "/js/word-wars/lobby.js", "destination": "/applications/word-wars/page-ui/lobby.js" },
-      { "source": "/js/word-wars/race.js", "destination": "/applications/word-wars/page-ui/race.js" },
-      { "source": "/js/word-wars/track.js", "destination": "/applications/word-wars/page-ui/track.js" },
-      { "source": "/js/word-wars/writer.js", "destination": "/applications/word-wars/page-ui/writer.js" },
-      { "source": "/js/word-wars/waiting.js", "destination": "/applications/word-wars/page-ui/waiting.js" },
-      { "source": "/js/word-wars/results.js", "destination": "/applications/word-wars/page-ui/results.js" },
-      { "source": "/js/word-wars/prompt-picker.js", "destination": "/applications/word-wars/page-ui/prompt-picker.js" },
-      { "source": "/js/editor/autosave.js", "destination": "/applications/editor/page-ui/autosave.js" },
-      { "source": "/js/editor/prompt.js", "destination": "/applications/editor/page-ui/prompt.js" },
-      { "source": "/js/editor/font-catalog.js", "destination": "/applications/editor/page-ui/font-catalog.js" },
-      { "source": "/js/editor/editor-google-fonts.js", "destination": "/applications/editor/page-ui/editor-google-fonts.js" },
-      { "source": "/js/editor/scene-breaks.js", "destination": "/applications/editor/page-ui/scene-breaks.js" },
-      { "source": "/js/editor/find.js", "destination": "/applications/editor/page-ui/find.js" },
-      { "source": "/js/editor/settings.js", "destination": "/applications/editor/page-ui/settings.js" },
-      { "source": "/js/editor/export-zip.js", "destination": "/applications/editor/page-ui/export-zip.js" },
-      { "source": "/js/editor/library-preview.js", "destination": "/applications/editor/page-ui/library-preview.js" },
-      { "source": "/js/editor/preview-book.js", "destination": "/applications/editor/page-ui/preview-book.js" },
-      { "source": "/js/editor/page-look-rail.js", "destination": "/applications/editor/page-ui/page-look-rail.js" },
-      { "source": "/js/editor/cover.js", "destination": "/applications/editor/page-ui/cover.js" },
-      { "source": "/js/editor/book-invite.js", "destination": "/applications/editor/page-ui/book-invite.js" },
-      { "source": "/js/signup/signup.js", "destination": "/applications/main-site/signup/signup.js" },
-      { "source": "/js/signup/elements.js", "destination": "/applications/main-site/signup/elements.js" },
-      { "source": "/js/signup/state.js", "destination": "/applications/main-site/signup/state.js" },
-      { "source": "/js/signup/helpers.js", "destination": "/applications/main-site/signup/helpers.js" },
-      { "source": "/js/signup/confirm.js", "destination": "/applications/main-site/signup/confirm.js" },
-      { "source": "/js/signup/onboarding.js", "destination": "/applications/main-site/signup/onboarding.js" },
-      { "source": "/js/signup/oauth.js", "destination": "/applications/main-site/signup/oauth.js" },
-      { "source": "/js/settings/page.js", "destination": "/applications/main-site/settings/page.js" },
-      { "source": "/js/settings/elements.js", "destination": "/applications/main-site/settings/elements.js" },
-      { "source": "/js/settings/state.js", "destination": "/applications/main-site/settings/state.js" },
-      { "source": "/js/settings/helpers.js", "destination": "/applications/main-site/settings/helpers.js" },
-      { "source": "/js/settings/nav.js", "destination": "/applications/main-site/settings/nav.js" },
-      { "source": "/js/settings/author-page.js", "destination": "/applications/main-site/settings/author-page.js" },
-      { "source": "/js/settings/appearance.js", "destination": "/applications/main-site/settings/appearance.js" },
-      { "source": "/js/settings/ui-colors.js", "destination": "/applications/main-site/settings/ui-colors.js" },
-      { "source": "/js/settings/loadouts.js", "destination": "/applications/main-site/settings/loadouts.js" },
-      { "source": "/js/settings/backup.js", "destination": "/applications/main-site/settings/backup.js" },
-      { "source": "/js/settings/shell.js", "destination": "/applications/main-site/settings/shell.js" },
-      { "source": "/js/settings/saves.js", "destination": "/applications/main-site/settings/saves.js" },
-      { "source": "/js/settings/security.js", "destination": "/applications/main-site/settings/security.js" },
-      { "source": "/css/site-responsive.css", "destination": "/applications/main-site/pages-css/site-responsive.css" },
-      { "source": "/css/workspace-nav.css", "destination": "/applications/main-site/pages-css/workspace-nav.css" },
-      { "source": "/css/homepage/page.css", "destination": "/applications/main-site/homepage/homepage-css/page.css" },
-      { "source": "/css/homepage/navigation.css", "destination": "/applications/main-site/homepage/homepage-css/navigation.css" },
-      { "source": "/css/homepage/hero.css", "destination": "/applications/main-site/homepage/homepage-css/hero.css" },
-      { "source": "/css/homepage/features.css", "destination": "/applications/main-site/homepage/homepage-css/features.css" },
-      { "source": "/css/homepage/breakpoints.css", "destination": "/applications/main-site/homepage/homepage-css/breakpoints.css" },
-      { "source": "/css/homepage/footer.css", "destination": "/applications/main-site/homepage/homepage-css/footer.css" },
-      { "source": "/css/login/page.css", "destination": "/applications/main-site/login/login-css/page.css" },
-      { "source": "/css/login/messages.css", "destination": "/applications/main-site/login/login-css/messages.css" },
-      { "source": "/css/signup/page.css", "destination": "/applications/main-site/signup/signup-css/page.css" },
-      { "source": "/css/signup/onboarding.css", "destination": "/applications/main-site/signup/signup-css/onboarding.css" },
-      { "source": "/css/settings/page.css", "destination": "/applications/main-site/settings/settings-css/page.css" },
-      { "source": "/css/settings/appearance.css", "destination": "/applications/main-site/settings/settings-css/appearance.css" },
-      { "source": "/css/settings/account.css", "destination": "/applications/main-site/settings/settings-css/account.css" },
-      { "source": "/css/settings/profile.css", "destination": "/applications/main-site/settings/settings-css/profile.css" },
-      { "source": "/css/settings/backup.css", "destination": "/applications/main-site/settings/settings-css/backup.css" },
-      { "source": "/css/settings/overview.css", "destination": "/applications/main-site/settings/settings-css/overview.css" },
-      { "source": "/css/settings/security.css", "destination": "/applications/main-site/settings/settings-css/security.css" },
-      { "source": "/css/studio/page.css", "destination": "/applications/studio/studio-css/page.css" },
-      { "source": "/css/editor/page.css", "destination": "/applications/editor/editor-css/page.css" },
-      { "source": "/css/editor/page/shell.css", "destination": "/applications/editor/editor-css/page/shell.css" },
-      { "source": "/css/editor/page/tree.css", "destination": "/applications/editor/editor-css/page/tree.css" },
-      { "source": "/css/editor/page/main.css", "destination": "/applications/editor/editor-css/page/main.css" },
-      { "source": "/css/editor/page/typewriter.css", "destination": "/applications/editor/editor-css/page/typewriter.css" },
-      { "source": "/css/editor/page/find.css", "destination": "/applications/editor/editor-css/page/find.css" },
-      { "source": "/css/editor/page/settings.css", "destination": "/applications/editor/editor-css/page/settings.css" },
-      { "source": "/css/editor/page/preview.css", "destination": "/applications/editor/editor-css/page/preview.css" },
-      { "source": "/css/editor/document.css", "destination": "/applications/editor/editor-css/document.css" },
-      { "source": "/css/editor/editor-fonts.css", "destination": "/applications/editor/editor-css/editor-fonts.css" },
-      { "source": "/css/editor/scene-breaks.css", "destination": "/applications/editor/editor-css/scene-breaks.css" },
-      { "source": "/css/word-wars/lobby.css", "destination": "/applications/word-wars/word-wars-css/lobby.css" },
-      { "source": "/css/word-wars/shared.css", "destination": "/applications/word-wars/word-wars-css/shared.css" },
-      { "source": "/css/word-wars/race.css", "destination": "/applications/word-wars/word-wars-css/race.css" }
+      {
+        "source": "/author",
+        "destination": "/applications/library/pages/author.html"
+      },
+      {
+        "source": "/author.html",
+        "destination": "/applications/library/pages/author.html"
+      },
+      {
+        "source": "/inbox",
+        "destination": "/applications/notifications/pages/inbox.html"
+      },
+      {
+        "source": "/inbox.html",
+        "destination": "/applications/notifications/pages/inbox.html"
+      },
+      {
+        "source": "/updates",
+        "destination": "/applications/updates/pages/updates.html"
+      },
+      {
+        "source": "/write-update",
+        "destination": "/applications/updates/pages/write-update.html"
+      },
+      {
+        "source": "/updates.html",
+        "destination": "/applications/updates/pages/updates.html"
+      },
+      {
+        "source": "/write-update.html",
+        "destination": "/applications/updates/pages/write-update.html"
+      },
+      {
+        "source": "/",
+        "destination": "/applications/main-site/pages/index.html"
+      },
+      {
+        "source": "/index.html",
+        "destination": "/applications/main-site/pages/index.html"
+      },
+      {
+        "source": "/login.html",
+        "destination": "/applications/main-site/pages/login.html"
+      },
+      {
+        "source": "/login",
+        "destination": "/applications/main-site/pages/login.html"
+      },
+      {
+        "source": "/signup.html",
+        "destination": "/applications/main-site/pages/signup.html"
+      },
+      {
+        "source": "/signup",
+        "destination": "/applications/main-site/pages/signup.html"
+      },
+      {
+        "source": "/settings.html",
+        "destination": "/applications/main-site/pages/settings.html"
+      },
+      {
+        "source": "/settings",
+        "destination": "/applications/main-site/pages/settings.html"
+      },
+      {
+        "source": "/overview.html",
+        "destination": "/applications/main-site/pages/overview.html"
+      },
+      {
+        "source": "/overview",
+        "destination": "/applications/main-site/pages/overview.html"
+      },
+      {
+        "source": "/statistics-spec.html",
+        "destination": "/applications/main-site/pages/statistics-spec.html"
+      },
+      {
+        "source": "/studio",
+        "destination": "/applications/studio/pages/studio.html"
+      },
+      {
+        "source": "/studio.html",
+        "destination": "/applications/studio/pages/studio.html"
+      },
+      {
+        "source": "/editor",
+        "destination": "/applications/editor/pages/editor.html"
+      },
+      {
+        "source": "/word-wars-lobby",
+        "destination": "/applications/word-wars/pages/word-wars-lobby.html"
+      },
+      {
+        "source": "/word-wars",
+        "destination": "/applications/word-wars/pages/word-wars.html"
+      },
+      {
+        "source": "/shared-section",
+        "destination": "/applications/excerpts/pages/read.html"
+      },
+      {
+        "source": "/library",
+        "destination": "/applications/library/pages/library.html"
+      },
+      {
+        "source": "/roadmap",
+        "destination": "/applications/main-site/pages/roadmap-handoff.html"
+      },
+      {
+        "source": "/roadmap.html",
+        "destination": "/applications/main-site/pages/roadmap-handoff.html"
+      },
+      {
+        "source": "/book",
+        "destination": "/applications/library/pages/book.html"
+      },
+      {
+        "source": "/read",
+        "destination": "/applications/library/pages/read.html"
+      },
+      {
+        "source": "/publish",
+        "destination": "/applications/studio/pages/publish.html"
+      },
+      {
+        "source": "/js/library/page.js",
+        "destination": "/applications/library/page-ui/page.js"
+      },
+      {
+        "source": "/js/library/reader.js",
+        "destination": "/applications/library/page-ui/reader.js"
+      },
+      {
+        "source": "/js/library/reader-end.js",
+        "destination": "/applications/library/page-ui/reader-end.js"
+      },
+      {
+        "source": "/js/library/reader-tips.js",
+        "destination": "/applications/library/page-ui/reader-tips.js"
+      },
+      {
+        "source": "/js/library/reader-author.js",
+        "destination": "/applications/library/page-ui/reader-author.js"
+      },
+      {
+        "source": "/js/library/comment-editor.js",
+        "destination": "/applications/library/page-ui/comment-editor.js"
+      },
+      {
+        "source": "/js/library/comment-html.js",
+        "destination": "/applications/library/page-ui/comment-html.js"
+      },
+      {
+        "source": "/js/library/reader-theme.js",
+        "destination": "/applications/library/page-ui/reader-theme.js"
+      },
+      {
+        "source": "/js/library/book.js",
+        "destination": "/applications/library/page-ui/book.js"
+      },
+      {
+        "source": "/css/library/page.css",
+        "destination": "/applications/library/library-css/page.css"
+      },
+      {
+        "source": "/css/library/reader.css",
+        "destination": "/applications/library/library-css/reader.css"
+      },
+      {
+        "source": "/css/library/reader-end.css",
+        "destination": "/applications/library/library-css/reader-end.css"
+      },
+      {
+        "source": "/css/library/reader-author.css",
+        "destination": "/applications/library/library-css/reader-author.css"
+      },
+      {
+        "source": "/css/library/reader-comments.css",
+        "destination": "/applications/library/library-css/reader-comments.css"
+      },
+      {
+        "source": "/css/library/book.css",
+        "destination": "/applications/library/library-css/book.css"
+      },
+      {
+        "source": "/js/studio/cover-crop.js",
+        "destination": "/applications/studio/page-ui/cover-crop.js"
+      },
+      {
+        "source": "/js/studio/page-look.js",
+        "destination": "/applications/studio/page-ui/page-look.js"
+      },
+      {
+        "source": "/js/studio/warning-picker.js",
+        "destination": "/applications/studio/page-ui/warning-picker.js"
+      },
+      {
+        "source": "/js/studio/payment-setup.js",
+        "destination": "/applications/studio/page-ui/payment-setup.js"
+      },
+      {
+        "source": "/js/studio/connected-payments.js",
+        "destination": "/applications/studio/page-ui/connected-payments.js"
+      },
+      {
+        "source": "/js/library/paid-reader.js",
+        "destination": "/applications/library/page-ui/paid-reader.js"
+      },
+      {
+        "source": "/css/studio/paid-access.css",
+        "destination": "/applications/studio/studio-css/paid-access.css"
+      },
+      {
+        "source": "/css/library/paid-access.css",
+        "destination": "/applications/library/library-css/paid-access.css"
+      },
+      {
+        "source": "/js/studio/publish.js",
+        "destination": "/applications/studio/page-ui/publish.js"
+      },
+      {
+        "source": "/js/studio/publish-access.js",
+        "destination": "/applications/studio/page-ui/publish-access.js"
+      },
+      {
+        "source": "/js/studio/publish-save.js",
+        "destination": "/applications/studio/page-ui/publish-save.js"
+      },
+      {
+        "source": "/css/studio/publish.css",
+        "destination": "/applications/studio/studio-css/publish.css"
+      },
+      {
+        "source": "/editor.html",
+        "destination": "/applications/editor/pages/editor.html"
+      },
+      {
+        "source": "/book-invite.html",
+        "destination": "/applications/editor/pages/book-invite.html"
+      },
+      {
+        "source": "/word-wars-lobby.html",
+        "destination": "/applications/word-wars/pages/word-wars-lobby.html"
+      },
+      {
+        "source": "/word-wars.html",
+        "destination": "/applications/word-wars/pages/word-wars.html"
+      },
+      {
+        "source": "/reset-password.html",
+        "destination": "/applications/main-site/pages/reset-password.html"
+      },
+      {
+        "source": "/privacy-policy.html",
+        "destination": "/applications/main-site/pages/privacy-policy.html"
+      },
+      {
+        "source": "/terms-of-service.html",
+        "destination": "/applications/main-site/pages/terms-of-service.html"
+      },
+      {
+        "source": "/sw.js",
+        "destination": "/applications/main-site/public/sw.js"
+      },
+      {
+        "source": "/manifest.webmanifest",
+        "destination": "/applications/main-site/public/manifest.webmanifest"
+      },
+      {
+        "source": "/robots.txt",
+        "destination": "/applications/main-site/public/robots.txt"
+      },
+      {
+        "source": "/Alysum-3.png",
+        "destination": "/applications/main-site/public/Alysum-3.png"
+      },
+      {
+        "source": "/discord-logo.png",
+        "destination": "/applications/main-site/public/discord-logo.png"
+      },
+      {
+        "source": "/assets/discord-logo.png",
+        "destination": "/applications/main-site/assets/discord-logo.png"
+      },
+      {
+        "source": "/js/pwa-register.js",
+        "destination": "/applications/main-site/page-ui/pwa-register.js"
+      },
+      {
+        "source": "/js/vercel-analytics.js",
+        "destination": "/applications/main-site/page-ui/vercel-analytics.js"
+      },
+      {
+        "source": "/js/seo-meta.js",
+        "destination": "/applications/main-site/page-ui/seo-meta.js"
+      },
+      {
+        "source": "/js/workspace-nav.js",
+        "destination": "/applications/main-site/page-ui/workspace-nav.js"
+      },
+      {
+        "source": "/js/welcome-bar.js",
+        "destination": "/applications/main-site/page-ui/welcome-bar.js"
+      },
+      {
+        "source": "/js/welcome-lines.js",
+        "destination": "/applications/main-site/page-ui/welcome-lines.js"
+      },
+      {
+        "source": "/js/homepage-auth-nav.js",
+        "destination": "/applications/main-site/homepage/homepage-auth-nav.js"
+      },
+      {
+        "source": "/js/homepage.js",
+        "destination": "/applications/main-site/homepage/homepage.js"
+      },
+      {
+        "source": "/js/homepage-library.js",
+        "destination": "/applications/main-site/homepage/homepage-library.js"
+      },
+      {
+        "source": "/js/user-backup.js",
+        "destination": "/applications/main-site/page-ui/user-backup.js"
+      },
+      {
+        "source": "/js/backup-zip.js",
+        "destination": "/applications/main-site/page-ui/backup-zip.js"
+      },
+      {
+        "source": "/js/prompt.js",
+        "destination": "/applications/main-site/page-ui/prompt.js"
+      },
+      {
+        "source": "/js/login.js",
+        "destination": "/applications/main-site/login/login.js"
+      },
+      {
+        "source": "/js/login-ui.js",
+        "destination": "/applications/main-site/login/login-ui.js"
+      },
+      {
+        "source": "/js/login-reset.js",
+        "destination": "/applications/main-site/login/login-reset.js"
+      },
+      {
+        "source": "/js/feature-highlights.js",
+        "destination": "/applications/main-site/page-ui/feature-highlights.js"
+      },
+      {
+        "source": "/js/overview.js",
+        "destination": "/applications/main-site/page-ui/overview.js"
+      },
+      {
+        "source": "/js/statistics-ui/badge.js",
+        "destination": "/applications/main-site/statistics-ui/badge.js"
+      },
+      {
+        "source": "/js/statistics-ui/spec-render.js",
+        "destination": "/applications/main-site/statistics-ui/spec-render.js"
+      },
+      {
+        "source": "/js/statistics-ui/review-highlight.js",
+        "destination": "/applications/main-site/statistics-ui/review-highlight.js"
+      },
+      {
+        "source": "/css/statistics-ui/badge.css",
+        "destination": "/applications/main-site/statistics-ui/badge.css"
+      },
+      {
+        "source": "/css/statistics-ui/review-marks.css",
+        "destination": "/applications/main-site/statistics-ui/review-marks.css"
+      },
+      {
+        "source": "/js/studio/page.js",
+        "destination": "/applications/studio/page-ui/page.js"
+      },
+      {
+        "source": "/js/studio/book-menu.js",
+        "destination": "/applications/studio/page-ui/book-menu.js"
+      },
+      {
+        "source": "/js/studio/shell.js",
+        "destination": "/applications/studio/page-ui/shell.js"
+      },
+      {
+        "source": "/js/editor/page.js",
+        "destination": "/applications/editor/page-ui/page.js"
+      },
+      {
+        "source": "/js/editor/page/helpers.js",
+        "destination": "/applications/editor/page-ui/page/helpers.js"
+      },
+      {
+        "source": "/js/editor/page/folder-view.js",
+        "destination": "/applications/editor/page-ui/page/folder-view.js"
+      },
+      {
+        "source": "/js/editor/page/chrome.js",
+        "destination": "/applications/editor/page-ui/page/chrome.js"
+      },
+      {
+        "source": "/js/editor/page/typewriter.js",
+        "destination": "/applications/editor/page-ui/page/typewriter.js"
+      },
+      {
+        "source": "/js/editor/page/manuscript-nav.js",
+        "destination": "/applications/editor/page-ui/page/manuscript-nav.js"
+      },
+      {
+        "source": "/js/editor/page/preview-session.js",
+        "destination": "/applications/editor/page-ui/page/preview-session.js"
+      },
+      {
+        "source": "/js/editor/page/persist-hooks.js",
+        "destination": "/applications/editor/page-ui/page/persist-hooks.js"
+      },
+      {
+        "source": "/js/editor/shell.js",
+        "destination": "/applications/editor/page-ui/shell.js"
+      },
+      {
+        "source": "/js/editor/tree.js",
+        "destination": "/applications/editor/page-ui/tree.js"
+      },
+      {
+        "source": "/js/editor/sortable.js",
+        "destination": "/applications/editor/page-ui/sortable.js"
+      },
+      {
+        "source": "/js/editor/sortable/state.js",
+        "destination": "/applications/editor/page-ui/sortable/state.js"
+      },
+      {
+        "source": "/js/editor/sortable/babel.js",
+        "destination": "/applications/editor/page-ui/sortable/babel.js"
+      },
+      {
+        "source": "/js/editor/sortable/utils.js",
+        "destination": "/applications/editor/page-ui/sortable/utils.js"
+      },
+      {
+        "source": "/js/editor/sortable/animation.js",
+        "destination": "/applications/editor/page-ui/sortable/animation.js"
+      },
+      {
+        "source": "/js/editor/sortable/plugin-manager.js",
+        "destination": "/applications/editor/page-ui/sortable/plugin-manager.js"
+      },
+      {
+        "source": "/js/editor/sortable/detect.js",
+        "destination": "/applications/editor/page-ui/sortable/detect.js"
+      },
+      {
+        "source": "/js/editor/sortable/constructor.js",
+        "destination": "/applications/editor/page-ui/sortable/constructor.js"
+      },
+      {
+        "source": "/js/editor/sortable/drag-start.js",
+        "destination": "/applications/editor/page-ui/sortable/drag-start.js"
+      },
+      {
+        "source": "/js/editor/sortable/drag-over.js",
+        "destination": "/applications/editor/page-ui/sortable/drag-over.js"
+      },
+      {
+        "source": "/js/editor/sortable/drop.js",
+        "destination": "/applications/editor/page-ui/sortable/drop.js"
+      },
+      {
+        "source": "/js/editor/sortable/move-helpers.js",
+        "destination": "/applications/editor/page-ui/sortable/move-helpers.js"
+      },
+      {
+        "source": "/js/editor/sortable/index.js",
+        "destination": "/applications/editor/page-ui/sortable/index.js"
+      },
+      {
+        "source": "/js/editor/sortable/plugins/auto-scroll.js",
+        "destination": "/applications/editor/page-ui/sortable/plugins/auto-scroll.js"
+      },
+      {
+        "source": "/js/editor/sortable/plugins/on-spill.js",
+        "destination": "/applications/editor/page-ui/sortable/plugins/on-spill.js"
+      },
+      {
+        "source": "/js/editor/sortable/plugins/swap.js",
+        "destination": "/applications/editor/page-ui/sortable/plugins/swap.js"
+      },
+      {
+        "source": "/js/editor/sortable/plugins/multi-drag.js",
+        "destination": "/applications/editor/page-ui/sortable/plugins/multi-drag.js"
+      },
+      {
+        "source": "/js/editor/toolbar.js",
+        "destination": "/applications/editor/page-ui/toolbar.js"
+      },
+      {
+        "source": "/js/editor/toolbar-overflow.js",
+        "destination": "/applications/editor/page-ui/toolbar-overflow.js"
+      },
+      {
+        "source": "/js/editor/document.js",
+        "destination": "/applications/editor/page-ui/document.js"
+      },
+      {
+        "source": "/js/word-wars/lobby.js",
+        "destination": "/applications/word-wars/page-ui/lobby.js"
+      },
+      {
+        "source": "/js/word-wars/race.js",
+        "destination": "/applications/word-wars/page-ui/race.js"
+      },
+      {
+        "source": "/js/word-wars/track.js",
+        "destination": "/applications/word-wars/page-ui/track.js"
+      },
+      {
+        "source": "/js/word-wars/writer.js",
+        "destination": "/applications/word-wars/page-ui/writer.js"
+      },
+      {
+        "source": "/js/word-wars/waiting.js",
+        "destination": "/applications/word-wars/page-ui/waiting.js"
+      },
+      {
+        "source": "/js/word-wars/results.js",
+        "destination": "/applications/word-wars/page-ui/results.js"
+      },
+      {
+        "source": "/js/word-wars/prompt-picker.js",
+        "destination": "/applications/word-wars/page-ui/prompt-picker.js"
+      },
+      {
+        "source": "/js/editor/autosave.js",
+        "destination": "/applications/editor/page-ui/autosave.js"
+      },
+      {
+        "source": "/js/editor/prompt.js",
+        "destination": "/applications/editor/page-ui/prompt.js"
+      },
+      {
+        "source": "/js/editor/font-catalog.js",
+        "destination": "/applications/editor/page-ui/font-catalog.js"
+      },
+      {
+        "source": "/js/editor/editor-google-fonts.js",
+        "destination": "/applications/editor/page-ui/editor-google-fonts.js"
+      },
+      {
+        "source": "/js/editor/scene-breaks.js",
+        "destination": "/applications/editor/page-ui/scene-breaks.js"
+      },
+      {
+        "source": "/js/editor/find.js",
+        "destination": "/applications/editor/page-ui/find.js"
+      },
+      {
+        "source": "/js/editor/settings.js",
+        "destination": "/applications/editor/page-ui/settings.js"
+      },
+      {
+        "source": "/js/editor/export-zip.js",
+        "destination": "/applications/editor/page-ui/export-zip.js"
+      },
+      {
+        "source": "/js/editor/library-preview.js",
+        "destination": "/applications/editor/page-ui/library-preview.js"
+      },
+      {
+        "source": "/js/editor/preview-book.js",
+        "destination": "/applications/editor/page-ui/preview-book.js"
+      },
+      {
+        "source": "/js/editor/page-look-rail.js",
+        "destination": "/applications/editor/page-ui/page-look-rail.js"
+      },
+      {
+        "source": "/js/editor/cover.js",
+        "destination": "/applications/editor/page-ui/cover.js"
+      },
+      {
+        "source": "/js/editor/book-invite.js",
+        "destination": "/applications/editor/page-ui/book-invite.js"
+      },
+      {
+        "source": "/js/signup/signup.js",
+        "destination": "/applications/main-site/signup/signup.js"
+      },
+      {
+        "source": "/js/signup/elements.js",
+        "destination": "/applications/main-site/signup/elements.js"
+      },
+      {
+        "source": "/js/signup/state.js",
+        "destination": "/applications/main-site/signup/state.js"
+      },
+      {
+        "source": "/js/signup/helpers.js",
+        "destination": "/applications/main-site/signup/helpers.js"
+      },
+      {
+        "source": "/js/signup/confirm.js",
+        "destination": "/applications/main-site/signup/confirm.js"
+      },
+      {
+        "source": "/js/signup/onboarding.js",
+        "destination": "/applications/main-site/signup/onboarding.js"
+      },
+      {
+        "source": "/js/signup/oauth.js",
+        "destination": "/applications/main-site/signup/oauth.js"
+      },
+      {
+        "source": "/js/settings/page.js",
+        "destination": "/applications/main-site/settings/page.js"
+      },
+      {
+        "source": "/js/settings/elements.js",
+        "destination": "/applications/main-site/settings/elements.js"
+      },
+      {
+        "source": "/js/settings/state.js",
+        "destination": "/applications/main-site/settings/state.js"
+      },
+      {
+        "source": "/js/settings/helpers.js",
+        "destination": "/applications/main-site/settings/helpers.js"
+      },
+      {
+        "source": "/js/settings/nav.js",
+        "destination": "/applications/main-site/settings/nav.js"
+      },
+      {
+        "source": "/js/settings/author-page.js",
+        "destination": "/applications/main-site/settings/author-page.js"
+      },
+      {
+        "source": "/js/settings/appearance.js",
+        "destination": "/applications/main-site/settings/appearance.js"
+      },
+      {
+        "source": "/js/settings/ui-colors.js",
+        "destination": "/applications/main-site/settings/ui-colors.js"
+      },
+      {
+        "source": "/js/settings/loadouts.js",
+        "destination": "/applications/main-site/settings/loadouts.js"
+      },
+      {
+        "source": "/js/settings/backup.js",
+        "destination": "/applications/main-site/settings/backup.js"
+      },
+      {
+        "source": "/js/settings/shell.js",
+        "destination": "/applications/main-site/settings/shell.js"
+      },
+      {
+        "source": "/js/settings/saves.js",
+        "destination": "/applications/main-site/settings/saves.js"
+      },
+      {
+        "source": "/js/settings/security.js",
+        "destination": "/applications/main-site/settings/security.js"
+      },
+      {
+        "source": "/css/site-responsive.css",
+        "destination": "/applications/main-site/pages-css/site-responsive.css"
+      },
+      {
+        "source": "/css/workspace-nav.css",
+        "destination": "/applications/main-site/pages-css/workspace-nav.css"
+      },
+      {
+        "source": "/css/homepage/page.css",
+        "destination": "/applications/main-site/homepage/homepage-css/page.css"
+      },
+      {
+        "source": "/css/homepage/navigation.css",
+        "destination": "/applications/main-site/homepage/homepage-css/navigation.css"
+      },
+      {
+        "source": "/css/homepage/hero.css",
+        "destination": "/applications/main-site/homepage/homepage-css/hero.css"
+      },
+      {
+        "source": "/css/homepage/features.css",
+        "destination": "/applications/main-site/homepage/homepage-css/features.css"
+      },
+      {
+        "source": "/css/homepage/breakpoints.css",
+        "destination": "/applications/main-site/homepage/homepage-css/breakpoints.css"
+      },
+      {
+        "source": "/css/homepage/footer.css",
+        "destination": "/applications/main-site/homepage/homepage-css/footer.css"
+      },
+      {
+        "source": "/css/login/page.css",
+        "destination": "/applications/main-site/login/login-css/page.css"
+      },
+      {
+        "source": "/css/login/messages.css",
+        "destination": "/applications/main-site/login/login-css/messages.css"
+      },
+      {
+        "source": "/css/signup/page.css",
+        "destination": "/applications/main-site/signup/signup-css/page.css"
+      },
+      {
+        "source": "/css/signup/onboarding.css",
+        "destination": "/applications/main-site/signup/signup-css/onboarding.css"
+      },
+      {
+        "source": "/css/settings/page.css",
+        "destination": "/applications/main-site/settings/settings-css/page.css"
+      },
+      {
+        "source": "/css/settings/appearance.css",
+        "destination": "/applications/main-site/settings/settings-css/appearance.css"
+      },
+      {
+        "source": "/css/settings/account.css",
+        "destination": "/applications/main-site/settings/settings-css/account.css"
+      },
+      {
+        "source": "/css/settings/profile.css",
+        "destination": "/applications/main-site/settings/settings-css/profile.css"
+      },
+      {
+        "source": "/css/settings/backup.css",
+        "destination": "/applications/main-site/settings/settings-css/backup.css"
+      },
+      {
+        "source": "/css/settings/overview.css",
+        "destination": "/applications/main-site/settings/settings-css/overview.css"
+      },
+      {
+        "source": "/css/settings/security.css",
+        "destination": "/applications/main-site/settings/settings-css/security.css"
+      },
+      {
+        "source": "/css/studio/page.css",
+        "destination": "/applications/studio/studio-css/page.css"
+      },
+      {
+        "source": "/css/editor/page.css",
+        "destination": "/applications/editor/editor-css/page.css"
+      },
+      {
+        "source": "/css/editor/page/shell.css",
+        "destination": "/applications/editor/editor-css/page/shell.css"
+      },
+      {
+        "source": "/css/editor/page/tree.css",
+        "destination": "/applications/editor/editor-css/page/tree.css"
+      },
+      {
+        "source": "/css/editor/page/main.css",
+        "destination": "/applications/editor/editor-css/page/main.css"
+      },
+      {
+        "source": "/css/editor/page/typewriter.css",
+        "destination": "/applications/editor/editor-css/page/typewriter.css"
+      },
+      {
+        "source": "/css/editor/page/find.css",
+        "destination": "/applications/editor/editor-css/page/find.css"
+      },
+      {
+        "source": "/css/editor/page/settings.css",
+        "destination": "/applications/editor/editor-css/page/settings.css"
+      },
+      {
+        "source": "/css/editor/page/preview.css",
+        "destination": "/applications/editor/editor-css/page/preview.css"
+      },
+      {
+        "source": "/css/editor/document.css",
+        "destination": "/applications/editor/editor-css/document.css"
+      },
+      {
+        "source": "/css/editor/editor-fonts.css",
+        "destination": "/applications/editor/editor-css/editor-fonts.css"
+      },
+      {
+        "source": "/css/editor/scene-breaks.css",
+        "destination": "/applications/editor/editor-css/scene-breaks.css"
+      },
+      {
+        "source": "/css/word-wars/lobby.css",
+        "destination": "/applications/word-wars/word-wars-css/lobby.css"
+      },
+      {
+        "source": "/css/word-wars/shared.css",
+        "destination": "/applications/word-wars/word-wars-css/shared.css"
+      },
+      {
+        "source": "/css/word-wars/race.css",
+        "destination": "/applications/word-wars/word-wars-css/race.css"
+      }
     ]
   }
 }

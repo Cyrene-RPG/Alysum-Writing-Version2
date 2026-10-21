@@ -1,3 +1,5 @@
+import { authorProfileUrl } from "/core/library/author-links.js";
+import { authorNameHtml } from "/site-appearance/js-runtime/author-link.js";
 import { openReadingState } from "/core/library/reading-state.js";
 import { normalizePurchaseUrl } from "@alysum/publishing/publish-meta.js";
 import { supabase } from "@alysum/authentication/client.js";
@@ -185,7 +187,7 @@ async function boot() {
     applyVisitSiteAccent(document.getElementById("bookCard"), work);
     applyVisitWelcomeChrome(document.querySelector(".wd-welcome-bar"), work);
     applyVisitTitleColor(document.getElementById("welcomeTitle"), work);
-    document.getElementById("bookAuthor").textContent = work.author || "Unknown";
+    document.getElementById("bookAuthor").innerHTML = authorNameHtml({url:authorProfileUrl({userId:work.ownerUserId,anonymous:work.isAnonymous}),label:work.author || "Unknown"});
     document.getElementById("bookMeta").textContent =
         `${chapters.length} chapter${chapters.length === 1 ? "" : "s"} published`;
 
