@@ -1,3 +1,6 @@
+import { createAudiobooksApi } from "/core/audiobooks/client.js";
+import { mountBookFormatChoice } from "./book-format-choice.js";
+import { mountAudiobookShelf } from "./audiobook-shelf.js";
 import { groupRevisionBooks } from "/core/writing-engine/draft-revisions.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
@@ -204,7 +207,7 @@ function bookCoverHtml(book) {
 
 function renderBooks(mount, books) {
     const newCard = `<button type="button" class="studio-new-card" id="newBookCard"><span class="studio-plus" aria-hidden="true">+</span><span>New book</span></button>`;
-    const importCard = `<button type="button" class="studio-new-card studio-import-card" id="importBookCard"><span class="studio-plus" aria-hidden="true">↥</span><span>Import manuscript</span></button>`;
+    const importCard = `<button type="button" class="studio-new-card studio-import-card" id="importBookCard"><span class="studio-plus" aria-hidden="true">↥</span><span>Upload book</span></button>`;
     mount.innerHTML = newCard + importCard + groupRevisionBooks(sortBooksByLastWorked(books))
         .map(({ book, drafts }, index) => {
             const words = bookWordCount(book);
@@ -446,6 +449,15 @@ async function boot() {
         returnFocus: () => document.getElementById("importBookCard"),
     });
     importer.bindDrop(document.body);
+    const audioApi = createAudiobooksApi(session.mode === "cloud" ? supabase : null, session.mode === "cloud" ? session.user.id : "");
+    const formatChoice = mountBookFormatChoice({
+        session, getBooks: () => books,
+        createWritten: () => api.insertBook(createEmptyBook()),
+        importWritten: () => importer.open(),
+        createAudio: details => audioApi.save(null, details),
+    });
+    const audioShelf = mountAudiobookShelf({ api: audioApi, session, before: stats, onCreate: button => formatChoice.open("new", button, true) });
+    window.addEventListener("focus", () => void audioShelf.refresh());
 
     list?.addEventListener("click", async (event) => {
         const gear = event.target.closest("[data-book-gear]");
@@ -456,20 +468,12 @@ async function boot() {
             return;
         }
         if (event.target.closest("#importBookCard")) {
-            importer.open();
+            formatChoice.open("upload", document.getElementById("importBookCard"));
             return;
         }
         const card = event.target.closest("#newBookCard");
         if (!card || card.disabled) return;
-        card.disabled = true;
-        if (status) status.textContent = "Creating…";
-        try {
-            const created = await api.insertBook(createEmptyBook());
-            window.location.href = `/editor?book=${encodeURIComponent(created.id)}`;
-        } catch {
-            if (status) status.textContent = "Could not create a book.";
-            card.disabled = false;
-        }
+        formatChoice.open("new", card);
     });
 }
 
@@ -481,3 +485,4 @@ boot().catch((err) => {
         loading.textContent = "Couldn't load Studio. Try reloading.";
     }
 });
+
