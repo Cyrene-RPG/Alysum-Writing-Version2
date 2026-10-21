@@ -22,9 +22,9 @@ CREATE POLICY author_follows_read_own_relationships ON public.author_follows
 REVOKE SELECT ON public.author_follows FROM PUBLIC,anon;
 GRANT SELECT ON public.author_follows TO authenticated;
 CREATE OR REPLACE FUNCTION public.get_author_follower_count(p_author_id uuid)
-RETURNS bigint LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $
+RETURNS bigint LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
     SELECT count(*) FROM public.author_follows WHERE author_id=p_author_id;
-$;
+$$;
 REVOKE ALL ON FUNCTION public.get_author_follower_count(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_author_follower_count(uuid) TO anon,authenticated;
 

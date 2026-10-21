@@ -79,7 +79,7 @@ REVOKE ALL ON FUNCTION public.list_my_connections(text,text,integer) FROM PUBLIC
 GRANT EXECUTE ON FUNCTION public.get_my_connections_summary() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_my_connections(text,text,integer) TO authenticated;
 CREATE OR REPLACE FUNCTION public.remove_my_connection(p_kind text,p_target_id text,p_expected_user_id uuid)
-RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
     IF auth.uid() IS NULL OR auth.uid() IS DISTINCT FROM p_expected_user_id THEN
         RAISE EXCEPTION 'Your account changed. Reload and try again.';
@@ -91,7 +91,7 @@ BEGIN
     END IF;
     RETURN true;
 END;
-$;
+$$;
 REVOKE ALL ON FUNCTION public.remove_my_connection(text,text,uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.remove_my_connection(text,text,uuid) TO authenticated;
 COMMIT;
