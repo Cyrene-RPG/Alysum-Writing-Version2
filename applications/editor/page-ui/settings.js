@@ -7,18 +7,14 @@ import {
 } from "@alysum/writing-engine/version-api.js";
 import { downloadBookZip } from "./export-zip.js";
 import { openManuscriptDialog } from "./manuscript-dialog.js";
+import { bookEditorsError } from "@alysum/collaboration/book-editors-client.js";
 
 let editorsApiPromise = null;
 function editorsModule() {
     if (!editorsApiPromise) {
-        editorsApiPromise = import("@alysum/collaboration/book-editors.js").catch(() => null);
+        editorsApiPromise = import("@alysum/collaboration/book-editors.js").catch(error => { editorsApiPromise = null; throw error; });
     }
     return editorsApiPromise;
-}
-
-function schemaMissing(collab, error) {
-    if (!collab) return true;
-    return collab.isBookEditorsSchemaMissing(error);
 }
 
 const PILLS = [
@@ -51,16 +47,20 @@ export function mountBookSettings({
     const userId = session?.user?.id || "";
     let filter = "all";
     let versions = [];
-    let collaborators = { owner: null, editors: [], isOwner: true };
+    let collaborators = { owner: null, editors: [], isOwner: false };
+    let collaboratorsReady = false;
+    let collaboratorsRequest = 0;
+    const ownsBook = () => isLocal || String(getBook()?.user_id || "") === String(userId);
 
     mount.innerHTML = `
         <article class="s-block" id="collabBlock">
             <div class="s-block-head"><h2>Collaborators</h2></div>
             <p class="s-sub">Editors can write in this book with you. There is no viewer-only invite.</p>
             <div id="collabList"></div>
+            <p id="collabStatus" class="s-sub" role="status"></p><button type="button" class="v-save-btn" id="collabRetry" hidden>Retry collaborators</button>
             <button type="button" class="invite-btn" id="inviteBtn">+ Invite editor</button>
         </article>
-        <article class="s-block">
+        <article class="s-block" id="versionBlock">
             <div class="s-block-head"><h2>Version history</h2></div>
             <p class="s-sub">Save a snapshot, then restore if you need an earlier draft.</p>
             <button type="button" class="v-save-btn" id="saveVersionBtn">Save version…</button>
@@ -87,6 +87,8 @@ export function mountBookSettings({
     `;
 
     const collabList = mount.querySelector("#collabList");
+    const collabStatus = mount.querySelector("#collabStatus");
+    const collabRetry = mount.querySelector("#collabRetry");
     const inviteBtn = mount.querySelector("#inviteBtn");
     const versionPills = mount.querySelector("#versionPills");
     const versionList = mount.querySelector("#versionList");
@@ -124,15 +126,15 @@ export function mountBookSettings({
 
     function paintCollaborators() {
         const owner = collaborators.owner || {
-            display_name: session?.user?.email || "You",
+            displayName: ownsBook() ? "You" : "Book owner",
             role: "owner",
-            is_you: true,
+            isYou: ownsBook(),
         };
         const rows = [owner, ...(collaborators.editors || [])];
         collabList.innerHTML = rows.map((row) => {
-            const name = row.display_name || row.email || "Editor";
-            const you = row.is_you ? " (you)" : "";
-            const canRevoke = collaborators.isOwner && row.role === "editor" && row.user_id;
+            const name = row.displayName || "Editor";
+            const you = row.isYou ? " (you)" : "";
+            const canRevoke = collaborators.isOwner && row.role === "editor" && row.userId;
             return `
                 <div class="collab-row">
                     <div class="collab-who">
@@ -143,11 +145,12 @@ export function mountBookSettings({
                         </div>
                     </div>
                     ${canRevoke
-                        ? `<button type="button" class="revoke-btn" data-revoke="${escapeHtml(row.user_id)}">Remove</button>`
+                        ? `<button type="button" class="revoke-btn" data-revoke="${escapeHtml(row.userId)}">Remove</button>`
                         : `<span class="role-tag">${row.role === "owner" ? "Owner" : "Editor"}</span>`}
                 </div>`;
         }).join("");
-        inviteBtn.hidden = isLocal || !collaborators.isOwner;
+        inviteBtn.hidden = !ownsBook();
+        inviteBtn.disabled = !collaboratorsReady || !collaborators.isOwner;
         if (isLocal) {
             inviteBtn.hidden = false;
             inviteBtn.textContent = "Invites need a signed-in account";
@@ -156,41 +159,41 @@ export function mountBookSettings({
     }
 
     async function refreshCollaborators() {
-        if (isLocal) {
-            collaborators = {
-                owner: { display_name: "You", role: "owner", is_you: true },
-                editors: [],
-                isOwner: true,
-            };
-            paintCollaborators();
-            return;
+        const request=++collaboratorsRequest;
+        collaboratorsReady=false;inviteBtn.disabled=true;collabRetry.hidden=true;
+        if(isLocal){
+            collaborators={owner:{displayName:"You",role:"owner",isYou:true},editors:[],isOwner:true};
+            paintCollaborators();collabStatus.textContent="";return;
         }
-        const collab = await editorsModule();
-        try {
-            if (!collab) throw new Error("book_editors");
-            collaborators = await collab.listBookCollaborators(bookId);
-        } catch (err) {
-            collaborators = {
-                owner: { display_name: session?.user?.email || "You", role: "owner", is_you: true },
-                editors: [],
-                isOwner: true,
-            };
-            if (!schemaMissing(collab, err)) {
-                inviteBtn.disabled = false;
-            }
+        collabStatus.textContent="Loading collaborator permissions…";
+        try{
+            const collab=await editorsModule();
+            const next=await collab.listBookCollaborators(bookId);
+            if(request!==collaboratorsRequest)return;
+            collaborators=next;collaboratorsReady=true;paintCollaborators();collabStatus.textContent="";
+        }catch(error){
+            if(request!==collaboratorsRequest)return;
+            collaborators={owner:null,editors:[],isOwner:false};paintCollaborators();
+            collabRetry.hidden=false;
+            collabStatus.textContent=bookEditorsError(error).message;
         }
-        paintCollaborators();
     }
 
     async function refreshVersions() {
+        if(!ownsBook()){
+            versionCount.textContent="Version history is managed by the book owner.";
+            mount.querySelector("#saveVersionBtn").hidden=true;
+            versionPills.hidden=true;versionList.replaceChildren();return;
+        }
         try {
             versions = await listBookVersions({
                 supabase,
                 isLocalStudio: isLocal,
                 bookId,
             });
-        } catch {
-            versions = [];
+        } catch (error) {
+            versionCount.textContent=String(error?.message || "Could not load version history.");
+            return;
         }
         paintPills();
         paintVersions();
@@ -214,9 +217,12 @@ export function mountBookSettings({
         if (overlay) overlay.hidden = true;
     }
 
+    collabRetry.addEventListener("click",()=>void refreshCollaborators());
+
     versionPills.addEventListener("click", (event) => {
         const btn = event.target.closest("[data-filter]");
-        if (!btn) return;
+        if (!btn || btn.disabled || !collaboratorsReady || !collaborators.isOwner) return;
+        btn.disabled = true;
         filter = btn.dataset.filter;
         paintPills();
         paintVersions();
@@ -294,12 +300,15 @@ export function mountBookSettings({
             await collab.revokeBookEditor(bookId, btn.dataset.revoke);
             await refreshCollaborators();
         } catch (err) {
-            window.alert(String(err?.message || err || "Couldn't remove editor."));
+            window.alert(bookEditorsError(err).message);
+        } finally {
+            btn.disabled = false;
         }
     });
 
     inviteBtn?.addEventListener("click", () => {
         if (inviteBtn.disabled) return;
+        if(!collaboratorsReady || !collaborators.isOwner)return;
         openInvite();
     });
     inviteClose?.addEventListener("click", closeInvite);
@@ -312,6 +321,7 @@ export function mountBookSettings({
         try {
             const collab = await editorsModule();
             if (!collab) throw new Error("book_editors");
+            if(!collaboratorsReady || !collaborators.isOwner)throw new Error("Reload collaborator permissions before inviting.");
             const created = await collab.createBookEditorInvite(bookId, inviteEmail?.value || "");
             lastInviteUrl = created.url;
             if (inviteLinkText) inviteLinkText.textContent = lastInviteUrl;
@@ -320,10 +330,7 @@ export function mountBookSettings({
             inviteCopy?.classList.remove("hidden");
         } catch (err) {
             inviteError.hidden = false;
-            const collab = await editorsModule();
-            inviteError.textContent = schemaMissing(collab, err)
-                ? "Run supabase-book-editors.sql on the live database first."
-                : String(err?.message || err || "Couldn't create invite.");
+            inviteError.textContent = bookEditorsError(err).message;
         } finally {
             inviteCreate.disabled = false;
         }
@@ -335,7 +342,8 @@ export function mountBookSettings({
             inviteCopy.textContent = "Copied";
             setTimeout(() => { inviteCopy.textContent = "Copy link"; }, 1400);
         } catch {
-            /* ignore */
+            inviteError.hidden=false;
+            inviteError.textContent="Could not copy automatically. Select and copy the invite link above.";
         }
     });
 
@@ -359,3 +367,4 @@ function escapeHtml(text) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
 }
+

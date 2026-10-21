@@ -196,8 +196,8 @@
     <div class="confirm-overlay" id="inviteOverlay" hidden>
         <div class="confirm-card" role="dialog" aria-modal="true" aria-labelledby="inviteTitle">
             <h2 class="confirm-title" id="inviteTitle">Invite editor</h2>
-            <p class="confirm-text">Enter an email. You’ll get a link they can open to join this book as an editor.</p>
-            <input type="email" id="inviteEmail" class="writer-invite-input" placeholder="editor@email.com" autocomplete="email" />
+            <p class="confirm-text">Create a link to share with an editor. Links expire after seven days and can be used by one person. Add their email to restrict the link to that verified account; leave it blank to let its first recipient join.</p>
+            <input type="email" id="inviteEmail" class="writer-invite-input" placeholder="Email restriction (optional)" aria-label="Editor email restriction (optional)" autocomplete="email" />
             <p class="confirm-text" id="inviteLinkRow" hidden><span id="inviteLinkText"></span></p>
             <p class="confirm-text writer-invite-error" id="inviteError" hidden></p>
             <div class="confirm-actions">

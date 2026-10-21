@@ -159,6 +159,10 @@ async function boot() {
             setSaveStatus("");
             return;
         }
+        if(saved?._synced===false && isProbablyOnline()){
+            setSaveStatus(saved._syncError || "Cloud save failed — your text is kept on this device. Check your connection and book access.");
+            return;
+        }
         if (cloudLooksOffline(saved)) {
             setSaveStatus("Offline — saved on this device");
             return;
@@ -311,7 +315,7 @@ async function boot() {
                     return;
                 }
                 setSaveStatus("");
-                void maybeCreateAutoVersion({
+                if(session.mode!=="cloud" || String(book.user_id)===String(session.user?.id))void maybeCreateAutoVersion({
                     supabase,
                     isLocalStudio: session.mode !== "cloud",
                     userId: session.user?.id || "",
@@ -634,3 +638,4 @@ boot().catch((err) => {
         loading.innerHTML = `Couldn't load writer.${detail ? ` <span style="opacity:.6">(${detail})</span>` : ""} <a href="/studio">Back to Studio</a>`;
     }
 });
+

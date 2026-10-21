@@ -8,17 +8,24 @@ const btn = document.getElementById("inviteAccept");
 
 function tokenFromUrl() {
     try {
-        return new URLSearchParams(window.location.search).get("token") || "";
+        const hash=window.location.hash.slice(1);
+        return (hash.startsWith("token=") ? new URLSearchParams(hash).get("token") : hash) || new URLSearchParams(window.location.search).get("token") || "";
     } catch {
         return "";
     }
 }
 
 async function boot() {
-    const session = await requireStudioSession(supabase, window.location.pathname + window.location.search);
+    const session = await requireStudioSession(supabase, window.location.pathname + window.location.search + window.location.hash);
     if (!session) return;
+    if (session.mode !== "cloud") {
+        heading.textContent = "Sign in to join";
+        copy.textContent = "Editor invitations need a signed-in online account. Open this link on the website and sign in.";
+        btn.hidden = true;
+        return;
+    }
     const token = tokenFromUrl();
-    if (!token) {
+    if (!/^[a-f0-9]{48,64}$/.test(token)) {
         heading.textContent = "Invite missing";
         copy.textContent = "This link is incomplete.";
         btn.hidden = true;
@@ -29,11 +36,7 @@ async function boot() {
         copy.textContent = "Joining…";
         try {
             const { bookId } = await acceptBookEditorInvite(token);
-            if (bookId) {
-                window.location.replace(`/editor?book=${encodeURIComponent(bookId)}`);
-                return;
-            }
-            copy.textContent = "Joined, but the book id was missing.";
+            window.location.replace(`/editor?book=${encodeURIComponent(bookId)}`);
         } catch (err) {
             btn.disabled = false;
             copy.textContent = String(err?.message || err || "Couldn't accept this invite.");
@@ -41,4 +44,9 @@ async function boot() {
     });
 }
 
-boot();
+boot().catch(() => {
+    heading.textContent = "Could not open invitation";
+    copy.textContent = "Check your connection and reload this page to try again.";
+    btn.hidden = true;
+});
+

@@ -114,7 +114,7 @@ function stashPatch(previous, id, userId, patch) {
         ...(previous || { id, user_id: userId }),
         ...patch,
         id,
-        user_id: userId,
+        user_id: previous?.user_id || userId,
         updated: patch.updated != null && Number.isFinite(Number(patch.updated))
             ? Number(patch.updated)
             : Date.now(),
@@ -261,6 +261,7 @@ export function createBooksApi(session, supabase) {
                 cloudBook = null;
             }
         }
+        if(row.user_id && String(row.user_id)!==String(userId) && !cloudBook)throw new Error("Editor access could not be verified. Your pending text is kept on this device.");
         const picked = chooseBook(row, cloudBook);
         if (picked.action === "keep-cloud") {
             if (picked.book) upsertCache(userId, withoutPending(picked.book));
@@ -280,7 +281,10 @@ export function createBooksApi(session, supabase) {
             return true;
         }
         if (picked.action === "upload") {
-            const pushed = await cloud.updateBook(supabase, userId, row.id, cloudWritePayload(picked.book));
+            const payload = String(cloudBook?.user_id) !== String(userId)
+                ? { title: picked.book.title, sections: picked.book.sections, words: picked.book.words }
+                : cloudWritePayload(picked.book);
+            const pushed = await cloud.updateBook(supabase, userId, row.id, payload);
             const keep = mergeLoadedBook(picked.book, pushed).book;
             upsertCache(userId, withoutPending(keep));
             return true;
@@ -322,17 +326,17 @@ export function createBooksApi(session, supabase) {
             return readCache(userId).some((row) => cacheIsPending(row) || isLocalOnlyId(row.id));
         },
         peekBooks() {
-            return sortByUpdated(readCache(userId)).map(normalizeBook).filter(Boolean);
+            return sortByUpdated(readCache(userId).filter(row=>!row.user_id || String(row.user_id)===String(userId))).map(normalizeBook).filter(Boolean);
         },
         peekBook(id) {
             const cached = readCache(userId).find((row) => row.id === id) || null;
-            return cached ? normalizeBook(cached) : null;
+            return cached && (!cached.user_id || String(cached.user_id)===String(userId)) ? normalizeBook(cached) : null;
         },
         async listBooks() {
             const cached = readCache(userId);
             if (!isProbablyOnline()) {
                 lastReadFromCache = true;
-                return sortByUpdated(cached).map(normalizeBook).filter(Boolean);
+                return sortByUpdated(cached.filter(row=>!row.user_id || String(row.user_id)===String(userId))).map(normalizeBook).filter(Boolean);
             }
             try {
                 const books = await cloudList();
@@ -345,19 +349,20 @@ export function createBooksApi(session, supabase) {
                 });
                 const serverIds = new Set(books.map((book) => book.id));
                 const extras = cached.filter((row) => !serverIds.has(row.id) && (cacheIsPending(row) || isLocalOnlyId(row.id)));
-                const combined = sortByUpdated([...merged.filter(Boolean), ...extras]);
-                writeCache(userId, combined.map(stripRuntime));
+                const hiddenPending=extras.filter(row=>row.user_id && String(row.user_id)!==String(userId));
+                const combined = sortByUpdated([...merged.filter(Boolean), ...extras.filter(row=>!hiddenPending.includes(row))]);
+                writeCache(userId, [...combined,...hiddenPending].map(stripRuntime));
                 return combined.map(normalizeBook).filter(Boolean);
             } catch {
                 lastReadFromCache = true;
-                return sortByUpdated(readCache(userId)).map(normalizeBook).filter(Boolean);
+                return sortByUpdated(readCache(userId).filter(row=>!row.user_id || String(row.user_id)===String(userId))).map(normalizeBook).filter(Boolean);
             }
         },
         async getBook(id) {
             const cached = readCache(userId).find((row) => row.id === id) || null;
             if (!isProbablyOnline()) {
                 lastReadFromCache = true;
-                return cached ? normalizeBook(cached) : null;
+                return cached && (!cached.user_id || String(cached.user_id)===String(userId)) ? normalizeBook(cached) : null;
             }
             try {
                 const book = await cloudGet(id);
@@ -371,6 +376,10 @@ export function createBooksApi(session, supabase) {
                     removeCache(userId, id);
                     return null;
                 }
+                if(!book && cached?.user_id && String(cached.user_id)!==String(userId)){
+                    if(!cacheIsPending(cached))removeCache(userId,id);
+                    return null;
+                }
                 const picked = applyChoice(cached, book);
                 if (!picked.book) {
                     if (cached && !cacheIsPending(cached)) removeCache(userId, id);
@@ -380,7 +389,7 @@ export function createBooksApi(session, supabase) {
                 return normalizeBook(picked.book);
             } catch {
                 lastReadFromCache = true;
-                return cached ? normalizeBook(cached) : null;
+                return cached && (!cached.user_id || String(cached.user_id)===String(userId)) ? normalizeBook(cached) : null;
             }
         },
         async insertBook(payload, { strict = false } = {}) {
@@ -411,12 +420,14 @@ export function createBooksApi(session, supabase) {
             upsertCache(userId, optimistic);
             try {
                 requireOnline();
-                const book = await cloud.updateBook(supabase, userId, id, patch);
+                const shared = previous?.user_id && String(previous.user_id)!==String(userId);
+                const allowedPatch = shared ? Object.fromEntries(Object.entries(patch).filter(([key])=>["title","sections","words"].includes(key))) : patch;
+                const book = await cloud.updateBook(supabase, userId, id, allowedPatch);
                 const keep = withoutPending(mergeLoadedBook(optimistic, book).book);
                 upsertCache(userId, keep);
                 return { ...normalizeBook(keep), _synced: true };
-            } catch {
-                return { ...normalizeBook(optimistic), _synced: false, _pending: true };
+            } catch (error) {
+                return { ...normalizeBook(optimistic), _synced: false, _pending: true, _syncError:error?.message || "Could not save to the cloud." };
             }
         },
         stashBook(id, patch) {
@@ -458,3 +469,4 @@ export function createBooksApi(session, supabase) {
         },
     };
 }
+
