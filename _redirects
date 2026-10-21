@@ -45,6 +45,9 @@
 /js/login-ui.js  /applications/main-site/login/login-ui.js  200
 /js/login-reset.js  /applications/main-site/login/login-reset.js  200
 /studio  /applications/studio/pages/studio  200
+/audiobook-studio  /applications/studio/pages/audiobook-studio  200
+# Audiobook preview reuses Studio with document-scoped sample data; no live auth or uploads.
+/audiobook-preview  /applications/studio/pages/audiobook-preview  200
 /editor  /applications/editor/pages/editor  200
 /book-invite  /applications/editor/pages/book-invite  200
 /word-wars-lobby  /applications/word-wars/pages/word-wars-lobby  200
@@ -93,3 +96,4 @@
 /css/statistics-ui/*  /applications/main-site/statistics-ui/:splat  200
 /css/*  /applications/main-site/pages-css/:splat  200
 /assets/*  /applications/main-site/assets/:splat  200
+

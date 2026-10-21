@@ -1,0 +1,61 @@
+name: Audiobook draft checks
+on:
+  push:
+    branches: [feature/audiobook-drafts]
+  pull_request:
+    paths:
+      - 'core/audiobooks/**'
+      - 'core/tests/audiobooks/**'
+      - 'applications/studio/**'
+      - 'supabase/live-site/supabase-audiobooks.sql'
+      - '.github/workflows/audiobook-tests.yml'
+permissions:
+  contents: read
+jobs:
+  audio-data:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: audiobook_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/audiobook_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test core/tests/audiobooks/*.test.js
+      - name: Private storage and ownership checks
+        run: |
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/audiobooks/setup.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-audiobooks.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-audiobooks.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/audiobooks/database.sql
+  audio-browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test runtime
+        run: |
+          npm install --prefix "$RUNNER_TEMP/audio-browser" --no-audit --no-fund playwright@1.61.1
+          "$RUNNER_TEMP/audio-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Create, upload, and manage audio drafts
+        run: PLAYWRIGHT_MODULE_PATH="$RUNNER_TEMP/audio-browser/node_modules/playwright/index.mjs" node applications/studio/tests/audiobooks.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audiobook-screenshots
+          path: test-results/audiobooks
