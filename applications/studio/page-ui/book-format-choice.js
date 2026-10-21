@@ -41,7 +41,7 @@ export function mountBookFormatChoice({session,getBooks,createWritten,importWrit
             if(session.mode!=='cloud'){message('Sign in online to create and upload audiobooks. Written books still work on this device.');return;}
             audioSetup();return;
         }
-        if(entry==='upload'){dialog.close();importWritten();return;}
+        if(entry==='upload'){trigger=null;dialog.close();importWritten();return;}
         busy=true;for(const button of dialog.querySelectorAll('button'))button.disabled=true;
         try{const created=await createWritten();dialog.close();navigate(`/editor?book=${encodeURIComponent(created.id)}`);}
         catch(error){message(error);}

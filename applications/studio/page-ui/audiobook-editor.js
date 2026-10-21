@@ -8,7 +8,7 @@ export async function mountAudiobookEditor({mount,id,api,writtenBooks=[],focusUp
     let book=await api.get(id),tracks=await api.tracks(id),busy=false,dirty=false;
     mount.classList.add('audio-workspace');
     mount.innerHTML=`<a href="/studio">← Back to Studio</a><h1 data-heading></h1><span class="audio-badge">Audiobook · Private draft</span>
-      <p class="audio-muted">Only you can open these recordings. Uploading does not publish them or send notifications.</p>
+      <p class="audio-muted">These recordings are private drafts. Uploading does not publish them or send notifications.</p>
       <section class="audio-panel"><h2>Details</h2><form data-details>
       <label>Title<input name="title" required maxlength="200"></label>
       <label>Description<textarea name="description" maxlength="6000"></textarea></label>
