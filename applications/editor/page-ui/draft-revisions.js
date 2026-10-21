@@ -144,9 +144,9 @@ export function mountDraftRevisions({ button, shell, writePane, getBook, api, se
             error(/draft_parent_id|draft_label|schema cache/i.test(message)?'Same-book drafts need the draft-revisions migration in the test database. Your existing draft is unchanged.':message==='offline'?'Connect to the internet before creating a cloud revision.':message);
         }finally{busy=false;for(const control of dialog.querySelectorAll('button,select,input'))control.disabled=false;}
     });
-    // Preview/settings and typewriter retain their original single-editor layout.
-    const observer=new MutationObserver(()=>{if(open&&(shell.classList.contains('is-preview')||document.documentElement.classList.contains('is-typewriter')))closeReference();});
-    observer.observe(shell,{attributes:true,attributeFilter:['class']});observer.observe(document.documentElement,{attributes:true,attributeFilter:['class']});
+    // Preview/settings use a single pane; Typewriter mode keeps the reference workspace.
+    const observer=new MutationObserver(()=>{if(open&&shell.classList.contains('is-preview'))closeReference();});
+    observer.observe(shell,{attributes:true,attributeFilter:['class']});
     const params=new URLSearchParams(window.location.search);
     if(params.get('referenceBook'))void loadSnapshot(params.get('referenceBook'),params.get('referenceVersion')||'').then(result=>showReference(result.snapshot)).catch(err=>{button.title=err.message||'Reference unavailable';});
     return {close:closeReference};

@@ -151,3 +151,14 @@ html.is-typewriter .writer-typewriter-exit {
         padding: 0;
     }
 }
+
+/* Keep the editable page and read-only reference in independent scroll panes. */
+html.is-typewriter .draft-mode-bar {
+    padding-inline-end: 60px;
+}
+html.is-typewriter .draft-reference-text {
+    width: 100%;
+    min-height: 0;
+    margin: 0;
+    align-self: stretch;
+}

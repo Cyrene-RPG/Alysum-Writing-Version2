@@ -1,0 +1,27 @@
+name: Editor reference layout
+on:
+  push:
+    branches: [fix/typewriter-reference]
+  pull_request:
+    paths:
+      - 'applications/editor/page-ui/draft-revisions.js'
+      - 'applications/editor/page-ui/page/typewriter.js'
+      - 'applications/editor/editor-css/**'
+      - 'applications/editor/tests/typewriter-reference.mjs'
+      - '.github/workflows/editor-reference-tests.yml'
+permissions:
+  contents: read
+jobs:
+  reference-layout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test runtime
+        run: |
+          npm install --prefix "$RUNNER_TEMP/editor-browser" --no-audit --no-fund playwright@1.61.1
+          "$RUNNER_TEMP/editor-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Typewriter and reference layout
+        run: PLAYWRIGHT_MODULE_PATH="$RUNNER_TEMP/editor-browser/node_modules/playwright/index.mjs" node applications/editor/tests/typewriter-reference.mjs
