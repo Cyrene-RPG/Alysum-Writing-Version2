@@ -11,7 +11,7 @@ const fixture=`<!doctype html><html><head><meta charset="utf-8"><style>
 </style>${['page/shell','page/main','page/typewriter','document','snippets','draft-revisions'].map(name=>`<link rel="stylesheet" href="/applications/editor/editor-css/${name}.css">`).join('')}</head><body>
 <header class="wd-welcome-bar">Alysum</header><nav class="wd-nav-wrap">Studio</nav>
 <div class="wrap"><div class="writer-shell" id="shell"><aside class="writer-tree">Chapters</aside>
-<main class="writer-main"><div class="snippet-editor-action"><button class="quote-button" id="draftAction">Drafts / Reference</button><button class="quote-button" id="excerptAction">Share excerpt</button></div><div class="writer-main-scroll" id="writePane"><div class="writer-toolbar">Formatting</div><article class="writer-page" id="page" contenteditable="true" tabindex="0"><p>Editable writing.</p></article></div></main>
+<main class="writer-main"><div class="writer-main-scroll" id="writePane"><div class="snippet-editor-action"><button class="quote-button" id="draftAction">Drafts / Reference</button><button class="quote-button" id="excerptAction">Share excerpt</button></div><div class="writer-toolbar">Formatting</div><article class="writer-page" id="page" contenteditable="true" tabindex="0"><p>Editable writing.</p></article></div></main>
 <aside class="writer-rail">Notes</aside></div></div>
 <button class="writer-typewriter-exit" id="exit" hidden aria-label="Leave typewriter mode">×</button>
 <button id="referenceButton" hidden>Reference</button>
