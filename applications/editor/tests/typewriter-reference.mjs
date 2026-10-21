@@ -8,10 +8,10 @@ const {chromium}=await import(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright'
 const root=resolve(new URL('../../../',import.meta.url).pathname);
 const fixture=`<!doctype html><html><head><meta charset="utf-8"><style>
 :root{--text:#eee;--muted:#aaa;--accent:#8047c8;--border:#444;--bg:#151515}
-</style>${['page/shell','page/main','page/typewriter','document','draft-revisions'].map(name=>`<link rel="stylesheet" href="/applications/editor/editor-css/${name}.css">`).join('')}</head><body>
+</style>${['page/shell','page/main','page/typewriter','document','snippets','draft-revisions'].map(name=>`<link rel="stylesheet" href="/applications/editor/editor-css/${name}.css">`).join('')}</head><body>
 <header class="wd-welcome-bar">Alysum</header><nav class="wd-nav-wrap">Studio</nav>
 <div class="wrap"><div class="writer-shell" id="shell"><aside class="writer-tree">Chapters</aside>
-<main class="writer-main"><div class="writer-main-scroll" id="writePane"><div class="writer-toolbar">Formatting</div><article class="writer-page" id="page" contenteditable="true" tabindex="0"><p>Editable writing.</p></article></div></main>
+<main class="writer-main"><div class="writer-main-scroll" id="writePane"><div class="snippet-editor-action"><button class="quote-button" id="draftAction">Drafts / Reference</button><button class="quote-button" id="excerptAction">Share excerpt</button></div><div class="writer-toolbar">Formatting</div><article class="writer-page" id="page" contenteditable="true" tabindex="0"><p>Editable writing.</p></article></div></main>
 <aside class="writer-rail">Notes</aside></div></div>
 <button class="writer-typewriter-exit" id="exit" hidden aria-label="Leave typewriter mode">×</button>
 <button id="referenceButton" hidden>Reference</button>
@@ -35,7 +35,7 @@ const server=createServer(async(req,res)=>{
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const browser=await chromium.launch({headless:true});
 try{
- for(const width of [1440,721,720,390]){
+ for(const width of [1440,721,720,390,320]){
   const page=await browser.newPage({viewport:{width,height:900}}),errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   await page.goto(`http://127.0.0.1:${server.address().port}/fixture?book=sample&referenceBook=sample`);
@@ -54,6 +54,14 @@ try{
    assert.equal(await page.locator('.draft-divider').getAttribute('aria-valuenow'),split);
    assert.match(page.url(),/referenceBook=sample/);
    assert.equal(await page.locator('.writer-toolbar').isVisible(),false);
+   const exitBounds=await page.locator('#exit').boundingBox();
+   assert.ok(exitBounds.width>=44&&exitBounds.height>=44,'Exit has a usable touch target');
+   for(const selector of ['#draftAction','#excerptAction']){
+    const bounds=await page.locator(selector).boundingBox();
+    const overlaps=exitBounds.x<bounds.x+bounds.width&&exitBounds.x+exitBounds.width>bounds.x&&exitBounds.y<bounds.y+bounds.height&&exitBounds.y+exitBounds.height>bounds.y;
+    assert.equal(overlaps,false,'Exit never overlaps '+selector);
+    await page.locator(selector).click();
+   }
    if(width>720){
     const write=await page.locator('#writePane').boundingBox(),reference=await page.locator('.draft-reference').boundingBox();
     assert.ok(write.width>150&&reference.width>100&&reference.height>200,'Both panes have usable dimensions');
@@ -71,6 +79,16 @@ try{
    assert.equal(await page.locator('.draft-workspace').count(),1,'Leaving Typewriter preserves comparison');
    assert.equal(await page.locator('.writer-toolbar').isVisible(),true);
   }
+  // Closing comparison must retain the same spacing for single-pane Typewriter.
+  await page.locator('[data-end]').click();
+  await page.evaluate(()=>window.typewriter.setTypewriter(true));
+  const singleExit=await page.locator('#exit').boundingBox(),singleExcerpt=await page.locator('#excerptAction').boundingBox();
+  assert.ok(singleExit.x>=singleExcerpt.x+singleExcerpt.width||singleExit.y>=singleExcerpt.y+singleExcerpt.height,'Single-pane excerpt has separate space');
+  await page.locator('#excerptAction').click();
+  await page.locator('#exit').click();
+  // Reopen from URL to check the existing preview cleanup separately.
+  await page.goto(`http://127.0.0.1:${server.address().port}/fixture?book=sample&referenceBook=sample`);
+  await page.locator('.draft-workspace').waitFor({state:'attached'});
   await page.evaluate(()=>document.querySelector('#shell').classList.add('is-preview'));
   await page.waitForFunction(()=>!document.querySelector('.draft-workspace'));
   assert.equal(await page.evaluate(()=>document.querySelector('#writePane')===window.originalWritePane),true);
