@@ -1,7 +1,7 @@
 name: Notification inbox checks
 on:
   push:
-    branches: [feature/private-notification-inbox, feature/book-subscriptions]
+    branches: [feature/private-notification-inbox, feature/book-subscriptions, feature/notification-confirmations]
   pull_request:
     paths:
       - 'core/notifications/**'
@@ -12,6 +12,7 @@ on:
       - 'site-appearance/js-runtime/notification-bell.js'
       - 'supabase/live-site/supabase-notifications-inbox.sql'
       - 'supabase/live-site/supabase-book-subscriptions.sql'
+      - 'supabase/live-site/supabase-notification-confirmations.sql'
       - '.github/workflows/notifications-tests.yml'
 permissions:
   contents: read
@@ -55,3 +56,6 @@ jobs:
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-book-subscriptions.sql
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-book-subscriptions.sql
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/notifications/reading.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-notification-confirmations.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-notification-confirmations.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/notifications/confirmations.sql
