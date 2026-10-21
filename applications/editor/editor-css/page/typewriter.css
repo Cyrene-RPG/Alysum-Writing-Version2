@@ -62,11 +62,11 @@
 .writer-typewriter-exit {
     display: none;
     position: fixed;
-    top: 14px;
-    right: 16px;
+    top: calc(8px + env(safe-area-inset-top, 0px));
+    right: calc(12px + env(safe-area-inset-right, 0px));
     z-index: 80;
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
     padding: 0;
     border: 0;
     border-radius: 8px;
@@ -161,4 +161,12 @@ html.is-typewriter .draft-reference-text {
     min-height: 0;
     margin: 0;
     align-self: stretch;
+}
+
+/* The fixed exit control has its own space beside the excerpt actions. */
+html.is-typewriter .snippet-editor-action {
+    flex-shrink: 0;
+    min-height: calc(60px + env(safe-area-inset-top, 0px));
+    padding-top: calc(8px + env(safe-area-inset-top, 0px));
+    padding-inline-end: calc(72px + env(safe-area-inset-right, 0px));
 }
