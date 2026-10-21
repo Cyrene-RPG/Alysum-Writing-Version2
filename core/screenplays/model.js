@@ -25,6 +25,7 @@ export function normalize(value={}) {
         return {id,type:TYPES.includes(item?.type)?item.type:'action',runs:runs(item?.runs),dual:item?.type==='character'&&item.dual===true};
     });
     if(blocks.length>20000)throw Error('This screenplay exceeds 20,000 elements. Split it into separate documents.');
+    for(let i=0;i<blocks.length;i++)if(blocks[i].dual){let previous=i-1;while(previous>=0&&['dialogue','parenthetical'].includes(blocks[previous].type))previous--;if(previous<0||blocks[previous].type!=='character'||blocks[previous].dual)blocks[i].dual=false;}
     const doc={version:1,title:String(value.title||'Untitled screenplay').trim().slice(0,200)||'Untitled screenplay',author:String(value.author??'').slice(0,200),credit:String(value.credit??'Written by').slice(0,200),contact:String(value.contact??'').slice(0,2000),draft:String(value.draft??'').slice(0,200),paper:value.paper==='a4'?'a4':'letter',titlePage:value.titlePage!==false,blocks};
     if(JSON.stringify(doc).length>4000000)throw Error('This screenplay exceeds the 4 MB document limit. Export a backup before continuing.');
     return doc;

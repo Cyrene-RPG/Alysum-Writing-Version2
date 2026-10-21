@@ -43,7 +43,7 @@ export function paginate(doc,measure) {
         return wrapRuns(items,g.width,measure).map(runs=>[{id:b.id,type:b.type,runs,x:108+offset+g.x,width:g.width,align:b.type==='transition'?'right':'left',scene:b.type==='scene'?scene:null}]);
     };
     const cueRows=(name,x=108+158.4,width=bodyWidth-158.4)=>[[{type:'character',runs:[{text:name.replace(/\s*\(CONT['’]D\)\s*$/i,'')+" (CONT’D)"}],x,width,continuation:true}]];
-    const more=(dual=false)=>dual?[{type:'parenthetical',runs:[{text:'(MORE)'}],x:126,width:180},{type:'parenthetical',runs:[{text:'(MORE)'}],x:126+(bodyWidth+18)/2,width:180}]:[{type:'parenthetical',runs:[{text:'(MORE)'}],x:223.2,width:208.8}];
+    const more=(dual=false,active=[true,true])=>dual?[active[0]?{type:'parenthetical',runs:[{text:'(MORE)'}],x:126,width:180}:null,active[1]?{type:'parenthetical',runs:[{text:'(MORE)'}],x:126+(bodyWidth+18)/2,width:180}:null].filter(Boolean):[{type:'parenthetical',runs:[{text:'(MORE)'}],x:223.2,width:208.8}];
     const dialogueGroup=start=>{let end=start+1;while(end<doc.blocks.length&&['dialogue','parenthetical'].includes(doc.blocks[end].type))end++;return end;};
     for(let i=0;i<doc.blocks.length;i++) {
         const b=doc.blocks[i];if(b.type==='scene')scene++;
@@ -73,12 +73,15 @@ export function paginate(doc,measure) {
             if(take<2){newPage();continue;}
             let count=take;
             if(!dialogue&&remaining-count===1)count--;
+            if(dialogue)while(count>2&&rows[pos+count-1].every(line=>['character','parenthetical'].includes(line.type)))count--;
             for(const line of rows.slice(pos,pos+count))put(line);
             pos+=count;
-            if(dialogue)put(more(dual));
+            const midpoint=108+(bodyWidth+18)/2;
+            const activeColumns=dual?[rows.slice(pos).some(r=>r.some(l=>l.x<midpoint)),rows.slice(pos).some(r=>r.some(l=>l.x>=midpoint))]:[true,true];
+            if(dialogue)put(more(dual,activeColumns));
             newPage();
             if(dialogue) {
-                if(dual){const col=(bodyWidth-18)/2;put([...cueRows(names[0],144,col-36)[0],...cueRows(names[1],144+col+18,col-36)[0]]);}
+                if(dual){const col=(bodyWidth-18)/2;put([...(activeColumns[0]?cueRows(names[0],144,col-36)[0]:[]),...(activeColumns[1]?cueRows(names[1],144+col+18,col-36)[0]:[])]);}
                 else put(cueRows(names[0])[0]);
             }
         }

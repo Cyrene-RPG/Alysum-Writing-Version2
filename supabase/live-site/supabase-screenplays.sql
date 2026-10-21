@@ -28,7 +28,7 @@ DECLARE v_uid uuid:=auth.uid();v_row public.screenplays%ROWTYPE;v_prior public.s
 BEGIN
  IF v_uid IS NULL THEN RAISE EXCEPTION 'Sign in to save a screenplay.';END IF;
  IF p_id IS NULL OR p_request_id IS NULL OR p_expected_version IS NULL OR p_expected_version<0 THEN RAISE EXCEPTION 'Invalid screenplay save request.';END IF;
- IF p_document IS NULL OR jsonb_typeof(p_document)<>'object' OR p_document->>'version' IS DISTINCT FROM '1'
+ IF p_document IS NULL OR jsonb_typeof(p_document)<>'object' OR p_document->>'version' IS DISTINCT FROM '1' OR jsonb_typeof(p_document->'version') IS DISTINCT FROM 'number'
   OR COALESCE(length(trim(p_document->>'title')),0) NOT BETWEEN 1 AND 200
   OR jsonb_typeof(p_document->'blocks') IS DISTINCT FROM 'array' OR octet_length(p_document::text)>5000000 THEN RAISE EXCEPTION 'Invalid screenplay document.';END IF;
  IF jsonb_array_length(p_document->'blocks') NOT BETWEEN 1 AND 20000 THEN RAISE EXCEPTION 'Invalid screenplay element count.';END IF;
@@ -55,6 +55,8 @@ BEGIN
   UPDATE public.screenplays SET title=trim(p_document->>'title'),document=p_document,version=version+1,updated_at=clock_timestamp() WHERE id=p_id RETURNING * INTO v_row;
  END IF;
  INSERT INTO public.screenplay_revisions(screenplay_id,owner_id,version,request_id,document,label) VALUES(p_id,v_uid,v_row.version,p_request_id,p_document,COALESCE(p_label,''));
+ -- Named drafts are retained; recent autosaves cover the latest 100 versions.
+ DELETE FROM public.screenplay_revisions WHERE screenplay_id=p_id AND label='' AND version<=v_row.version-100;
  RETURN to_jsonb(v_row);
 END;
 $$;
