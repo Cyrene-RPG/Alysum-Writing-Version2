@@ -22,6 +22,8 @@ function setPreferences(value) {
     el("pref-followers").checked = value.newFollowers;
     el("pref-authors").checked = value.authorAnnouncements;
     el("pref-site").checked = value.siteUpdates;
+    el("pref-books").checked = value.newBooks;
+    el("pref-chapters").checked = value.newChapters;
 }
 function drawRows() {
     list.replaceChildren(...rows.map(entry => renderNotification(entry, { onOpen: openEntry, onToggle: toggleEntry })));
@@ -29,7 +31,7 @@ function drawRows() {
     el("inbox-empty-heading").textContent = unreadOnly ? "You’re all caught up" : "No notifications yet";
     el("inbox-empty-copy").textContent = unreadOnly
         ? "There are no unread notifications in this view."
-        : el("inbox-category").value ? "There are no notifications in this category." : "New follows and announcements will appear here.";
+        : el("inbox-category").value ? "There are no notifications in this category." : "New follows, books, chapters, and announcements will appear here.";
 }
 async function load(reset = true) {
     if (!userId || (loading && !reset)) return;
@@ -145,6 +147,7 @@ el("notification-preferences-form").addEventListener("submit", async event => {
             newFollowers: el("pref-followers").checked,
             authorAnnouncements: el("pref-authors").checked,
             siteUpdates: el("pref-site").checked,
+            newBooks: el("pref-books").checked, newChapters: el("pref-chapters").checked,
         });
         if (account !== userId) return;
         preferencesDirty = false;

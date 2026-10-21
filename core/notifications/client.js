@@ -1,11 +1,12 @@
 export const NOTIFICATION_PAGE_SIZE = 25;
 export const DEFAULT_NOTIFICATION_PREFERENCES = Object.freeze({
-    newFollowers: true, authorAnnouncements: true, siteUpdates: false,
+    newFollowers: true, authorAnnouncements: true, siteUpdates: false, newBooks: true, newChapters: true,
 });
 export const NOTIFICATION_KINDS = Object.freeze({
     follower: "Followers", author_announcement: "Author announcements", site_update: "Alysum updates",
+    new_book: "New books", new_chapter: "New chapters",
 });
-const COLUMNS = "id,kind,actor_id,announcement_id,title,message,created_at,read_at";
+const COLUMNS = "id,kind,actor_id,announcement_id,book_id,chapter_id,title,message,created_at,read_at";
 
 function checkError(error) {
     if (!error) return;
@@ -28,7 +29,7 @@ function requireId(id, allowZero = false) {
 export function normalizeNotification(row) {
     return {
         id: String(row.id), kind: row.kind, actorId: row.actor_id || "",
-        announcementId: row.announcement_id || "", title: String(row.title || ""),
+        announcementId: row.announcement_id || "", bookId: row.book_id || "", chapterId: row.chapter_id || "", title: String(row.title || ""),
         message: String(row.message || ""), createdAt: row.created_at, readAt: row.read_at || null,
     };
 }
@@ -37,6 +38,7 @@ export function normalizeNotificationPreferences(row) {
         newFollowers: row?.new_followers ?? true,
         authorAnnouncements: row?.author_announcements ?? true,
         siteUpdates: row?.site_updates ?? false,
+        newBooks: row?.new_books ?? true, newChapters: row?.new_chapters ?? true,
     };
 }
 export async function listNotifications(client, { userId, before = "", unreadOnly = false, kind = "", limit = NOTIFICATION_PAGE_SIZE }) {
@@ -73,19 +75,20 @@ export async function getNotificationSummary(client) {
 }
 export async function getNotificationPreferences(client, userId) {
     requireUser(userId);
-    const { data, error } = await client.from("notification_preferences").select("new_followers,author_announcements,site_updates")
+    const { data, error } = await client.from("notification_preferences").select("new_followers,author_announcements,site_updates,new_books,new_chapters")
         .eq("user_id", userId).maybeSingle();
     checkError(error);
     return normalizeNotificationPreferences(data);
 }
 export async function saveNotificationPreferences(client, value) {
-    if (![value.newFollowers, value.authorAnnouncements, value.siteUpdates].every(v => typeof v === "boolean")) {
+    if (![value.newFollowers, value.authorAnnouncements, value.siteUpdates, value.newBooks, value.newChapters].every(v => typeof v === "boolean")) {
         throw new Error("Choose a setting for every category.");
     }
-    const { data, error } = await client.rpc("set_notification_preferences", {
+    const { data, error } = await client.rpc("set_reading_notification_preferences", {
         p_new_followers: value.newFollowers,
         p_author_announcements: value.authorAnnouncements,
         p_site_updates: value.siteUpdates,
+        p_new_books: value.newBooks, p_new_chapters: value.newChapters,
     });
     checkError(error);
     const row = Array.isArray(data) ? data[0] : data;
@@ -108,6 +111,18 @@ export async function markNotificationsRead(client, throughId) {
 }
 export async function resolveNotificationDestination(client, entry) {
     if (entry.kind === "follower") return null;
+    if (entry.kind === "new_book" || entry.kind === "new_chapter") {
+        const { data, error } = await client.rpc("get_reading_notification_target", {
+            p_notification_id: requireId(entry.id),
+        });
+        checkError(error);
+        const target = Array.isArray(data) ? data[0] : data;
+        if (!target?.book_id || (entry.kind === "new_chapter" && !target.chapter_id)) {
+            throw new Error("This book or chapter is no longer available.");
+        }
+        return entry.kind === "new_book" ? "/book?id=" + encodeURIComponent(target.book_id)
+            : "/read?id=" + encodeURIComponent(target.book_id) + "&chapter=" + encodeURIComponent(target.chapter_id);
+    }
     if (!entry.announcementId) throw new Error("This update is no longer available.");
     const { data, error } = await client.from("announcements").select("id")
         .eq("id", entry.announcementId).eq("status", "published").maybeSingle();

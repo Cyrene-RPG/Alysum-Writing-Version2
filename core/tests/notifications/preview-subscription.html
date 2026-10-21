@@ -1,0 +1,137 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta name="robots" content="noindex">
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/",
+        "@alysum/statistics/": "/core/statistics/"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=9" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes-dim/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=10" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=12" />
+    <script src="/site-appearance/js-runtime/body-background-presets-data.js?v=3"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/boot.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sample book subscription</title>
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=30" />
+    <link rel="stylesheet" href="/css/library/book.css?v=30" />
+    <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
+</head>
+<body>
+    <header class="wd-welcome-bar ui-bar" aria-label="Welcome">
+        <div class="wd-welcome-inner">
+            <div class="wd-pfp-menu" id="welcomePfpMenu">
+                <button type="button" class="wd-pfp-btn" id="welcomePfpBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="welcomePfpDropdown" aria-label="Account menu">
+                    <span class="wd-pfp" id="welcomePfp">
+                        <img id="welcomePfpImg" alt="" hidden />
+                        <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true">A</span>
+                    </span>
+                </button>
+                <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
+                    <a role="menuitem" href="/library" data-close-pfp-menu>Home</a>
+                    <a role="menuitem" href="/overview" data-close-pfp-menu>Profile</a>
+                    <a role="menuitem" href="/settings" data-close-pfp-menu>Settings</a>
+                    <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
+                </div>
+            </div>
+            <div class="wd-welcome-copy">
+                <h1 class="wd-welcome-title" id="welcomeTitle">The <span class="wd-name">Library</span></h1>
+                <p class="wd-welcome-sub" id="welcomeSubtitle">A reading room, catalogued with care</p>
+            </div>
+        </div>
+    </header>
+    <div class="book-page" id="bookPage" hidden>
+        <article class="book-card" id="bookCard">
+            <header class="book-hero" id="bookHero">
+                <div class="book-hero-top">
+                    <a class="book-back" href="/library">‹ Library</a>
+                </div>
+                <div class="book-hero-bottom">
+                    <div class="book-cover" id="bookCover" hidden></div>
+                    <div class="book-title-block">
+                        <div class="book-title-row">
+                            <h1 id="bookTitle"></h1>
+                            <a class="book-edit" id="editTitle" href="/publish" hidden title="Edit listing">✎</a>
+                        </div>
+                        <p class="book-by">by <span id="bookAuthor"></span></p>
+                        <p class="book-meta" id="bookMeta"></p>
+                    </div>
+                </div>
+            </header>
+            <div class="book-body">
+                <p class="book-label" id="genresLabel">Genres</p>
+                <div class="book-tags" id="bookGenres"></div>
+                <p class="book-label" id="tagsLabel">Tags</p>
+                <div class="book-tags" id="bookTags"></div>
+                <p class="book-label" id="warnsLabel">Content warnings</p>
+                <div class="book-warns" id="bookWarns"></div>
+                <div class="book-row-head">
+                    <p class="book-label">Synopsis</p>
+                    <a class="book-edit" id="editSynopsis" href="/publish" hidden title="Edit listing">✎</a>
+                </div>
+                <div class="book-synopsis-wrap">
+                    <div class="book-synopsis clipped" id="bookSynopsis"></div>
+                    <div class="book-synopsis-fade" id="synopsisFade"></div>
+                </div>
+                <button type="button" class="book-more" id="synopsisMore" hidden>Show more</button>
+                <div id="bookNotesBlock" hidden>
+                    <p class="book-label">Notes</p>
+                    <div class="book-synopsis" id="bookNotes"></div>
+                </div>
+                <a class="book-cta" id="readCta" href="/read">Start reading</a>
+                <p class="book-cta-cap" id="readCaption" hidden></p>
+                <div id="book-subscription" class="book-subscription" hidden>
+                    <button type="button" id="subscribe-book" class="book-subscribe" aria-pressed="false" disabled>Subscribe</button>
+                    <p class="book-cta-cap">Free on-site notifications when a new chapter is published. Chapter access stays the same.</p>
+                    <p id="subscription-status" class="book-cta-cap" role="status" aria-live="polite"></p>
+                </div>
+                <div id="bookPurchaseBlock" hidden>
+                    <a class="book-cta" id="buyFromAuthor" target="_blank" rel="noopener noreferrer external">Buy from author ↗</a>
+                    <p class="book-cta-cap">Payment and paid access are handled on the author’s linked service. Purchases do not unlock chapters on Alysum.</p>
+                </div>
+                <div class="book-rule"></div>
+                <div class="book-toc-head">
+                    <div class="book-toc-left">
+                        <p class="book-label">Chapters</p>
+                        <a class="book-add-ch" id="addChapter" href="/publish" hidden>＋ Add</a>
+                    </div>
+                    <span class="book-toc-count" id="chapterCount"></span>
+                </div>
+                <p class="book-toc-hint" id="tocHint" hidden>Manage chapters on the publish page</p>
+                <div id="chapterList"></div>
+                <div class="book-rule"></div>
+                <div class="book-reviews">
+                    <div class="book-row-head">
+                        <p class="book-label">Reviews</p>
+                        <span class="book-score" id="reviewScore" hidden></span>
+                    </div>
+                    <p class="book-reviews-empty" id="reviewsEmpty">No reviews yet</p>
+                </div>
+            </div>
+        </article>
+    </div>
+    <div class="book-empty" id="bookEmpty" hidden>
+        <p>This book isn’t available yet.</p>
+        <a href="/library">Back to Library</a>
+    </div>
+    <script type="module" src="/core/tests/notifications/preview-subscription.js"></script>
+</body>
+</html>

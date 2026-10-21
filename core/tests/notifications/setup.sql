@@ -18,6 +18,7 @@ CREATE TABLE public.users(
     username text, display_name text, account_type text
 );
 CREATE TABLE public.library(id text PRIMARY KEY, user_id uuid REFERENCES auth.users(id), data jsonb);
+CREATE TABLE public.library_book_moderation(book_id text PRIMARY KEY, visibility text);
 CREATE TABLE public.moderation_staff(user_id uuid PRIMARY KEY REFERENCES auth.users(id), role text);
 CREATE TABLE public.notifications(
     id text PRIMARY KEY, user_id uuid REFERENCES auth.users(id),
