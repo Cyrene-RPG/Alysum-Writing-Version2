@@ -46,6 +46,7 @@
 /js/login-reset.js  /applications/main-site/login/login-reset.js  200
 /studio  /applications/studio/pages/studio  200
 /audiobook-studio  /applications/studio/pages/audiobook-studio  200
+/audiobook-preview  /applications/studio/pages/audiobook-preview  200
 /editor  /applications/editor/pages/editor  200
 /book-invite  /applications/editor/pages/book-invite  200
 /word-wars-lobby  /applications/word-wars/pages/word-wars-lobby  200

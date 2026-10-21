@@ -35,8 +35,9 @@ function wav(){
 }
 const server=createServer(async(req,res)=>{
  try{const url=new URL(req.url,'http://localhost');if(url.pathname==='/fixture'){res.setHeader('Content-Type','text/html');res.end(fixture);return;}
- let path=url.pathname.replace('/css/studio/','/applications/studio/studio-css/');path=resolve(root,'.'+path);
- if(!path.startsWith(root+'/'))throw Error('Outside fixture');const content=await readFile(path);res.setHeader('Content-Type',extname(path)==='.css'?'text/css':'text/javascript');res.end(content);
+ let path=url.pathname==='/audiobook-preview'?'/applications/studio/pages/audiobook-preview.html':url.pathname;
+ path=path.replace('/css/studio/','/applications/studio/studio-css/').replace('/js/studio/','/applications/studio/page-ui/');path=resolve(root,'.'+path);
+ if(!path.startsWith(root+'/'))throw Error('Outside fixture');const content=await readFile(path);res.setHeader('Content-Type',extname(path)==='.css'?'text/css':extname(path)==='.html'?'text/html':'text/javascript');res.end(content);
  }catch{res.statusCode=404;res.end();}
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -80,5 +81,27 @@ try{
   await page.goto(base+'?local=1');await page.waitForFunction(()=>window.ready);await page.click('#new');await page.getByRole('button',{name:'Audiobook',exact:false}).click();
   assert.match(await page.locator('[data-error]').textContent(),/Sign in online/);assert.equal(await page.evaluate(()=>window.calls.created.length),0);
   assert.deepEqual(errors,[]);console.log(`PASS audiobook create, upload retry, credits, preview, removal at ${width}px`);await page.close();
+ }
+ for(const width of [1440,320]){
+  const page=await browser.newPage({viewport:{width,height:950}}),external=[],errors=[];
+  page.on('request',request=>{if(/supabase|\/core\/authentication\//i.test(request.url())||!['GET','HEAD'].includes(request.method()))external.push(request.url());});
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.goto(base.replace('/fixture','/audiobook-preview'));
+  await page.click('#preview-new');await page.getByRole('button',{name:'Audiobook',exact:false}).click();
+  await page.getByLabel('Title',{exact:true}).fill('Demo recording project');await page.getByRole('button',{name:'Create audiobook',exact:true}).click();
+  await page.locator('#preview-editor h1').waitFor();assert.equal(await page.locator('#preview-editor h1').textContent(),'Demo recording project');
+  await page.getByLabel('I have permission',{exact:false}).check();await page.getByRole('button',{name:'Save details',exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector('[data-details-status]').textContent==='Details saved.');
+  await page.locator('input[type=file]').setInputFiles({name:'demo.wav',mimeType:'audio/wav',buffer:wav()});
+  await page.getByRole('button',{name:'Upload recording',exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector('[data-upload-status]').textContent.includes('remains private'));
+  await page.getByRole('button',{name:'Preview recording'}).click();
+  assert.match(await page.locator('.audio-track audio').getAttribute('src'),/^blob:/,'Demo plays a local file');
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  await page.screenshot({path:`test-results/audiobooks/demo-${width}.png`,fullPage:true});
+  assert.deepEqual(external,[],'Demo never uses auth, backend requests, or network uploads');assert.deepEqual(errors,[]);
+  await page.reload();await page.click('#preview-sample');await page.locator('#preview-editor h1').waitFor();
+  assert.equal(await page.locator('.audio-track').count(),0,'Demo data resets after reload');
+  console.log(`PASS no-login demo with local audio at ${width}px`);await page.close();
  }
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <title>Audiobook preview — Alysum</title>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=8">
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=10">
+    <link rel="stylesheet" href="/css/studio/audiobooks.css?v=1" data-audiobook-styles>
+    <style>
+        body{margin:0;background:var(--bg,#111);color:var(--text,#eee);font-family:var(--font-sans,Arial,sans-serif)}
+        .audio-preview{width:min(1000px,100%);margin:auto;padding:32px 20px;box-sizing:border-box}
+        .audio-preview h1{font:600 clamp(36px,7vw,56px)/1.1 var(--font-heading,Georgia,serif);margin:8px 0 20px}
+        .audio-preview-banner{padding:16px 20px;border:1px solid var(--border,#444);border-radius:var(--glass-radius,12px);line-height:1.6;font-size:13px;background:var(--alysum-ui-panel,#191919)}
+        .audio-preview-actions{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0}
+        .audio-preview-actions button{min-height:48px;padding:12px 20px;border:1px solid var(--border,#444);border-radius:var(--glass-radius,12px);color:var(--text,#eee);background:var(--alysum-ui-raised,#292929);font:inherit;cursor:pointer}
+        .audio-preview-actions button:focus-visible{outline:2px solid var(--accent,#8047c8);outline-offset:3px}
+        #preview-editor:empty{display:none}
+        @media(max-width:600px){.audio-preview{padding:24px 12px}.audio-preview-actions button{flex:1 1 140px}}
+    </style>
+</head>
+<body>
+    <header class="audio-preview">
+        <span class="audio-badge">Alysum · Feature preview</span>
+        <h1>Audiobook Studio</h1>
+        <div class="audio-preview-banner"><strong>Try the audiobook flow here.</strong> No sign-in needed. This demo uses sample books. Recordings you choose stay in this tab and are never uploaded. Changes reset when you reload.</div>
+        <div class="audio-preview-actions">
+            <button type="button" id="preview-new">New book</button>
+            <button type="button" id="preview-upload">Upload book</button>
+            <button type="button" id="preview-sample">Open sample audiobook</button>
+        </div>
+        <p class="audio-muted" id="preview-status" role="status">Choose New book or Upload book, then Audiobook. Or open the sample to see the recording workspace.</p>
+    </header>
+    <main id="preview-editor" class="audio-workspace"></main>
+    <script type="module" src="/js/studio/audiobook-preview.js?v=1"></script>
+</body>
+</html>

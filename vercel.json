@@ -12,7 +12,18 @@
     }
   ],
   "rewrites": [
-    {"source":"/connections","destination":"/applications/connections/pages/connections.html"},
+    {
+      "source": "/audiobook-studio",
+      "destination": "/applications/studio/pages/audiobook-studio.html"
+    },
+    {
+      "source": "/audiobook-preview",
+      "destination": "/applications/studio/pages/audiobook-preview.html"
+    },
+    {
+      "source": "/connections",
+      "destination": "/applications/connections/pages/connections.html"
+    },
     {
       "source": "/author",
       "destination": "/applications/library/pages/author.html"
