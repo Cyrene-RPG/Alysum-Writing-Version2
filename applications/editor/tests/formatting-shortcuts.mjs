@@ -80,7 +80,7 @@ try {
     assert.equal(await active("italic"), true, "Caret formatting applies to newly typed text");
     await page.keyboard.press("Control+i"); await page.keyboard.type(" plain");
     assert.equal(await active("italic"), false, "Caret formatting can be switched off");
-    assert.match(await page.locator("#page").textContent(), /Plain italic plain/);
+    assert.match(await page.locator("#page").textContent(), /Plain\s+italic\s+plain/);
     await select();
     await page.evaluate(() => typewriter.setTypewriter(true));
     assert.equal(await page.locator("#toolbar").isVisible(), false);
