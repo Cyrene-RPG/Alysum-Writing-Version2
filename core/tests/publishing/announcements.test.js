@@ -41,10 +41,10 @@ test("public detail and author feeds always exclude drafts and use stable pagina
     assert.ok(!detail.calls.some(call => call[0] === "eq" && call[1] === "category"));
 });
 
-test("What’s New requests site updates while saved posts are scoped to the signed-in owner", async () => {
+test("What’s New includes both public audiences while saved posts stay scoped to the signed-in owner", async () => {
     const publicClient = clientFor();
     await listPublicAnnouncements(publicClient);
-    assert.ok(publicClient.calls.some(call => call[0] === "eq" && call[1] === "scope" && call[2] === "site"));
+    assert.ok(!publicClient.calls.some(call => call[0] === "eq" && (call[1] === "scope" || call[1] === "author_id")));
     const ownClient = clientFor();
     await listOwnAnnouncements(ownClient, "me");
     assert.ok(ownClient.calls.some(call => call[0] === "eq" && call[1] === "author_id" && call[2] === "me"));

@@ -49,7 +49,6 @@ export async function listPublicAnnouncements(client, { authorId = "", category 
     let query = client.from("announcements").select(COLUMNS).eq("status", "published");
     if (postId) query = query.eq("id", postId);
     else if (authorId) query = query.eq("scope", "author").eq("author_id", authorId);
-    else query = query.eq("scope", "site");
     if (category && !postId) query = query.eq("category", category);
     const { data, error } = await query.order("published_at", { ascending: false })
         .order("id", { ascending: false }).range(offset, offset + UPDATE_PAGE_SIZE - 1);

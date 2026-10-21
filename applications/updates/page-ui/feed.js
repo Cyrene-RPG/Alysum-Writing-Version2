@@ -1,5 +1,5 @@
 import { supabase } from "/core/authentication/client.js";
-import { listPublicAnnouncements, fetchAnnouncementAuthor, UPDATE_PAGE_SIZE } from "/core/publishing/announcements.js";
+import { listPublicAnnouncements, fetchAnnouncementAuthor, UPDATE_PAGE_SIZE } from "/core/publishing/announcements.js?v=2";
 import { renderAnnouncement } from "./render.js";
 
 const params = new URLSearchParams(window.location.search);
