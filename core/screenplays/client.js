@@ -1,4 +1,4 @@
-import {normalize,uid} from './model.js';
+import {normalize,uid} from './model.js?v=2';
 export function screenplayError(error) {
     if(error?.code==='P0002')return Object.assign(Error('This screenplay changed in another tab or device. Your version is safe on this device. Export a backup or reload the cloud version before continuing.'),{conflict:true});
     if(['42P01','42883','PGRST202','PGRST205'].includes(error?.code))return Error('Screenplay cloud storage has not been enabled yet. Your draft remains on this device; download a backup before changing devices.');

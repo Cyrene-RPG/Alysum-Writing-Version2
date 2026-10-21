@@ -1,4 +1,4 @@
-import {normalize,block,runs} from '/core/screenplays/model.js';
+import {normalize,block,runs} from '/core/screenplays/model.js?v=2';
 function inline(text) {
     const result=[];let marks={},buffer='';const flush=()=>{if(buffer)result.push({text:buffer,...marks});buffer='';};
     for(let i=0;i<text.length;){if(text[i]==='\\'&&i+1<text.length){buffer+=text[i+1];i+=2;continue;}let token=text.startsWith('**',i)?'**':['*','_'].includes(text[i])?text[i]:'';if(token){flush();const key={'**':'bold','*':'italic','_':'underline'}[token];marks={...marks,[key]:!marks[key]};i+=token.length;}else buffer+=text[i++];}flush();return runs(result);

@@ -1,5 +1,10 @@
 export const ELEMENTS = Object.freeze({scene:'Scene heading',action:'Action',character:'Character',dialogue:'Dialogue',parenthetical:'Parenthetical',transition:'Transition',shot:'Shot'});
 export const TYPES = Object.keys(ELEMENTS);
+export const SCENE_COLORS = ['neutral','amber','blue','green','rose','violet'];
+export const SCENE_STATUSES = ['planned','drafting','revised'];
+export function sceneDetails(value={}) {
+    return {synopsis:String(value?.synopsis??'').slice(0,4000),act:String(value?.act??'').slice(0,80),color:SCENE_COLORS.includes(value?.color)?value.color:'neutral',status:SCENE_STATUSES.includes(value?.status)?value.status:'planned'};
+}
 export const uid = () => globalThis.crypto.randomUUID();
 export const textOf = block => block.runs.map(run=>run.text).join('');
 export const escape = value => String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -22,7 +27,7 @@ export function normalize(value={}) {
     const seen=new Set();
     const blocks=(Array.isArray(value.blocks)&&value.blocks.length?value.blocks:[block('scene')]).map(item=>{
         const id=typeof item?.id==='string'&&item.id.length<=80&&!seen.has(item.id)?item.id:uid();seen.add(id);
-        return {id,type:TYPES.includes(item?.type)?item.type:'action',runs:runs(item?.runs),dual:item?.type==='character'&&item.dual===true};
+        return {id,type:TYPES.includes(item?.type)?item.type:'action',runs:runs(item?.runs),dual:item?.type==='character'&&item.dual===true,...(item?.outline?{outline:sceneDetails(item.outline)}:{})};
     });
     if(blocks.length>20000)throw Error('This screenplay exceeds 20,000 elements. Split it into separate documents.');
     for(let i=0;i<blocks.length;i++)if(blocks[i].dual){let previous=i-1;while(previous>=0&&['dialogue','parenthetical'].includes(blocks[previous].type))previous--;if(previous<0||blocks[previous].type!=='character'||blocks[previous].dual)blocks[i].dual=false;}
@@ -35,7 +40,7 @@ export function cycleType(type,back=false) {const order=['action','character','d
 export function scenes(doc) {
     const result=[];let scene;
     for(const item of doc.blocks) {
-        if(item.type==='scene'){scene={id:item.id,title:textOf(item)||'Untitled scene',number:result.length+1,blocks:[]};result.push(scene);}
+        if(item.type==='scene'){scene={id:item.id,title:textOf(item)||'Untitled scene',number:result.filter(s=>s.number>0).length+1,outline:sceneDetails(item.outline),blocks:[]};result.push(scene);}
         if(!scene){scene={id:item.id,title:'Before first scene',number:0,blocks:[]};result.push(scene);}
         scene.blocks.push(item);
     }

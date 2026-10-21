@@ -1,5 +1,5 @@
-import {createScreenplaysApi as createLocalScripts} from '/core/screenplays/client.js?preview-local=1';
-import {mountScreenplayEditor} from '/applications/studio/page-ui/screenplay-editor.js';
+import {createScreenplaysApi as createLocalScripts} from '/core/screenplays/client.js?preview-local=2';
+import {mountScreenplayEditor} from '/applications/studio/page-ui/screenplay-editor.js?v=2';
 import {block} from '/core/screenplays/model.js';
 // This module is substituted only by the no-login preview's import map.
 // The preview runs the actual Studio page, cards and styles with invented data.

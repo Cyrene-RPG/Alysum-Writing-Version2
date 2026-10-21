@@ -1,4 +1,4 @@
-import { createScreenplaysApi } from "/core/screenplays/client.js";
+import { createScreenplaysApi } from "/core/screenplays/client.js?v=2";
 import { createAudiobooksApi } from "/core/audiobooks/client.js";
 import { mountBookFormatChoice } from "./book-format-choice.js";
 import { groupRevisionBooks } from "/core/writing-engine/draft-revisions.js";

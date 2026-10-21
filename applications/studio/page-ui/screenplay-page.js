@@ -2,8 +2,8 @@ import {supabase} from '@alysum/authentication/client.js';
 import {requireStudioSession} from '@alysum/desktop/studio-session.js';
 import {loadWorkspaceProfile} from '@alysum/account/workspace-profile.js';
 import {initWorkspaceShell} from './shell.js?v=9';
-import {createScreenplaysApi} from '/core/screenplays/client.js';
-import {mountScreenplayEditor} from './screenplay-editor.js';
+import {createScreenplaysApi} from '/core/screenplays/client.js?v=2';
+import {mountScreenplayEditor} from './screenplay-editor.js?v=2';
 
 async function boot() {
     const session=await requireStudioSession(supabase,location.pathname+location.search);if(!session)return;
