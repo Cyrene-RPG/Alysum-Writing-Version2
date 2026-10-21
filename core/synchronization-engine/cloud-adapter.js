@@ -108,24 +108,11 @@ function toCloudPatch(patch) {
     return out;
 }
 
-async function selectVisibleBooks(supabase, userId) {
-    const ownerId = String(userId || "").trim();
-    const base = () => supabase.from("books").select("*").eq("user_id", ownerId);
-    let result = await base().order("updated", { ascending: false });
-    if (result.error) {
-        result = await base().order("updated_at", { ascending: false });
-    }
-    if (result.error) {
-        result = await base();
-    }
-    return result;
-}
-
 export async function listBooks(supabase, userId) {
-    if (!String(userId || "").trim()) return [];
-    const { data, error } = await selectVisibleBooks(supabase, userId);
-    if (error) throw error;
-    return (data || []).map(fromCloudRow).filter((book) => book && book.id);
+    if(!String(userId || "").trim())return [];
+    const {data,error}=await supabase.rpc("list_editable_books");
+    if(error)throw error;
+    return (data || []).map(fromCloudRow).filter(book=>book?.id);
 }
 
 export async function getBook(supabase, userId, id) {
@@ -196,3 +183,4 @@ export async function promoteDraft(supabase, userId, draftId) {
     if(!data)throw new Error('The main draft changed while preparing this update. A backup was saved; reopen the main draft and try again.');
     return {main:fromCloudRow(data),backup};
 }
+
