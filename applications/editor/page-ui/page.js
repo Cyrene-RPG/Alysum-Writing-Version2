@@ -1,6 +1,6 @@
 import { chapterContentChanged } from "/core/writing-engine/draft-revisions.js";
 import { mountDraftSwitcher } from "./draft-switcher.js";
-import { mountDraftRevisions } from "./draft-revisions.js";
+import { mountDraftRevisions } from "./draft-revisions.js?v=2";
 import { createSnippetDownloadApi } from "/core/publishing/snippet-download.js";
 import { createExcerptApi } from "/core/publishing/excerpts.js";
 import { mountSnippetSharing } from "./snippets.js";

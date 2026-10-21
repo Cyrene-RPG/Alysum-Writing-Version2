@@ -11,7 +11,7 @@ The editor now has a **Drafts / Reference** button. It can reference a saved ver
 - Each editable revision is an independent `books` record. Switching writing targets flushes the existing save queue, blocks on failure, then navigates to another editor session. The active book variable is never repointed while autosave is running.
 - Blank revision creation inserts a new record. It copies no manuscript text, notes, publication metadata, covers, published chapters or permissions. Cloud creation fails explicitly instead of silently creating a pending fallback if the schema is missing.
 - Nullable `draft_parent_id` and `draft_label` fields group independent rows in the Studio. Existing records remain valid without either field. Orphan revisions stay visible; deleting a root detaches child drafts instead of deleting their writing.
-- Reference mode closes when entering listing/settings preview or typewriter mode, preserving those existing layouts.
+- Reference mode closes when entering listing/settings preview. Typewriter mode retains the reference, its selected chapter and scroll position, and the split width. The existing editor remains the only editable pane; phones retain Write and Reference tabs.
 
 ## Database setup
 
