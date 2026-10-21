@@ -1,6 +1,5 @@
 import { createAudiobooksApi } from "/core/audiobooks/client.js";
 import { mountBookFormatChoice } from "./book-format-choice.js";
-import { mountAudiobookShelf } from "./audiobook-shelf.js";
 import { groupRevisionBooks } from "/core/writing-engine/draft-revisions.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
@@ -205,7 +204,7 @@ function bookCoverHtml(book) {
     return `<img class="studio-book-art" src="${escapeHtml(src)}" alt="" decoding="async"${attr} />`;
 }
 
-function renderBooks(mount, books) {
+function renderBooks(mount, books, audioBooks = []) {
     const newCard = `<button type="button" class="studio-new-card" id="newBookCard"><span class="studio-plus" aria-hidden="true">+</span><span>New book</span></button>`;
     const importCard = `<button type="button" class="studio-new-card studio-import-card" id="importBookCard"><span class="studio-plus" aria-hidden="true">↥</span><span>Upload book</span></button>`;
     mount.innerHTML = newCard + importCard + groupRevisionBooks(sortBooksByLastWorked(books))
@@ -222,7 +221,11 @@ function renderBooks(mount, books) {
                     ${drafts.length > 1 ? `<p class="studio-book-meta">${drafts.length} drafts · Choose a draft in the editor</p>` : ""}
                 </a>`;
         })
-        .join("");
+        .join("") + audioBooks.map((book,index) => `
+            <a class="studio-book studio-book-${index % 5}" href="/audiobook-studio?id=${encodeURIComponent(book.id)}" data-audiobook="${escapeHtml(book.id)}">
+                <h2 class="studio-book-title">${escapeHtml(book.title)}</h2>
+                <p class="studio-book-meta">Audiobook · Private draft</p>
+            </a>`).join("");
 }
 
 function initShelf(shelf, dots, prev, next) {
@@ -314,6 +317,8 @@ async function boot() {
 
     const api = createBooksApi(session, supabase);
     let books = api.peekBooks?.() || [];
+    let audioBooks = [];
+    let audioLoadError = "";
 
     function paintStudioStatus() {
         if (!status || session.mode !== "cloud") return;
@@ -323,7 +328,7 @@ async function boot() {
                 : "Connect once to load your books";
             return;
         }
-        status.textContent = "";
+        status.textContent = audioLoadError;
     }
 
     async function hydrateCovers() {
@@ -335,13 +340,14 @@ async function boot() {
             if (src) draftCoverSrc.set(id, src);
         }));
         if (!books.some((book) => bookCoverSrc(book))) return;
-        renderBooks(list, books);
+        renderBooks(list, books, audioBooks);
         window.__alysumTextInk?.scheduleChromeInk?.();
     }
 
     function paintShelf() {
-        renderBooks(list, books);
-        document.getElementById("shelfCount").textContent = `${books.length} book${books.length === 1 ? "" : "s"}`;
+        renderBooks(list, books, audioBooks);
+        const total = books.length + audioBooks.length;
+        document.getElementById("shelfCount").textContent = `${total} book${total === 1 ? "" : "s"}`;
         paintTotals();
         paintStudioStatus();
         window.__alysumTextInk?.scheduleChromeInk?.();
@@ -456,8 +462,14 @@ async function boot() {
         importWritten: () => importer.open(),
         createAudio: details => audioApi.save(null, details),
     });
-    const audioShelf = mountAudiobookShelf({ api: audioApi, session, before: stats, onCreate: button => formatChoice.open("new", button, true) });
-    window.addEventListener("focus", () => void audioShelf.refresh());
+    async function refreshAudiobooks() {
+        if (session.mode !== "cloud") return;
+        try { audioBooks = await audioApi.list(); audioLoadError = ""; }
+        catch (error) { audioLoadError = error.message || "Could not load audiobooks."; }
+        paintShelf();
+    }
+    void refreshAudiobooks();
+    window.addEventListener("focus", () => void refreshAudiobooks());
 
     list?.addEventListener("click", async (event) => {
         const gear = event.target.closest("[data-book-gear]");

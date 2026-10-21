@@ -13,8 +13,8 @@ async function boot(){
     if(!session)return;
     if(session.mode!=='cloud')throw new Error('Sign in online to manage audiobook recordings.');
     if(!/^[a-f0-9-]{36}$/.test(id || ''))throw new Error('Open an audiobook from your Studio to manage its recordings.');
-    initWorkspaceShell({lead:'Audiobook ',accent:'Studio',subtitle:'Your recordings, chapters, and credits.'});
-    void loadWorkspaceProfile(supabase,session).then(profile=>initWorkspaceShell({lead:'Audiobook ',accent:'Studio',subtitle:'Your recordings, chapters, and credits.',name:profile.name,imageUrl:profile.imageUrl})).catch(()=>{});
+    initWorkspaceShell({lead:'Writing ',accent:'Studio',subtitle:'Your recordings, chapters, and credits.'});
+    void loadWorkspaceProfile(supabase,session).then(profile=>initWorkspaceShell({lead:'Writing ',accent:'Studio',subtitle:'Your recordings, chapters, and credits.',name:profile.name,imageUrl:profile.imageUrl})).catch(()=>{});
     const api=createAudiobooksApi(supabase,session.user.id);
     let writtenBooks=[];
     try{writtenBooks=(await createBooksApi(session,supabase).listBooks()).filter(book=>String(book.user_id)===String(session.user.id)&&!book.draft_parent_id);}catch{}

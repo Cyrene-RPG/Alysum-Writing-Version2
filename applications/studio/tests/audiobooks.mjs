@@ -33,11 +33,18 @@ function wav(){
  view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);view.setUint32(24,8000,true);
  view.setUint32(28,16000,true);view.setUint16(32,2,true);view.setUint16(34,16,true);bytes.write('data',36);view.setUint32(40,16000,true);return bytes;
 }
+const redirectRules=(await readFile(resolve(root,'_redirects'),'utf8')).split('\n').map(line=>line.trim().split(/\s+/)).filter(parts=>parts.length===3&&parts[2]==='200');
+function staticPath(path){
+ for(const [source,target] of redirectRules){
+  if(source===path)return target;
+  if(source.endsWith('*')&&path.startsWith(source.slice(0,-1)))return target.replace(':splat',path.slice(source.length-1));
+ }
+ return path;
+}
 const server=createServer(async(req,res)=>{
  try{const url=new URL(req.url,'http://localhost');if(url.pathname==='/fixture'){res.setHeader('Content-Type','text/html');res.end(fixture);return;}
- let path=url.pathname==='/audiobook-preview'?'/applications/studio/pages/audiobook-preview.html':url.pathname;
- path=path.replace('/css/studio/','/applications/studio/studio-css/').replace('/js/studio/','/applications/studio/page-ui/');path=resolve(root,'.'+path);
- if(!path.startsWith(root+'/'))throw Error('Outside fixture');const content=await readFile(path);res.setHeader('Content-Type',extname(path)==='.css'?'text/css':extname(path)==='.html'?'text/html':'text/javascript');res.end(content);
+ let path=staticPath(url.pathname);if(path.startsWith('/applications/')&&!extname(path))path+='.html';path=resolve(root,'.'+path);
+ if(!path.startsWith(root+'/'))throw Error('Outside fixture');const content=await readFile(path);res.setHeader('Content-Type',({'.css':'text/css','.html':'text/html','.woff2':'font/woff2','.woff':'font/woff','.png':'image/png','.json':'application/json'})[extname(path)]||'text/javascript');res.end(content);
  }catch{res.statusCode=404;res.end();}
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -87,7 +94,13 @@ try{
   page.on('request',request=>{if(/supabase|\/core\/authentication\//i.test(request.url())||!['GET','HEAD'].includes(request.method()))external.push(request.url());});
   page.on('pageerror',error=>errors.push(error.message));
   await page.goto(base.replace('/fixture','/audiobook-preview'));
-  await page.click('#preview-new');await page.locator('dialog [data-format=audio]').click();
+  await page.locator('#newBookCard').waitFor({state:'visible'});
+  assert.equal(await page.locator('.wd-welcome-bar').count(),1,'Original Studio header is retained');
+  assert.equal(await page.locator('.studio-section-head h1').textContent(),'Your books');
+  assert.equal(await page.locator('.studio-list [data-audiobook]').count(),1,'Audiobook uses the original shelf');
+  assert.equal(await page.locator('.audio-shelf,.audio-preview').count(),0,'No redesigned Studio sections');
+  await page.screenshot({path:`test-results/audiobooks/original-studio-${width}.png`,fullPage:true});
+  await page.click('#newBookCard');await page.locator('dialog [data-format=audio]').click();
   await page.getByLabel('Title',{exact:true}).fill('Demo recording project');await page.getByRole('button',{name:'Create audiobook',exact:true}).click();
   await page.locator('#preview-editor h1').waitFor();assert.equal(await page.locator('#preview-editor h1').textContent(),'Demo recording project');
   await page.getByLabel('I have permission',{exact:false}).check();await page.getByRole('button',{name:'Save details',exact:true}).click();
@@ -100,7 +113,7 @@ try{
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   await page.screenshot({path:`test-results/audiobooks/demo-${width}.png`,fullPage:true});
   assert.deepEqual(external,[],'Demo never uses auth, backend requests, or network uploads');assert.deepEqual(errors,[]);
-  await page.reload();await page.click('#preview-sample');await page.locator('#preview-editor h1').waitFor();
+  await page.reload();await page.locator('.studio-list [data-audiobook]').click();await page.locator('#preview-editor h1').waitFor();
   assert.equal(await page.locator('.audio-track').count(),0,'Demo data resets after reload');
   console.log(`PASS no-login demo with local audio at ${width}px`);await page.close();
  }

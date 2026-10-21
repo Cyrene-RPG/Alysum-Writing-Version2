@@ -2,7 +2,7 @@ const escape = value => String(value ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;'
 
 export function loadAudiobookStyles() {
     if (document.querySelector('link[data-audiobook-styles]')) return;
-    const link=document.createElement('link');link.rel='stylesheet';link.href='/css/studio/audiobooks.css?v=1';link.dataset.audiobookStyles='';document.head.append(link);
+    const link=document.createElement('link');link.rel='stylesheet';link.href='/css/studio/audiobooks.css?v=2';link.dataset.audiobookStyles='';document.head.append(link);
 }
 
 /** Shared entry point for New book and Upload book. Written-book behavior is delegated. */
