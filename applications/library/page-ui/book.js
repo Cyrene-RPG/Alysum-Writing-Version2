@@ -1,3 +1,4 @@
+import {mountReporting} from "./report-book.js?v=1";
 import { renderContentWarnings } from "/site-appearance/components/content-warnings.js";
 import { authorProfileUrl } from "/core/library/author-links.js";
 import { authorNameHtml } from "/site-appearance/js-runtime/author-link.js";
@@ -166,6 +167,7 @@ async function boot() {
         return;
     }
     const owner = isOwner(work, session);
+    mountReporting({client:supabase,work});
     void mountBookSubscription({client:supabase, work, session, isActive:() => readingState.active});
     const saved = readProgress(work.id);
     const chapters = work.chapters || [];

@@ -13,6 +13,18 @@
   ],
   "rewrites": [
     {
+      "source": "/staff/book-reports",
+      "destination": "/applications/book-reports/pages/staff.html"
+    },
+    {
+      "source": "/report-preview",
+      "destination": "/applications/book-reports/pages/preview-book.html"
+    },
+    {
+      "source": "/report-staff-preview",
+      "destination": "/applications/book-reports/pages/preview-staff.html"
+    },
+    {
       "source": "/content-warning-preview",
       "destination": "/applications/studio/pages/content-warning-preview.html"
     },
