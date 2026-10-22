@@ -3,7 +3,7 @@ import { normalizePurchaseUrl } from "../publishing/publish-meta.js";
 /**
  * Full published work for the book reader (listing + ordered chapter text).
  */
-import { fetchLibraryCatalog, normalizePublishedBookPreview } from "./author-profile.js?v=5";
+import { fetchLibraryCatalog, normalizePublishedBookPreview } from "./author-profile.js?v=6";
 import { readLocalLibraryListings } from "../publishing/post-work.js";
 import { chapterMeetsPublishLength, publishWordCount } from "../publishing/chapter-length.js";
 import { countWordsInHtml } from "../writing-engine/word-count.js";

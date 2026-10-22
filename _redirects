@@ -1,3 +1,4 @@
+/content-warning-preview /applications/studio/pages/content-warning-preview.html 200
 /screenplay-studio  /applications/studio/pages/screenplay-studio.html  200
 /screenplay-preview  /applications/studio/pages/screenplay-preview.html  200
 # Cloudflare Pages routing. Mirrors the redirects and rewrites in vercel.json.

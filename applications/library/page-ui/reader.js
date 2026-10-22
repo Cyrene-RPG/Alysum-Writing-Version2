@@ -1,7 +1,8 @@
+import { renderContentWarnings } from "/site-appearance/components/content-warnings.js";
 import { openReadingState } from "/core/library/reading-state.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
-import { fetchPublishedWork } from "@alysum/library/work.js?v=2";
+import { fetchPublishedWork } from "@alysum/library/work.js?v=5";
 import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
 import { mountReaderThemes } from "./reader-theme.js?v=6";
 import { mountReaderEnd } from "./reader-end.js?v=4";
@@ -254,6 +255,9 @@ async function boot() {
         document.getElementById("chapterMeta").textContent =
             chapter.locked ? "Locked · purchase required" : `${minutesFor(words)} min · ${formatWords(words)}`;
         const body = document.getElementById("chapterBody");
+        let warningMount=document.getElementById("readerContentWarnings");
+        if(!warningMount){warningMount=document.createElement("div");warningMount.id="readerContentWarnings";body.before(warningMount);}
+        renderContentWarnings(warningMount,work.warningMeta,{legacy:work.warnings||[],chapters:work.chapters||[],chapterId:chapter.id,collapsible:true});
         body.replaceChildren();
         if (chapter.locked) {
             const heading=document.createElement('h2');heading.textContent='This chapter is locked';

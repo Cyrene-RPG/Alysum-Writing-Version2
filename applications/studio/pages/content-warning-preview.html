@@ -1,0 +1,203 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/",
+        "@alysum/statistics/": "/core/statistics/"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=8" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes-dim/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=10" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=12" />
+    <script src="/site-appearance/js-runtime/body-background-presets-data.js?v=3"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/boot.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow">
+    <title>Content warning preview — Alysum</title>
+    <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
+    <link rel="stylesheet" href="/css/editor/document.css?v=11" />
+    <link rel="stylesheet" href="/css/editor/scene-breaks.css?v=2" />
+    <link rel="stylesheet" href="/css/studio/publish.css?v=27" />
+    <link rel="stylesheet" href="/css/studio/paid-access.css">
+<link rel="stylesheet" href="/site-appearance/css-styles/content-warnings.css">
+</head>
+<body>
+    <div class="pub-page">
+        <h1>Post work</h1>
+        <p class="pub-sub">Required fields are marked *. You can save without posting and come back later.</p>
+        <p class="pub-note">This listing uses chapters already in your book. Pick a genre — extra labels go in additional tags.</p>
+
+        <section class="pub-card">
+            <h2>Tags</h2>
+            <label>Genre *</label>
+            <p class="pub-hint">First pick is the main genre; you can add two more as secondary and tertiary.</p>
+            <div class="pub-genre-picker" id="genrePicker">
+                <div class="pub-genre-chips" id="genreChips"></div>
+                <input id="genreSearch" type="search" placeholder="Search genres…" autocomplete="off" />
+                <div class="pub-genre-menu" id="genreMenu" hidden></div>
+            </div>
+            <label>Rating *</label>
+            <div class="pub-pills" id="ratingPicker">
+                <label><input type="radio" name="rating" value="general" /> General Audiences</label>
+                <label><input type="radio" name="rating" value="mature" checked /> Mature</label>
+                <label><input type="radio" name="rating" value="explicit" /> Explicit</label>
+            </div>
+            <label>Content warnings *</label>
+            <div class="pub-checks" id="warningPicker"></div>
+            <label for="extraTags">Additional tags</label>
+            <input id="extraTags" type="text" placeholder="Gay, slow burn, found family…" />
+        </section>
+
+        <section class="pub-card">
+            <h2>Work details</h2>
+            <label for="workTitle">Title *</label>
+            <input id="workTitle" type="text" />
+            <div class="pub-look" id="pubLook">
+                <div class="pub-look-head">
+                    <button type="button" class="pub-look-reset" data-book-look-all-reset>Reset</button>
+                    <p class="pub-look-title">Listing look</p>
+                </div>
+                <button type="button" class="pub-look-drop-btn" data-look-drop-btn="listing" aria-expanded="false">UI elements</button>
+                <div class="pub-look-drop" data-look-drop="listing" hidden>
+                    <div data-book-look-swatches class="book-look-swatches"></div>
+                    <div data-book-look-custom hidden>
+                        <input type="color" data-book-look-color value="#111827" />
+                    </div>
+                </div>
+                <button type="button" class="pub-look-drop-btn" data-look-drop-btn="bg" aria-expanded="false">Page background</button>
+                <div class="pub-look-drop" data-look-drop="bg" hidden>
+                    <div data-book-bg-chips class="book-look-bg-chips"></div>
+                    <div data-book-bg-custom hidden>
+                        <input type="color" data-book-bg-color value="#0b1220" />
+                    </div>
+                </div>
+                <button type="button" class="pub-look-drop-btn" data-look-drop-btn="title" aria-expanded="false">Title colors</button>
+                <div class="pub-look-drop" data-look-drop="title" hidden>
+                    <div data-book-title-swatches class="book-look-swatches"></div>
+                    <div data-book-title-custom hidden>
+                        <input type="color" data-book-title-main value="#f59e0b" />
+                        <input type="color" data-book-title-accent value="#fde68a" />
+                    </div>
+                </div>
+                <button type="button" class="pub-look-drop-btn" data-look-drop-btn="accent" aria-expanded="false">Site accents</button>
+                <div class="pub-look-drop" data-look-drop="accent" hidden>
+                    <div data-book-accent-swatches class="book-look-swatches"></div>
+                </div>
+            </div>
+            <p class="pub-hint">Optional. Visitors keep their Appearance unless you set these. Library page only — not chapters.</p>
+            <label for="workSummary">Summary</label>
+            <textarea id="workSummary" placeholder="A few sentences for the library card."></textarea>
+            <label for="workNotesAfter">Notes</label>
+            <textarea id="workNotesAfter" placeholder="Optional notes shown under the synopsis."></textarea>
+            <div class="pub-checks">
+                <label><input type="checkbox" id="workWip" checked /> This is a work in progress</label>
+                <label><input type="checkbox" id="workComplete" /> This work is complete — post all chapters now</label>
+            </div>
+            <label for="workCoverFile">Cover</label>
+            <input id="workCoverFile" type="file" accept="image/*" />
+            <p class="pub-hint">Whole image for a normal cover. Wide banner also needs a 2:3 Library crop for the shelf — this page will switch you to that frame.</p>
+            <div class="pub-checks">
+                <label><input type="checkbox" id="coverWideOn" /> Use a wide banner</label>
+            </div>
+            <div class="pub-cover-editor" id="coverEditor" hidden>
+                <div class="pub-crop-tabs" id="cropTabs">
+                    <button type="button" data-crop-tab="library" class="is-on">Library</button>
+                    <button type="button" data-crop-tab="mini">Mini</button>
+                    <button type="button" data-crop-tab="wide" hidden>Wide</button>
+                </div>
+                <div class="pub-cover-stage" id="coverStage">
+                    <img id="coverStageImg" alt="" />
+                    <div class="pub-crop-frame" id="cropFrame" aria-label="Crop frame">
+                        <i data-handle="nw"></i>
+                        <i data-handle="ne"></i>
+                        <i data-handle="sw"></i>
+                        <i data-handle="se"></i>
+                    </div>
+                </div>
+                <div class="pub-cover-previews">
+                    <figure data-crop-tab="library">
+                        <div class="pub-prev is-lib" id="prevLib"><img alt="" /></div>
+                        <figcaption>Library</figcaption>
+                    </figure>
+                    <figure data-crop-tab="mini">
+                        <div class="pub-prev is-mini" id="prevMini"><img alt="" /></div>
+                        <figcaption>Mini</figcaption>
+                    </figure>
+                    <figure id="prevWideWrap" data-crop-tab="wide" hidden>
+                        <div class="pub-prev is-wide" id="prevWide"><img alt="" /></div>
+                        <figcaption>Wide</figcaption>
+                    </figure>
+                </div>
+            </div>
+        </section>
+
+        <section class="pub-card">
+            <h2>Manuscript</h2>
+            <p class="pub-hint">Select the chapters to post. They are free unless you check them under Locked chapters. Unchecked chapters stay private.</p>
+            <details class="pub-chapters" id="chapterDetails">
+                <summary id="chapterSummary">Chapters to post (0)</summary>
+                <div id="chapterList"></div>
+            </details>
+            <label for="chapterSelect">Preview</label>
+            <select id="chapterSelect"></select>
+            <div class="pub-preview">
+                <div class="pub-preview-head">
+                    <span id="previewLabel">Chapter preview</span>
+                    <span id="previewWords"></span>
+                </div>
+                <div class="pub-preview-body writer-page" id="previewBody">Select a chapter.</div>
+            </div>
+        </section>
+
+        <section class="pub-card" id="chapterAccessCard">
+            <h2>Locked chapters</h2>
+            <p class="pub-hint">Readers buy a product from your shop, then read its chapters here. Use one product to unlock the chapters checked below.</p>
+            <p id="chapterAccessUnavailable" role="status">Checking chapter access…</p>
+            <a id="chapterAccessSetup" class="payment-back" href="/applications/studio/pages/payment-setup" hidden>Site owner: prepare chapter access</a>
+            <fieldset id="chapterAccessFields" class="payment-fields" hidden>
+                <p><a class="payment-back" id="chapterShopSettings" href="/applications/studio/pages/connected-payments">Connect or manage your shop →</a></p>
+                <label for="chapterConnection">Your connected shop</label><select id="chapterConnection"><option value="">Choose your connected shop</option></select>
+                <label for="chapterProduct">Product link</label><input id="chapterProduct" type="url" placeholder="https://ko-fi.com/s/your-product" maxlength="2000">
+                <div class="access-grid"><div><label for="chapterMinimum">Product price</label><input id="chapterMinimum" inputmode="decimal" placeholder="3.00"></div>
+                <div><label for="chapterCurrency">Currency</label><select id="chapterCurrency"><option>USD</option><option>GBP</option><option>EUR</option><option>CAD</option><option>AUD</option></select></div></div>
+                <p class="pub-hint">Use a one-time shop product. Tips, gifts and memberships do not unlock chapters. Discounts below this price will not unlock access.</p>
+                <div id="chapterLocks" class="payment-chapters"></div>
+                <p class="pub-hint">Checked chapters are locked when you post or update. Readers must use their verified Alysum email at checkout. Each purchase unlocks the chapters included at that time.</p>
+            </fieldset>
+        </section>
+
+        <section class="pub-card" id="purchaseLinkCard">
+            <h2>Sell through your own page</h2>
+            <p class="pub-hint">Have a paid book, chapters or membership elsewhere? Add your own shop or membership link, such as Ko-fi, Patreon, Payhip or your website.</p>
+            <label for="purchaseUrl">Purchase link (optional)</label>
+            <input id="purchaseUrl" type="url" inputmode="url" maxlength="2000" placeholder="https://your-shop.com/your-book" aria-describedby="purchaseLinkHint">
+            <p class="pub-hint" id="purchaseLinkHint">Readers will see “Buy from author” on your book page. Payment and paid content are handled on your linked service. Buying there does not unlock chapters on Alysum.</p>
+        </section>
+        <div class="pub-strip" id="previewStrip"></div>
+        <div class="pub-actions">
+            <button type="button" class="pub-ghost" id="saveDraftBtn">Save without posting</button>
+            <button type="button" class="pub-primary" id="postBtn">Post work</button>
+        </div>
+        <p class="pub-status" id="pubStatus" role="status"></p>
+        <p class="pub-error" id="postError" hidden></p>
+    </div>
+    <script type="module" src="/js/studio/warning-preview.js?v=1"></script>
+</body>
+</html>

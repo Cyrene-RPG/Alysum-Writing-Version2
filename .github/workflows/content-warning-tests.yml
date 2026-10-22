@@ -1,0 +1,44 @@
+name: Content warning tests
+on:
+  push:
+    branches: [feature/publishing-content-warnings]
+  pull_request:
+    paths:
+      - 'core/**'
+      - 'applications/studio/**'
+      - 'applications/library/**'
+      - 'site-appearance/**'
+      - '.github/workflows/content-warning-tests.yml'
+permissions:
+  contents: read
+jobs:
+  publishing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test core/tests/publishing/*.test.js core/tests/library/author-profile.test.js
+  warning-browser:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix "$RUNNER_TEMP/warning-browser" playwright@1.61.1
+      - run: '"$RUNNER_TEMP/warning-browser/node_modules/.bin/playwright" install --with-deps ${{ matrix.browser }}'
+      - run: node applications/studio/tests/content-warnings.mjs
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/warning-browser/node_modules/playwright/index.mjs
+          WARNING_BROWSER: ${{ matrix.browser }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: content-warnings-${{ matrix.browser }}
+          path: test-results/content-warnings/

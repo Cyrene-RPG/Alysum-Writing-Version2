@@ -4,32 +4,16 @@
 import { normalizeCrop } from "./cover-upload.js";
 import { normalizeGenreList, partitionGenresAndTags } from "./genres.js";
 
-export const CONTENT_WARNINGS = [
-    "Graphic Violence",
-    "Explicit Sexual Content",
-    "Death",
-    "Self-harm",
-    "Abuse",
-    "Explicit",
-    "Mental Health Issue",
-    "Substance Abuse",
-    "Racism",
-    "Homophobia",
-    "Child Abuse",
-];
-
+import {WARNING_CATALOG,searchWarnings} from "./warning-catalog.js";
+import {normalizeWarningState} from "./content-warnings.js";
+export const CONTENT_WARNINGS = WARNING_CATALOG.map(item=>item.label);
 export function matchingContentWarnings(query) {
-    const q = String(query || "").trim().toLowerCase();
-    return CONTENT_WARNINGS.filter((item) => !q || item.toLowerCase().includes(q));
+    return searchWarnings(query,{limit:100}).items.map(item=>item.label);
 }
-
-export function toggleContentWarning(list, item) {
-    const value = String(item || "").trim();
-    if (!value) return Array.isArray(list) ? list.slice() : [];
-    const current = Array.isArray(list) ? list.map(String) : [];
-    if (current.includes(value)) return current.filter((entry) => entry !== value);
-    if (!CONTENT_WARNINGS.includes(value)) return current;
-    return [...current, value];
+export function toggleContentWarning(list,item) {
+    const current=Array.isArray(list)?list.map(String):[];
+    if(current.includes(item))return current.filter(value=>value!==item);
+    return CONTENT_WARNINGS.includes(item)?[...current,item]:current;
 }
 
 export const RATINGS = [
@@ -111,6 +95,7 @@ export function readPublishDraft(book) {
         lockedChapterIds: asIdList(raw.lockedChapterIds),
         tags: split.tags,
         warnings: asStringList(raw.warnings),
+        warningMeta: normalizeWarningState(raw.warningMeta,asStringList(raw.warnings)),
         cover_url: String(raw.cover_url || raw.coverUrl || ""),
         coverCrop: normalizeCrop(raw.coverCrop || raw.cover_crop),
         coverMini: normalizeCrop(raw.coverMini || raw.cover_mini),
