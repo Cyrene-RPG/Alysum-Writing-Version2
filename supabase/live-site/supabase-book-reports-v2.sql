@@ -44,7 +44,7 @@ RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_cata
 AS $$
 BEGIN
  IF auth.uid() IS NULL OR to_regclass('public.moderation_staff') IS NULL THEN RETURN false; END IF;
- RETURN EXISTS(SELECT 1 FROM public.moderation_staff WHERE user_id=auth.uid() AND role IN ('admin','moderator','staff'));
+ RETURN EXISTS(SELECT 1 FROM public.moderation_staff WHERE user_id=auth.uid() AND role::text IN ('admin','moderator','staff'));
 END $$;
 
 ALTER TABLE public.book_reports_v2 ENABLE ROW LEVEL SECURITY;

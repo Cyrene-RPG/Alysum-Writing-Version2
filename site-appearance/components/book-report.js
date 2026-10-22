@@ -20,7 +20,7 @@ export function mountBookReport({button,book,service}){
     function showExisting(receipt){openReport=receipt;view('existing');$('[data-br-existing-status]').textContent='Status: '+statusLabel(receipt.status);$('#br-followup').focus();}
     function close(){if(busy)return;epoch++;dialog.close();document.body.style.overflow=bodyOverflow;button.focus();}
     function reset(){epoch++;activity(false);if(dialog.open){dialog.close();document.body.style.overflow=bodyOverflow;}$('#br-form').reset();$('#br-followup').value='';openReport=null;view('confirm');}
-    button.addEventListener('click',()=>{reset();requestId=uuid();followId=uuid();bodyOverflow=document.body.style.overflow;document.body.style.overflow='hidden';dialog.showModal();$('[data-br-cancel]').focus();});
+    button.addEventListener('click',()=>{reset();const theme=getComputedStyle(button);for(const name of ['--alysum-ui-panel','--alysum-ui-raised','--alysum-ui-chrome','--alysum-ui-input','--bg','--text','--ui-text','--muted','--border','--glass-radius','--font-display','--font-sans']){const value=theme.getPropertyValue(name);if(value)dialog.style.setProperty(name,value);}requestId=uuid();followId=uuid();bodyOverflow=document.body.style.overflow;document.body.style.overflow='hidden';dialog.showModal();$('[data-br-cancel]').focus();});
     dialog.addEventListener('cancel',e=>{e.preventDefault();close();});
     for(const selector of ['[data-br-close]','[data-br-cancel]','[data-br-done]'])$(selector).onclick=close;
     $('[data-br-continue]').onclick=async()=>{
