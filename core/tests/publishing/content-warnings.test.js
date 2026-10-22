@@ -74,3 +74,16 @@ test('Unfinished warning selections can still be saved as publishing drafts',asy
     globalThis.window={location:{replace(){}}};
     try{await runPublishSave({isPublished:false,session:{mode:'local'},book:{id:'book'},readForm:()=>({title:'Book',chapterIds:[],warnings:['Death'],warningMeta:normalizeWarningState(null,['Death'])}),api:{async updateBook(id,value){patch=value;return value;}},postError:{}});assert.equal(patch.publish_meta.warningMeta.reviewed,false);assert.deepEqual(patch.publish_meta.warnings,['Death']);}finally{globalThis.window=previous;}
 });
+
+test('Requested aliases resolve without merging unrelated harm or consent labels',()=>{
+    for(const term of ['Animal abuse','Animal harm','Beastiality','SA','SH (sexual harassment)','SV','Domestic violence','Incest','Pedophilia','Human trafficking','Stalking','Kidnapping','Body fluids','Religious trauma','Religious abuse','Cannibalism','Child death','Arachnophobia','Uncommon phobia/s','General PTSD','C-PTSD','Veteran/Wartime trauma/PTSD','Graphic depiction of illness/disease','Kink/Fetish','Fetish','Vore','Colonial Violence']){
+        const item=warningDefinition(term);assert.ok(item,term);assert.ok(searchWarnings(term,{limit:100}).items.some(result=>result.id===item.id),term+' is searchable');
+    }
+    assert.equal(warningDefinition('Arachnophobia').id,'spiders');
+    assert.notEqual(warningDefinition('PTSD').id,warningDefinition('C-PTSD').id);
+    assert.notEqual(warningDefinition('Vore').id,warningDefinition('Gore').id);
+    assert.equal(warningDefinition('Beastiality').kind,'warning');
+    assert.equal(warningDefinition('Pedophilia').kind,'warning');
+    assert.equal(warningDefinition('Incest').kind,'warning');
+    assert.equal(warningDefinition('SH'),null,'Ambiguous initials must not silently mean harassment or self-harm');
+});

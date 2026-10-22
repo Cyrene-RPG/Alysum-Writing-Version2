@@ -64,7 +64,7 @@ const GROUPS = [
   [
     "Sexual violence and consent violations",
     "warning",
-    "Attempted sexual assault\nSexual harassment|unwanted sexual advances\nUnwanted sexual contact\nSexual coercion|coerced sex,pressured sexual activity\nSexual exploitation\nSexual abuse\nChild sexual abuse|CSA\nGrooming\nSexual blackmail\nSexual trafficking\nSexual contact with an incapacitated person\nDrug-facilitated sexual assault\nReproductive coercion|reproductive control\nSexual violence within a relationship\nSexual violence by an authority figure\nVoyeurism without consent\nNon-consensual intimate imagery|revenge porn,leaked intimate images\nNon-consensual sexual recording\nNon-consensual sexual broadcasting\nThreats of sexual violence\nAmbiguous consent|dubious consent,dubcon\nSexual boundaries ignored\nPersistent sexual demands\nConsent obtained through deception\nSexual contact while asleep|sexual contact with a sleeping person\nSexual contact while unconscious\nSexual contact during severe intoxication\nSexual activity under threat\nSexual activity under financial pressure\nSexual activity under institutional pressure\nSexual activity exchanged for protection\nUnwanted sexual observation\nSexual boundary violations within a relationship\nSexual coercion presented as romance\nSexual coercion presented as obligation\nSexual coercion presented as repayment\nConcealed information affecting consent\nConsent withdrawn during an encounter\nPressure to agree to sexual activity\nSexual activity involving unconsenting witnesses"
+    "Attempted sexual assault\nSexual harassment|unwanted sexual advances,SH (sexual harassment)\nUnwanted sexual contact\nSexual coercion|coerced sex,pressured sexual activity\nSexual exploitation\nSexual abuse|SA,SA (sexual abuse)\nChild sexual abuse|CSA\nGrooming\nSexual blackmail\nSexual trafficking\nSexual contact with an incapacitated person\nDrug-facilitated sexual assault\nReproductive coercion|reproductive control\nSexual violence within a relationship\nSexual violence by an authority figure\nVoyeurism without consent\nNon-consensual intimate imagery|revenge porn,leaked intimate images\nNon-consensual sexual recording\nNon-consensual sexual broadcasting\nThreats of sexual violence\nAmbiguous consent|dubious consent,dubcon\nSexual boundaries ignored\nPersistent sexual demands\nConsent obtained through deception\nSexual contact while asleep|sexual contact with a sleeping person\nSexual contact while unconscious\nSexual contact during severe intoxication\nSexual activity under threat\nSexual activity under financial pressure\nSexual activity under institutional pressure\nSexual activity exchanged for protection\nUnwanted sexual observation\nSexual boundary violations within a relationship\nSexual coercion presented as romance\nSexual coercion presented as obligation\nSexual coercion presented as repayment\nConcealed information affecting consent\nConsent withdrawn during an encounter\nPressure to agree to sexual activity\nSexual activity involving unconsenting witnesses\nSexual violence|SV,SV (sexual violence)\nIncest|incestuous relationships\nPedophilia|Paedophilia,pedophilic themes,paedophilic themes"
   ],
   [
     "Domestic and psychological abuse",
@@ -84,7 +84,7 @@ const GROUPS = [
   [
     "Mental health and trauma depictions",
     "warning",
-    "Panic attacks\nSevere anxiety\nDepressive episodes\nTrauma flashbacks\nNightmares\nDissociation\nDepersonalization\nDerealization\nMemory loss\nIntrusive thoughts\nObsessions and compulsions\nParanoia\nHallucinations\nDelusions\nManic episodes\nPsychiatric hospitalization\nInvoluntary psychiatric treatment\nRestraint in a care setting\nSeclusion in a care setting\nMedical dismissal of mental distress\nTrauma responses\nEmotional breakdowns\nIntense hopelessness\nProlonged isolation\nFear of physical touch\nTouch aversion\nPanic during intimacy\nDissociation during intimacy\nTrauma flashbacks during intimacy\nTraumatic memory recovery\nDistress caused by memory gaps\nFear of losing control\nSevere insomnia\nSensory overload\nBurnout-related distress\nCompulsive checking\nIntense shame\nDistress involving identity loss"
+    "Panic attacks\nSevere anxiety\nDepressive episodes\nTrauma flashbacks\nNightmares\nDissociation\nDepersonalization\nDerealization\nMemory loss\nIntrusive thoughts\nObsessions and compulsions\nParanoia\nHallucinations\nDelusions\nManic episodes\nPsychiatric hospitalization\nInvoluntary psychiatric treatment\nRestraint in a care setting\nSeclusion in a care setting\nMedical dismissal of mental distress\nTrauma responses\nEmotional breakdowns\nIntense hopelessness\nProlonged isolation\nFear of physical touch\nTouch aversion\nPanic during intimacy\nDissociation during intimacy\nTrauma flashbacks during intimacy\nTraumatic memory recovery\nDistress caused by memory gaps\nFear of losing control\nSevere insomnia\nSensory overload\nBurnout-related distress\nCompulsive checking\nIntense shame\nDistress involving identity loss\nReligious trauma\nPost-traumatic stress disorder|PTSD,General PTSD\nComplex post-traumatic stress disorder|C-PTSD,CPTSD,Complex PTSD\nCombat and wartime trauma|Veteran trauma,Wartime trauma,Veteran PTSD,Combat PTSD,Wartime PTSD,Veteran/Wartime trauma/PTSD"
   ],
   [
     "Eating disorders and body distress",
@@ -94,7 +94,7 @@ const GROUPS = [
   [
     "Medical content and illness",
     "warning",
-    "Medical trauma\nMedical neglect\nMedical malpractice\nInvasive medical procedures\nSurgery\nNeedles and injections\nBlood draws\nHospitals\nIntensive care\nEmergency resuscitation\nLife support\nWithdrawal of life support\nCancer\nSerious infectious illness\nEpidemics and pandemics\nChronic pain\nSeizures\nDementia-related distress\nLoss of bodily autonomy\nUnwanted medical treatment\nUnethical medical experimentation|human experimentation\nInadequate pain treatment\nMedication withdrawal\nDistressing medication side effects\nVomiting\nChoking\nBreathing difficulties\nMedical emergencies\nForced medical examinations\nMedical restraint\nMedical gaslighting\nMisdiagnosis\nDelayed diagnosis\nOrgan transplantation\nOrgan failure\nIntubation\nVentilation\nCatheterization\nConsciousness during a procedure\nDistress involving medical equipment\nTerminal diagnosis\nCare denied because of discrimination"
+    "Medical trauma\nMedical neglect\nMedical malpractice\nInvasive medical procedures\nSurgery\nNeedles and injections\nBlood draws\nHospitals\nIntensive care\nEmergency resuscitation\nLife support\nWithdrawal of life support\nCancer\nSerious infectious illness\nEpidemics and pandemics\nChronic pain\nSeizures\nDementia-related distress\nLoss of bodily autonomy\nUnwanted medical treatment\nUnethical medical experimentation|human experimentation\nInadequate pain treatment\nMedication withdrawal\nDistressing medication side effects\nVomiting\nChoking\nBreathing difficulties\nMedical emergencies\nForced medical examinations\nMedical restraint\nMedical gaslighting\nMisdiagnosis\nDelayed diagnosis\nOrgan transplantation\nOrgan failure\nIntubation\nVentilation\nCatheterization\nConsciousness during a procedure\nDistress involving medical equipment\nTerminal diagnosis\nCare denied because of discrimination\nGraphic depictions of illness or disease|Graphic depiction of illness/disease,Graphic illness,Graphic disease"
   ],
   [
     "Pregnancy and reproductive loss",
@@ -104,7 +104,7 @@ const GROUPS = [
   [
     "Discrimination and hate",
     "warning",
-    "Racism\nRacial slurs\nAnti-Black racism\nAntisemitism\nIslamophobia\nAnti-Asian racism\nAnti-Indigenous racism\nXenophobia\nEthnic persecution\nReligious persecution\nCaste discrimination\nColorism\nSexism\nMisogyny\nHomophobia\nLesbophobia\nBiphobia\nTransphobia\nMisgendering\nDeadnaming\nForced outing|outing without consent\nConversion practices|conversion therapy\nDiscrimination against asexual people\nIntersex discrimination\nAbleism\nDisability-related slurs\nClassism\nFatphobia\nAgeism\nHate speech\nHate crimes\nDehumanizing language\nDiscrimination against sex workers\nDiscrimination against people with addictions\nDiscrimination against refugees\nDiscrimination against homeless people\nReligious justification of discrimination\nHarassment involving gender expression\nHarassment involving sexual orientation"
+    "Racism\nRacial slurs\nAnti-Black racism\nAntisemitism\nIslamophobia\nAnti-Asian racism\nAnti-Indigenous racism\nXenophobia\nEthnic persecution\nReligious persecution\nCaste discrimination\nColorism\nSexism\nMisogyny\nHomophobia\nLesbophobia\nBiphobia\nTransphobia\nMisgendering\nDeadnaming\nForced outing|outing without consent\nConversion practices|conversion therapy\nDiscrimination against asexual people\nIntersex discrimination\nAbleism\nDisability-related slurs\nClassism\nFatphobia\nAgeism\nHate speech\nHate crimes\nDehumanizing language\nDiscrimination against sex workers\nDiscrimination against people with addictions\nDiscrimination against refugees\nDiscrimination against homeless people\nReligious justification of discrimination\nHarassment involving gender expression\nHarassment involving sexual orientation\nColonial violence|Colonialism-related violence"
   ],
   [
     "Substance use and addiction",
@@ -129,7 +129,7 @@ const GROUPS = [
   [
     "Animal harm",
     "warning",
-    "Animal abuse\nAnimal neglect\nAnimal abandonment\nAnimal injury\nAnimal death\nPet death|pet loss,death of a pet\nPet euthanasia\nAnimal experimentation\nAnimal fighting\nAnimal hunting\nAnimal slaughter\nAnimals in distress\nPredation involving animals\nThreats against animals\nSeparation from a pet\nLoss of a service animal\nAnimals trapped in a disaster\nAnimal poisoning\nAnimal captivity\nAnimal cruelty discussed"
+    "Animal abuse\nAnimal neglect\nAnimal abandonment\nAnimal injury\nAnimal death\nPet death|pet loss,death of a pet\nPet euthanasia\nAnimal experimentation\nAnimal fighting\nAnimal hunting\nAnimal slaughter\nAnimals in distress\nPredation involving animals\nThreats against animals\nSeparation from a pet\nLoss of a service animal\nAnimals trapped in a disaster\nAnimal poisoning\nAnimal captivity\nAnimal cruelty discussed\nAnimal harm|harm to animals\nBestiality|Beastiality,sexual abuse of animals"
   ],
   [
     "Horror and body horror",
@@ -139,7 +139,7 @@ const GROUPS = [
   [
     "Phobia-specific depictions",
     "warning",
-    "Spiders\nSnakes\nInsects\nSwarms\nRodents\nAggressive dogs\nDeep water\nOpen ocean\nHeights\nFalling\nEnclosed spaces|claustrophobic settings\nTight passages\nBeing trapped underground\nDarkness\nClowns\nDolls\nMasks\nClusters of holes|trypophobia imagery\nContamination\nGerms\nDental procedures\nBeing watched or followed\nUnstable bridges\nTrapped elevators\nBuried spaces\nBeing unable to move"
+    "Spiders|Arachnophobia\nSnakes\nInsects\nSwarms\nRodents\nAggressive dogs\nDeep water\nOpen ocean\nHeights\nFalling\nEnclosed spaces|claustrophobic settings\nTight passages\nBeing trapped underground\nDarkness\nClowns\nDolls\nMasks\nClusters of holes|trypophobia imagery\nContamination\nGerms\nDental procedures\nBeing watched or followed\nUnstable bridges\nTrapped elevators\nBuried spaces\nBeing unable to move\nOther phobia-related content|Uncommon phobia,Uncommon phobias,Uncommon phobia/s"
   ],
   [
     "Sexual content and explicitness — adults",
@@ -174,12 +174,12 @@ const GROUPS = [
   [
     "Bodily functions and intimate medical content",
     "content",
-    "Semen\nVaginal fluids\nMenstrual blood\nSexual bleeding\nBlood during intimate contact\nUrine\nFeces\nVomit\nSaliva\nSpitting\nIncontinence\nLoss of bowel control\nLoss of bladder control\nIntimate hygiene descriptions\nIntimate medical examinations\nGenital injuries\nGenital surgery\nGenital pain\nPainful sexual activity\nSexual activity involving bodily waste\nSexual activity involving vomit\nSexual activity involving menstrual blood"
+    "Semen\nVaginal fluids\nMenstrual blood\nSexual bleeding\nBlood during intimate contact\nUrine\nFeces\nVomit\nSaliva\nSpitting\nIncontinence\nLoss of bowel control\nLoss of bladder control\nIntimate hygiene descriptions\nIntimate medical examinations\nGenital injuries\nGenital surgery\nGenital pain\nPainful sexual activity\nSexual activity involving bodily waste\nSexual activity involving vomit\nSexual activity involving menstrual blood\nBodily fluids|Body fluids"
   ],
   [
     "Fetish and roleplay descriptors — adults",
     "adult",
-    "Fetish themes\nClothing-related fetish content\nUniform-related fetish content\nFoot-related fetish content\nBody-part-focused sexual content\nScent-focused sexual content\nVoice-focused sexual content\nVoyeurism with consent\nExhibitionism with consent\nAdult authority-role roleplay\nAdult caregiver-role roleplay\nConsensual pet roleplay\nConsensual animal-persona roleplay\nConsensual interrogation roleplay\nConsensual captivity roleplay\nConsensual punishment roleplay\nConsensual ritualized sexual activity\nSexualized worship\nSexualized praise\nSexualized humiliation\nSexualized objectification\nSexualized competition\nSexualized performance"
+    "Fetish themes|Fetish\nClothing-related fetish content\nUniform-related fetish content\nFoot-related fetish content\nBody-part-focused sexual content\nScent-focused sexual content\nVoice-focused sexual content\nVoyeurism with consent\nExhibitionism with consent\nAdult authority-role roleplay\nAdult caregiver-role roleplay\nConsensual pet roleplay\nConsensual animal-persona roleplay\nConsensual interrogation roleplay\nConsensual captivity roleplay\nConsensual punishment roleplay\nConsensual ritualized sexual activity\nSexualized worship\nSexualized praise\nSexualized humiliation\nSexualized objectification\nSexualized competition\nSexualized performance\nKink themes|Kink,Kink/Fetish\nVore themes|Vore,Vorarephilia"
   ],
   [
     "Relationships and interpersonal distress",
@@ -250,6 +250,16 @@ const extra = GROUPS.flatMap(([category,kind,source]) => source.trim().split('\n
     return {id:warningKey(label),label,category,kind:category==='Legacy broad labels'?'legacy':kind,aliases:aliases.split(',').map(value=>value.trim()).filter(Boolean)};
 }));
 const DESCRIPTIONS = {
+  "bestiality": "Sexual abuse of animals. Separate from consensual adult sexual-content descriptors.",
+  "sexual-violence": "Sexual violence or its aftermath. Review whether the core non-consent warning also applies.",
+  "incest": "Sexual content or abuse involving relatives. Apply relevant consent and minor-related core warnings as appropriate.",
+  "pedophilia": "Themes involving sexual interest in prepubescent children. Review the core warning for sexual content involving minors where applicable.",
+  "other-phobia-related-content": "Phobia-related depictions not covered by a more specific label. Use the warning note to identify the subject.",
+  "vore-themes": "Sexualized fantasy themes involving swallowing or being swallowed, with adult characters. Add graphic violence warnings if graphic bodily harm is depicted.",
+  "post-traumatic-stress-disorder": "Depictions or discussion of PTSD.",
+  "complex-post-traumatic-stress-disorder": "Depictions or discussion of complex PTSD.",
+  "combat-and-wartime-trauma": "Trauma associated with military service, combat or war; not all such trauma is PTSD.",
+
   "graphic-violence": "Detailed or graphic depictions of physical violence.",
   "major-character-death": "A major character dies in the work.",
   "sexual-assault-non-consensual-sex": "Sexual activity imposed without consent. Consensual adult roleplay alone is not this warning.",
