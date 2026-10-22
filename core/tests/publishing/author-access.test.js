@@ -125,7 +125,7 @@ test('a failed private snapshot save stops publication before any public write',
     code=code.replace(/(["'])(@alysum\/publishing\/|\/core\/writing-engine\/)([^"']+)\1/g,(_match,_quote,prefix,tail)=>JSON.stringify(new URL((prefix.startsWith('@')?'../../publishing/':'../../writing-engine/')+tail,import.meta.url).href));
     const {runPublishSave}=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
     await assert.rejects(runPublishSave({isPublished:true,listed:true,session:{mode:'cloud',user:{id:owner}},book:source,chapters:source.sections.body,
-        readForm:()=>({title:'Book',genres:['fantasy'],rating:'general',chapterIds:['free','locked'],lockedChapterIds:['locked']}),
+        readForm:()=>({title:'Book',genres:['fantasy'],rating:'general',warningMeta:{version:1,reviewed:true,noneApply:true,coreIds:[],entries:[],note:''},chapterIds:['free','locked'],lockedChapterIds:['locked']}),
         loadDraftCoverFile:async()=>null,saveChapterAccess:async()=>{throw Error('Private save unavailable');},
         api:{updateBook(){assert.fail('Must not save');}},supabase:{from(){assert.fail('Must not publish');}},postError:{}}),/Private save unavailable/);
 });
@@ -156,7 +156,7 @@ test('short locked chapters give a named error before any write or automatic tak
     for(const chapters of [[{id:'locked',title:'Chapter 2',content:'short '.repeat(100)}],[{id:'free',title:'Sample',content:'word '.repeat(600)},{id:'locked',title:'Chapter 2',content:'short '.repeat(100)}]]) {
         const postError={};
         await runPublishSave({isPublished:true,listed:true,session:{mode:'cloud',user:{id:owner}},book:source,chapters,
-            readForm:()=>({title:'Book',genres:['fantasy'],rating:'general',chapterIds:chapters.map(ch=>ch.id),lockedChapterIds:['locked']}),
+            readForm:()=>({title:'Book',genres:['fantasy'],rating:'general',warningMeta:{version:1,reviewed:true,noneApply:true,coreIds:[],entries:[],note:''},chapterIds:chapters.map(ch=>ch.id),lockedChapterIds:['locked']}),
             saveChapterAccess(){assert.fail('Must not configure');},api:{updateBook(){assert.fail('Must not save');}},supabase:{from(){assert.fail('Must not update or unlist');}},postError});
         assert.match(postError.textContent,/Chapter 2/);assert.match(postError.textContent,/100 \/ 500/);assert.match(postError.textContent,/listing has not changed/);
     }
@@ -164,7 +164,7 @@ test('short locked chapters give a named error before any write or automatic tak
 test('a lock missing from the publication selection gives the chapter name before writes',async()=>{
     const {runPublishSave}=await loadPublishSave();const postError={};
     await runPublishSave({isPublished:true,listed:true,session:{mode:'cloud',user:{id:owner}},book:source,chapters:source.sections.body,
-        readForm:()=>({title:'Book',genres:['fantasy'],rating:'general',chapterIds:['free'],lockedChapterIds:['locked']}),
+        readForm:()=>({title:'Book',genres:['fantasy'],rating:'general',warningMeta:{version:1,reviewed:true,noneApply:true,coreIds:[],entries:[],note:''},chapterIds:['free'],lockedChapterIds:['locked']}),
         saveChapterAccess(){assert.fail('Must not configure');},api:{updateBook(){assert.fail('Must not save');}},supabase:{from(){assert.fail('Must not publish');}},postError});
     assert.match(postError.textContent,/Private chapter/);assert.match(postError.textContent,/Manuscript/);
 });

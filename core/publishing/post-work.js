@@ -1,3 +1,4 @@
+import { normalizeWarningState } from "./content-warnings.js";
 /**
  * Build and save a public.library listing from a manuscript + publish form.
  */
@@ -134,6 +135,7 @@ export function buildLibraryPayload(book, form) {
         genres: split.genres,
         rating: String(form.rating || "").trim(),
         warnings: Array.isArray(form.warnings) ? form.warnings.map(String) : [],
+        warningMeta: normalizeWarningState(form.warningMeta,form.warnings),
         tags: split.tags,
         coverUrl: String(form.coverUrl || "").trim(),
         coverCrop: normalizeCrop(form.coverCrop),

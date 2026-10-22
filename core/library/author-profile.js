@@ -1,3 +1,4 @@
+import { normalizeWarningState } from "../publishing/content-warnings.js";
 import { authorProfileUrl } from "./author-links.js";
 /**
  * Public author profiles: biography pages and reader/library author links.
@@ -220,6 +221,7 @@ export function normalizePublishedBookPreview(row) {
         rating: String(data.rating || "").trim(),
         tags: split.tags,
         warnings: Array.isArray(data.warnings) ? data.warnings.map(String) : [],
+        warningMeta: normalizeWarningState(data.warningMeta,data.warnings),
         followers: Number(data.followers) || 0,
         ratingScore: Number(data.ratingScore ?? data.rating_score) || 0,
         publishedAt: parseTimeMs(data.publishedAt ?? data.published_at),

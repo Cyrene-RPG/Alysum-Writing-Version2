@@ -11,7 +11,7 @@ async function publishSave(){
 }
 test('an empty chapter selection after promotion cannot unlist the live book',async()=>{
     const {runPublishSave}=await publishSave();const postError={};let writes=0;
-    await runPublishSave({isPublished:true,listed:true,session:{mode:'cloud',user:{id:'owner'}},supabase:{from(){writes++;throw Error('Must not write');}},api:{updateBook(){writes++;throw Error('Must not write');}},book:{id:'main',is_published:true,publish_meta:{revisionNeedsPublishReview:true}},chapters:[],readForm:()=>({title:'Book',genres:['fantasy'],rating:'Teen',chapterIds:[]}),postError});
+    await runPublishSave({isPublished:true,listed:true,session:{mode:'cloud',user:{id:'owner'}},supabase:{from(){writes++;throw Error('Must not write');}},api:{updateBook(){writes++;throw Error('Must not write');}},book:{id:'main',is_published:true,publish_meta:{revisionNeedsPublishReview:true}},chapters:[],readForm:()=>({title:'Book',genres:['fantasy'],rating:'Teen',warningMeta:{version:1,reviewed:true,noneApply:true,coreIds:[],entries:[],note:''},chapterIds:[]}),postError});
     assert.match(postError.textContent,/Choose chapters from your new main draft/);assert.equal(writes,0);
 });
 test('saving publishing settings preserves the chapter-review guard until publication',async()=>{

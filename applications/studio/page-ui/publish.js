@@ -20,11 +20,11 @@ import {
     saveDraftCover,
     uploadBookCover,
 } from "@alysum/publishing/cover-upload.js?v=10";
-import { readPublishDraft } from "@alysum/publishing/publish-meta.js?v=7";
+import { readPublishDraft } from "@alysum/publishing/publish-meta.js?v=8";
 import { fetchLibraryListingId, isLibraryListed, readLocalLibraryListings } from "@alysum/publishing/post-work.js?v=13";
 import { bindPageLook, paintPageLook, readPageLook } from "./page-look.js?v=14";
-import { bindWarningPicker } from "./warning-picker.js?v=5";
-import { paintPostError, runPublishSave } from "./publish-save.js?v=9";
+import { bindWarningPicker } from "./warning-picker.js?v=6";
+import { paintPostError, runPublishSave } from "./publish-save.js?v=10";
 import {
     CROP_ASPECT,
     applyPreview,
@@ -110,6 +110,7 @@ async function boot() {
         return;
     }
     let chapterAccess = null;
+    let warningPicker = null;
     const profile = peekWorkspaceProfile(session);
     const draft = readPublishDraft(book);
     const listed = Boolean(await fetchLibraryListingId(supabase, book.id)) || isLibraryListed(book);
@@ -254,6 +255,7 @@ async function boot() {
             genres: selectedGenres.slice(0, 3),
             rating: document.querySelector("#ratingPicker input:checked")?.value || "",
             warnings: selectedWarnings.slice(),
+            warningMeta: warningPicker?.read() || draft.warningMeta,
             tags,
             coverUrl,
             coverCrop: crops.library,
@@ -339,7 +341,9 @@ async function boot() {
         paintStrip();
     }
 
-    bindWarningPicker(document, {
+    warningPicker = bindWarningPicker(document, {
+        initialState: draft.warningMeta,
+        chapters,
         getSelected: () => selectedWarnings,
         setSelected(next) { selectedWarnings = next; },
     });

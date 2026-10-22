@@ -1,3 +1,4 @@
+import { renderContentWarnings } from "/site-appearance/components/content-warnings.js";
 import { authorProfileUrl } from "/core/library/author-links.js";
 import { authorNameHtml } from "/site-appearance/js-runtime/author-link.js";
 import { openReadingState } from "/core/library/reading-state.js";
@@ -5,7 +6,7 @@ import { normalizePurchaseUrl } from "@alysum/publishing/publish-meta.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
-import { fetchPublishedWork } from "@alysum/library/work.js?v=4";
+import { fetchPublishedWork } from "@alysum/library/work.js?v=5";
 import { cropFrameStyle, coverCropForImage, isFullCoverCrop, peekCoverSrc } from "@alysum/publishing/cover-upload.js?v=10";
 import { genreLabel } from "@alysum/publishing/genres.js?v=4";
 import { applyVisitListingLook, applyVisitSiteAccent, applyVisitTitleColor, applyVisitWelcomeChrome } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=11";
@@ -95,19 +96,11 @@ function paintTags(work, owner) {
     label.hidden = !chips.length;
 }
 
-function paintWarns(work, owner) {
-    const warnings = work.warnings || [];
-    const el = document.getElementById("bookWarns");
-    const label = document.getElementById("warnsLabel");
-    if (!warnings.length && !owner) {
-        el.innerHTML = "";
-        label.hidden = true;
-        return;
-    }
-    label.hidden = false;
-    el.innerHTML = warnings.map((item) =>
-        `<span class="book-warn"><span class="lbl">${escapeHtml(item)}</span></span>`
-    ).join("") + (owner ? `<a class="book-warn add" href="${publishHref(work.id)}">+ Add warning</a>` : "");
+function paintWarns(work,owner) {
+    const el=document.getElementById("bookWarns"),label=document.getElementById("warnsLabel");
+    renderContentWarnings(el,work.warningMeta,{legacy:work.warnings||[],chapters:work.chapters||[]});
+    label.hidden=el.hidden&&!owner;
+    if(owner){el.hidden=false;const add=document.createElement("a");add.className="book-warn add";add.href=publishHref(work.id);add.textContent="Edit content warnings";el.append(add);}
 }
 
 function paintChapters(work, owner, saved) {

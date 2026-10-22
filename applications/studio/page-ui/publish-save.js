@@ -1,10 +1,11 @@
+import { normalizeWarningState,validateWarningState } from "@alysum/publishing/content-warnings.js";
 import { normalizePurchaseUrl } from "@alysum/publishing/publish-meta.js";
 import { needsPromotedChapterSelection } from "/core/writing-engine/promote-draft.js";
 import {
     MIN_PUBLISH_WORDS,
     publishWordCount,
 } from "@alysum/publishing/chapter-length.js?v=1";
-import { saveLibraryListing, unlistLibraryListing } from "@alysum/publishing/post-work.js?v=13";
+import { saveLibraryListing, unlistLibraryListing } from "@alysum/publishing/post-work.js?v=14";
 
 export function paintPostError(el, message) {
     if (!el) return;
@@ -85,6 +86,7 @@ export function publishMetaFromForm(form) {
         } : null,
         tags: form.tags,
         warnings: form.warnings,
+        warningMeta: normalizeWarningState(form.warningMeta,form.warnings),
         cover_url: form.coverUrl,
         coverCrop: form.coverCrop,
         coverMini: form.coverMini,
@@ -144,6 +146,8 @@ export async function runPublishSave({
                 : "Choose a rating and title first.");
             return;
         }
+        const warningError=validateWarningState(form.warningMeta,{chapterIds:chapters.map(ch=>String(ch.id))});
+        if (warningError) { paintPostError(postError,warningError); return; }
         if (!listed && !form.chapterIds.length) {
             paintPostError(postError, "Pick at least one chapter to post.");
             return;
