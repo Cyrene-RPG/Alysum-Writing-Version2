@@ -15,7 +15,7 @@ export function mountReportQueue(service,root=document){
         offset+=(data.items||[]).length;$('#br-groups-more').hidden=offset>=data.total;
         status.textContent=data.total?data.total+' book(s) match these filters.':'No reports match these filters.';
     }catch(error){if(v===generation&&t===queueToken)status.textContent=reportError(error);}}
-    async function loadBook(bookId,more=false){const v=generation,t=++bookToken;if(!more){currentBook=bookId;bookOffset=0;reports.replaceChildren();detail.replaceChildren();selectedId='';current=null;detailToken++;}$('#br-book-more').hidden=true;reports.setAttribute('aria-busy','true');
+    async function loadBook(bookId,more=false){const v=generation,t=++bookToken;if(!more){currentBook=bookId;bookOffset=0;reports.replaceChildren();detail.replaceChildren(el('p','Select a report below to review it.'));selectedId='';current=null;detailToken++;}$('#br-book-more').hidden=true;reports.setAttribute('aria-busy','true');
         try{const data=await service.book(bookId,bookOffset);if(v!==generation||t!==bookToken)return;
             if(!more){reports.append(el('h2','Reports for this book'),el('p','All reports for the selected book, including closed reports.',{class:'br-muted'}));const link=el('a','Open book ↗',{href:'/book?id='+encodeURIComponent(bookId),target:'_blank',rel:'noopener noreferrer'});reports.append(link);}
             for(const report of data.items||[]){const card=el('div',undefined,{class:'br-card'}),b=el('button',undefined,{type:'button'});b.append(el('strong',reasonLabel(report.reason)),el('small',statusLabel(report.status)+' · '+date(report.created_at)),el('small',report.chapter_title||'Whole book'));b.onclick=()=>loadDetail(report.id);card.append(b);reports.append(card);}
