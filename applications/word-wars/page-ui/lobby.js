@@ -19,6 +19,8 @@ import {
 } from "@alysum/community/word-war-race.js";
 import { initWorkspaceShell } from "/js/studio/shell.js";
 import { mountPromptPicker } from "/js/word-wars/prompt-picker.js";
+import { restoreUnsavedWriting } from "@alysum/community/word-war-backup.js";
+import { bookChoices } from "@alysum/community/word-war-books.js";
 
 const LIST_REFRESH_MS = 5_000;
 const BOOK_KEY = "alysum:word-wars:book";
@@ -67,8 +69,11 @@ async function boot() {
     });
 
     let books = [];
+    const booksApi = createBooksApi(session, supabase);
+    // Writing a closed tab or dropped connection kept on this device goes back into its book first.
+    const restored = await restoreUnsavedWriting({ userId: session.user.id, booksApi }).catch(() => []);
     try {
-        books = await createBooksApi(session, supabase).listBooks();
+        books = await booksApi.listBooks();
     } catch {
         books = [];
     }
@@ -79,10 +84,10 @@ async function boot() {
 
     // ---------- Book ----------
     if (books.length) {
-        bookSelect.replaceChildren(...books.map((b) => {
+        bookSelect.replaceChildren(...bookChoices(books).map((choice) => {
             const opt = document.createElement("option");
-            opt.value = b.id;
-            opt.textContent = b.title || "Untitled";
+            opt.value = choice.id;
+            opt.textContent = choice.label;
             return opt;
         }));
         const saved = rememberedBook();
@@ -342,6 +347,13 @@ async function boot() {
         }
     }
 
+    if (restored.length) {
+        const words = restored.reduce((sum, r) => sum + r.words, 0);
+        const titles = [...new Set(restored.map((r) => r.bookTitle))].join(", ");
+        const separate = restored.some((r) => r.isNewChapter) ? " Some are in a new chapter marked “recovered”, so nothing you changed since was overwritten." : "";
+        $("restoredNote").textContent = `We put back ${words.toLocaleString()} words from an earlier Word War that hadn't saved yet. They're in ${titles}.${separate}`;
+        $("restoredNote").classList.remove("hidden");
+    }
     $("loadingPanel").classList.add("hidden");
     $("hubShell").classList.remove("hidden");
     await refreshList();

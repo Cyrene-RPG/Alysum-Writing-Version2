@@ -45,6 +45,8 @@ import {
     wordCap,
 } from "@alysum/community/word-war-race.js";
 import { createRaceCaller } from "@alysum/community/word-war-calls.js";
+import { restoreUnsavedWriting } from "@alysum/community/word-war-backup.js";
+import { bookChoices } from "@alysum/community/word-war-books.js";
 import { initWorkspaceShell } from "/js/studio/shell.js";
 import { createTrack, heartIcon } from "/js/word-wars/track.js";
 import { WRITE_IN_NEW, mountWaitingRoom } from "/js/word-wars/waiting.js";
@@ -160,6 +162,8 @@ async function boot() {
     }
 
     const booksApi = createBooksApi(session, supabase);
+    // Writing a closed tab or dropped connection kept on this device goes back into its book first.
+    const restored = await restoreUnsavedWriting({ userId: session.user.id, booksApi }).catch(() => []);
     let books = [];
     try {
         books = await booksApi.listBooks();
@@ -167,10 +171,10 @@ async function boot() {
         books = [];
     }
 
-    runRace({ raceId, uid: session.user.id, booksApi, books, first });
+    runRace({ raceId, uid: session.user.id, booksApi, books, first, restored });
 }
 
-function runRace({ raceId, uid, booksApi, books, first }) {
+function runRace({ raceId, uid, booksApi, books, first, restored = [] }) {
     const S = {
         race: first.race,
         racers: new Map(),
@@ -933,6 +937,13 @@ function runRace({ raceId, uid, booksApi, books, first }) {
         $("meCheers").textContent = String(cheersOf(mine));
         $("paceChip").classList.toggle("hidden", !mineCount.isOverLimit || mine.finishedAt != null);
 
+        const saveState = $("saveState");
+        const saveStatus = writer.saveStatus();
+        saveState.classList.toggle("is-error", saveStatus === "error");
+        saveState.textContent = saveStatus === "saved" ? `Saved to ${writer.bookTitle}`
+            : saveStatus === "error" ? "Not saved to your book yet. A copy is kept on this device and we keep trying."
+                : "Saving…";
+
         const toggle = $("pageToggle");
         toggle.textContent = mine.isPagePublic ? "Public: spectators can watch you write" : "Private: only you can see this";
         toggle.classList.toggle("is-public", mine.isPagePublic);
@@ -1152,9 +1163,9 @@ function runRace({ raceId, uid, booksApi, books, first }) {
     });
 
     if (books.length) {
-        $("dropInBook").replaceChildren(...books.map((b) => Object.assign(document.createElement("option"), {
-            value: b.id,
-            textContent: b.title || "Untitled",
+        $("dropInBook").replaceChildren(...bookChoices(books).map((choice) => Object.assign(document.createElement("option"), {
+            value: choice.id,
+            textContent: choice.label,
         })));
         const saved = rememberedBook();
         if (books.some((b) => b.id === saved)) $("dropInBook").value = saved;
@@ -1248,6 +1259,17 @@ function runRace({ raceId, uid, booksApi, books, first }) {
     window.addEventListener("pagehide", () => {
         void writer?.flush();
     });
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") void writer?.flush();
+    });
+    // Closing with words not in the book yet: send them now and ask the browser to hold on.
+    // (The copy on this device is put back on the next visit even if they leave.)
+    window.addEventListener("beforeunload", (event) => {
+        if (!writer || writer.saveStatus() === "saved") return;
+        void writer.flush();
+        event.preventDefault();
+        event.returnValue = "";
+    });
 
     $("heartIcon").replaceWith(heartIcon());
 
@@ -1283,6 +1305,10 @@ function runRace({ raceId, uid, booksApi, books, first }) {
 
     afterData();
     schedulePoll();
+    if (restored.length) {
+        const words = restored.reduce((sum, r) => sum + r.words, 0);
+        toast(`We put back ${words.toLocaleString()} words from an earlier Word War that hadn't saved yet.`);
+    }
     setInterval(tick, TICK_MS);
     setInterval(() => { void flushCheers(); }, CHEER_FLUSH_MS);
 }

@@ -279,6 +279,15 @@ html[data-corner-style="sharp"] .ww-hub-body { --ww-radius: 0; }
     overflow-wrap: anywhere;
 }
 
+.ww-restored {
+    margin: 0;
+    padding: 10px 14px;
+    border: 1px solid color-mix(in srgb, #34d399 45%, var(--ww-line));
+    border-radius: var(--ww-radius);
+    background: color-mix(in srgb, #34d399 10%, var(--ww-panel));
+    font-size: 14px;
+}
+
 .ww-tag {
     padding: 2px 8px;
     border-radius: 999px;

@@ -380,6 +380,8 @@ body[data-view="race"] .ww-race {
     align-content: start;
 }
 .ww-stands { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.ww-save-state { margin-left: auto; font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.ww-save-state.is-error { color: var(--ww-gold); font-weight: 700; white-space: normal; }
 .ww-drop-in { display: grid; gap: 8px; border-color: color-mix(in srgb, var(--ww-gold) 45%, var(--ww-line)); }
 .ww-drop-in .ww-hint { margin: 0; }
 .ww-spec-main { display: grid; gap: 12px; align-content: start; min-width: 0; }

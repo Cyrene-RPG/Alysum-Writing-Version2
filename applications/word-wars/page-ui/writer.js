@@ -1,6 +1,9 @@
 /**
  * The racer's page: their real book, a chapter picker and the editor. Saves to
- * the book like Studio does. Only the word count ever leaves this page.
+ * the book like Studio does, and never loses writing: every edit is also kept
+ * on this device until the book has it (word-war-backup.js), a failed save is
+ * retried, and if the book was saved somewhere else meanwhile, the chapters
+ * written here are merged into that copy instead of overwriting it.
  */
 import {
     addBodyChapter,
@@ -14,9 +17,17 @@ import { recordTypedWords } from "@alysum/account/writing-stats.js";
 import { countedWordDelta, isPasteLikeInput } from "@alysum/statistics/typed-input.js";
 import { reviewSentencesForXp, recordPastedRegion } from "@alysum/statistics/sentence-review.js";
 import { createRaceCounter, pageTextFromHtml } from "@alysum/community/word-war-race.js";
+import {
+    keepWriting,
+    markSaved,
+    mergeWrittenChapters,
+    readBookSavedAt,
+} from "@alysum/community/word-war-backup.js";
 import { createAutosave } from "/js/editor/autosave.js";
 import { mountDocument } from "/js/editor/document.js";
 import { mountToolbar } from "/js/editor/toolbar.js";
+
+const RETRY_SAVE_MS = 5_000;
 
 function pastedKey(raceId) {
     return `alysum:word-wars:pasted:${raceId}`;
@@ -51,20 +62,50 @@ export function mountWriter({
     let current = withUpdatedWords(book);
     let counter = null;
     let pasted = readPasted(raceId);
+    // When the server last saved this book, as far as this page knows.
+    let knownSavedAt = Number(book.updated) || 0;
+    // Chapters written in during this race: the only ones this page puts into a newer copy.
+    const touched = new Set();
 
     const chapters = () => listBodyChapters(current.sections).filter((ch) => ch && ch.kind !== "folder");
     let selectedId = chapters()[chapters().length - 1]?.id || "";
 
-    const autosave = createAutosave({
-        delay: 400,
-        save: async (next) => {
-            await booksApi.updateBook(next.id, {
-                title: next.title,
-                sections: next.sections,
-                words: next.words,
-                media_format: next.media_format,
-            });
-        },
+    async function saveBook() {
+        let savedAt = null;
+        try {
+            savedAt = await readBookSavedAt(supabase, current.id);
+        } catch {
+            savedAt = null;
+        }
+        if (savedAt != null && savedAt > knownSavedAt) {
+            // Saved elsewhere since (Studio in another tab or device): start from that copy.
+            const fresh = await booksApi.getBook(current.id).catch(() => null);
+            if (fresh?.sections) {
+                current = withUpdatedWords({ ...fresh, sections: mergeWrittenChapters(fresh.sections, current.sections, touched) });
+                paintChapters();
+                // The open chapter wasn't written in here, so show their newer text before any typing.
+                if (!touched.has(selectedId)) editor.setHtml(currentChapter()?.content || "<p><br></p>");
+            }
+        }
+        const next = current;
+        const saved = await booksApi.updateBook(next.id, {
+            title: next.title,
+            sections: next.sections,
+            words: next.words,
+            media_format: next.media_format,
+        });
+        // updateBook keeps a pending copy and resolves even when the server refused it.
+        if (!saved || saved._synced === false) throw new Error(saved?._syncError || "Not saved yet.");
+        knownSavedAt = Number(saved.updated) || Date.now();
+        markSaved(uid, { raceId, bookId: next.id, sections: next.sections });
+    }
+
+    const autosave = createAutosave({ delay: 400, save: () => saveBook() });
+    const retryTimer = window.setInterval(() => {
+        if (autosave.getStatus() === "error") autosave.schedule(current);
+    }, RETRY_SAVE_MS);
+    window.addEventListener("online", () => {
+        if (autosave.getStatus() !== "saved") autosave.schedule(current);
     });
 
     const editor = mountDocument({
@@ -104,6 +145,17 @@ export function mountWriter({
         if (!chapter) return;
         const isPaste = isPasteLikeInput(event);
         if (isPaste) recordPastedRegion(uid, chapter.content || "", html);
+        // Keep a copy on this device first, so closing the tab right now loses nothing.
+        touched.add(chapter.id);
+        keepWriting(uid, {
+            raceId,
+            bookId: current.id,
+            bookTitle: current.title,
+            chapterId: chapter.id,
+            title: chapter.title,
+            html,
+            previousHtml: chapter.content || "",
+        });
         const before = bookWords();
         current = withUpdatedWords({ ...current, sections: setChapterContent(current.sections, chapter.id, html) });
         const after = bookWords();
@@ -160,6 +212,7 @@ export function mountWriter({
             await autosave.flush();
             current = withUpdatedWords({ ...current, sections: addBodyChapter(current.sections, "", null) });
             const added = lastOfKind(current.sections.body, "chapter", null);
+            if (added?.id) touched.add(added.id);
             openChapter(added?.id || selectedId);
             autosave.schedule(current);
             await autosave.flush();
@@ -185,6 +238,7 @@ export function mountWriter({
         current = withUpdatedWords({ ...current, sections: addBodyChapter(current.sections, start.newTitle || "", null) });
         selectedId = lastOfKind(current.sections.body, "chapter", null)?.id || "";
         createdChapterId = selectedId;
+        touched.add(createdChapterId);
         autosave.schedule(current);
     }
     const firstId = selectedId || chapters()[0]?.id || "";
@@ -228,6 +282,13 @@ export function mountWriter({
         },
         flush() {
             return autosave.flush();
+        },
+        /** "saved" | "saving" | "error" (not in the book yet: kept on this device and retried). */
+        saveStatus() {
+            return autosave.getStatus();
+        },
+        stop() {
+            window.clearInterval(retryTimer);
         },
         /** Save, then check the race's sentences for writing XP. Safe to call once at the end. */
         async seal() {

@@ -3,6 +3,7 @@
  * host's settings, each racer's page settings and the Begin button.
  */
 import { CHILL_LENGTH_CHOICES, GONE_AFTER_MS, TARGET_CHOICES, lengthLabel } from "@alysum/community/word-war-race.js";
+import { bookChoices } from "@alysum/community/word-war-books.js";
 import { avatarEl, colorFor } from "/js/word-wars/track.js";
 import { mountPromptPicker } from "/js/word-wars/prompt-picker.js";
 
@@ -32,10 +33,10 @@ export function mountWaitingRoom(els, {
     onWriteIn = () => {},
 } = {}) {
     els.bookSelect.replaceChildren(...(books.length
-        ? books.map((b) => {
+        ? bookChoices(books).map((choice) => {
             const opt = document.createElement("option");
-            opt.value = b.id;
-            opt.textContent = b.title || "Untitled";
+            opt.value = choice.id;
+            opt.textContent = choice.label;
             return opt;
         })
         : [Object.assign(document.createElement("option"), { value: "", textContent: "No books yet. Make one in Studio." })]));
