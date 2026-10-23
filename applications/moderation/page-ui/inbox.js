@@ -41,3 +41,5 @@ document.addEventListener('submit',async e=>{
 bindDialog();client.auth.onAuthStateChange((_event,session)=>{if((session?.user?.id||'')!==userId){epoch++;clearPrivate();userId=session?.user?.id||'';threads=[];messages=[];opened=null;setTimeout(()=>void start(),0);}});
 window.addEventListener('pagehide',()=>{epoch++;clearPrivate();});
 void start();
+
+window.addEventListener('pageshow',event=>{if(event.persisted)void start();});

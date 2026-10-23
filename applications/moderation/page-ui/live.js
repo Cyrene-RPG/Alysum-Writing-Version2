@@ -123,7 +123,7 @@ function appealForm(id){
 }
 async function action(name,id){
  if(name==='close')return close();if(name==='lock')return lock();if(name==='nav')return go(id);if(name==='more')return load(true);
- if(name==='oauth'){sessionStorage.setItem('alysum-mod-oauth','1');const {error}=await client.auth.signInWithOAuth({provider:id,options:{redirectTo:location.origin+'/moderation',queryParams:{prompt:'login'}}});if(error)throw error;return;}
+ if(name==='oauth'){sessionStorage.setItem('alysum-mod-oauth','1');const {error}=await client.auth.signInWithOAuth({provider:id,options:{redirectTo:location.origin+'/moderation',queryParams:{prompt:id==='google'?'select_account':'consent'}}});if(error)throw error;return;}
  if(name==='enroll'){
  const {data,error}=await client.auth.mfa.enroll({factorType:'totp',friendlyName:'Alysum Moderation'});if(error)throw error;enrollment=data;factorId=data.id;mfaView(true);
  const area=$('#mc-enrollment'),p=document.createElement('p'),img=document.createElement('img');p.textContent='Scan this code in your authenticator, then enter a generated code above.';img.alt='Authenticator setup QR code';img.style.maxWidth='220px';img.src=data.totp.qr_code;area.append(p,img);
@@ -168,3 +168,5 @@ let lastKeepalive=0;
 setInterval(()=>{if(!state.role)return;if(Date.now()-state.lastAction>900000){void lock('The staff session expired after inactivity.');return;}if(Date.now()-lastKeepalive>120000&&Date.now()-state.lastAction<60000){lastKeepalive=Date.now();void call('access').then(d=>{if(!d.verified)void lock();else return call('dashboard');}).catch(()=>{});}},10000);
 window.addEventListener('pagehide',clearPrivate);
 void resume().catch(error=>gate(error.message));
+
+window.addEventListener('pageshow',event=>{if(event.persisted)void resume().catch(error=>gate(error.message));});

@@ -204,7 +204,7 @@ BEGIN
  END IF;
  IF p_action='my_inbox' THEN
  SELECT coalesce(jsonb_agg(to_jsonb(q) ORDER BY q.updated_at DESC,q.id DESC),'[]') INTO items FROM (
- SELECT id,subject,book_id,deadline,updated_at,recipient_read_at FROM public.mc_threads WHERE recipient_id=uid ORDER BY updated_at DESC,id DESC LIMIT 50 OFFSET off)q;
+ SELECT t.id,t.subject,t.book_id,t.deadline,t.updated_at,t.recipient_read_at FROM public.mc_threads t WHERE t.recipient_id=uid ORDER BY t.updated_at DESC,t.id DESC LIMIT 50 OFFSET off)q;
  SELECT count(*) INTO total FROM public.mc_threads WHERE recipient_id=uid;
  SELECT coalesce(jsonb_agg(jsonb_build_object('id',s.id,'kind',s.kind,'reason',s.reason,'explanation',s.explanation,'expiresAt',s.expires_at,'createdAt',s.created_at,'appealStatus',(SELECT status FROM public.mc_appeals WHERE sanction_id=s.id AND user_id=uid ORDER BY created_at DESC LIMIT 1)) ORDER BY s.created_at DESC),'[]') INTO result FROM public.mc_sanctions s WHERE s.user_id=uid AND s.revoked_at IS NULL AND (s.expires_at IS NULL OR s.expires_at>clock_timestamp());
  RETURN jsonb_build_object('threads',items,'total',total,'sanctions',result);
@@ -305,7 +305,7 @@ BEGIN
  SELECT jsonb_build_object('items',coalesce((SELECT jsonb_agg(to_jsonb(q)) FROM (SELECT * FROM rows ORDER BY created_at DESC,id DESC LIMIT 50 OFFSET off)q),'[]'),'total',(SELECT count(*) FROM rows)) INTO result; RETURN result;
  END IF;
  IF p_action='audit' THEN
- WITH rows AS (SELECT a.*,public.mc_name(actor_id) AS actor_name FROM public.mc_audit a WHERE coalesce(p_payload->>'query','')='' OR action||' '||target ILIKE '%'||left(p_payload->>'query',100)||'%')
+ WITH rows AS (SELECT a.*,public.mc_name(actor_id) AS actor_name FROM public.mc_audit a WHERE coalesce(p_payload->>'query','')='' OR a.action||' '||a.target ILIKE '%'||left(p_payload->>'query',100)||'%')
  SELECT jsonb_build_object('items',coalesce((SELECT jsonb_agg(to_jsonb(q)) FROM (SELECT * FROM rows ORDER BY id DESC LIMIT 100 OFFSET off)q),'[]'),'total',(SELECT count(*) FROM rows)) INTO result; RETURN result;
  END IF;
  IF p_action='staff' THEN
