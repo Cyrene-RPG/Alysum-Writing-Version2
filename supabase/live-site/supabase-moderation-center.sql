@@ -262,7 +262,7 @@ BEGIN
  IF p_action='user' THEN
  target:=(p_payload->>'id')::uuid;
  result:=public.mc_user_summary(target,days); IF result IS NULL THEN RAISE EXCEPTION 'User not found.'; END IF;
- SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'kind',kind,'reason',v_reason,'explanation',explanation,'expiresAt',expires_at,'revokedAt',revoked_at,'createdAt',created_at,'createdBy',public.mc_name(created_by)) ORDER BY created_at DESC),'[]') INTO items FROM (SELECT * FROM public.mc_sanctions WHERE user_id=target ORDER BY created_at DESC LIMIT 100)q;
+ SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'kind',kind,'reason',reason,'explanation',explanation,'expiresAt',expires_at,'revokedAt',revoked_at,'createdAt',created_at,'createdBy',public.mc_name(created_by)) ORDER BY created_at DESC),'[]') INTO items FROM (SELECT * FROM public.mc_sanctions WHERE user_id=target ORDER BY created_at DESC LIMIT 100)q;
  RETURN result||jsonb_build_object('sanctions',items,'protected',EXISTS(SELECT 1 FROM public.moderation_staff WHERE user_id=target) OR EXISTS(SELECT 1 FROM public.mc_staff_overrides WHERE user_id=target),'books',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'title',left(data->>'title',500))),'[]') FROM public.library WHERE user_id=target),'reports',(SELECT count(*) FROM public.book_reports_v2 r JOIN public.library l ON l.id::text=r.book_id WHERE l.user_id=target));
  END IF;
  IF p_action='reports' THEN
@@ -332,7 +332,7 @@ BEGIN
  deadline:=CASE WHEN v_kind IN ('warning','ban') THEN NULL ELSE clock_timestamp()+make_interval(days=>duration) END;
  INSERT INTO public.mc_sanctions(user_id,kind,reason,explanation,expires_at,created_by) VALUES(target,v_kind,v_reason,txt,deadline,uid) RETURNING id INTO rid;
  tid:=public.mc_notice(target,'Account action: '||v_kind,v_reason||E'\n\n'||txt||CASE WHEN deadline IS NULL THEN '' ELSE E'\nExpires: '||deadline::text END||E'\nYou can reply here or appeal this restriction in Moderation Messages.');
- PERFORM public.mc_log('Account action: '||v_kind,target::text,jsonb_build_object('sanction',rid,'expiresAt',deadline,'reason',reason));
+ PERFORM public.mc_log('Account action: '||v_kind,target::text,jsonb_build_object('sanction',rid,'expiresAt',deadline,'reason',v_reason));
  result:=jsonb_build_object('id',rid,'threadId',tid);
  ELSIF p_action='revoke_sanction' THEN
  rid:=(p_payload->>'id')::uuid; SELECT * INTO sanction FROM public.mc_sanctions WHERE id=rid FOR UPDATE;
@@ -408,7 +408,7 @@ BEGIN
  IF choice IS NULL OR choice NOT IN ('admin','moderator','none') THEN RAISE EXCEPTION 'Choose a valid staff role.'; END IF;
  IF NOT EXISTS(SELECT 1 FROM auth.users WHERE id=target) THEN RAISE EXCEPTION 'User not found.'; END IF;
  PERFORM pg_advisory_xact_lock(hashtextextended('mc:staff-membership',0));
- INSERT INTO public.mc_staff_overrides(user_id,role) VALUES(target,choice) ON CONFLICT(user_id) DO UPDATE SET v_role=EXCLUDED.role;
+ INSERT INTO public.mc_staff_overrides(user_id,role) VALUES(target,choice) ON CONFLICT(user_id) DO UPDATE SET role=EXCLUDED.role;
  DELETE FROM public.mc_staff_sessions WHERE user_id=target;
  PERFORM public.mc_log('Staff role: '||choice,target::text,jsonb_build_object('reason',txt));
  result:=jsonb_build_object('id',target,'role',choice);
