@@ -54,12 +54,12 @@ await page.locator('#md-role').selectOption('admin');
 await nav('Reports').click();await screen.getByRole('button',{name:'Sample Staff Book',exact:true}).click();
 assert.match(await dialog.textContent(),/involves your account/);assert.equal(await page.locator('#md-case-state').isEnabled(),false);
 await page.locator('#md-assignee').selectOption({label:'Sample Moderator'});await page.getByRole('button',{name:'Hand off case',exact:true}).click();
-await screen.getByRole('button',{name:'The Glass District',exact:true}).click();
+await screen.locator('[data-id="ALY-1042"][data-action="case"],[data-id="b1"][data-action="book"]').click();
 await page.locator('#md-case-state').selectOption({label:'Under Review'});
 await page.locator('#md-assignee').selectOption({label:'Sample Admin'});
 const secret='Private evidence note: do not send this to the author.';
 await page.locator('#md-case-note').fill(secret);await page.getByRole('button',{name:'Save case',exact:true}).click();
-await screen.getByRole('button',{name:'The Glass District',exact:true}).click();assert.match(await dialog.textContent(),/Private evidence note/);
+await screen.locator('[data-id="ALY-1042"][data-action="case"],[data-id="b1"][data-action="book"]').click();assert.match(await dialog.textContent(),/Private evidence note/);
 await page.getByRole('button',{name:'Contact author',exact:true}).click();
 await page.locator('#md-message-text').fill('Hi Mira, please review the injury warnings in chapter four and reply when updated.');
 await page.getByRole('button',{name:'Send official message',exact:true}).click();
@@ -72,10 +72,10 @@ assert.match(await screen.textContent(),/warnings are now updated/);
 await page.locator('#md-reply-text').fill('Thank you. We will review the updated listing.');
 await page.getByRole('button',{name:'Send staff reply',exact:true}).click();
 await page.screenshot({path:'test-results/moderation-design/conversation-'+name+'.png'});
-await nav('Books').click();await screen.getByRole('button',{name:'The Glass District',exact:true}).click();
+await nav('Books').click();await screen.locator('[data-id="ALY-1042"][data-action="case"],[data-id="b1"][data-action="book"]').click();
 await page.getByRole('button',{name:'Hide pending review',exact:true}).click();await page.locator('#md-book-reason').fill('Temporarily hidden while the published warning changes are reviewed.');
 await page.getByRole('button',{name:'Confirm visibility change',exact:true}).click();assert.match(await page.locator('.md-table tbody tr').first().textContent(),/Hidden/);
-await screen.getByRole('button',{name:'The Glass District',exact:true}).click();await page.getByRole('button',{name:'Restore visibility',exact:true}).click();await page.locator('#md-book-reason').fill('Warning corrections confirmed. The listing is restored.');await page.getByRole('button',{name:'Confirm visibility change',exact:true}).click();
+await screen.locator('[data-id="ALY-1042"][data-action="case"],[data-id="b1"][data-action="book"]').click();await page.getByRole('button',{name:'Restore visibility',exact:true}).click();await page.locator('#md-book-reason').fill('Warning corrections confirmed. The listing is restored.');await page.getByRole('button',{name:'Confirm visibility change',exact:true}).click();
 await nav('Appeals').click();await page.getByRole('button',{name:'Review appeal',exact:true}).click();await page.locator('#md-appeal-decision').selectOption('reverse');await page.locator('#md-appeal-note').fill('The suspension has been reversed following a separate review.');await page.getByRole('button',{name:'Save appeal decision',exact:true}).click();assert.match(await screen.textContent(),/Granted/);
 await nav('Audit Log').click();assert.match(await screen.textContent(),/Case updated/);assert.match(await screen.textContent(),/Appeal Granted/);
 await nav('Staff & Security').click();await page.getByRole('button',{name:'Add temporary rule',exact:true}).click();
@@ -90,7 +90,7 @@ await page.locator('#md-user-search').fill('');await page.screenshot({path:'test
 for(const width of [390,320]){
 await page.setViewportSize({width,height:844});
 for(const label of ['Dashboard','Reports','Users','Books','Conversations','Appeals','Audit Log','Staff & Security']){await nav(label).click();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),label+' must fit mobile');}
-await nav('Reports').click();await screen.getByRole('button',{name:'The Glass District',exact:true}).click();
+await nav('Reports').click();await screen.locator('[data-id="ALY-1042"][data-action="case"],[data-id="b1"][data-action="book"]').click();
 assert.ok(await dialog.evaluate(e=>e.getBoundingClientRect().width<=innerWidth&&e.getBoundingClientRect().height<=innerHeight));
 assert.ok(await page.locator('.md-dialog-body').evaluate(e=>e.scrollHeight>e.clientHeight));
 await page.screenshot({path:'test-results/moderation-design/case-mobile-'+width+'-'+name+'.png'});await close();
