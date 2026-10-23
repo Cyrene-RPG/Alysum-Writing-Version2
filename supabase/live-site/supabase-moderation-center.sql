@@ -158,15 +158,15 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,
 CREATE OR REPLACE FUNCTION public.mc_call(p_action text,p_payload jsonb DEFAULT '{}')
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $$
 DECLARE
- uid uuid:=auth.uid(); role text; result jsonb; items jsonb; total bigint; req uuid; target uuid; rid uuid; tid uuid; bid text; txt text; reason text; kind text;
+ uid uuid:=auth.uid(); v_role text; result jsonb; items jsonb; total bigint; req uuid; target uuid; rid uuid; tid uuid; bid text; txt text; v_reason text; v_kind text;
  duration integer; deadline timestamptz; off integer:=greatest(0,least(100000,coalesce((p_payload->>'offset')::integer,0))); days integer:=coalesce((p_payload->>'days')::integer,7);
  r public.book_reports_v2%ROWTYPE; sanction public.mc_sanctions%ROWTYPE; appeal public.mc_appeals%ROWTYPE;
  thread public.mc_threads%ROWTYPE; sid uuid; choice text; item record;
 BEGIN
  IF uid IS NULL THEN RAISE EXCEPTION 'Sign in to continue.'; END IF;
  IF p_action IS NULL OR p_payload IS NULL OR jsonb_typeof(p_payload)<>'object' OR octet_length(p_payload::text)>65536 THEN RAISE EXCEPTION 'Invalid moderation request.'; END IF;
- role:=public.mc_role(uid);
- IF p_action='access' THEN RETURN jsonb_build_object('role',role,'verified',public.mc_verified(),'name',public.mc_name(uid)); END IF;
+ v_role:=public.mc_role(uid);
+ IF p_action='access' THEN RETURN jsonb_build_object('role',v_role,'verified',public.mc_verified(),'name',public.mc_name(uid)); END IF;
  IF p_action='account_status' THEN
  RETURN jsonb_build_object('blocked',NOT public.mc_allowed('account'),'restrictions',(public.mc_user_summary(uid)->'restrictions'));
  END IF;
@@ -178,14 +178,14 @@ BEGIN
  RETURN jsonb_build_object('blocked',false);
  END IF;
  IF p_action='start' THEN
- IF role='' THEN RAISE EXCEPTION 'Staff access required.'; END IF;
+ IF v_role='' THEN RAISE EXCEPTION 'Staff access required.'; END IF;
  IF coalesce(auth.jwt()->>'aal','')<>'aal2' THEN RAISE EXCEPTION 'Complete two-factor verification to open moderation.'; END IF;
  sid:=nullif(auth.jwt()->>'session_id','')::uuid;
- IF public.mc_verified() THEN RETURN jsonb_build_object('role',role,'verified',true,'name',public.mc_name(uid)); END IF;
+ IF public.mc_verified() THEN RETURN jsonb_build_object('role',v_role,'verified',true,'name',public.mc_name(uid)); END IF;
  IF NOT EXISTS(SELECT 1 FROM auth.sessions WHERE id=sid AND user_id=uid AND created_at>clock_timestamp()-interval '5 minutes') THEN RAISE EXCEPTION 'A fresh staff sign-in is required.'; END IF;
  INSERT INTO public.mc_staff_sessions(session_id,user_id) VALUES(sid,uid) ON CONFLICT(session_id) DO UPDATE SET verified_at=clock_timestamp(),last_seen_at=clock_timestamp() WHERE mc_staff_sessions.user_id=uid;
  PERFORM public.mc_log('Staff workspace verified',sid::text);
- RETURN jsonb_build_object('role',role,'verified',true,'name',public.mc_name(uid));
+ RETURN jsonb_build_object('role',v_role,'verified',true,'name',public.mc_name(uid));
  END IF;
  IF p_action='end' THEN
  DELETE FROM public.mc_staff_sessions WHERE user_id=uid AND session_id=nullif(auth.jwt()->>'session_id','')::uuid;
@@ -245,9 +245,9 @@ BEGIN
 
  IF NOT public.mc_verified() THEN RAISE EXCEPTION 'Fresh staff verification is required. Sign in to the Moderation Center again.'; END IF;
  UPDATE public.mc_staff_sessions SET last_seen_at=clock_timestamp() WHERE session_id=(auth.jwt()->>'session_id')::uuid AND user_id=uid;
- IF p_action IN ('staff','ips','set_staff','ip_add','ip_remove') AND role<>'admin' THEN RAISE EXCEPTION 'Admin access required.'; END IF;
+ IF p_action IN ('staff','ips','set_staff','ip_add','ip_remove') AND v_role<>'admin' THEN RAISE EXCEPTION 'Admin access required.'; END IF;
  IF p_action='dashboard' THEN
- RETURN jsonb_build_object('users',(SELECT count(*) FROM auth.users),'newUsers',(SELECT count(*) FROM auth.users WHERE (created_at AT TIME ZONE 'America/Los_Angeles')::date=(clock_timestamp() AT TIME ZONE 'America/Los_Angeles')::date),'openReports',(SELECT count(*) FROM public.book_reports_v2 WHERE status IN ('new','under_review')),'unassigned',(SELECT count(*) FROM public.book_reports_v2 r LEFT JOIN public.mc_case_meta m ON m.report_id=r.id WHERE r.status IN ('new','under_review') AND m.assigned_id IS NULL),'pendingAppeals',(SELECT count(*) FROM public.mc_appeals WHERE status IN ('pending','awaiting_information')),'authorReplies',(SELECT count(*) FROM public.mc_threads t WHERE EXISTS(SELECT 1 FROM public.mc_messages m WHERE m.thread_id=t.id AND side='user' AND m.created_at>coalesce(t.staff_read_at,'epoch'))),'role',role,'name',public.mc_name(uid));
+ RETURN jsonb_build_object('users',(SELECT count(*) FROM auth.users),'newUsers',(SELECT count(*) FROM auth.users WHERE (created_at AT TIME ZONE 'America/Los_Angeles')::date=(clock_timestamp() AT TIME ZONE 'America/Los_Angeles')::date),'openReports',(SELECT count(*) FROM public.book_reports_v2 WHERE status IN ('new','under_review')),'unassigned',(SELECT count(*) FROM public.book_reports_v2 r LEFT JOIN public.mc_case_meta m ON m.report_id=r.id WHERE r.status IN ('new','under_review') AND m.assigned_id IS NULL),'pendingAppeals',(SELECT count(*) FROM public.mc_appeals WHERE status IN ('pending','awaiting_information')),'authorReplies',(SELECT count(*) FROM public.mc_threads t WHERE EXISTS(SELECT 1 FROM public.mc_messages m WHERE m.thread_id=t.id AND side='user' AND m.created_at>coalesce(t.staff_read_at,'epoch'))),'role',v_role,'name',public.mc_name(uid));
  END IF;
  IF p_action='users' THEN
  WITH rows AS (
@@ -262,7 +262,7 @@ BEGIN
  IF p_action='user' THEN
  target:=(p_payload->>'id')::uuid;
  result:=public.mc_user_summary(target,days); IF result IS NULL THEN RAISE EXCEPTION 'User not found.'; END IF;
- SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'kind',kind,'reason',reason,'explanation',explanation,'expiresAt',expires_at,'revokedAt',revoked_at,'createdAt',created_at,'createdBy',public.mc_name(created_by)) ORDER BY created_at DESC),'[]') INTO items FROM (SELECT * FROM public.mc_sanctions WHERE user_id=target ORDER BY created_at DESC LIMIT 100)q;
+ SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'kind',kind,'reason',v_reason,'explanation',explanation,'expiresAt',expires_at,'revokedAt',revoked_at,'createdAt',created_at,'createdBy',public.mc_name(created_by)) ORDER BY created_at DESC),'[]') INTO items FROM (SELECT * FROM public.mc_sanctions WHERE user_id=target ORDER BY created_at DESC LIMIT 100)q;
  RETURN result||jsonb_build_object('sanctions',items,'protected',EXISTS(SELECT 1 FROM public.moderation_staff WHERE user_id=target) OR EXISTS(SELECT 1 FROM public.mc_staff_overrides WHERE user_id=target),'books',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'title',left(data->>'title',500))),'[]') FROM public.library WHERE user_id=target),'reports',(SELECT count(*) FROM public.book_reports_v2 r JOIN public.library l ON l.id::text=r.book_id WHERE l.user_id=target));
  END IF;
  IF p_action='reports' THEN
@@ -318,26 +318,26 @@ BEGIN
  PERFORM pg_advisory_xact_lock(hashtextextended('mc:'||uid::text||req::text,0));
  SELECT mc_requests.result INTO result FROM public.mc_requests WHERE user_id=uid AND request_id=req; IF FOUND THEN RETURN result; END IF;
  txt:=btrim(coalesce(p_payload->>'body',p_payload->>'note',''));
- reason:=btrim(coalesce(p_payload->>'reason',''));
+ v_reason:=btrim(coalesce(p_payload->>'reason',''));
  IF length(txt) NOT BETWEEN 10 AND 4000 THEN RAISE EXCEPTION 'Enter a clear explanation in 10–4,000 characters.'; END IF;
  IF p_action='sanction' THEN
- target:=(p_payload->>'userId')::uuid;kind:=p_payload->>'kind';
+ target:=(p_payload->>'userId')::uuid;v_kind:=p_payload->>'kind';
  IF NOT EXISTS(SELECT 1 FROM auth.users WHERE id=target) THEN RAISE EXCEPTION 'User not found.'; END IF;
  IF target=uid OR EXISTS(SELECT 1 FROM public.moderation_staff WHERE user_id=target) OR EXISTS(SELECT 1 FROM public.mc_staff_overrides WHERE user_id=target) THEN RAISE EXCEPTION 'Protected staff accounts cannot be sanctioned here.'; END IF;
- IF kind IS NULL OR kind NOT IN ('warning','commenting','publishing','announcements','suspension','ban') THEN RAISE EXCEPTION 'Choose a valid account action.'; END IF;
- IF length(reason) NOT BETWEEN 3 AND 160 THEN RAISE EXCEPTION 'Identify the relevant rule or reason.'; END IF;
- IF kind='ban' AND role<>'admin' THEN RAISE EXCEPTION 'Only admins can permanently ban accounts.'; END IF;
+ IF v_kind IS NULL OR v_kind NOT IN ('warning','commenting','publishing','announcements','suspension','ban') THEN RAISE EXCEPTION 'Choose a valid account action.'; END IF;
+ IF length(v_reason) NOT BETWEEN 3 AND 160 THEN RAISE EXCEPTION 'Identify the relevant rule or reason.'; END IF;
+ IF v_kind='ban' AND v_role<>'admin' THEN RAISE EXCEPTION 'Only admins can permanently ban accounts.'; END IF;
  duration:=coalesce((p_payload->>'days')::integer,7);
- IF kind NOT IN ('warning','ban') AND duration NOT BETWEEN 1 AND 30 THEN RAISE EXCEPTION 'Choose a duration between 1 and 30 days.'; END IF;
- deadline:=CASE WHEN kind IN ('warning','ban') THEN NULL ELSE clock_timestamp()+make_interval(days=>duration) END;
- INSERT INTO public.mc_sanctions(user_id,kind,reason,explanation,expires_at,created_by) VALUES(target,kind,reason,txt,deadline,uid) RETURNING id INTO rid;
- tid:=public.mc_notice(target,'Account action: '||kind,reason||E'\n\n'||txt||CASE WHEN deadline IS NULL THEN '' ELSE E'\nExpires: '||deadline::text END||E'\nYou can reply here or appeal this restriction in Moderation Messages.');
- PERFORM public.mc_log('Account action: '||kind,target::text,jsonb_build_object('sanction',rid,'expiresAt',deadline,'reason',reason));
+ IF v_kind NOT IN ('warning','ban') AND duration NOT BETWEEN 1 AND 30 THEN RAISE EXCEPTION 'Choose a duration between 1 and 30 days.'; END IF;
+ deadline:=CASE WHEN v_kind IN ('warning','ban') THEN NULL ELSE clock_timestamp()+make_interval(days=>duration) END;
+ INSERT INTO public.mc_sanctions(user_id,kind,reason,explanation,expires_at,created_by) VALUES(target,v_kind,v_reason,txt,deadline,uid) RETURNING id INTO rid;
+ tid:=public.mc_notice(target,'Account action: '||v_kind,v_reason||E'\n\n'||txt||CASE WHEN deadline IS NULL THEN '' ELSE E'\nExpires: '||deadline::text END||E'\nYou can reply here or appeal this restriction in Moderation Messages.');
+ PERFORM public.mc_log('Account action: '||v_kind,target::text,jsonb_build_object('sanction',rid,'expiresAt',deadline,'reason',reason));
  result:=jsonb_build_object('id',rid,'threadId',tid);
  ELSIF p_action='revoke_sanction' THEN
  rid:=(p_payload->>'id')::uuid; SELECT * INTO sanction FROM public.mc_sanctions WHERE id=rid FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'Restriction not found.'; END IF;
- IF sanction.kind='ban' AND role<>'admin' THEN RAISE EXCEPTION 'Only admins can reverse a permanent ban.'; END IF;
+ IF sanction.v_kind='ban' AND v_role<>'admin' THEN RAISE EXCEPTION 'Only admins can reverse a permanent ban.'; END IF;
  UPDATE public.mc_sanctions SET revoked_at=clock_timestamp(),revoked_by=uid WHERE id=rid;
  tid:=public.mc_notice(sanction.user_id,'Account restriction lifted',txt);
  PERFORM public.mc_log('Restriction reversed',rid::text,jsonb_build_object('reason',txt));
@@ -383,7 +383,7 @@ BEGIN
  IF NOT EXISTS(SELECT 1 FROM public.library WHERE id::text=bid) THEN RAISE EXCEPTION 'Book not found.'; END IF;
  IF EXISTS(SELECT 1 FROM public.library WHERE id::text=bid AND user_id=uid) THEN RAISE EXCEPTION 'Another staff member must review your book.'; END IF;
  IF choice IS NULL OR choice NOT IN ('visible','hidden','removed') THEN RAISE EXCEPTION 'Choose a valid visibility.'; END IF;
- IF choice='removed' AND role<>'admin' THEN RAISE EXCEPTION 'Only admins can remove public listings.'; END IF;
+ IF choice='removed' AND v_role<>'admin' THEN RAISE EXCEPTION 'Only admins can remove public listings.'; END IF;
  INSERT INTO public.mc_book_visibility(book_id,visibility,reason,updated_by) VALUES(bid,choice,txt,uid) ON CONFLICT(book_id) DO UPDATE SET visibility=EXCLUDED.visibility,reason=EXCLUDED.reason,updated_by=uid,updated_at=clock_timestamp();
  PERFORM public.mc_log('Book visibility: '||choice,bid,jsonb_build_object('reason',txt));
  result:=jsonb_build_object('id',bid,'visibility',choice);
@@ -395,7 +395,7 @@ BEGIN
  IF sanction.created_by=uid THEN RAISE EXCEPTION 'Another staff member must review your original decision.'; END IF;
  choice:=p_payload->>'decision'; IF choice IS NULL OR choice NOT IN ('awaiting_information','upheld','granted') THEN RAISE EXCEPTION 'Choose an appeal outcome.'; END IF;
  IF choice='granted' THEN
- IF sanction.kind='ban' AND role<>'admin' THEN RAISE EXCEPTION 'Only admins can reverse permanent bans.'; END IF;
+ IF sanction.v_kind='ban' AND v_role<>'admin' THEN RAISE EXCEPTION 'Only admins can reverse permanent bans.'; END IF;
  UPDATE public.mc_sanctions SET revoked_at=clock_timestamp(),revoked_by=uid WHERE id=sanction.id;
  END IF;
  UPDATE public.mc_appeals SET status=choice,decision=txt,decided_by=uid,version=version+1,updated_at=clock_timestamp() WHERE id=rid;
@@ -408,13 +408,13 @@ BEGIN
  IF choice IS NULL OR choice NOT IN ('admin','moderator','none') THEN RAISE EXCEPTION 'Choose a valid staff role.'; END IF;
  IF NOT EXISTS(SELECT 1 FROM auth.users WHERE id=target) THEN RAISE EXCEPTION 'User not found.'; END IF;
  PERFORM pg_advisory_xact_lock(hashtextextended('mc:staff-membership',0));
- INSERT INTO public.mc_staff_overrides(user_id,role) VALUES(target,choice) ON CONFLICT(user_id) DO UPDATE SET role=EXCLUDED.role;
+ INSERT INTO public.mc_staff_overrides(user_id,role) VALUES(target,choice) ON CONFLICT(user_id) DO UPDATE SET v_role=EXCLUDED.role;
  DELETE FROM public.mc_staff_sessions WHERE user_id=target;
  PERFORM public.mc_log('Staff role: '||choice,target::text,jsonb_build_object('reason',txt));
  result:=jsonb_build_object('id',target,'role',choice);
  ELSIF p_action='ip_add' THEN
  duration:=coalesce((p_payload->>'hours')::integer,24); IF duration NOT BETWEEN 1 AND 168 THEN RAISE EXCEPTION 'Network blocks must expire within 1 hour to 7 days.'; END IF;
- IF masklen((p_payload->>'address')::inet)<>CASE WHEN family((p_payload->>'address')::inet)=4 THEN 32 ELSE 128 END THEN RAISE EXCEPTION 'Enter a single address, not a network range.'; END IF;
+ IF masklen((p_payload->>'address')::inet)<>(CASE WHEN family((p_payload->>'address')::inet)=4 THEN 32 ELSE 128 END) THEN RAISE EXCEPTION 'Enter a single address, not a network range.'; END IF;
  IF length(txt)>1000 THEN RAISE EXCEPTION 'Keep the reason to 1,000 characters.'; END IF;
  INSERT INTO public.mc_ip_blocks(address,reason,expires_at,created_by) VALUES((p_payload->>'address')::inet,txt,clock_timestamp()+make_interval(hours=>duration),uid) RETURNING id INTO rid;
  PERFORM public.mc_log('Temporary IP block added',rid::text,jsonb_build_object('expiresHours',duration));
