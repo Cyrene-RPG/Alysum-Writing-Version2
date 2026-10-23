@@ -51,6 +51,11 @@ test('new Story Bible database: isolation, atomic links, conflicts, history, mem
         assert.equal((await db.query('SELECT title FROM public.story_bible_entries WHERE id=$1', [first.id])).rows[0].title, 'Mara Vey');
         await db.query('SELECT public.connect_story_bible_entries($1,$2,$3,$4,$5)', [bible.id, first.id, second.id, 'sister of', 'brother of']);
         await db.query('SELECT public.add_story_bible_fact($1,$2,$3)', [bible.id, first.id, JSON.stringify({ category: 'Age', value: '27', bookId: 'main', chapterId: 'one', sourceText: 'She was twenty-seven.' })]);
+        const capturedFact = { id: '00000000-0000-4000-8000-000000000777', category: 'Appearance', value: 'Green eyes', bookId: 'main', chapterId: 'one', sourceText: 'Her eyes were green.' };
+        await db.query('SELECT public.add_story_bible_fact($1,$2,$3)', [bible.id, first.id, JSON.stringify(capturedFact)]);
+        await db.query('SELECT public.add_story_bible_fact($1,$2,$3)', [bible.id, first.id, JSON.stringify(capturedFact)]);
+        assert.equal((await db.query('SELECT id FROM public.story_bible_canon_facts WHERE id=$1', [capturedFact.id])).rows.length, 1);
+        await assert.rejects(db.query('SELECT public.add_story_bible_fact($1,$2,$3)', [bible.id, first.id, JSON.stringify({ ...capturedFact, value: 'Changed after saving' })]), /already saved with different details/);
         await db.query('SELECT public.replace_story_bible_mentions($1,$2,$3,$4,$5)', [bible.id, 'main', 'one', JSON.stringify([{ entryId: first.id, excerpt: 'Mara arrives' }]), 1]);
         await assert.rejects(db.query('SELECT public.replace_story_bible_mentions($1,$2,$3,$4,$5)', [bible.id, 'main', 'one', '[]', 0]), /manuscript changed/);
         const archived = await save(linked, { ...payload('Mara Vey'), archived: true }); assert.ok(archived.archived_at);

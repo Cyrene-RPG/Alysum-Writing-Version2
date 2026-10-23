@@ -1,3 +1,4 @@
+import { mountBibleSelectionMenu } from './selection-menu.js';
 import { createStoryBibleApi } from '/core/synchronization-engine/story-bible.js';
 import { canEdit, describeError, searchEntries } from '/core/encyclopedia/model.js';
 /** Editor-owned reference surface. Does not import Encyclopedia application screens. */
@@ -116,6 +117,19 @@ export function mountStoryBible({ button, pageEl, supabase, session, getBook, ge
         } catch (error) { message(`Profile access is available. Appearance index: ${describeError(error)}`); }
         finally { indexing = false; }
     }
+    mountBibleSelectionMenu({ pageEl, getBook, getChapterId, saveCurrent,
+        async loadBible(create) {
+            bible = await api.openBook(getBook().id, create);
+            if (bible) { state = await api.load(bible.id); renderResults(); }
+            return { bible, state, api };
+        },
+        async onEntryCreated(entry) {
+            state = await api.load(bible.id); selected = state.entries.find(item => item.id === entry.id) || entry;
+            renderResults(); renderDetail(); message('Entry created from your manuscript.');
+            void indexSavedMentions();
+        },
+        async onFactSaved(entry) { state = await api.load(bible.id); selected = state.entries.find(item => item.id === entry.id); renderResults(); renderDetail(); message('Character details saved with their source.'); },
+    });
     button.addEventListener('click', () => void toggle());
     search.addEventListener('input', renderResults);
     pageEl.addEventListener('compositionstart', () => { isComposing = true; }); pageEl.addEventListener('compositionend', () => { isComposing = false; });

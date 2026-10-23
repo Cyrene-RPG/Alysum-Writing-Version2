@@ -13,6 +13,10 @@
   ],
   "rewrites": [
     {
+      "source": "/story-bible-selection-preview",
+      "destination": "/applications/editor/pages/story-bible-preview.html"
+    },
+    {
       "source": "/story-bible",
       "destination": "/applications/encyclopedia/pages/story-bible.html"
     },

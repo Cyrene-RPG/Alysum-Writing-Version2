@@ -29,3 +29,15 @@ No production migration has been run. A real-browser pass is still required for 
 ## Boundaries
 
 Boards/graph visualization, series-management controls, public Bible publishing, custom fantasy calendar arithmetic, and rich-text styling inside profile sections are not included. Profiles use safe text sections with linked entry references. Full-text search currently runs over loaded Bible entries; very large Bibles will need server search/pagination. Entry history snapshots every successful profile update; retention and storage cleanup should be agreed before adding automatic pruning.
+
+## Capture from the manuscript
+
+Highlight a name and right-click → Create entry from selection. The form prefills the name and lets you choose the entry category. Optional linking preserves the selected wording and inline formatting.
+
+Highlight descriptive text and right-click → Add details to a character. Pick a character or another entry from the grouped dropdown, choose a detail category, and edit the captured fact if needed. The original quotation and chapter are retained separately. Facts are added without overwriting biography sections.
+
+On phones/tablets, use normal long-press selection and the selection handles. A Story Bible action bar appears with Create entry and Add details. Native touch selection menus remain available. The form opens as a keyboard-aware bottom sheet. Desktop keyboard access is Shift+F10; Shift+right-click retains the browser menu.
+
+The isolated `/story-bible-selection-preview` uses the actual selection component with memory-only data. `?phone=1` shows that same screen in a phone-width frame. It does not authenticate or contact Supabase. Native iOS/Android selection-handle and keyboard verification still requires real-device testing.
+
+Run optional selection tests with `JSDOM_MODULE=<absolute-package-directory> node --experimental-vm-modules --test core/tests/encyclopedia/selection-menu.mjs`. The fact RPC accepts an optional capture ID so retrying an uncertain save cannot duplicate that fact; apply the updated migration on staging with the frontend.

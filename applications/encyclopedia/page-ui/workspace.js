@@ -337,7 +337,7 @@ function accessDialog() {
 async function boot() {
     void mountBibleShell({ isPreview: parameters.get('preview') === '1', beforeLogout: leaveEdit }).catch(error => console.warn('Account menu could not finish loading.', error));
     if (parameters.get('preview') === '1') {
-        const { createPreviewApi } = await import('./preview.js'); api = createPreviewApi(); userId = 'preview'; bible = await api.openBook(); byId('preview-banner').hidden = false;
+        const { createPreviewApi } = await import('./preview.js'); api = createPreviewApi(); userId = 'preview'; bible = await api.openBook(); byId('preview-banner').hidden = false; byId('preview-banner').append(' ', el('a', { href: '/story-bible-selection-preview' }, 'Try highlighting manuscript text →'));
     } else {
         const { supabase } = await import('/core/authentication/client.js');
         const { data, error } = await supabase.auth.getSession(); if (error) throw error;

@@ -182,11 +182,17 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$ BEGIN
  DELETE FROM public.story_bible_connections WHERE id=p_id AND bible_id=p_bible_id AND kind='relationship';
 END; $$;
 CREATE OR REPLACE FUNCTION public.add_story_bible_fact(p_bible_id uuid,p_entry_id uuid,p_data jsonb) RETURNS void
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$ BEGIN
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+DECLARE existing public.story_bible_canon_facts; fact_id uuid:=COALESCE(NULLIF(p_data->>'id','')::uuid,gen_random_uuid());
+BEGIN
  PERFORM public.require_story_bible_editor(p_bible_id);
  IF length(COALESCE(p_data->>'category',''))>100 OR octet_length(p_data::text)>30000 THEN RAISE EXCEPTION 'Fact is too large.'; END IF;
  IF NULLIF(p_data->>'bookId','') IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.books b JOIN public.story_bible_book_links l ON l.book_id=COALESCE(b.draft_parent_id,b.id) WHERE b.id=p_data->>'bookId' AND l.bible_id=p_bible_id AND (b.user_id=auth.uid() OR EXISTS(SELECT 1 FROM public.book_editors e WHERE e.book_id=b.id AND e.user_id=auth.uid()))) THEN RAISE EXCEPTION 'Source book unavailable.' USING ERRCODE='42501'; END IF;
- INSERT INTO public.story_bible_canon_facts(bible_id,entry_id,category,value,source_book_id,source_chapter_id,source_text,source_context) VALUES(p_bible_id,p_entry_id,COALESCE(p_data->>'category',''),trim(p_data->>'value'),NULLIF(p_data->>'bookId',''),COALESCE(p_data->>'chapterId',''),COALESCE(p_data->>'sourceText',''),COALESCE(p_data->>'sourceContext',''));
+ INSERT INTO public.story_bible_canon_facts(id,bible_id,entry_id,category,value,source_book_id,source_chapter_id,source_text,source_context) VALUES(fact_id,p_bible_id,p_entry_id,COALESCE(p_data->>'category',''),trim(p_data->>'value'),NULLIF(p_data->>'bookId',''),COALESCE(p_data->>'chapterId',''),COALESCE(p_data->>'sourceText',''),COALESCE(p_data->>'sourceContext','')) ON CONFLICT(id) DO NOTHING;
+ IF NOT FOUND THEN
+  SELECT * INTO existing FROM public.story_bible_canon_facts WHERE id=fact_id;
+  IF NOT FOUND OR existing.bible_id<>p_bible_id OR existing.entry_id<>p_entry_id OR existing.category<>COALESCE(p_data->>'category','') OR existing.value<>trim(p_data->>'value') OR existing.source_book_id IS DISTINCT FROM NULLIF(p_data->>'bookId','') OR existing.source_chapter_id<>COALESCE(p_data->>'chapterId','') OR existing.source_text<>COALESCE(p_data->>'sourceText','') THEN RAISE EXCEPTION 'This capture was already saved with different details. Close and select the passage again.'; END IF;
+ END IF;
 END; $$;
 CREATE OR REPLACE FUNCTION public.replace_story_bible_mentions(p_bible_id uuid,p_book_id text,p_chapter_id text,p_mentions jsonb,p_expected_updated bigint) RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$ BEGIN
