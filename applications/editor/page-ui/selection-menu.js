@@ -50,8 +50,11 @@ export function mountBibleSelectionMenu({ pageEl, getBook, getChapterId, saveCur
         positionTouchSurfaces(); touchToolbar.hidden = false;
     }
     function scheduleTouchSelection() { clearTimeout(selectionTimer); selectionTimer = setTimeout(syncTouchSelection, 140); }
-    document.addEventListener('selectionchange', scheduleTouchSelection);
+    // Capture before Android opens its native selection menu; a delayed callback
+    // can run only after that menu has already changed focus or selection.
+    document.addEventListener('selectionchange', syncTouchSelection);
     pageEl.addEventListener('pointerup', scheduleTouchSelection);
+    pageEl.addEventListener('touchend', scheduleTouchSelection, { passive: true });
     pageEl.addEventListener('keyup', scheduleTouchSelection);
     pageEl.addEventListener('compositionstart', () => { isComposing = true; touchToolbar.hidden = true; });
     pageEl.addEventListener('compositionend', () => { isComposing = false; scheduleTouchSelection(); });
@@ -76,7 +79,7 @@ export function mountBibleSelectionMenu({ pageEl, getBook, getChapterId, saveCur
     }
     function hideMenu() { menu.hidden = true; }
     function showMenu(event, keyboard = false) {
-        if (isTouchLayout() && !keyboard) { scheduleTouchSelection(); return; }
+        if (isTouchLayout() && !keyboard) { syncTouchSelection(); scheduleTouchSelection(); return; }
         if (event.shiftKey && !keyboard) return;
         const captured = captureSelection(); if (!captured) return;
         event.preventDefault(); source = captured; menu.hidden = false;
@@ -204,5 +207,5 @@ export function mountBibleSelectionMenu({ pageEl, getBook, getChapterId, saveCur
         } catch (exception) { showError(exception); }
         finally { isSaving = false; submit.disabled = false; cancel.disabled = false; close.disabled = false; }
     });
-    return { menu, dialog, touchToolbar, destroy() { clearTimeout(selectionTimer); hideMenu(); dialog.remove(); menu.remove(); touchToolbar.remove(); document.removeEventListener('selectionchange', scheduleTouchSelection); window.visualViewport?.removeEventListener('resize', positionTouchSurfaces); window.visualViewport?.removeEventListener('scroll', positionTouchSurfaces); touchQuery?.removeEventListener?.('change', syncTouchSelection); } };
+    return { menu, dialog, touchToolbar, destroy() { clearTimeout(selectionTimer); hideMenu(); dialog.remove(); menu.remove(); touchToolbar.remove(); document.removeEventListener('selectionchange', syncTouchSelection); pageEl.removeEventListener('touchend', scheduleTouchSelection); window.visualViewport?.removeEventListener('resize', positionTouchSurfaces); window.visualViewport?.removeEventListener('scroll', positionTouchSurfaces); touchQuery?.removeEventListener?.('change', syncTouchSelection); } };
 }

@@ -4,7 +4,17 @@ import { createStoryBibleApi } from '/core/synchronization-engine/story-bible.js
 import { canEdit, describeError, searchEntries } from '/core/encyclopedia/model.js';
 /** Editor-owned reference surface. Does not import Encyclopedia application screens. */
 export function mountStoryBible({ button, pageEl, supabase, session, getBook, getChapterId, saveCurrent }) {
-    if (!button || session.mode !== 'cloud') { if (button) button.hidden = true; return; }
+    if (session.mode !== 'cloud') { if (button) button.hidden = true; return; }
+    // A service worker can pair the current module with an older cached editor shell.
+    // The optional reference button must never gate manuscript selection actions.
+    if (!button) {
+        button = document.createElement('button'); button.type = 'button';
+        button.id = 'open-story-bible'; button.className = 'quote-button';
+        button.textContent = 'Story Bible'; button.setAttribute('aria-expanded', 'false');
+        const host = document.querySelector('.snippet-editor-action') || document.getElementById('writerToolbar');
+        if (host) host.append(button);
+        else pageEl.before(button);
+    }
     const api = createStoryBibleApi(supabase, { userId: session.user.id });
     const node = (tag, text = '') => { const element = document.createElement(tag); element.textContent = text; return element; };
     const action = (text, handler) => { const element = node('button', text); element.type = 'button'; element.addEventListener('click', handler); return element; };
