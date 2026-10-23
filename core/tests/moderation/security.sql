@@ -22,13 +22,19 @@ SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
 SET request.jwt.claims='{"session_id":"10000000-0000-0000-0000-000000000001","aal":"aal1"}';
 SET ROLE authenticated;
 SELECT public.report_test_assert(public.mc_call('access')->>'role'='admin','existing admin membership inherited');
-SELECT public.report_expect_error($q$SELECT public.mc_call('start')$q$,'two-factor');
+SELECT public.report_expect_error($q$SELECT public.mc_call('start')$q$,'email code');
 SELECT public.report_expect_error($q$SELECT public.mc_call('users','{"role":"admin","aal":"aal2"}')$q$,'verification');
 RESET ROLE;
-SET request.jwt.claims='{"session_id":"10000000-0000-0000-0000-000000000001","aal":"aal2"}';
+SELECT set_config('request.jwt.claims',jsonb_build_object('session_id','10000000-0000-0000-0000-000000000001','aal','aal1','email','staff@example.test','amr',jsonb_build_array(jsonb_build_object('method','otp','timestamp',extract(epoch FROM clock_timestamp()))))::text,false);
 SET ROLE authenticated;
+SELECT set_config('test.mc.freshclaims',current_setting('request.jwt.claims'),false);
+SELECT set_config('request.jwt.claims',jsonb_build_object('session_id','10000000-0000-0000-0000-000000000001','aal','aal2','email','staff@example.test','amr',jsonb_build_array(jsonb_build_object('method','totp','timestamp',extract(epoch FROM clock_timestamp()))))::text,false);
+SELECT public.report_expect_error($q$SELECT public.mc_call('start')$q$,'email code');
+SELECT set_config('request.jwt.claims',jsonb_build_object('session_id','10000000-0000-0000-0000-000000000001','aal','aal1','email','staff@example.test','amr',jsonb_build_array(jsonb_build_object('method','otp','timestamp',extract(epoch FROM clock_timestamp()-interval '6 minutes'))))::text,false);
+SELECT public.report_expect_error($q$SELECT public.mc_call('start')$q$,'email code');
+SELECT set_config('request.jwt.claims',current_setting('test.mc.freshclaims'),false);
 SELECT public.mc_call('start');
-SELECT public.report_test_assert((public.mc_call('access')->>'verified')::boolean,'fresh MFA session opens staff lease');
+SELECT public.report_test_assert((public.mc_call('access')->>'verified')::boolean,'fresh verified email code opens staff lease');
 SELECT public.report_test_assert((public.mc_call('users')->>'total')::int=6,'real user directory');
 SELECT public.report_test_assert((public.mc_call('users','{"view":"active"}')->'items'->0->>'id')='00000000-0000-0000-0000-000000000003','activity ranks real recorded days');
 SELECT public.report_test_assert((public.mc_call('dashboard')->>'users')::int=6,'dashboard real count');
@@ -80,12 +86,12 @@ SELECT public.report_expect_error(format('SELECT public.mc_call(''user_reply'',j
 SELECT public.report_expect_error($q$SELECT public.mc_call('reports')$q$,'verification');
 RESET ROLE;
 SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
-SET request.jwt.claims='{"session_id":"10000000-0000-0000-0000-000000000001","aal":"aal2"}';
+SELECT set_config('request.jwt.claims',jsonb_build_object('session_id','10000000-0000-0000-0000-000000000001','aal','aal1','email','staff@example.test','amr',jsonb_build_array(jsonb_build_object('method','otp','timestamp',extract(epoch FROM clock_timestamp()))))::text,false);
 SET ROLE authenticated;
 SELECT public.report_expect_error(format('SELECT public.mc_call(''appeal_decision'',jsonb_build_object(''requestId'',gen_random_uuid(),''id'',%L,''version'',1,''decision'',''granted'',''body'',''Cannot review my original decision.''))',current_setting('test.mc.appeal')),'Another staff');
 RESET ROLE;
 SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
-SET request.jwt.claims='{"session_id":"10000000-0000-0000-0000-000000000002","aal":"aal2"}';
+SELECT set_config('request.jwt.claims',jsonb_build_object('session_id','10000000-0000-0000-0000-000000000002','aal','aal1','email','staff@example.test','amr',jsonb_build_array(jsonb_build_object('method','otp','timestamp',extract(epoch FROM clock_timestamp()))))::text,false);
 SET ROLE authenticated;
 SELECT public.mc_call('start');
 SELECT public.report_expect_error($q$SELECT public.mc_call('sanction','{"requestId":"40000000-0000-0000-0000-000000000001","userId":"00000000-0000-0000-0000-000000000004","kind":"ban","reason":"Policy","body":"A moderator cannot impose a permanent ban."}')$q$,'Only admins');
@@ -98,7 +104,7 @@ SELECT public.report_test_assert(NOT (public.mc_call('account_status')->>'blocke
 INSERT INTO public.books VALUES('restored-write',auth.uid(),'{}');
 RESET ROLE;
 SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
-SET request.jwt.claims='{"session_id":"10000000-0000-0000-0000-000000000001","aal":"aal2"}';
+SELECT set_config('request.jwt.claims',jsonb_build_object('session_id','10000000-0000-0000-0000-000000000001','aal','aal1','email','staff@example.test','amr',jsonb_build_array(jsonb_build_object('method','otp','timestamp',extract(epoch FROM clock_timestamp()))))::text,false);
 SET ROLE authenticated;
 SELECT public.mc_call('ip_add','{"requestId":"50000000-0000-0000-0000-000000000001","address":"192.0.2.44","hours":1,"body":"Disposable integration test connection only."}');
 SELECT public.report_test_assert(public.mc_network_blocked('192.0.2.44'),'IP rule enforceable at edge');
@@ -124,4 +130,8 @@ SELECT public.report_test_assert((SELECT count(*) FROM public.mc_sanctions)=(SEL
 SELECT public.report_test_assert((SELECT count(*) FROM public.mc_threads)=(SELECT t FROM counts),'rerun preserves conversations');
 SELECT public.report_test_assert((SELECT count(*) FROM public.mc_audit)=(SELECT a FROM counts),'rerun preserves audit');
 SELECT public.report_test_assert((SELECT count(*) FROM public.book_reports_v2)=(SELECT r FROM counts),'rerun preserves reports');
-SELECT 'Live moderation security tests passed';
+\ir ../../../supabase/live-site/supabase-moderation-email-codes.sql
+SELECT public.report_test_assert(NOT public.mc_verified(),'email migration invalidates previous staff leases');
+\ir ../../../supabase/live-site/supabase-moderation-email-codes.sql
+SELECT public.report_test_assert((SELECT count(*) FROM public.mc_threads)=(SELECT t FROM counts),'email migration rerun preserves messages');
+SELECT 'Live moderation email-code security tests passed';

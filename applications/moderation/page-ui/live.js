@@ -1,6 +1,7 @@
 import {moderationClient as client} from '/core/moderation/client.js';
 import {createModerationService} from '/core/moderation/service.js';
 import {esc,$,date,label,badge,button,title,table,formShell,field,select,modal,close,toast,showError,clearPrivate,bindDialog} from './common.js';
+import {sendStaffEmailCode,verifyStaffEmailCode} from '/core/moderation/email-auth.js';
 const api=createModerationService(client);
 const state={view:location.pathname.includes('book-reports')?'reports':new URLSearchParams(location.search).get('view')||'dashboard',role:'',user:null,epoch:0,offset:0,filters:{},rows:[],selected:null,lastAction:Date.now(),busy:false};
 const reasons=[['','All reasons'],['suspected_ai','Suspected Use of AI'],['improper_tags','Improperly Tagged Book'],['incorrect_rating','Incorrect Age Rating'],['plagiarism','Suspected Plagiarism / Stolen Work'],['harassment','Harassment / Targeted Abuse'],['site_rules','Content Violating Site Rules'],['spam','Spam / Scam / Malicious Links'],['other','Other']];
@@ -13,17 +14,25 @@ const templates={
  outcome:['Review outcome','Our review is complete. [Explain the finding, action, duration, and appeal route.]'],
  custom:['A message from Alysum Moderation','']
 };
-let factorId='',enrollment=null,oauthPending=sessionStorage.getItem('alysum-mod-oauth')==='1',fresh=false;
+let pendingEmail='',lastCodeSent=0,oauthPending=sessionStorage.getItem('alysum-mod-oauth')==='1',fresh=false;
 const call=(action,payload={},key)=>api.call(action,payload,key);
 function gate(message=''){
- state.epoch++;state.role='';state.user=null;state.rows=[];state.selected=null;clearPrivate();$('#md-identity').textContent='Staff sign-in required';
+ state.epoch++;state.role='';state.user=null;pendingEmail='';lastCodeSent=0;state.rows=[];state.selected=null;clearPrivate();$('#md-identity').textContent='Staff sign-in required';
  $('#md-screen').innerHTML=title('Staff sign-in','Sign in separately with your existing staff account. Your normal Alysum session stays separate.')+
- '<section class="md-panel" style="max-width:600px"><form id="mc-signin">'+field('mc-email','Email address','email')+field('mc-password','Password','password')+'<p class="md-error" data-form-error role="alert">'+esc(message)+'</p><div class="md-actions"><button type="submit" class="md-primary">Sign in to moderation</button></div></form><p class="md-muted">Or continue with your existing provider:</p><div class="md-heading-actions">'+button('Google','oauth','google')+button('Discord','oauth','discord')+'</div><p class="md-muted md-small">Two-factor verification is required for staff access.</p><a href="/overview">Back to profile</a></section>';
+ '<section class="md-panel" style="max-width:600px"><form id="mc-signin">'+field('mc-email','Email address','email')+field('mc-password','Password','password')+'<p class="md-error" data-form-error role="alert">'+esc(message)+'</p><div class="md-actions"><button type="submit" class="md-primary">Sign in to moderation</button></div></form><p class="md-muted">Or continue with your existing provider:</p><div class="md-heading-actions">'+button('Google','oauth','google')+button('Discord','oauth','discord')+'</div><p class="md-muted md-small">A six-digit email code is required for staff access.</p><a href="/overview">Back to profile</a></section>';
 }
-function mfaView(hasFactor){
- $('#md-screen').innerHTML=title('Verify staff identity','Use your authenticator app to complete the separate staff sign-in.')+
- '<section class="md-panel" style="max-width:600px">'+(hasFactor?formShell('mc-mfa',field('mc-code','Six-digit authenticator code','text'),'Verify and open moderation'):'<p>Set up an authenticator for your staff account to protect access to moderation tools.</p>'+button('Set up authenticator','enroll'))+'<div id="mc-enrollment"></div><p class="md-error" id="mc-page-error" role="alert"></p></section>';
- if($('#mc-code')){$('#mc-code').inputMode='numeric';$('#mc-code').autocomplete='one-time-code';$('#mc-code').maxLength=6;}
+function emailCodeView(message=''){
+ $('#md-screen').innerHTML=title('Check your email','Enter the six-digit code sent to '+pendingEmail+' to open moderation.')+
+ '<section class="md-panel" style="max-width:600px">'+formShell('mc-email-code',field('mc-code','Six-digit email code','text'),'Verify and open moderation')+
+ '<div class="md-actions">'+button('Send another code','resend-code')+button('Use another account','lock')+'</div><p id="mc-page-error" class="md-error" role="alert">'+esc(message)+'</p></section>';
+ $('#mc-code').inputMode='numeric';$('#mc-code').autocomplete='one-time-code';$('#mc-code').maxLength=6;$('#mc-code').pattern='[0-9]{6}';
+}
+async function sendEmailCode(){
+ if(Date.now()-lastCodeSent<60000){emailCodeView('Please wait a minute before requesting another code.');return;}
+ const generation=state.epoch;
+ await sendStaffEmailCode(client,pendingEmail);
+ if(generation!==state.epoch)return;
+ lastCodeSent=Date.now();emailCodeView();
 }
 async function resume(){
  const token=++state.epoch;const {data,error}=await client.auth.getSession();if(error)throw error;if(!data?.session)return gate();
@@ -31,8 +40,7 @@ async function resume(){
  if(!access.role){await client.auth.signOut({scope:'local'});return gate('This account does not have staff access.');}
  if(access.verified){state.role=access.role;fresh=false;sessionStorage.removeItem('alysum-mod-oauth');return load();}
  if(!fresh&&!oauthPending)return gate('Please sign in again to verify this staff session.');
- const factors=await client.auth.mfa.listFactors();if(factors.error)throw factors.error;factorId=factors.data.totp?.find(f=>f.status==='verified')?.id||'';
- mfaView(Boolean(factorId));
+ pendingEmail=data.session.user.email||'';lastCodeSent=0;await sendEmailCode();
 }
 async function unlock(){
  await call('start');oauthPending=false;sessionStorage.removeItem('alysum-mod-oauth');fresh=false;await resume();
@@ -124,11 +132,7 @@ function appealForm(id){
 async function action(name,id){
  if(name==='close')return close();if(name==='lock')return lock();if(name==='nav')return go(id);if(name==='more')return load(true);
  if(name==='oauth'){sessionStorage.setItem('alysum-mod-oauth','1');const {error}=await client.auth.signInWithOAuth({provider:id,options:{redirectTo:location.origin+'/moderation',queryParams:{prompt:id==='google'?'select_account':'consent'}}});if(error)throw error;return;}
- if(name==='enroll'){
- const {data,error}=await client.auth.mfa.enroll({factorType:'totp',friendlyName:'Alysum Moderation'});if(error)throw error;enrollment=data;factorId=data.id;mfaView(true);
- const area=$('#mc-enrollment'),p=document.createElement('p'),img=document.createElement('img');p.textContent='Scan this code in your authenticator, then enter a generated code above.';img.alt='Authenticator setup QR code';img.style.maxWidth='220px';img.src=data.totp.qr_code;area.append(p,img);
- const labelNode=document.createElement('label');labelNode.textContent='Setup key (keep private)';const input=document.createElement('input');input.readOnly=true;input.value=data.totp.secret;area.append(labelNode,input);return;
- }
+ if(name==='resend-code')return sendEmailCode();
  if(name==='user')return userDetail(id);if(name==='report')return reportDetail(id);if(name==='report-history')return reportDetail(state.selected.data.report.id,Number(id));
  if(name==='new-message')return messageForm();if(name==='message-user')return messageForm(id);if(name==='report-message'){const d=state.selected.data;return messageForm(d.ownerId,d.report.book_id,d.report.id);}
  if(name==='thread')return threadDetail(id);if(name==='thread-more')return threadDetail(state.selected.data.thread.id,Number(id),state.selected.messages);
@@ -144,7 +148,13 @@ document.addEventListener('submit',async e=>{
  const f=e.target;if(!f.id.startsWith('mc-'))return;e.preventDefault();if(state.busy)return;state.busy=true;const token=state.epoch;const buttons=[...f.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);const issue=f.querySelector('[data-form-error]');if(issue)issue.textContent='';
  try{
  if(f.id==='mc-signin'){fresh=true;const {error}=await client.auth.signInWithPassword({email:$('#mc-email').value.trim(),password:$('#mc-password').value});$('#mc-password').value='';if(error)throw error;await resume();return;}
- if(f.id==='mc-mfa'){const {error}=await client.auth.mfa.challengeAndVerify({factorId,code:$('#mc-code').value.trim()});if(error)throw error;enrollment=null;await unlock();return;}
+ if(f.id==='mc-email-code'){
+ const code=$('#mc-code').value.trim();if(!/^[0-9]{6}$/.test(code))throw Error('Enter the six-digit code from your email.');
+ const expectedUser=state.user?.id;
+ await verifyStaffEmailCode(client,pendingEmail,code,expectedUser);
+ if(token!==state.epoch)return;
+ $('#mc-code').value='';await unlock();return;
+}
  if(f.id==='mc-filter'){state.filters={query:$('#mc-query')?.value||'',view:$('#mc-view')?.value||'',status:$('#mc-status')?.value||$('#mc-user-status')?.value||'all',reason:$('#mc-reason')?.value||'',days:Number($('#mc-days')?.value||7),measure:$('#mc-measure')?.value||'activeDays',from:$('#mc-from')?.value||'',through:$('#mc-through')?.value||''};state.offset=0;await load();return;}
  let method,payload;const text=()=>$('#mc-explanation')?.value.trim()||'';
  if(f.id==='mc-sanction-form'){method='sanction';payload={userId:f.dataset.user,kind:$('#mc-sanction-kind').value,days:Number($('#mc-duration').value),reason:$('#mc-rule').value.trim(),body:text()};}

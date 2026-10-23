@@ -53,9 +53,21 @@ CREATE OR REPLACE FUNCTION public.mc_name(p_user uuid)
 RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,public AS $$
  SELECT coalesce((SELECT coalesce(nullif(display_name,''),nullif(username,''),id::text) FROM public.users WHERE id=p_user),'Deleted account')
 $$;
+CREATE OR REPLACE FUNCTION public.mc_email_code_verified(p_max_age interval)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,public AS $$
+ SELECT auth.uid() IS NOT NULL AND coalesce(auth.jwt()->>'email','')<>''
+ AND EXISTS(
+ SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(auth.jwt()->'amr')='array' THEN auth.jwt()->'amr' ELSE '[]'::jsonb END) a
+ WHERE a->>'method'='otp'
+ AND CASE WHEN coalesce(a->>'timestamp','') ~ '^[0-9]+([.][0-9]+)?$'
+ THEN (a->>'timestamp')::numeric BETWEEN extract(epoch FROM clock_timestamp()-p_max_age) AND extract(epoch FROM clock_timestamp()+interval '30 seconds')
+ ELSE false END
+ )
+$$;
+
 CREATE OR REPLACE FUNCTION public.mc_verified()
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,public AS $$
- SELECT auth.uid() IS NOT NULL AND public.mc_role(auth.uid())<>'' AND coalesce(auth.jwt()->>'aal','')='aal2'
+ SELECT auth.uid() IS NOT NULL AND public.mc_role(auth.uid())<>'' AND public.mc_email_code_verified(interval '8 hours')
  AND EXISTS(SELECT 1 FROM public.mc_staff_sessions m JOIN auth.sessions s ON s.id=m.session_id AND s.user_id=m.user_id
  WHERE m.user_id=auth.uid() AND m.session_id=nullif(auth.jwt()->>'session_id','')::uuid
  AND m.last_seen_at>clock_timestamp()-interval '15 minutes' AND m.verified_at>clock_timestamp()-interval '8 hours')
@@ -183,7 +195,7 @@ BEGIN
  END IF;
  IF p_action='start' THEN
  IF v_role='' THEN RAISE EXCEPTION 'Staff access required.'; END IF;
- IF coalesce(auth.jwt()->>'aal','')<>'aal2' THEN RAISE EXCEPTION 'Complete two-factor verification to open moderation.'; END IF;
+ IF NOT public.mc_email_code_verified(interval '5 minutes') THEN RAISE EXCEPTION 'Verify a fresh email code to open moderation.'; END IF;
  sid:=nullif(auth.jwt()->>'session_id','')::uuid;
  IF public.mc_verified() THEN RETURN jsonb_build_object('role',v_role,'verified',true,'name',public.mc_name(uid)); END IF;
  IF NOT EXISTS(SELECT 1 FROM auth.sessions WHERE id=sid AND user_id=uid AND created_at>clock_timestamp()-interval '5 minutes') THEN RAISE EXCEPTION 'A fresh staff sign-in is required.'; END IF;

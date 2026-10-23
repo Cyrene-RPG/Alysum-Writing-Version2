@@ -21,7 +21,7 @@ async function update(){
  if(version!==epoch||error||!access?.role)return;
  navLink('mc-profile-nav','Moderation Center','/moderation');
  if(!content||isSettings)return;
- const section=document.createElement('section');section.id='mc-profile-entry';section.className='panel';section.innerHTML='<h2>Moderation</h2><p class="hint">Your private staff workspace. Sign in separately and verify with your authenticator to enter.</p><a class="btn" href="/moderation">Open Moderation Center</a>';content.append(section);
+ const section=document.createElement('section');section.id='mc-profile-entry';section.className='panel';section.innerHTML='<h2>Moderation</h2><p class="hint">Your private staff workspace. Sign in separately and verify with an email code to enter.</p><a class="btn" href="/moderation">Open Moderation Center</a>';content.append(section);
 }
 void update().catch(()=>{});
 supabase.auth.onAuthStateChange(()=>setTimeout(()=>void update().catch(()=>{}),0));
