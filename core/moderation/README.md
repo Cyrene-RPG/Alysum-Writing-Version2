@@ -1,10 +1,10 @@
 # Live moderation
-The real routes are /moderation (separate staff sign-in + TOTP) and /moderation-inbox (normal account sign-in, including restricted users). The earlier design remains a clearly labeled sample at /moderation-preview.
+The real routes are /moderation (separate staff sign-in + email code) and /moderation-inbox (normal account sign-in, including restricted users). The earlier design remains a clearly labeled sample at /moderation-preview.
 
 Apply supabase/live-site/supabase-moderation-center.sql after the installed inbox and book-reports-v2 migrations. The migration is transactional and rerunnable. It preserves existing reports and audit history.
 
 ## Staff identity
-A separate Supabase client uses per-tab sessionStorage under alysum-moderation-auth. Existing normal-site sessions are not copied into it. A new staff lease requires current staff membership, a real auth.sessions entry created within five minutes, and a signed aal2 JWT. Every staff read or write checks membership, MFA and a server lease (15-minute idle / eight-hour absolute limit). No self-grants or self-role changes. Authenticator enrollment uses Supabase's normal MFA flow and never sends codes to the site's database.
+A separate Supabase client uses per-tab sessionStorage under alysum-moderation-auth. Existing normal-site sessions are not copied into it. A new staff lease requires current staff membership, a real auth.sessions entry created within five minutes, and signed OTP authentication proof in the JWT. Every staff read or write checks membership, email-code verification and a server lease (15-minute idle / eight-hour absolute limit). No self-grants or self-role changes. Email codes are generated, delivered and checked by Supabase Auth. The database checks signed OTP method/timestamp claims; form payloads cannot grant access.
 
 Add production /moderation URLs to Supabase's allowed redirect URLs for Google/Discord sign-in if not already covered by an allowed URL. Email/password sign-in does not require redirect configuration. No service-role key is exposed or required.
 
@@ -24,3 +24,6 @@ Admin-only, expiring, single-address IP blocks are enforced by functions/_middle
 
 ## Rollout
 No production migration or staff action is executed by source changes. Run the SQL in the live editor, then publish the frontend. Test with a staff account, a normal account and a separate non-staff browser. Never use sample rows to test live bans.
+
+## Switch existing installations to email codes
+Run supabase/live-site/supabase-moderation-email-codes.sql. It changes only staff verification functions and clears old staff leases; reports, messages and sanctions are preserved. In Supabase Auth > Email Templates > Magic Link, include `<p>Your sign-in code: <strong>{{ .Token }}</strong></p>`; retain existing sign-in links for normal account flows. Set the email OTP length to six digits and expiry to 300 seconds. The app does not create accounts when requesting codes, and uses the signed-in staff account email only. Resend requests have a 60-second UI cooldown plus Supabase rate limits. Browser values are never trusted as proof. No authenticator app is required by the moderation flow; existing enrolled factors are not deleted from user accounts.
