@@ -4,7 +4,7 @@ export function mountModeratorChat({host,service,userId,onAccessLost=()=>{},poll
  const root=el('section');root.className='mc-chat md-panel';root.setAttribute('aria-label','Moderator chat');
  const heading=el('h2','Staff room'),intro=el('p','Private to verified moderators and admins. Messages stay in this room.');intro.className='md-muted';
  const older=el('button','Load earlier messages');older.type='button';older.hidden=true;
- const scroll=el('div');scroll.className='mc-chat-scroll';scroll.tabIndex=0;scroll.setAttribute('aria-label','Chat history');
+ const scroll=el('div');scroll.className='mc-chat-scroll';scroll.hidden=true;scroll.tabIndex=0;scroll.setAttribute('aria-label','Chat history');
  const log=el('ol');log.className='mc-chat-messages';log.setAttribute('role','log');log.setAttribute('aria-label','Staff messages');log.setAttribute('aria-live','polite');log.setAttribute('aria-relevant','additions');scroll.append(log);
  const empty=el('p','No messages yet. Start the conversation.');empty.className='md-muted';empty.hidden=true;
  const status=el('p','Connecting…');status.className='mc-chat-status md-muted';status.setAttribute('role','status');
@@ -26,6 +26,7 @@ export function mountModeratorChat({host,service,userId,onAccessLost=()=>{},poll
    const next=ordered.slice(i+1).map(key=>nodes.get(key)).find(Boolean);log.insertBefore(item,next||null);
   }
   empty.hidden=messages.size>0;
+  scroll.hidden=messages.size===0;
   if(history)scroll.scrollTop=top+scroll.scrollHeight-height;else if(follow)scroll.scrollTop=scroll.scrollHeight;
  }
  function errorMessage(error){

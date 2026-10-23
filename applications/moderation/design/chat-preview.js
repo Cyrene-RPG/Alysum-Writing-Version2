@@ -10,6 +10,9 @@ const messages=[
  {id:'2',senderId:'sample-admin',name:'Sample Admin',role:'admin',body:'I have that one. Please leave any evidence in the private case notes so it stays with the report.',createdAt:new Date(Date.now()-120000).toISOString()},
  {id:'3',senderId:'sample-mod',name:'Sample Moderator',role:'moderator',body:'Thanks! I’ll take the next report in the queue.',createdAt:new Date(Date.now()-60000).toISOString()},
 ];
+const previewOptions=new URLSearchParams(location.search);
+if(previewOptions.get('empty')==='1')messages.length=0;
+if(previewOptions.get('history')==='1')for(let i=4;i<=35;i++)messages.push({...messages[0],id:String(i),body:'Sample history message '+i+'. Checking the staff room scroll behavior.'});
 const requests=new Map();
 const service={
  async list({before=null,after=null}={}){return {items:messages.filter(m=>(!before||BigInt(m.id)<BigInt(before))&&(!after||BigInt(m.id)>BigInt(after))),hasOlder:false,hasNewer:false};},

@@ -3,11 +3,11 @@ import test from 'node:test';import assert from 'node:assert/strict';import vm f
 const {JSDOM}=createRequire(import.meta.url)(process.env.JSDOM_MODULE||'jsdom');
 const pause=()=>new Promise(r=>setTimeout(r,5));async function until(check){for(let i=0;i<100;i++){if(check())return;await pause();}throw Error('Chat did not settle');}
 const message=(id,body='Message '+id)=>({id:String(id),senderId:'other',name:'Sample Moderator',role:'moderator',body,createdAt:new Date().toISOString()});
-async function harness(){
+async function harness({empty=false}={}){
  const dom=new JSDOM('<main></main>',{url:'https://alysum.test/moderation?view=chat',pretendToBeVisual:true}),{window}=dom;
  const context=vm.createContext({document:window.document,window,crypto:webcrypto,setTimeout,clearTimeout});
  const module=new vm.SourceTextModule(await fs.readFile(new URL('../../../applications/moderation/page-ui/chat.js',import.meta.url),'utf8'),{context});await module.link(()=>{});await module.evaluate();
- const records=[message(1),message(2),message(3,'<img src=x onerror=bad()>')],calls=[],keys=new Map();let failSend=false,failRead=null,pending=null,lost=false;
+ const records=empty?[]:[message(1),message(2),message(3,'<img src=x onerror=bad()>')],calls=[],keys=new Map();let failSend=false,failRead=null,pending=null,lost=false;
  const service={list:async({before=null,after=null}={})=>{if(pending)await pending;if(failRead)throw failRead;const filtered=records.filter(m=>(!before||BigInt(m.id)<BigInt(before))&&(!after||BigInt(m.id)>BigInt(after)));const items=after?filtered.slice(0,2):filtered.slice(-2);return {items,hasOlder:records.some(m=>BigInt(m.id)<BigInt(items[0]?.id||'0')),hasNewer:after&&filtered.length>2};},send:async(body,key)=>{calls.push({body,key});if(!keys.has(key)){const row=message(records.length+1,body);row.senderId='me';records.push(row);keys.set(key,row);}if(failSend)throw Error('Connection interrupted');return {id:keys.get(key).id};}};
  const mounted=module.namespace.mountModeratorChat({host:window.document.querySelector('main'),service,userId:'me',pollMs:60000,onAccessLost:()=>{lost=true;}});
  await until(()=>window.document.querySelector('button[type=submit]')?.disabled===false);
@@ -20,6 +20,14 @@ test('chat renders plain text, loads earlier messages, catches up and deduplicat
   [...h.window.document.querySelectorAll('button')].find(b=>b.textContent==='Load earlier messages').click();await until(()=>h.window.document.querySelectorAll('li').length===3);
   h.records.push(message(4),message(5),message(6));await h.mounted.refresh();await until(()=>h.window.document.querySelectorAll('li').length===6);
   await h.mounted.refresh();assert.equal(h.window.document.querySelectorAll('li').length,6);
+ }finally{h.destroy();}
+});
+test('empty history collapses and the composer accepts the first message',async()=>{
+ const h=await harness({empty:true});try{
+  assert.equal(h.window.document.querySelector('.mc-chat-scroll').hidden,true);
+  assert.match(h.mounted.root.textContent,/No messages yet/);
+  h.input.value='First message';h.submit();await until(()=>h.window.document.querySelectorAll('li').length===1);
+  assert.equal(h.window.document.querySelector('.mc-chat-scroll').hidden,false);assert.equal(h.input.value,'');
  }finally{h.destroy();}
 });
 test('uncertain send preserves draft and retry identity; a successful retry does not duplicate',async()=>{

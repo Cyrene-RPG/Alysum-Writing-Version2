@@ -106,5 +106,22 @@ assert.equal(await page.locator('.mc-chat-message img').count(),0);
 assert.match(await page.locator('.mc-chat-message').last().textContent(),/Sample reply <img/);
 for(const width of [1440,390,320]){await page.setViewportSize({width,height:900});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'chat must fit '+width);await page.screenshot({path:'test-results/moderation-design/chat-'+width+'-'+name+'.png',fullPage:true});}
 await page.getByRole('button',{name:'Lock workspace',exact:true}).click();assert.equal(await page.locator('.mc-chat').count(),0);
+for(const width of [390,320]){
+ await page.setViewportSize({width,height:844});
+ await page.goto(base+'/moderation-preview?view=chat&empty=1');await page.waitForFunction(()=>window.modChatPreview?.sampleData&&document.querySelector('.mc-chat-status')?.textContent.includes('automatically'));
+ assert.equal(await page.locator('.mc-chat-scroll').isVisible(),false,'empty room must not reserve a blank scrolling pane');
+ const composer=page.getByLabel('Message the staff room');
+ assert.ok(await composer.evaluate(e=>e.getBoundingClientRect().bottom<=innerHeight),'empty-room composer is reachable at '+width);
+ await composer.click();await composer.fill('First message from a phone');assert.equal(await composer.inputValue(),'First message from a phone');
+ await page.getByRole('button',{name:'Send message',exact:true}).click();await page.waitForFunction(()=>window.modChatPreview.messages.length===1);
+ await page.screenshot({path:'test-results/moderation-design/chat-empty-'+width+'-'+name+'.png',fullPage:true});
+ await page.goto(base+'/moderation-preview?view=chat&history=1');await page.waitForFunction(()=>document.querySelectorAll('.mc-chat-message').length===35);
+ const history=page.locator('.mc-chat-scroll');await history.evaluate(e=>{e.scrollTop=e.scrollHeight;});await history.hover();
+ const startScroll=await page.evaluate(()=>scrollY);await page.mouse.wheel(0,700);
+ await page.waitForFunction(start=>scrollY>start,startScroll);
+ await page.getByLabel('Message the staff room').click();await page.getByLabel('Message the staff room').fill('The composer is reachable after scrolling history');
+ assert.equal(await page.getByLabel('Message the staff room').inputValue(),'The composer is reachable after scrolling history');
+ await page.screenshot({path:'test-results/moderation-design/chat-scroll-'+width+'-'+name+'.png',fullPage:true});
+}
 assert.deepEqual(remote,[]);assert.deepEqual(errors,[]);console.log(name+': moderation design flows and mobile layout passed; no live backend requests');
 }finally{await browser.close();server.close();}

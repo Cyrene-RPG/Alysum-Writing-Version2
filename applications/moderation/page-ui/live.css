@@ -2,7 +2,8 @@
 
 .mc-chat { min-width: 0; max-width: 1000px; }
 .mc-chat h2 { margin-top: 0; }
-.mc-chat-scroll { height: min(52dvh, 580px); min-height: 240px; overflow-y: auto; overscroll-behavior: contain; border-block: 1px solid var(--border, #ffffff25); margin-top: 12px; padding: 12px 0; }
+.mc-chat-scroll { max-height: min(38dvh, 420px); overflow-y: auto; overscroll-behavior-y: auto; border-block: 1px solid var(--border, #ffffff25); margin-top: 12px; padding: 12px 0; }
+.mc-chat-scroll[hidden] { display: none !important; }
 .mc-chat-messages { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
 .mc-chat-message { min-width: 0; padding: 14px 16px; border: 1px solid var(--border, #ffffff20); border-radius: 10px; background: var(--alysum-ui-chrome, #171717); }
 .mc-chat-message.is-own { border-inline-start: 3px solid var(--accent, #9c7ada); }
@@ -17,4 +18,4 @@
 .mc-chat button { min-height: 44px; }
 .mc-chat-status { min-height: 1.5em; font-size: 12px; }
 .mc-chat :is(button,textarea,.mc-chat-scroll):focus-visible { outline: 2px solid var(--accent, #9c7ada); outline-offset: 3px; }
-@media(max-width:600px) { .mc-chat { padding: 16px; } .mc-chat-message time { margin-inline-start: 0; width: 100%; } .mc-chat-compose>div>button { width: 100%; } }
+@media(max-width:600px) { .mc-chat { padding: 16px; } .mc-chat-scroll { max-height: min(32dvh, 280px); } .mc-chat-message time { margin-inline-start: 0; width: 100%; } .mc-chat-compose>div>button { width: 100%; } }
