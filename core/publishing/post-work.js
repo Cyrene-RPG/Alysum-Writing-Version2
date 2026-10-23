@@ -1,3 +1,4 @@
+import { stripStoryBibleMetadata } from "../encyclopedia/model.js";
 import { normalizeWarningState } from "./content-warnings.js";
 /**
  * Build and save a public.library listing from a manuscript + publish form.
@@ -109,7 +110,7 @@ export function buildLibraryPayload(book, form) {
             posted.push({id:ch.id,title:ch.title || 'Untitled',content:'',wordCount:countWordsInHtml(ch.content || ''),locked:true,purchaseUrl:normalizePurchaseUrl(form.chapterAccess?.productUrl)});
             continue;
         }
-        const content = stripReviewMarks(String(ch.content || ""));
+        const content = stripStoryBibleMetadata(stripReviewMarks(String(ch.content || "")));
         posted.push({
             id: ch.id,
             title: ch.title || "Untitled",

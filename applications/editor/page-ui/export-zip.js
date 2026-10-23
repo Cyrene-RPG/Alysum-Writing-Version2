@@ -1,3 +1,4 @@
+import { stripStoryBibleMetadata } from "/core/encyclopedia/model.js";
 import { walkBookChapters } from "@alysum/writing-engine/manuscript.js?v=5";
 
 function safeName(text, fallback, index) {
@@ -10,7 +11,7 @@ function safeName(text, fallback, index) {
 }
 
 function asDocHtml(title, html) {
-    const body = String(html || "").trim() || "<p></p>";
+    const body = stripStoryBibleMetadata(html).trim() || "<p></p>";
     return `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
 <head><meta charset="utf-8"><title>${escapeHtml(title)}</title></head>

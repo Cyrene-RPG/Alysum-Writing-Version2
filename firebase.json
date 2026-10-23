@@ -45,6 +45,10 @@
       }
     ],
     "rewrites": [
+      {
+        "source": "/story-bible",
+        "destination": "/applications/encyclopedia/pages/story-bible.html"
+      },
       {"source":"/connections","destination":"/applications/connections/pages/connections.html"},
       {"source":"/connections.html","destination":"/applications/connections/pages/connections.html"},
       {

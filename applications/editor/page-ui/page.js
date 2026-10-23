@@ -1,3 +1,4 @@
+import { mountStoryBible } from "./story-bible.js";
 import { chapterContentChanged } from "/core/writing-engine/draft-revisions.js";
 import { mountDraftSwitcher } from "./draft-switcher.js";
 import { mountDraftRevisions } from "./draft-revisions.js?v=2";
@@ -105,7 +106,7 @@ async function boot() {
 
     let selectedId = fallbackChapterId(
         book.sections,
-        readRememberedChapter() || listBodyChapters(book.sections)[0]?.id || "",
+        new URLSearchParams(location.search).get("chapter") || readRememberedChapter() || listBodyChapters(book.sections)[0]?.id || "",
     );
     initWorkspaceShell({
         lead: "Working On ",
@@ -582,6 +583,8 @@ async function boot() {
         writePane: document.getElementById("writerWritePane"), getBook: () => book,
         api, session, supabase, saveCurrent: saveChapter,
     });
+    mountStoryBible({ button: document.getElementById("open-story-bible"), pageEl, supabase, session,
+        getBook: () => book, getChapterId: () => selectedId, saveCurrent: saveChapter });
     paintOfflineStatus();
     if (openedFromCache && session.mode === "cloud") {
         void api.getBook(bookId).then((fresh) => {

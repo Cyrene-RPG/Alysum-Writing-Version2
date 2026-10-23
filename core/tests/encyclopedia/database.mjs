@@ -1,0 +1,77 @@
+/** Disposable database only. PGLITE_MODULE points to an externally installed @electric-sql/pglite. */
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import { defaultEntryTypes } from '../../encyclopedia/model.js';
+const { PGlite } = await import(process.env.PGLITE_MODULE || '@electric-sql/pglite');
+test('new Story Bible database: isolation, atomic links, conflicts, history, membership and drafts', async () => {
+    const db = new PGlite();
+    try {
+        await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated;
+            CREATE SCHEMA auth; CREATE SCHEMA storage;
+            CREATE TABLE auth.users(id uuid PRIMARY KEY,email text);
+            CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+            CREATE TABLE public.books(id text PRIMARY KEY,user_id uuid,title text,draft_parent_id text,updated bigint,sections jsonb DEFAULT '{}');
+            CREATE TABLE public.book_editors(book_id text,user_id uuid);
+            CREATE TABLE storage.buckets(id text PRIMARY KEY,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
+            CREATE TABLE storage.objects(id uuid DEFAULT gen_random_uuid(),bucket_id text,name text);
+            ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY; GRANT USAGE ON SCHEMA storage,auth TO authenticated; GRANT SELECT,INSERT ON storage.objects TO authenticated;
+            INSERT INTO auth.users VALUES('00000000-0000-4000-8000-000000000001','owner@test.invalid'),('00000000-0000-4000-8000-000000000002','other@test.invalid');
+            INSERT INTO public.books(id,user_id,title,updated) VALUES('main','00000000-0000-4000-8000-000000000001','Test novel',1),('other','00000000-0000-4000-8000-000000000002','Other novel',1);
+            INSERT INTO public.books(id,user_id,title,draft_parent_id,updated) VALUES('revision','00000000-0000-4000-8000-000000000001','Revision','main',1);
+        `);
+        const migration = await fs.readFile(new URL('../../../supabase/live-site/supabase-encyclopedia-story-bible.sql', import.meta.url), 'utf8');
+        await db.exec(migration); await db.exec(migration); // additive, rerunnable
+        async function user(id) { await db.exec(`RESET ROLE; SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-00000000000${id}',false); SET ROLE authenticated;`); }
+        const result = async (sql, args = []) => (await db.query(sql, args)).rows[0]?.value;
+        await user(1);
+        assert.equal(await result('SELECT public.open_story_bible($1,false,$2) AS value', ['main', JSON.stringify(defaultEntryTypes())]), null);
+        const bible = await result('SELECT public.open_story_bible($1,true,$2) AS value', ['main', JSON.stringify(defaultEntryTypes())]);
+        assert.equal(bible.role, 'owner');
+        const revisionBible = await result('SELECT public.open_story_bible($1,true,$2) AS value', ['revision', '[]']); assert.equal(revisionBible.id, bible.id);
+        const types = (await db.query('SELECT * FROM public.story_bible_entry_types WHERE bible_id=$1', [bible.id])).rows; assert.equal(types.length, 4);
+        const characterType = types.find(type => type.name === 'Character');
+        const renamedType = await result('SELECT public.save_story_bible_type($1,$2,$3,$4) AS value', [bible.id, characterType.id, 1, JSON.stringify({ ...defaultEntryTypes()[0], name: 'Person' })]);
+        assert.equal(renamedType.revision, 2); assert.equal(renamedType.fields[0].id, characterType.fields[0].id);
+        const payload = title => ({ title, type_id: types.find(type => type.name === 'Character').id, aliases: [], tags: [], fields: {}, sections: {}, archived: false });
+        const save = (entry, data) => result('SELECT public.save_story_bible_entry($1,$2,$3,$4,$5) AS value', [bible.id, entry?.id || null, entry?.revision || 0, JSON.stringify(data), '[]']);
+        const first = await save(null, payload('Mara')), second = await save(null, payload('Elian'));
+        const explicitId = '00000000-0000-4000-8000-000000000555';
+        const createdOnce = await save({ id: explicitId, revision: 0 }, payload('Retry-safe'));
+        const createdTwice = await save({ id: explicitId, revision: 0 }, payload('Retry-safe'));
+        assert.equal(createdOnce.id, createdTwice.id);
+        const custom = await save(createdOnce, { ...payload('Retry-safe'), custom_fields: [{ id: 'custom-mark', label: 'Mark', type: 'text' }], fields: { 'custom-mark': 'Scar' } });
+        assert.equal(custom.custom_fields[0].label, 'Mark');
+        const linked = await save(first, { ...payload('Mara Vey'), sections: { overview: `Sister of [[${second.id}|Elian]].` } });
+        assert.equal((await db.query('SELECT * FROM public.story_bible_connections')).rows.length, 1);
+        assert.equal((await db.query('SELECT * FROM public.story_bible_entry_versions WHERE entry_id=$1', [first.id])).rows.length, 1);
+        await assert.rejects(save(first, payload('Stale write')), /BIBLE_CONFLICT/);
+        const invalid = { ...payload('Invalid link'), sections: { overview: '[[00000000-0000-4000-8000-999999999999|Private person]]' } };
+        await assert.rejects(save(linked, invalid), /linked entry is unavailable/);
+        assert.equal((await db.query('SELECT title FROM public.story_bible_entries WHERE id=$1', [first.id])).rows[0].title, 'Mara Vey');
+        await db.query('SELECT public.connect_story_bible_entries($1,$2,$3,$4,$5)', [bible.id, first.id, second.id, 'sister of', 'brother of']);
+        await db.query('SELECT public.add_story_bible_fact($1,$2,$3)', [bible.id, first.id, JSON.stringify({ category: 'Age', value: '27', bookId: 'main', chapterId: 'one', sourceText: 'She was twenty-seven.' })]);
+        await db.query('SELECT public.replace_story_bible_mentions($1,$2,$3,$4,$5)', [bible.id, 'main', 'one', JSON.stringify([{ entryId: first.id, excerpt: 'Mara arrives' }]), 1]);
+        await assert.rejects(db.query('SELECT public.replace_story_bible_mentions($1,$2,$3,$4,$5)', [bible.id, 'main', 'one', '[]', 0]), /manuscript changed/);
+        const archived = await save(linked, { ...payload('Mara Vey'), archived: true }); assert.ok(archived.archived_at);
+        const restored = await save(archived, payload('Mara Vey')); assert.equal(restored.archived_at, null);
+        await user(2);
+        assert.equal((await db.query('SELECT * FROM public.story_bible_entries')).rows.length, 0);
+        await assert.rejects(save(null, payload('Intrusion')), /permission/);
+        await assert.rejects(db.query("INSERT INTO public.story_bible_entries(bible_id,type_id,title) VALUES($1,$2,'Direct write')", [bible.id, types[0].id]), /permission denied/);
+        await assert.rejects(db.query("INSERT INTO storage.objects(bucket_id,name) VALUES('story-bible-portraits',$1)", [bible.id + '/foreign.png']), /row-level security/);
+        const otherBible = await result('SELECT public.open_story_bible($1,true,$2) AS value', ['other', JSON.stringify(defaultEntryTypes())]);
+        const otherType = (await db.query('SELECT id FROM public.story_bible_entry_types WHERE bible_id=$1 LIMIT 1', [otherBible.id])).rows[0].id;
+        const otherEntry = await result('SELECT public.save_story_bible_entry($1,NULL,0,$2,$3) AS value', [otherBible.id, JSON.stringify({ ...payload('Private'), type_id: otherType }), '[]']);
+        await user(1);
+        await assert.rejects(save(restored, { ...payload('Cross Bible'), sections: { overview: `[[${otherEntry.id}|Private]]` } }), /linked entry is unavailable/);
+        await db.query('SELECT public.set_story_bible_member($1,$2,$3)', [bible.id, 'other@test.invalid', 'viewer']);
+        await user(2); assert.equal((await db.query('SELECT * FROM public.story_bible_entries WHERE bible_id=$1', [bible.id])).rows.length, 3);
+        await assert.rejects(save(null, payload('Viewer write')), /permission/);
+        await user(1); await db.query('SELECT public.set_story_bible_member($1,$2,$3)', [bible.id, 'other@test.invalid', 'editor']);
+        await user(2); const collaboration = await save(null, payload('Shared editor')); assert.equal(collaboration.title, 'Shared editor');
+        await assert.rejects(db.query('SELECT public.save_story_bible_type($1,NULL,0,$2)', [bible.id, JSON.stringify(defaultEntryTypes()[0])]), /Only the owner/);
+        await user(1); await db.query('SELECT public.set_story_bible_member($1,$2,$3)', [bible.id, 'other@test.invalid', 'remove']);
+        await user(2); assert.equal((await db.query('SELECT * FROM public.story_bible_entries WHERE bible_id=$1', [bible.id])).rows.length, 0);
+    } finally { await db.close(); }
+});

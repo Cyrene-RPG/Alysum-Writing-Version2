@@ -1,11 +1,7 @@
 # Encyclopedia
 
-World Encyclopedia data: a story bible. Lore *about* the story (histories, geography, cultures, magic, wiki links, city/realm builders), not chapter prose.
+`model.js` defines the new Story Bible domain: templates, entry validation, wiki link extraction, search, roles, and publication/export metadata stripping. It is independent of the old Bible implementation.
 
-One blob store. The UI is `applications/encyclopedia/` (later). Builders are pages in that app, not sibling apps.
+Data access lives in `core/synchronization-engine/story-bible.js`; screens in `applications/encyclopedia/`. Cloud is authoritative. SQL enforces membership, revisions, collection-scoped references, and atomic profile/link updates. See the application README for deployment and tests.
 
-Not this folder: manuscript chapters, notes vault, plot-studio, public library.
-
-| File | Was |
-| --- | --- |
-| blob-store.js | encyclopedia-blob-store.js |
+`blob-store.js` remains untouched for legacy worldbuilding consumers. The new Story Bible never imports or reads it.
