@@ -18,7 +18,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.mc_verified()
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,public AS $$
- SELECT auth.uid() IS NOT NULL AND public.mc_role(auth.uid())<>'' AND coalesce(auth.jwt()->>'aal','')='aal2'
+ SELECT auth.uid() IS NOT NULL AND public.mc_role(auth.uid())<>'' AND public.mc_email_code_verified(interval '8 hours')
  AND EXISTS(SELECT 1 FROM public.mc_staff_sessions m JOIN auth.sessions s ON s.id=m.session_id AND s.user_id=m.user_id
  WHERE m.user_id=auth.uid() AND m.session_id=nullif(auth.jwt()->>'session_id','')::uuid
  AND m.last_seen_at>clock_timestamp()-interval '15 minutes' AND m.verified_at>clock_timestamp()-interval '8 hours')
