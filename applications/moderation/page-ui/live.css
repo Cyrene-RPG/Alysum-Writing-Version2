@@ -18,4 +18,4 @@
 .mc-chat button { min-height: 44px; }
 .mc-chat-status { min-height: 1.5em; font-size: 12px; }
 .mc-chat :is(button,textarea,.mc-chat-scroll):focus-visible { outline: 2px solid var(--accent, #9c7ada); outline-offset: 3px; }
-@media(max-width:600px) { .mc-chat { padding: 16px; } .mc-chat-scroll { max-height: min(32dvh, 280px); } .mc-chat-message time { margin-inline-start: 0; width: 100%; } .mc-chat-compose>div>button { width: 100%; } }
+@media(max-width:600px) { .mc-chat { padding: 16px; display: flex; flex-direction: column; } .mc-chat-status { order: 1; } .mc-chat-compose { order: 2; } .mc-chat>button { order: 3; } .mc-chat-scroll { order: 4; max-height: none; overflow: visible; } .mc-chat-message time { margin-inline-start: 0; width: 100%; } .mc-chat-compose>div>button { width: 100%; } }

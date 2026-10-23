@@ -117,20 +117,15 @@ for(const width of [390,320]){
  await page.screenshot({path:'test-results/moderation-design/chat-empty-'+width+'-'+name+'.png',fullPage:true});
  await page.goto(base+'/moderation-preview?view=chat&history=1');await page.waitForFunction(()=>document.querySelectorAll('.mc-chat-message').length===35);
  const history=page.locator('.mc-chat-scroll');
- // Keep part of the history visible without hover() automatically scrolling the
- // document all the way to its end before testing scroll chaining.
- await history.evaluate(async e=>{
-  window.scrollTo(0,Math.max(0,e.getBoundingClientRect().top+scrollY-innerHeight*.65));
-  e.scrollTop=e.scrollHeight;
-  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
- });
+ assert.ok(await history.evaluate(e=>e.scrollHeight<=e.clientHeight+1),'phone history must use document scrolling');
+ const composeBounds=await page.getByLabel('Message the staff room').boundingBox(),historyBounds=await history.boundingBox();
+ assert.ok(composeBounds.y+composeBounds.height<historyBounds.y,'phone composer precedes the long history');
+ await history.evaluate(e=>window.scrollTo(0,Math.max(0,e.getBoundingClientRect().top+scrollY-innerHeight*.65)));
  const bounds=await history.boundingBox();const viewport=page.viewportSize();
  await page.mouse.move(bounds.x+bounds.width/2,Math.min(viewport.height-20,bounds.y+40));
- const startScroll=await page.evaluate(()=>scrollY);
- assert.ok(await page.evaluate(start=>document.scrollingElement.scrollHeight-innerHeight>start+1,startScroll),'page has room to scroll before the boundary gesture');
- await page.mouse.wheel(0,700);
- try{await page.waitForFunction(start=>scrollY>start,startScroll,{timeout:5000});}
- catch(error){console.error('Scroll boundary state',await history.evaluate(e=>({top:e.scrollTop,height:e.scrollHeight,client:e.clientHeight,behavior:getComputedStyle(e).overscrollBehaviorY,page:scrollY,pageHeight:document.scrollingElement.scrollHeight,viewport:innerHeight})));throw error;}
+ const startScroll=await page.evaluate(()=>scrollY);await page.mouse.wheel(0,700);
+ await page.waitForFunction(start=>scrollY>start,startScroll,{timeout:5000});
+ await page.mouse.wheel(0,-10000);await page.waitForFunction(()=>scrollY===0);
  await page.getByLabel('Message the staff room').click();await page.getByLabel('Message the staff room').fill('The composer is reachable after scrolling history');
  assert.equal(await page.getByLabel('Message the staff room').inputValue(),'The composer is reachable after scrolling history');
  await page.screenshot({path:'test-results/moderation-design/chat-scroll-'+width+'-'+name+'.png',fullPage:true});
