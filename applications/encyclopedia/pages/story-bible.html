@@ -11,15 +11,42 @@
 <script src="/site-appearance/js-runtime/text-ink-data.js"></script>
 <script src="/site-appearance/js-runtime/boot.js"></script>
 <link rel="stylesheet" href="/applications/encyclopedia/pages-css/workspace.css">
+<link rel="stylesheet" href="/css/site-responsive.css">
+<link rel="stylesheet" href="/css/workspace-nav.css">
+<script src="/site-appearance/js-runtime/gradient-theme-sync.js" defer></script>
 <script type="module" src="/applications/encyclopedia/page-ui/workspace.js"></script>
 </head><body>
-<header class="bible-header"><a class="bible-brand" href="/studio">A<span>lysum</span></a><span class="bible-separator">/</span><div><p class="bible-eyebrow">YOUR STORY, CONNECTED</p><h1 id="bible-title">Story Bible</h1></div><a id="return-book" href="/studio">Back to Studio</a></header>
+<a class="bible-skip-link" href="#profile">Skip to character profile</a>
+<header class="wd-welcome-bar ui-bar" aria-label="Welcome">
+    <div class="wd-welcome-inner">
+        <div class="wd-pfp-menu" id="welcomePfpMenu">
+            <button type="button" class="wd-pfp-btn" id="welcomePfpBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="welcomePfpDropdown" aria-label="Account menu">
+                <span class="wd-pfp" id="welcomePfp"><img id="welcomePfpImg" alt="" hidden><span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true">A</span></span>
+            </button>
+            <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
+                <a role="menuitem" href="/overview">Profile</a>
+                <a role="menuitem" href="/settings">Settings</a>
+                <button type="button" role="menuitem" id="bible-logout" hidden>Log out</button>
+            </div>
+        </div>
+        <div class="wd-welcome-copy">
+            <h1 class="wd-welcome-title" id="welcomeTitle">Your <span class="wd-name">Story Bible</span></h1>
+            <p class="wd-welcome-sub" id="welcomeSubtitle">Characters, places, and the details that bring your story together.</p>
+        </div>
+    </div>
+</header>
+<nav class="wd-nav-wrap ui-bar" aria-label="Workspace"><div class="wd-nav">
+    <a href="/studio">Studio</a><a href="/word-wars-lobby">Word Wars</a><a href="/library">Library</a><a href="/updates">What’s New</a><a href="/story-bible" id="bible-nav-link" class="is-active" aria-current="page">Story Bible</a>
+</div></nav>
+<div class="bible-page">
+<div class="bible-page-heading"><div><p class="bible-eyebrow">YOUR WORLD, IN ONE PLACE</p><h2 class="lib-display-title" id="bible-title">Story Bible</h2></div><a class="bible-back-link" id="return-book" href="/studio">← Back to Studio</a></div>
 <p id="preview-banner" class="bible-notice" hidden>Interactive preview · Sample characters · Changes are temporary and never reach your account.</p>
-<div id="status" class="bible-status" role="status" aria-live="polite">Opening your Story Bible…</div>
+<div id="bible-status" class="bible-status" role="status" aria-live="polite">Opening your Story Bible…</div>
 <div class="bible-layout" id="workspace" hidden>
-<aside class="bible-navigation" aria-label="Story Bible navigation"><p class="bible-eyebrow">THE ENCYCLOPEDIA</p><button id="all-entries" class="bible-nav-button">All entries <span id="entry-count"></span></button><div id="categories"></div><button id="new-category" class="bible-subtle">＋ New category</button><hr><label class="bible-check"><input id="show-archived" type="checkbox"> Show archived</label><button id="manage-access" class="bible-subtle">Manage access</button><p class="bible-private">Private to your Bible members.<br>Publishing a book does not publish these pages.</p></aside>
-<section class="bible-directory" aria-label="Entry directory"><div class="bible-directory-head"><h2 id="directory-title">All entries</h2><button id="new-entry" class="bible-primary">＋ New entry</button></div><label class="bible-search"><span class="sr-only">Search names, aliases, facts, and biographies</span><input id="search" type="search" placeholder="Search your world…" autocomplete="off"></label><div class="bible-directory-tools"><span id="result-count"></span><label>View <select id="directory-view"><option value="cards">Cards</option><option value="list">List</option></select></label></div><div id="entries" class="bible-cards"></div></section>
-<main class="bible-profile" id="profile" tabindex="-1"><div class="bible-empty"><span class="bible-empty-symbol">✦</span><p class="bible-eyebrow">A PLACE FOR EVERY DETAIL</p><h2>Your world starts here.</h2><p>Create a character, a place, or anything your story needs. Connect their pages as your world grows.</p></div></main>
+<aside class="bible-navigation bible-panel panel" aria-label="Story Bible navigation"><p class="bible-eyebrow">THE ENCYCLOPEDIA</p><button id="all-entries" class="bible-nav-button">All entries <span id="entry-count"></span></button><div id="categories"></div><button id="new-category" class="bible-subtle">＋ New category</button><hr><label class="bible-check"><input id="show-archived" type="checkbox"> Show archived</label><button id="manage-access" class="bible-subtle">Manage access</button><p class="bible-private">Private to your Bible members.<br>Publishing a book does not publish these pages.</p></aside>
+<section class="bible-directory bible-panel panel" aria-label="Entry directory"><div class="bible-directory-head"><h2 id="directory-title">All entries</h2><button id="new-entry" class="bible-primary">＋ New entry</button></div><label class="bible-search"><span class="sr-only">Search names, aliases, facts, and biographies</span><input id="search" type="search" placeholder="Search your world…" autocomplete="off"></label><div class="bible-directory-tools"><span id="result-count"></span><label>View <select id="directory-view"><option value="cards">Cards</option><option value="list">List</option></select></label></div><div id="entries" class="bible-cards"></div></section>
+<main class="bible-profile bible-panel panel" id="profile" tabindex="-1"><div class="bible-empty"><span class="bible-empty-symbol">✦</span><p class="bible-eyebrow">A PLACE FOR EVERY DETAIL</p><h2>Your world starts here.</h2><p>Create a character, a place, or anything your story needs. Connect their pages as your world grows.</p></div></main>
+</div>
 </div>
 <dialog id="bible-dialog"><form method="dialog" id="dialog-form"><header><h2 id="dialog-title"></h2><button type="button" id="dialog-close" aria-label="Close dialog">×</button></header><div id="dialog-body"></div><p id="dialog-error" role="alert"></p><footer><button type="button" id="dialog-cancel">Cancel</button><button type="submit" class="bible-primary" id="dialog-submit">Save</button></footer></form></dialog>
 </body></html>

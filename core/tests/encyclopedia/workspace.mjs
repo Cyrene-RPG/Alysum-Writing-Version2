@@ -48,6 +48,6 @@ test('fresh workspace creates, saves, links, restores, archives and customizes p
  await click('＋ Add fact'); fill('Category', 'History'); fill('Fact', 'Built a ship.'); await submitDialog(); assert.match(document.getElementById('profile').textContent, /Built a ship/);
  await click('Archive entry'); assert.ok(findButton('Restore entry')); await click('Restore entry'); assert.ok(findButton('Archive entry'));
  await click('＋ New category'); fill('Category name', 'Dragon'); await click('＋ Add field'); document.querySelector('#dialog-body input[placeholder="Label"]').value = 'Wing span'; await submitDialog(); assert.match(document.getElementById('categories').textContent, /Dragon/);
- assert.equal(errors.length, 0); assert.ok(!document.getElementById('status').classList.contains('is-error'), document.getElementById('status').textContent);
+ assert.equal(errors.length, 0); assert.ok(!document.getElementById('bible-status').classList.contains('is-error'), document.getElementById('bible-status').textContent);
  dom.window.close();
 });

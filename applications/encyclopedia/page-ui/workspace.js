@@ -1,3 +1,4 @@
+import { mountBibleShell } from './shell.js';
 import { createStoryBibleApi } from '/core/synchronization-engine/story-bible.js';
 import { canEdit, describeError, searchEntries, FIELD_TYPES } from '/core/encyclopedia/model.js';
 const byId = id => document.getElementById(id);
@@ -21,7 +22,7 @@ let portraitGeneration = 0;
 const portraitUrls = new Map();
 const parameters = new URLSearchParams(location.search);
 let userId = '';
-function status(text, isError = false) { byId('status').textContent = text; byId('status').classList.toggle('is-error', isError); }
+function status(text, isError = false) { byId('bible-status').textContent = text; byId('bible-status').classList.toggle('is-error', isError); }
 function report(error) { status(describeError(error), true); }
 async function run(action) { try { return await action(); } catch (error) { report(error); return null; } }
 function entryById(id) { return state.entries.find(entry => entry.id === id); }
@@ -334,6 +335,7 @@ function accessDialog() {
     openDialog('Manage Story Bible access', [el('p', {}, 'This grants access to this entire Bible, including private lore, sources, and version history. It does not grant manuscript access or send an invitation.'), el('p', { class: 'bible-help' }, `Share this Bible’s address with members: ${location.origin}/story-bible?bible=${bible.id}`), label('Account email', email), label('Access', role), el('p', { class: 'bible-help' }, `${state.members.length} explicit member grant(s). The owner always retains access.`)], async () => { await api.setMember(bible.id, email.value, role.value); await refresh(); status(role.value === 'remove' ? 'Member access removed.' : 'Member access updated.'); });
 }
 async function boot() {
+    void mountBibleShell({ isPreview: parameters.get('preview') === '1', beforeLogout: leaveEdit }).catch(error => console.warn('Account menu could not finish loading.', error));
     if (parameters.get('preview') === '1') {
         const { createPreviewApi } = await import('./preview.js'); api = createPreviewApi(); userId = 'preview'; bible = await api.openBook(); byId('preview-banner').hidden = false;
     } else {
@@ -354,13 +356,14 @@ async function boot() {
             if (!bible) {
                 status('This book has no Story Bible yet.');
                 const create = button('Create a fresh Story Bible', () => void run(async () => { create.disabled = true; try { bible = await api.openBook(parameters.get('book'), true); await start(); } finally { create.disabled = false; } }), 'bible-primary');
-                byId('status').append(' ', create); return;
+                byId('bible-status').append(' ', create); return;
             }
         } else { status('Open Story Bible from a book in your editor.'); return; }
     }
     await start();
 }
 async function start() {
+    byId('bible-nav-link').href = location.pathname + location.search;
     byId('bible-title').textContent = bible.title; document.title = `${bible.title} — Alysum`;
     if (parameters.has('book')) { byId('return-book').href = `/editor?book=${encodeURIComponent(parameters.get('book'))}`; byId('return-book').textContent = 'Back to manuscript'; }
     byId('workspace').hidden = false;
