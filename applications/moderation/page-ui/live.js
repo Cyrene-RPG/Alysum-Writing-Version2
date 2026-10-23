@@ -1,7 +1,7 @@
 import {moderationClient as client} from '/core/moderation/client.js';
 import {createModerationService} from '/core/moderation/service.js';
 import {esc,$,date,label,badge,button,title,table,formShell,field,select,modal,close,toast,showError,clearPrivate,bindDialog} from './common.js';
-import {sendStaffEmailCode,verifyStaffEmailCode} from '/core/moderation/email-auth.js';
+import {sendStaffEmailCode,verifyStaffEmailCode,emailCodeRetrySeconds} from '/core/moderation/email-auth.js?v=2';
 const api=createModerationService(client);
 const state={view:location.pathname.includes('book-reports')?'reports':new URLSearchParams(location.search).get('view')||'dashboard',role:'',user:null,epoch:0,offset:0,filters:{},rows:[],selected:null,lastAction:Date.now(),busy:false};
 const reasons=[['','All reasons'],['suspected_ai','Suspected Use of AI'],['improper_tags','Improperly Tagged Book'],['incorrect_rating','Incorrect Age Rating'],['plagiarism','Suspected Plagiarism / Stolen Work'],['harassment','Harassment / Targeted Abuse'],['site_rules','Content Violating Site Rules'],['spam','Spam / Scam / Malicious Links'],['other','Other']];
@@ -14,25 +14,42 @@ const templates={
  outcome:['Review outcome','Our review is complete. [Explain the finding, action, duration, and appeal route.]'],
  custom:['A message from Alysum Moderation','']
 };
-let pendingEmail='',lastCodeSent=0,oauthPending=sessionStorage.getItem('alysum-mod-oauth')==='1',fresh=false;
+let pendingEmail='',lastCodeSent=0,codeRetryAt=0,codeSending=false,oauthPending=sessionStorage.getItem('alysum-mod-oauth')==='1',fresh=false;
 const call=(action,payload={},key)=>api.call(action,payload,key);
 function gate(message=''){
  state.epoch++;state.role='';state.user=null;pendingEmail='';lastCodeSent=0;state.rows=[];state.selected=null;clearPrivate();$('#md-identity').textContent='Staff sign-in required';
  $('#md-screen').innerHTML=title('Staff sign-in','Sign in separately with your existing staff account. Your normal Alysum session stays separate.')+
- '<section class="md-panel" style="max-width:600px"><form id="mc-signin">'+field('mc-email','Email address','email')+field('mc-password','Password','password')+'<p class="md-error" data-form-error role="alert">'+esc(message)+'</p><div class="md-actions"><button type="submit" class="md-primary">Sign in to moderation</button></div></form><p class="md-muted">Or continue with your existing provider:</p><div class="md-heading-actions">'+button('Google','oauth','google')+button('Discord','oauth','discord')+'</div><p class="md-muted md-small">A six-digit email code is required for staff access.</p><a href="/overview">Back to profile</a></section>';
+ '<section class="md-panel" style="max-width:600px"><form id="mc-signin">'+field('mc-email','Email address','email')+field('mc-password','Password','password')+'<p class="md-error" data-form-error role="alert">'+esc(message)+'</p><div class="md-actions"><button type="submit" class="md-primary">Sign in to moderation</button></div></form><p class="md-muted">Or continue with your existing provider:</p><div class="md-heading-actions">'+button('Google','oauth','google')+button('Discord','oauth','discord')+'</div><p class="md-muted md-small">An email verification code is required for staff access.</p><a href="/overview">Back to profile</a></section>';
 }
 function emailCodeView(message=''){
- $('#md-screen').innerHTML=title('Check your email','Enter the six-digit code sent to '+pendingEmail+' to open moderation.')+
- '<section class="md-panel" style="max-width:600px">'+formShell('mc-email-code',field('mc-code','Six-digit email code','text'),'Verify and open moderation')+
+ $('#md-screen').innerHTML=title('Check your email','Enter the complete code sent to '+pendingEmail+' to open moderation.')+
+ '<section class="md-panel" style="max-width:600px">'+formShell('mc-email-code',field('mc-code','Email verification code','text'),'Verify and open moderation')+
  '<div class="md-actions">'+button('Send another code','resend-code')+button('Use another account','lock')+'</div><p id="mc-page-error" class="md-error" role="alert">'+esc(message)+'</p></section>';
- $('#mc-code').inputMode='numeric';$('#mc-code').autocomplete='one-time-code';$('#mc-code').maxLength=6;$('#mc-code').pattern='[0-9]{6}';
+ $('#mc-code').inputMode='numeric';$('#mc-code').autocomplete='one-time-code';$('#mc-code').pattern='[0-9]{6,10}';$('#mc-code').minLength=6;
+ $('#mc-code').insertAdjacentHTML('afterend','<p class="md-muted md-small">Use every digit from the newest email, including any leading zero.</p>');
+ updateResendButton();
+}
+function updateResendButton(){
+ const button=document.querySelector('[data-live="resend-code"]');if(!button)return;
+ const remaining=Math.max(0,Math.ceil((codeRetryAt-Date.now())/1000));
+ button.disabled=codeSending||remaining>0;
+ button.textContent=codeSending?'Sending…':remaining?'Send another code in '+remaining+'s':'Send another code';
 }
 async function sendEmailCode(){
- if(Date.now()-lastCodeSent<60000){emailCodeView('Please wait a minute before requesting another code.');return;}
- const generation=state.epoch;
+ if(codeSending)return;
+ if(Date.now()<codeRetryAt){updateResendButton();return;}
+ const generation=state.epoch;codeSending=true;updateResendButton();
+ try{
  await sendStaffEmailCode(client,pendingEmail);
  if(generation!==state.epoch)return;
- lastCodeSent=Date.now();emailCodeView();
+ lastCodeSent=Date.now();codeRetryAt=lastCodeSent+60000;emailCodeView();
+ }catch(error){
+ const seconds=emailCodeRetrySeconds(error);
+ if(seconds)codeRetryAt=Date.now()+seconds*1000;
+ if(generation!==state.epoch)return;
+ if(!document.getElementById('mc-email-code'))emailCodeView(error.message);
+ throw error;
+ }finally{codeSending=false;updateResendButton();}
 }
 async function resume(){
  const token=++state.epoch;const {data,error}=await client.auth.getSession();if(error)throw error;if(!data?.session)return gate();
@@ -40,7 +57,9 @@ async function resume(){
  if(!access.role){await client.auth.signOut({scope:'local'});return gate('This account does not have staff access.');}
  if(access.verified){state.role=access.role;fresh=false;sessionStorage.removeItem('alysum-mod-oauth');return load();}
  if(!fresh&&!oauthPending)return gate('Please sign in again to verify this staff session.');
- pendingEmail=data.session.user.email||'';lastCodeSent=0;await sendEmailCode();
+ const email=data.session.user.email||'';
+ if(email===pendingEmail&&(lastCodeSent||codeRetryAt>Date.now())){emailCodeView();return;}
+ pendingEmail=email;lastCodeSent=0;await sendEmailCode();
 }
 async function unlock(){
  await call('start');oauthPending=false;sessionStorage.removeItem('alysum-mod-oauth');fresh=false;await resume();
@@ -149,7 +168,7 @@ document.addEventListener('submit',async e=>{
  try{
  if(f.id==='mc-signin'){fresh=true;const {error}=await client.auth.signInWithPassword({email:$('#mc-email').value.trim(),password:$('#mc-password').value});$('#mc-password').value='';if(error)throw error;await resume();return;}
  if(f.id==='mc-email-code'){
- const code=$('#mc-code').value.trim();if(!/^[0-9]{6}$/.test(code))throw Error('Enter the six-digit code from your email.');
+ const code=$('#mc-code').value.trim();if(!/^[0-9]{6,10}$/.test(code))throw Error('Enter the complete numeric code from your email (6–10 digits).');
  const expectedUser=state.user?.id;
  await verifyStaffEmailCode(client,pendingEmail,code,expectedUser);
  if(token!==state.epoch)return;
@@ -180,3 +199,5 @@ window.addEventListener('pagehide',clearPrivate);
 void resume().catch(error=>gate(error.message));
 
 window.addEventListener('pageshow',event=>{if(event.persisted)void resume().catch(error=>gate(error.message));});
+
+setInterval(updateResendButton,1000);
