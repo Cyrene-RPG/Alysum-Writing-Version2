@@ -13,6 +13,10 @@
   ],
   "rewrites": [
     {
+      "source": "/moderation-preview",
+      "destination": "/applications/moderation/design/index.html"
+    },
+    {
       "source": "/staff/book-reports",
       "destination": "/applications/book-reports/pages/staff.html"
     },
