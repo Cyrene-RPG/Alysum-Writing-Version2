@@ -96,5 +96,15 @@ assert.ok(await page.locator('.md-dialog-body').evaluate(e=>e.scrollHeight>e.cli
 await page.screenshot({path:'test-results/moderation-design/case-mobile-'+width+'-'+name+'.png'});await close();
 await nav('Dashboard').click();await page.screenshot({path:'test-results/moderation-design/dashboard-mobile-'+width+'-'+name+'.png',fullPage:true});
 }
+await page.goto(base+'/moderation-preview?view=chat');await page.waitForFunction(()=>window.modChatPreview?.sampleData);
+const chat=page.getByRole('region',{name:'Moderator chat'});
+await page.getByRole('button',{name:'Send message',exact:true}).waitFor({state:'visible'});
+await page.getByLabel('Message the staff room').fill('Sample reply <img src=x onerror=alert(1)>');
+await page.getByRole('button',{name:'Send message',exact:true}).click();
+await page.waitForFunction(()=>document.querySelectorAll('.mc-chat-message').length===4);
+assert.equal(await page.locator('.mc-chat-message img').count(),0);
+assert.match(await page.locator('.mc-chat-message').last().textContent(),/Sample reply <img/);
+for(const width of [1440,390,320]){await page.setViewportSize({width,height:900});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'chat must fit '+width);await page.screenshot({path:'test-results/moderation-design/chat-'+width+'-'+name+'.png',fullPage:true});}
+await page.getByRole('button',{name:'Lock workspace',exact:true}).click();assert.equal(await page.locator('.mc-chat').count(),0);
 assert.deepEqual(remote,[]);assert.deepEqual(errors,[]);console.log(name+': moderation design flows and mobile layout passed; no live backend requests');
 }finally{await browser.close();server.close();}

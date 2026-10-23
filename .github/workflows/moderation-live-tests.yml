@@ -8,6 +8,7 @@ on:
       - 'applications/moderation/pages/**'
       - 'core/server/http-handlers/moderation-network.mjs'
       - 'supabase/live-site/supabase-moderation-center.sql'
+      - 'supabase/live-site/supabase-moderator-chat.sql'
       - '.github/workflows/moderation-live-tests.yml'
 permissions:
   contents: read
@@ -40,3 +41,10 @@ jobs:
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/moderation/setup.sql
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-moderation-center.sql
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/moderation/security.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-moderator-chat.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-moderator-chat.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/moderation/chat-security.sql
+      - name: Chat interface checks
+        run: |
+          npm install --prefix "$RUNNER_TEMP/mod-chat" jsdom@26
+          JSDOM_MODULE="$RUNNER_TEMP/mod-chat/node_modules/jsdom" node --experimental-vm-modules --test core/tests/moderation/chat-ui.mjs

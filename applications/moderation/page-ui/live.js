@@ -1,8 +1,12 @@
 import {moderationClient as client} from '/core/moderation/client.js';
 import {createModerationService} from '/core/moderation/service.js';
+import {createModeratorChatService} from '/core/moderation/chat.js';
+import {mountModeratorChat} from './chat.js';
 import {esc,$,date,label,badge,button,title,table,formShell,field,select,modal,close,toast,showError,clearPrivate,bindDialog} from './common.js';
 import {sendStaffEmailCode,verifyStaffEmailCode,emailCodeRetrySeconds} from '/core/moderation/email-auth.js?v=2';
 const api=createModerationService(client);
+let chat=null;
+function stopChat(){chat?.destroy();chat=null;}
 const state={view:location.pathname.includes('book-reports')?'reports':new URLSearchParams(location.search).get('view')||'dashboard',role:'',user:null,epoch:0,offset:0,filters:{},rows:[],selected:null,lastAction:Date.now(),busy:false};
 const reasons=[['','All reasons'],['suspected_ai','Suspected Use of AI'],['improper_tags','Improperly Tagged Book'],['incorrect_rating','Incorrect Age Rating'],['plagiarism','Suspected Plagiarism / Stolen Work'],['harassment','Harassment / Targeted Abuse'],['site_rules','Content Violating Site Rules'],['spam','Spam / Scam / Malicious Links'],['other','Other']];
 const templates={
@@ -17,6 +21,7 @@ const templates={
 let pendingEmail='',lastCodeSent=0,codeRetryAt=0,codeSending=false,oauthPending=sessionStorage.getItem('alysum-mod-oauth')==='1',fresh=false;
 const call=(action,payload={},key)=>api.call(action,payload,key);
 function gate(message=''){
+ stopChat();
  state.epoch++;state.role='';state.user=null;pendingEmail='';lastCodeSent=0;state.rows=[];state.selected=null;clearPrivate();$('#md-identity').textContent='Staff sign-in required';
  $('#md-screen').innerHTML=title('Staff sign-in','Sign in separately with your existing staff account. Your normal Alysum session stays separate.')+
  '<section class="md-panel" style="max-width:600px"><form id="mc-signin">'+field('mc-email','Email address','email')+field('mc-password','Password','password')+'<p class="md-error" data-form-error role="alert">'+esc(message)+'</p><div class="md-actions"><button type="submit" class="md-primary">Sign in to moderation</button></div></form><p class="md-muted">Or continue with your existing provider:</p><div class="md-heading-actions">'+button('Google','oauth','google')+button('Discord','oauth','discord')+'</div><p class="md-muted md-small">An email verification code is required for staff access.</p><a href="/overview">Back to profile</a></section>';
@@ -65,10 +70,11 @@ async function unlock(){
  await call('start');oauthPending=false;sessionStorage.removeItem('alysum-mod-oauth');fresh=false;await resume();
 }
 async function lock(message='Your moderation workspace is locked.'){
+ stopChat();
  try{await call('end');}catch{}await client.auth.signOut({scope:'local'});fresh=false;oauthPending=false;gate(message);
 }
 function nav(){
- const pages=[['dashboard','Dashboard'],['reports','Book Reports'],['users','Users'],['books','Books'],['conversations','Conversations'],['appeals','Appeals'],['audit','Audit Log'],...(state.role==='admin'?[['security','Staff & Security']]:[])];
+ const pages=[['dashboard','Dashboard'],['chat','Moderator Chat'],['reports','Book Reports'],['users','Users'],['books','Books'],['conversations','Conversations'],['appeals','Appeals'],['audit','Audit Log'],...(state.role==='admin'?[['security','Staff & Security']]:[])];
  $('#md-nav').innerHTML=pages.map(([v,n])=>'<button data-live="nav" data-id="'+v+'" '+(state.view===v?'aria-current="page"':'')+'>'+n+'</button>').join('');
  $('#md-identity').textContent=label(state.role)+' · Verified';
 }
@@ -82,9 +88,15 @@ function controls(){
  return fields?'<form id="mc-filter" class="md-toolbar">'+fields+'<button type="submit">Apply filters</button></form>':'';
 }
 async function load(more=false){
+ stopChat();
  const token=++state.epoch;nav();
  if(!more)$('#md-screen').innerHTML=title(label(state.view),'Loading current data…')+'<p id="mc-page-error" class="md-error" role="alert"></p>';
  try{
+ if(state.view==='chat'){
+  $('#md-screen').innerHTML=title('Moderator Chat','One shared room for the moderation team.');
+  chat=mountModeratorChat({host:$('#md-screen'),service:createModeratorChatService(client),userId:state.user.id,onAccessLost:()=>void lock().catch(error=>gate(error.message))});
+  return;
+ }
  if(state.view==='dashboard'){const data=await call('dashboard');if(token!==state.epoch)return;$('#md-screen').innerHTML=title('Dashboard','Live reports, user activity, author replies, and appeals.')+
  '<div class="md-metrics">'+[['openReports','Open book reports','reports'],['unassigned','Unassigned reports','reports'],['newUsers','New users today','users'],['authorReplies','User replies','conversations'],['pendingAppeals','Pending appeals','appeals'],['users','All accounts','users']].map(([k,l,v])=>'<button class="md-metric" data-live="nav" data-id="'+v+'"><span>'+l+'</span><strong>'+Number(data[k]||0)+'</strong><small>Open '+v+'</small></button>').join('')+'</div><section class="md-panel"><h2>Your staff workspace</h2><p class="md-muted">Reports do not automatically remove books. Case notes stay private; contact users through Conversations. Activity metrics begin when this tracking is installed.</p></section>';return;}
  if(state.view==='security'){const [staff,ips]=await Promise.all([call('staff'),call('ips')]);if(token!==state.epoch)return;state.rows=ips.items;$('#md-screen').innerHTML=title('Staff & Security','Admin-only access. Changes are audited. Temporary IP blocks take a few seconds to update.',button('Add IP block','ip-add')+button('Manage staff','staff-edit'))+
@@ -191,11 +203,11 @@ document.addEventListener('submit',async e=>{
  close();await load();toast(method==='message'?'Official message delivered to the user’s on-site inbox.':'Saved. The action is recorded in the audit log.');
  }catch(error){showError(error);}finally{state.busy=false;buttons.forEach(b=>b.disabled=false);}
 });
-bindDialog();client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT')setTimeout(()=>gate(),0);});
+bindDialog();client.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'||chat&&session?.user?.id!==state.user?.id){stopChat();setTimeout(()=>gate(),0);}});
 for(const event of ['pointerdown','keydown'])document.addEventListener(event,()=>state.lastAction=Date.now(),{passive:true});
 let lastKeepalive=0;
 setInterval(()=>{if(!state.role)return;if(Date.now()-state.lastAction>900000){void lock('The staff session expired after inactivity.');return;}if(Date.now()-lastKeepalive>120000&&Date.now()-state.lastAction<60000){lastKeepalive=Date.now();void call('access').then(d=>{if(!d.verified)void lock();else return call('dashboard');}).catch(()=>{});}},10000);
-window.addEventListener('pagehide',clearPrivate);
+window.addEventListener('pagehide',()=>{stopChat();clearPrivate();});
 void resume().catch(error=>gate(error.message));
 
 window.addEventListener('pageshow',event=>{if(event.persisted)void resume().catch(error=>gate(error.message));});
