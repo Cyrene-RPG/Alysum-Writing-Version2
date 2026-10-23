@@ -16,7 +16,7 @@ const templates={
 let factorId='',enrollment=null,oauthPending=sessionStorage.getItem('alysum-mod-oauth')==='1',fresh=false;
 const call=(action,payload={},key)=>api.call(action,payload,key);
 function gate(message=''){
- state.epoch++;state.role='';state.rows=[];state.selected=null;clearPrivate();$('#md-identity').textContent='Staff sign-in required';
+ state.epoch++;state.role='';state.user=null;state.rows=[];state.selected=null;clearPrivate();$('#md-identity').textContent='Staff sign-in required';
  $('#md-screen').innerHTML=title('Staff sign-in','Sign in separately with your existing staff account. Your normal Alysum session stays separate.')+
  '<section class="md-panel" style="max-width:600px"><form id="mc-signin">'+field('mc-email','Email address','email')+field('mc-password','Password','password')+'<p class="md-error" data-form-error role="alert">'+esc(message)+'</p><div class="md-actions"><button type="submit" class="md-primary">Sign in to moderation</button></div></form><p class="md-muted">Or continue with your existing provider:</p><div class="md-heading-actions">'+button('Google','oauth','google')+button('Discord','oauth','discord')+'</div><p class="md-muted md-small">Two-factor verification is required for staff access.</p><a href="/overview">Back to profile</a></section>';
 }
@@ -78,14 +78,14 @@ async function load(more=false){
  }catch(error){if(token!==state.epoch)return;showError(error);if(/Fresh staff verification|fresh staff sign-in|Sign in to continue/.test(error.message))await lock('Please verify your staff session again.');}
 }
 async function userDetail(id){
- const data=await call('user',{id});state.selected={kind:'user',data};
+ const generation=state.epoch;const data=await call('user',{id});if(generation!==state.epoch||!state.role)return;state.selected={kind:'user',data};
  modal(data.name,'<p>@'+esc(data.username)+' · '+badge(data.status)+'</p><p class="md-muted">'+esc(data.id)+'</p><div class="md-details"><div><small>Joined</small><strong>'+date(data.joinedAt)+'</strong></div><div><small>Last active</small><strong>'+date(data.lastSeenAt)+'</strong></div></div>'+
  (data.protected?'<div class="md-callout">Protected staff account. Sanctions are unavailable here.</div>':'<div class="md-actions">'+button('Send message','message-user',id)+button('Issue warning / restriction','sanction',id)+'</div>')+
  '<h3>Published books</h3>'+data.books.map(b=>'<p>'+esc(b.title)+' <a href="/book?id='+encodeURIComponent(b.id)+'" target="_blank" rel="noopener noreferrer">Open book ↗</a></p>').join('')+
  '<h3>Account history</h3>'+data.sanctions.map(s=>'<div class="md-item"><strong>'+esc(label(s.kind))+'</strong> '+badge(s.revokedAt?'revoked':s.expiresAt&&new Date(s.expiresAt)<new Date()?'expired':'active')+'<p>'+esc(s.reason)+'</p><p class="md-pre">'+esc(s.explanation)+'</p><p class="md-muted md-small">By '+esc(s.createdBy)+' · '+date(s.createdAt)+' · Expires '+date(s.expiresAt)+'</p>'+(!s.revokedAt?button('Reverse this action','revoke',s.id):'')+'</div>').join(''));
 }
 async function reportDetail(id,eventsOffset=0){
- const data=await call('report',{id,offset:eventsOffset});state.selected={kind:'report',data};
+ const generation=state.epoch;const data=await call('report',{id,offset:eventsOffset});if(generation!==state.epoch||!state.role)return;state.selected={kind:'report',data};
  const r=data.report,m=data.caseMeta||{};
  modal('Report: '+r.book_title,'<p>'+badge(m.phase||r.status)+' · '+esc(r.id)+'</p><p><strong>Reporter (staff only):</strong> '+esc(data.reporter?.name||'Deleted account')+'</p><p><strong>Chapter:</strong> '+esc(r.chapter_title||'Whole book')+'</p><p class="md-pre">'+esc(r.explanation)+'</p>'+(r.tag_details?'<p class="md-pre"><strong>Tag details:</strong> '+esc(r.tag_details)+'</p>':'')+
  (data.conflict?'<div class="md-callout amber">This case involves your account or book. You can only hand it to another staff member.</div>':'')+
@@ -105,7 +105,7 @@ function messageForm(userId='',bookId='',reportId=''){
  $('#mc-message-book').required=false;$('#mc-deadline').required=false;
 }
 async function threadDetail(id,offset=0,older=[]){
- const data=await call('conversation',{id,offset});state.selected={kind:'thread',data};
+ const generation=state.epoch;const data=await call('conversation',{id,offset});if(generation!==state.epoch||!state.role)return;state.selected={kind:'thread',data};
  const messages=[...data.messages,...older];modal(data.thread.subject,'<p class="md-muted">To '+esc(data.recipientName)+' · '+esc(data.thread.book_id||'Account conversation')+'</p><div class="md-messages">'+messages.map(m=>'<article class="md-message '+esc(m.side)+'"><strong>'+esc(m.side==='staff'?'Alysum Moderation':data.recipientName)+'</strong><p>'+esc(m.body)+'</p><small>'+date(m.created_at)+(m.side==='staff'?' · Staff sender: '+esc(m.sender_name):'')+'</small></article>').join('')+'</div>'+formShell('mc-thread-form',field('mc-reply','Reply as Alysum Moderation'),'Send reply')+(offset+data.messages.length<data.total?button('Load earlier messages','thread-more',String(offset+data.messages.length)):''));
  state.selected.messages=messages;
 }
