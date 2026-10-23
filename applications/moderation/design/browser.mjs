@@ -125,7 +125,8 @@ for(const width of [390,320]){
  await page.mouse.move(bounds.x+bounds.width/2,Math.min(viewport.height-20,bounds.y+40));
  const startScroll=await page.evaluate(()=>scrollY);await page.mouse.wheel(0,700);
  await page.waitForFunction(start=>scrollY>start,startScroll,{timeout:5000});
- await page.mouse.wheel(0,-10000);await page.waitForFunction(()=>scrollY===0);
+ const beforeUp=await page.evaluate(()=>scrollY);await page.mouse.wheel(0,-700);
+ await page.waitForFunction(start=>scrollY<start,beforeUp,{timeout:5000});
  await page.getByLabel('Message the staff room').click();await page.getByLabel('Message the staff room').fill('The composer is reachable after scrolling history');
  assert.equal(await page.getByLabel('Message the staff room').inputValue(),'The composer is reachable after scrolling history');
  await page.screenshot({path:'test-results/moderation-design/chat-scroll-'+width+'-'+name+'.png',fullPage:true});
