@@ -1,0 +1,42 @@
+name: Live moderation checks
+on:
+  pull_request:
+    paths:
+      - 'core/moderation/**'
+      - 'core/tests/moderation/**'
+      - 'applications/moderation/page-ui/**'
+      - 'applications/moderation/pages/**'
+      - 'core/server/http-handlers/moderation-network.mjs'
+      - 'supabase/live-site/supabase-moderation-center.sql'
+      - '.github/workflows/moderation-live-tests.yml'
+permissions:
+  contents: read
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: moderation_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/moderation_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test core/tests/moderation/*.test.mjs
+      - name: Database security and rerun checks
+        run: |
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/moderation/setup.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-moderation-center.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/moderation/security.sql

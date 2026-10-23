@@ -1,5 +1,5 @@
 import { supabase } from "./client.js";
-import { wireUserPresence } from "./presence.js";
+import { wireUserPresence } from "./presence.js?v=2";
 
 /**
  * Invokes handler with the current session right away (getSession), then on every auth change.
@@ -10,11 +10,11 @@ import { wireUserPresence } from "./presence.js";
 export function wireSupabaseSession(handler) {
     void supabase.auth.getSession().then(({ data }) => {
         const session = data.session ?? null;
-        wireUserPresence(session);
+        wireUserPresence(session,supabase);
         void Promise.resolve(handler(session, "INITIAL_SESSION")).catch(console.error);
     });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
-        wireUserPresence(session ?? null);
+        wireUserPresence(session ?? null,supabase);
         void Promise.resolve(handler(session ?? null, event)).catch(console.error);
     });
     return data.subscription;

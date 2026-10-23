@@ -13,12 +13,20 @@
   ],
   "rewrites": [
     {
-      "source": "/moderation-preview",
-      "destination": "/applications/moderation/design/index.html"
+      "source": "/moderation",
+      "destination": "/applications/moderation/pages/moderation.html"
+    },
+    {
+      "source": "/moderation-inbox",
+      "destination": "/applications/moderation/pages/inbox.html"
     },
     {
       "source": "/staff/book-reports",
-      "destination": "/applications/book-reports/pages/staff.html"
+      "destination": "/applications/moderation/pages/moderation.html"
+    },
+    {
+      "source": "/moderation-preview",
+      "destination": "/applications/moderation/design/index.html"
     },
     {
       "source": "/report-preview",
