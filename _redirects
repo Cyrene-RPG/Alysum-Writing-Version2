@@ -41,6 +41,8 @@
 /inbox.html  /inbox  308
 
 # Pages and files (vercel.json "rewrites")
+/story-bible  /applications/encyclopedia/pages/story-bible  200
+/story-bible-selection-preview  /applications/editor/pages/story-bible-preview  200
 /  /applications/main-site/pages/  200
 /sw.js  /applications/main-site/public/sw.js  200
 /manifest.webmanifest  /applications/main-site/public/manifest.webmanifest  200

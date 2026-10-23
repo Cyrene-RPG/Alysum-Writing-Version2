@@ -1,0 +1,46 @@
+.bible-reference{position:fixed;z-index:90;right:1rem;top:1rem;bottom:1rem;width:min(410px,calc(100vw - 2rem));overflow:auto;padding:1.1rem;background:var(--alysum-ui-panel);color:var(--ui-text, var(--text));border:1px solid var(--ui-muted, var(--muted));border-radius:12px;box-shadow:0 15px 70px #0007;font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;line-height:1.6}.bible-reference[hidden]{display:none}.bible-reference header{display:flex;align-items:center;justify-content:space-between}.bible-reference header>strong{font:1.5rem "Cormorant Garamond", Georgia, serif}.bible-reference button,.bible-reference input{font:inherit;background:var(--alysum-ui-raised);color:var(--ui-text, var(--text));border:1px solid color-mix(in srgb,var(--ui-muted, var(--muted)) 35%,transparent);border-radius:6px;padding:.4rem .6rem;cursor:pointer}.bible-reference input{width:100%;margin:1rem 0}.bible-reference-result{display:block;width:100%;text-align:left;margin:.3rem 0}.bible-reference-tools{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;font-size:.8rem;margin:.7rem 0}.bible-reference-tools a{color:inherit}.bible-reference-status{font-size:.8rem;color:var(--ui-muted, var(--muted))}.bible-reference section{border-top:1px solid var(--ui-muted, var(--muted));margin-top:1rem;padding-top:1rem}.bible-reference section h2{font:1.9rem "Cormorant Garamond", Georgia, serif}.bible-reference section p{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.9rem}.bible-reference section p button{display:inline;border:0;background:none;text-decoration:underline;padding:0}.writer-page :is([data-story-bible-entry],a[href^="#story-bible-entry-"]){color:inherit;text-decoration:underline dotted;text-decoration-color:var(--ui-muted, var(--muted));text-underline-offset:3px}
+
+/* Selected-manuscript actions follow Studio's Appearance system. */
+.bible-selection-menu { position: fixed; z-index: 150; width: min(300px, calc(100vw - 16px)); padding: 8px; border: 1px solid var(--border); border-radius: var(--glass-radius, 12px); background: var(--alysum-ui-panel); color: var(--ui-text, var(--text)); box-shadow: 0 12px 45px #0006; font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.bible-selection-menu[hidden] { display: none; }
+.bible-selection-kicker { margin: 6px 9px; color: var(--ui-muted, var(--muted)); font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.bible-selection-menu button { display: block; width: 100%; min-height: 40px; padding: 9px; border: 0; border-radius: 7px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.bible-selection-menu button:hover, .bible-selection-menu button:focus-visible { outline: none; background: var(--accent); color: #fff; }
+.bible-selection-hint { margin: 8px; color: var(--ui-muted, var(--muted)); font-size: 11px; line-height: 1.6; }
+.bible-selection-dialog { width: min(560px, calc(100vw - 24px)); max-height: 88vh; overflow: auto; padding: 24px; border: 1px solid var(--border); border-radius: var(--glass-radius, 14px); background: var(--alysum-ui-panel); color: var(--ui-text, var(--text)); font: 13px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.bible-selection-dialog::backdrop { background: #0009; backdrop-filter: blur(3px); }
+.bible-selection-dialog header, .bible-selection-dialog footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.bible-selection-dialog h2 { font: 600 27px/1.2 "Cormorant Garamond", Georgia, serif; margin: 0; }
+.bible-selection-dialog footer { margin-top: 20px; justify-content: flex-end; }
+.bible-selection-dialog label { display: grid; gap: 6px; margin: 14px 0; font-size: 12px; font-weight: 600; }
+.bible-selection-dialog input, .bible-selection-dialog select, .bible-selection-dialog textarea { box-sizing: border-box; width: 100%; min-height: 40px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--alysum-ui-chrome); color: var(--ui-text, var(--text)); font: inherit; }
+.bible-selection-dialog textarea { resize: vertical; }
+.bible-selection-dialog .bible-selection-check { display: flex; gap: 9px; align-items: center; }
+.bible-selection-check input { width: 16px; min-height: 16px; accent-color: var(--accent); }
+.bible-selection-dialog blockquote { max-height: 150px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; margin: 16px 0; padding: 8px 12px; border-left: 2px solid var(--accent); background: var(--theme-accent-soft-bg); }
+.bible-selection-dialog small { color: var(--ui-muted, var(--muted)); }
+.bible-selection-dialog button { min-height: 38px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--alysum-ui-raised); color: var(--ui-text, var(--text)); cursor: pointer; font: inherit; }
+.bible-selection-dialog .bible-selection-primary { background: var(--btn-primary-bg, var(--accent)); color: #fff; }
+.bible-selection-dialog button:disabled { opacity: .5; cursor: wait; }
+.bible-selection-dialog :is(input, select, textarea, button, a):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.bible-selection-dialog a { color: inherit; text-underline-offset: 3px; }
+.bible-selection-error { color: #ef9a9a; font-size: 12px; }
+html[data-ui-tone="light"] .bible-selection-error { color: #b91c1c; }
+.bible-selection-dialog [hidden] { display: none !important; }
+
+.bible-selection-touch { position: fixed; z-index: 145; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); max-width: 480px; margin-inline: auto; padding: 10px 12px 12px; border: 1px solid var(--border); border-radius: var(--glass-radius, 14px); background: var(--alysum-ui-panel); color: var(--ui-text, var(--text)); box-shadow: 0 8px 32px #0006; font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.bible-selection-touch[hidden] { display: none; }
+.bible-selection-touch>div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.bible-selection-touch>div:last-child { margin-top: 9px; }
+.bible-selection-touch strong { font-size: 12px; }
+.bible-selection-touch-quote { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--ui-muted, var(--muted)); font-size: 11px; }
+.bible-selection-touch button { min-height: 44px; flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--alysum-ui-raised); color: inherit; font: inherit; font-weight: 600; cursor: pointer; touch-action: manipulation; }
+.bible-selection-touch button:first-child { background: var(--accent); color: #fff; }
+.bible-selection-touch button[aria-label] { flex: 0; min-width: 44px; padding: 4px 10px; background: transparent; border: 0; }
+.bible-selection-touch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 760px), (pointer: coarse) {
+    .bible-selection-dialog { position: fixed; inset: auto 0 0; margin: 0 auto; width: min(100%, 600px); max-height: 88dvh; padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px)); border-radius: 18px 18px 0 0; }
+    .bible-selection-dialog :is(input, select, textarea) { font-size: 16px; }
+    .bible-selection-dialog button { min-height: 44px; }
+    .bible-selection-dialog footer { position: sticky; bottom: 0; background: var(--alysum-ui-panel); padding-top: 10px; }
+}

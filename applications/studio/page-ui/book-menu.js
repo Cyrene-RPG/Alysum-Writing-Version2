@@ -118,6 +118,8 @@ export function bindBookMenu({ getBooks, setBooks, paintShelf, api, supabase, se
         menuBook = book;
         menuGear = gear;
         const listed = isLibraryListed(book);
+        const bibleButton = document.getElementById("bookMenuBible");
+        if (bibleButton) bibleButton.hidden = session.mode !== "cloud";
         const publishBtn = document.getElementById("bookMenuPublish");
         const takeBtn = document.getElementById("bookMenuTakedown");
         if (publishBtn) publishBtn.hidden = listed;
@@ -196,6 +198,9 @@ export function bindBookMenu({ getBooks, setBooks, paintShelf, api, supabase, se
         if (event.key !== "Escape" || !gearPop || gearPop.hidden) return;
         if (gearPublishPane && !gearPublishPane.hidden) return;
         closeBookMenu();
+    });
+    document.getElementById("bookMenuBible")?.addEventListener("click", () => {
+        if (menuBook && session.mode === "cloud") window.location.href = `/story-bible?book=${encodeURIComponent(menuBook.id)}`;
     });
     document.getElementById("bookMenuSettings")?.addEventListener("click", () => {
         const book = menuBook;
