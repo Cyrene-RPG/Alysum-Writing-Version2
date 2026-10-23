@@ -1,7 +1,7 @@
 import {moderationClient as client} from '/core/moderation/client.js';
 import {createModerationService} from '/core/moderation/service.js';
 import {esc,$,date,label,badge,button,title,table,formShell,field,select,modal,close,toast,showError,clearPrivate,bindDialog} from './common.js';
-import {sendStaffEmailCode,verifyStaffEmailCode,emailCodeRetrySeconds} from '/core/moderation/email-auth.js';
+import {sendStaffEmailCode,verifyStaffEmailCode,emailCodeRetrySeconds} from '/core/moderation/email-auth.js?v=2';
 const api=createModerationService(client);
 const state={view:location.pathname.includes('book-reports')?'reports':new URLSearchParams(location.search).get('view')||'dashboard',role:'',user:null,epoch:0,offset:0,filters:{},rows:[],selected:null,lastAction:Date.now(),busy:false};
 const reasons=[['','All reasons'],['suspected_ai','Suspected Use of AI'],['improper_tags','Improperly Tagged Book'],['incorrect_rating','Incorrect Age Rating'],['plagiarism','Suspected Plagiarism / Stolen Work'],['harassment','Harassment / Targeted Abuse'],['site_rules','Content Violating Site Rules'],['spam','Spam / Scam / Malicious Links'],['other','Other']];
