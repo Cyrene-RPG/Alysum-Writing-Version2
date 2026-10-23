@@ -313,7 +313,7 @@ BEGIN
  END IF;
 
  -- Every mutation has an idempotency key, even after a network retry.
- IF p_action NOT IN ('sanction','revoke_sanction','message','staff_reply','report_save','book_visibility','appeal_decision','set_staff','ip_add','ip_remove','comment_visibility') THEN RAISE EXCEPTION 'Unknown moderation action.'; END IF;
+ IF p_action NOT IN ('sanction','revoke_sanction','message','staff_reply','report_save','book_visibility','appeal_decision','set_staff','ip_add','ip_remove') THEN RAISE EXCEPTION 'Unknown moderation action.'; END IF;
  req:=(p_payload->>'requestId')::uuid; IF req IS NULL THEN RAISE EXCEPTION 'Missing request identifier.'; END IF;
  PERFORM pg_advisory_xact_lock(hashtextextended('mc:'||uid::text||req::text,0));
  SELECT mc_requests.result INTO result FROM public.mc_requests WHERE user_id=uid AND request_id=req; IF FOUND THEN RETURN result; END IF;
@@ -440,7 +440,7 @@ DO $$ BEGIN
  IF to_regprocedure('public.mc_base_v2_review(uuid,text,text,integer)') IS NULL THEN ALTER FUNCTION public.book_reports_v2_review(uuid,text,text,integer) RENAME TO mc_base_v2_review; END IF;
 END $$;
 CREATE OR REPLACE FUNCTION public.book_reports_v2_review(p_report_id uuid,p_status text,p_note text,p_expected_version integer)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $$
 DECLARE result jsonb;
 BEGIN
  IF NOT public.mc_verified() THEN RAISE EXCEPTION 'Fresh staff verification is required.'; END IF;
