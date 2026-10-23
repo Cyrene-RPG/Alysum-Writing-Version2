@@ -1,8 +1,15 @@
 import {createBookReportService} from '/core/book-reports/service.js';
 import {mountBookReport} from '/site-appearance/components/book-report.js';
-export function mountReporting({client,work}){
-    const service=createBookReportService(client),widget=mountBookReport({button:document.getElementById('reportBookButton'),book:work,service});
-    client.auth.onAuthStateChange(()=>{setTimeout(()=>widget.reset(),0);});
+import {mountAiReportNotice} from '/site-appearance/components/ai-report-notice.js';
+export function mountReporting({client,work,noticeHost}){
+    const service=createBookReportService(client);
+    const host=noticeHost||document.getElementById('bookAiNotice');
+    const notice=host?mountAiReportNotice({host,book:work,service}):null;
+    const button=document.getElementById('reportBookButton')||notice?.reportButton;
+    const widget=mountBookReport({button,book:work,service,onSubmitted:()=>notice?.refresh()});
+    if(notice && notice.reportButton!==button)notice.reportButton.addEventListener('click',()=>button.click());
+    void notice?.refresh();
+    client.auth.onAuthStateChange(()=>{notice?.reset();setTimeout(()=>{widget.reset();void notice?.refresh();},0);});
     void service.session().then(async session=>{
         if(!session)return;const access=await service.access();
         if(!access?.staff)return;

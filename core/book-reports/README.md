@@ -21,5 +21,14 @@ The report dialog uses native modal focus handling, Escape/cancel, scrollable co
 ## Previews
 /report-preview and /report-staff-preview use invented data in memory. They do not load the Supabase client, submit real reports, or preserve input across navigation. Production routes do not import the preview service.
 
+## Reader notice for suspected AI use
+After the existing reporting migration, run `supabase/live-site/supabase-book-ai-reader-notice.sql`. It adds a public threshold RPC without granting access to report rows. The frontend remains readable if this migration has not been applied; the notice cannot appear until it is installed.
+
+On the published book page and chapter reader, two distinct non-owner accounts with non-dismissed `suspected_ai` reports trigger a notice for other readers, including guests. Resolved reports count; dismissed reports, self-reports, repeat reports from the same person, and deleted reporter identities do not. The real owner is excluded server-side even for anonymous publications. Hidden, removed, draft and unavailable books return false.
+
+The notice identifies the concern as unconfirmed, offers the existing private report flow, and can be dismissed for that book and account for the current browser session. It does not remove or restrict reading. Auth changes cancel stale notice responses. `/report-preview?ai=1` demonstrates the notice using two invented reporters.
+
+Validation: `core/tests/book-reports/ai-notice.sql` runs in the disposable PostgreSQL CI database. Optional local runners use `PGLITE_MODULE=... node --test core/tests/book-reports/ai-notice-database.mjs` and `JSDOM_MODULE=... node --experimental-vm-modules --test core/tests/book-reports/ai-notice-ui.mjs`.
+
 ## Validation
 The book-report-tests workflow runs model/service tests, PostgreSQL permission, validation, idempotency, rate-limit and rerun checks, concurrent-request tests, and Chromium/Firefox interaction tests. Screenshots are workflow artifacts. Use only the disposable book_reports_test database for the database fixtures.

@@ -1,4 +1,5 @@
 import { renderContentWarnings } from "/site-appearance/components/content-warnings.js";
+import { mountReporting } from "./report-book.js?v=2";
 import { openReadingState } from "/core/library/reading-state.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
@@ -173,6 +174,7 @@ async function boot() {
     document.title = `${work.title || "Untitled"} — Alysum`;
     document.getElementById("bookTitle").textContent = work.title || "Untitled";
     document.getElementById("readerRoot").hidden = false;
+    mountReporting({client:supabase,work,noticeHost:document.getElementById('readerAiNotice')});
     const back = document.getElementById("readerBack");
     if (back) back.href = `/book?id=${encodeURIComponent(work.id)}`;
     paintBookmark(isBookmarked(work.id));
