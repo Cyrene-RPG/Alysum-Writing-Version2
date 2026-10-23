@@ -13,6 +13,7 @@ const api = createPreviewApi();
 const book = { id: 'selection-preview-book', title: 'The Saltwater Crown' };
 const bible = await api.openBook();
 const pageEl = document.getElementById('selection-manuscript');
+pageEl.addEventListener('click', event => { if (event.target.closest('a[href^="#story-bible-entry-"]')) event.preventDefault(); });
 const results = document.getElementById('selection-results');
 async function render() {
     const state = await api.load(); results.replaceChildren();

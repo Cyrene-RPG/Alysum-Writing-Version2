@@ -1,3 +1,4 @@
+import { linkStoryBibleSelection } from './story-bible-links.js';
 import { canEdit, describeError } from '/core/encyclopedia/model.js';
 
 /** Selection actions share the book's Bible and preserve their original source. */
@@ -124,7 +125,7 @@ export function mountBibleSelectionMenu({ pageEl, getBook, getChapterId, saveCur
             const character = loaded.state.types.find(template => /character|person/i.test(template.name)); if (character) type.value = character.id;
             const link = element('input'); link.type = 'checkbox'; link.checked = true;
             const fragment = source.range.cloneContents();
-            if (fragment.querySelector('p,div,li,ul,ol,h1,h2,h3,blockquote,table,[data-story-bible-entry]') || source.range.startContainer.parentElement?.closest('[data-story-bible-entry]')) { link.checked = false; link.disabled = true; }
+            if (fragment.querySelector('p,div,li,ul,ol,h1,h2,h3,blockquote,table,a,[data-story-bible-entry]') || source.range.startContainer.parentElement?.closest('a,[data-story-bible-entry]')) { link.checked = false; link.disabled = true; }
             controls = { name, type, link };
             body.append(label('Entry name', name), label('Category', type));
             const check = label('Link this selected text to the new entry', link); check.className = 'bible-selection-check'; check.prepend(link); body.append(check);
@@ -183,12 +184,10 @@ export function mountBibleSelectionMenu({ pageEl, getBook, getChapterId, saveCur
                 const entry = await loaded.api.saveEntry(draft, template);
                 let linked = false;
                 if (current.link.checked && sourceIsCurrent()) {
-                    const span = element('span'); span.setAttribute('data-story-bible-entry', entry.id); span.append(original.range.cloneContents());
                     // A modal makes the manuscript inert. Briefly release it for the native undoable edit.
                     dialog.close();
                     try {
-                        pageEl.focus(); const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(original.range);
-                        linked = document.execCommand('insertHTML', false, span.outerHTML);
+                        linked = linkStoryBibleSelection(pageEl, original.range, entry.id);
                     } finally { dialog.showModal(); }
                     if (linked && await saveCurrent() === 'error') confirmation.textContent = 'Entry created. The selected reference could not be saved yet; retry your manuscript save.';
                 }

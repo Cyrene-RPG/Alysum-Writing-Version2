@@ -36,3 +36,8 @@ test('public/export copies remove reference IDs and preserve prose, italics and 
     assert.equal(stripStoryBibleMetadata('The attribute data-story-bible-entry="example" is a detail.'), 'The attribute data-story-bible-entry="example" is a detail.');
     assert.equal(stripStoryBibleMetadata(html), '<p><em>Hello <span>Mara</span></em>!</p>');
 });
+
+test('public/export copies unwrap native Bible links while preserving formatting and ordinary links', () => {
+    const html = '<p><a href="#story-bible-entry-00000000-0000-4000-8000-000000000001"><strong>Iris</strong> Vale</a> <a href="https://example.com">source</a></p>';
+    assert.equal(stripStoryBibleMetadata(html), '<p><strong>Iris</strong> Vale <a href="https://example.com">source</a></p>');
+});

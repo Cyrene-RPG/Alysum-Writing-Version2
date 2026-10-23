@@ -57,5 +57,5 @@ export function describeError(error) {
 }
 /** Remove private reference metadata at publication/export boundaries, preserving prose/formatting. */
 export function stripStoryBibleMetadata(html) {
-    return String(html || '').replace(/<[^>]+>/g, tag => tag.replace(/\sdata-story-bible-entry\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, ''));
+    return String(html || '').replace(/<a\b(?=[^>]*\bhref\s*=\s*["']#story-bible-entry-[a-f\d-]{36}["'])[^>]*>([\s\S]*?)<\/a>/gi, '$1').replace(/<[^>]+>/g, tag => tag.replace(/\sdata-story-bible-entry\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, ''));
 }

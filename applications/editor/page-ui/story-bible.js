@@ -1,3 +1,4 @@
+import { STORY_BIBLE_REFERENCE_SELECTOR, getStoryBibleEntryId } from './story-bible-links.js';
 import { mountBibleSelectionMenu } from './selection-menu.js';
 import { createStoryBibleApi } from '/core/synchronization-engine/story-bible.js';
 import { canEdit, describeError, searchEntries } from '/core/encyclopedia/model.js';
@@ -77,9 +78,9 @@ export function mountStoryBible({ button, pageEl, supabase, session, getBook, ge
     function insertMention() {
         try {
             restoreSelection(mentionRange || range);
-            const span = node('span', selected.title); span.setAttribute('data-story-bible-entry', selected.id);
+            const anchor = node('a', selected.title); anchor.setAttribute('href', `#story-bible-entry-${selected.id}`);
             // Native insertion preserves the editor’s undo transaction and emits input.
-            const inserted = document.execCommand('insertHTML', false, span.outerHTML + ' ');
+            const inserted = document.execCommand('insertHTML', false, anchor.outerHTML + ' ');
             if (!inserted) throw new Error('Could not insert the mention. Your manuscript was not replaced.');
             mentionRange = null; rememberSelection(); message('Mention inserted. Its appearance is indexed after the chapter saves.');
             clearTimeout(indexTimer); indexTimer = setTimeout(() => void indexSavedMentions(), 1500);
@@ -110,7 +111,7 @@ export function mountStoryBible({ button, pageEl, supabase, session, getBook, ge
             const allMentions = [];
             for (const chapter of chapters) {
                 const document = new DOMParser().parseFromString(chapter.content || '', 'text/html');
-                const mentions = [...document.querySelectorAll('[data-story-bible-entry]')].filter(element => element.textContent.trim() && state.entries.some(entry => entry.id === element.getAttribute('data-story-bible-entry'))).map(element => ({ entryId: element.getAttribute('data-story-bible-entry'), excerpt: element.parentElement.textContent.slice(0, 240) }));
+                const mentions = [...document.querySelectorAll(STORY_BIBLE_REFERENCE_SELECTOR)].filter(element => element.textContent.trim() && state.entries.some(entry => entry.id === getStoryBibleEntryId(element))).map(element => ({ entryId: getStoryBibleEntryId(element), excerpt: element.parentElement.textContent.slice(0, 240) }));
                 allMentions.push(...mentions.map(mention => ({ ...mention, chapterId: chapter.id })));
             }
             await api.indexMentions(bible.id, getBook().id, '*', allMentions, data.updated);
@@ -145,9 +146,10 @@ export function mountStoryBible({ button, pageEl, supabase, session, getBook, ge
         clearTimeout(indexTimer); if (bible) indexTimer = setTimeout(() => void indexSavedMentions(), 2500);
     });
     pageEl.addEventListener('click', event => {
-        const mention = event.target.closest('[data-story-bible-entry]');
+        const mention = event.target.closest(STORY_BIBLE_REFERENCE_SELECTOR);
         if (!mention || !pageEl.contains(mention)) return;
-        void toggle(true).then(() => { selected = state?.entries.find(entry => entry.id === mention.getAttribute('data-story-bible-entry')); renderDetail(); });
+        event.preventDefault();
+        void toggle(true).then(() => { selected = state?.entries.find(entry => entry.id === getStoryBibleEntryId(mention)); renderDetail(); });
     });
     panel.addEventListener('keydown', event => { if (event.key === 'Escape') { toggle(false); button.focus(); } });
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && bible && !panel.hidden) void api.load(bible.id).then(next => { state = next; selected = state.entries.find(entry => entry.id === selected?.id); renderResults(); renderDetail(); }).catch(error => message(describeError(error))); });

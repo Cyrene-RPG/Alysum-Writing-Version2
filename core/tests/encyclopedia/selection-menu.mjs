@@ -28,7 +28,7 @@ async function harness({ role = 'owner', missing = false, isTouch = false } = {}
  let chapterId = 'chapter-one', saveStatus = 'saved', saveHook = async () => {}, callbackFailure = false;
  const state = { types: [{ id: 'character-type', name: 'Character', fields: [], sections: [] }, { id: 'location-type', name: 'Location', fields: [], sections: [] }], entries: [{ id: 'mara', typeId: 'character-type', title: 'Mara Vey' }, { id: 'elian', typeId: 'character-type', title: 'Elian Vey' }, { id: 'harbor', typeId: 'location-type', title: 'Northhaven' }] };
  const api = { saveEntry: async entry => { calls.push({ kind: 'entry', entry: structuredClone(entry) }); savedEntries.push(entry); return { ...entry, revision: 1 }; }, addFact: async (bibleId, entryId, fact) => { calls.push({ kind: 'fact', bibleId, entryId, fact: structuredClone(fact) }); } };
- document.execCommand = (command, _show, html) => { assert.equal(command, 'insertHTML'); const range = window.getSelection().getRangeAt(0); range.deleteContents(); range.insertNode(range.createContextualFragment(html)); page.dispatchEvent(new window.Event('input', { bubbles: true })); return true; };
+ document.execCommand = (command, _show, html) => { assert.equal(command, 'createLink'); const range = window.getSelection().getRangeAt(0); const anchor = document.createElement('a'); anchor.setAttribute('href', html); anchor.append(range.extractContents()); range.insertNode(anchor); page.dispatchEvent(new window.Event('input', { bubbles: true })); return true; };
  const mounted = module.namespace.mountBibleSelectionMenu({ pageEl: page, getBook: () => ({ id: 'book-1' }), getChapterId: () => chapterId,
   saveCurrent: async () => { await saveHook(); return saveStatus; }, async loadBible(create) { calls.push({ kind: 'open', create }); return { bible: missing && !create ? null : { id: 'bible-1', role }, state, api }; },
   onEntryCreated: async () => { if (callbackFailure) throw new Error('Refresh failed'); }, getEntryUrl: () => null,
@@ -57,7 +57,7 @@ test('create entry prefills selected name and links that occurrence without losi
   h.rightClick(); h.findButton('Create entry from selection…').click(); await until(() => h.mounted.dialog.querySelector('input'));
   assert.equal(h.field('Entry name').value, 'Iris Vale'); assert.equal(h.field('Category').value, 'character-type');
   await h.submit(); const created = h.calls.find(call => call.kind === 'entry'); assert.equal(created.entry.title, 'Iris Vale'); assert.equal(created.entry.bibleId, 'bible-1');
-  const mention = h.page.querySelector('[data-story-bible-entry]'); assert.equal(mention.textContent, 'Iris Vale'); assert.equal(mention.querySelector('strong').textContent, 'Iris Vale'); assert.equal(h.page.textContent, 'Iris Vale arrived at dawn.Her left eye was green.');
+  const mention = h.page.querySelector('a[href^="#story-bible-entry-"]'); assert.equal(mention.textContent, 'Iris Vale'); assert.equal(mention.querySelector('strong').textContent, 'Iris Vale'); assert.equal(h.page.textContent, 'Iris Vale arrived at dawn.Her left eye was green.');
   assert.match(h.mounted.dialog.textContent, /highlighted text is linked/);
  } finally { h.dom.window.close(); }
 });
@@ -67,7 +67,7 @@ test('character dropdown saves edited details and their original quotation to th
   await h.submit(); const fact = h.calls.find(call => call.kind === 'fact');
   assert.equal(fact.entryId, 'mara'); assert.equal(fact.bibleId, 'bible-1'); assert.equal(fact.fact.category, 'Appearance'); assert.equal(fact.fact.value, 'Her left eye is green.');
   assert.equal(fact.fact.sourceText, 'Her left eye was green.'); assert.equal(fact.fact.bookId, 'book-1'); assert.equal(fact.fact.chapterId, 'chapter-one'); assert.equal(h.calls.filter(call => call.kind === 'fact').length, 1);
-  assert.equal(h.page.querySelector('[data-story-bible-entry]'), null);
+  assert.equal(h.page.querySelector('a[href^="#story-bible-entry-"]'), null);
  } finally { h.dom.window.close(); }
 });
 test('failed manuscript save retains the form and makes no fact write; retry saves once', async () => {
