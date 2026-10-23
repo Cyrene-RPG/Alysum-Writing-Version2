@@ -79,7 +79,7 @@ async function leaveEdit() {
     if (savePromise) await savePromise;
     if (isDirty && !(await saveProfile())) return false;
     isEditing = false; portraitGeneration++;
-    await refresh();
+    try { await refresh(); } catch (error) { report(error); }
     return true;
 }
 async function selectEntry(id, remember = true) {

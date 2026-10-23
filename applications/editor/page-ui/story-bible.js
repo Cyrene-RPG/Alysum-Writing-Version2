@@ -88,10 +88,11 @@ export function mountStoryBible({ button, pageEl, supabase, session, getBook, ge
         try {
             if (!range || range.collapsed) throw new Error('Highlight a passage in the manuscript first.');
             const quotation = range.toString(); if (!quotation.trim() || quotation.length > 10000) throw new Error('Select a passage of 1–10,000 characters.');
+            const source = { entryId: selected.id, bookId: getBook().id, chapterId: getChapterId(), context: range.startContainer.parentElement?.textContent?.slice(0, 2000) || '' };
             const category = window.prompt('Fact category (appearance, history, injury…)', ''); if (category === null) return;
             const value = window.prompt('Confirm the canon fact', quotation); if (value === null) return;
             const saved = await saveCurrent(); if (saved === 'error') throw new Error('Save the manuscript successfully before adding a source fact.');
-            await api.addFact(bible.id, selected.id, { category, value, bookId: getBook().id, chapterId: getChapterId(), sourceText: quotation, sourceContext: range.startContainer.parentElement?.textContent?.slice(0, 2000) || '' });
+            await api.addFact(bible.id, source.entryId, { category, value, bookId: source.bookId, chapterId: source.chapterId, sourceText: quotation, sourceContext: source.context });
             message('Canon fact saved with its source quotation.');
         } catch (error) { message(describeError(error)); }
     }
