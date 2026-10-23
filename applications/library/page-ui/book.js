@@ -1,4 +1,4 @@
-import {mountReporting} from "./report-book.js?v=1";
+import {mountReporting} from "./report-book.js?v=2";
 import { renderContentWarnings } from "/site-appearance/components/content-warnings.js";
 import { authorProfileUrl } from "/core/library/author-links.js";
 import { authorNameHtml } from "/site-appearance/js-runtime/author-link.js";

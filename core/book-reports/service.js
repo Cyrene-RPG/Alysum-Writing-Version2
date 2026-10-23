@@ -6,6 +6,7 @@ export function createBookReportService(client){
     return {
         async session(){const {data,error}=await client.auth.getSession();if(error)throw error;return data?.session||null;},
         access:()=>rpc('book_reports_v2_access'),
+        aiNotice:bookId=>rpc('book_reports_v2_ai_notice',{p_book_id:String(bookId)}),
         own:bookId=>rpc('book_reports_v2_own',{p_book_id:String(bookId)}),
         async submit(book,value,requestId){
             const issue=validateReport(value,book.chapters||[]);if(issue)throw Error(issue);

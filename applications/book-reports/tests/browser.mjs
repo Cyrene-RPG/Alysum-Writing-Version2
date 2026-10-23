@@ -87,5 +87,18 @@ try{
  await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:'test-results/book-reports/staff-mobile-'+name+'.png',fullPage:true});
  await page.evaluate(()=>{reportStaffPreview.state.staff=false;return reportStaffPreview.queue.start();});
  assert.equal(await page.locator('#br-staff-content').isVisible(),false);assert.equal(await page.locator('#br-report-detail').textContent(),'');assert.match(await page.locator('#br-staff-status').textContent(),/Staff access/);
+ await page.goto(base+'/report-preview?ai=1');await page.waitForFunction(()=>window.reportPreview?.notice);
+ const ai=page.locator('.br-ai-notice');await ai.waitFor({state:'visible'});
+ assert.match(await ai.textContent(),/not a confirmed finding/);
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await page.screenshot({path:'test-results/book-reports/ai-notice-mobile-'+name+'.png',fullPage:true});
+ await ai.getByRole('button',{name:'Report book',exact:true}).click();assert.equal(await dialog.isVisible(),true);
+ await page.locator('[data-br-cancel]').click();
+ await ai.getByRole('button',{name:'Dismiss',exact:true}).click();assert.equal(await ai.isVisible(),false);
+ await page.reload();await page.waitForFunction(()=>window.reportPreview?.notice);await page.evaluate(()=>reportPreview.notice.refresh());assert.equal(await ai.isVisible(),false);
+ await page.evaluate(()=>{reportPreview.state.owner=true;reportPreview.notice.reset();return reportPreview.notice.refresh();});assert.equal(await ai.isVisible(),false);
+ await page.evaluate(()=>{reportPreview.state.owner=false;reportPreview.state.signedIn=false;reportPreview.notice.reset();return reportPreview.notice.refresh();});assert.equal(await ai.isVisible(),true);
+ await ai.getByRole('button',{name:'Report book',exact:true}).click();await page.locator('[data-br-continue]').click();await page.locator('[data-br-signin]').waitFor({state:'visible'});await page.locator('[data-br-done]').click();
+ await page.evaluate(()=>{reportPreview.records.filter(r=>r.reason==='suspected_ai')[0].status='dismissed';return reportPreview.notice.refresh();});assert.equal(await ai.isVisible(),false);
  assert.deepEqual(errors,[]);assert.deepEqual(remote,[]);console.log(name+': report flow, retries, duplicate prevention, staff review, private notes, account changes and mobile scrolling passed');
 }finally{await browser.close();server.close();}

@@ -7,10 +7,14 @@ on:
       - 'applications/book-reports/**'
       - 'applications/library/page-ui/report-book.js'
       - 'applications/library/page-ui/book.js'
+      - 'applications/library/page-ui/reader.js'
       - 'applications/library/pages/book.html'
+      - 'applications/library/pages/read.html'
       - 'site-appearance/components/book-report.js'
+      - 'site-appearance/components/ai-report-notice.js'
       - 'site-appearance/css-styles/book-reports.css'
       - 'supabase/live-site/supabase-book-reports-v2.sql'
+      - 'supabase/live-site/supabase-book-ai-reader-notice.sql'
       - '.github/workflows/book-report-tests.yml'
 permissions:
   contents: read
@@ -44,6 +48,9 @@ jobs:
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-book-reports-v2.sql
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/book-reports/database.sql
           node core/tests/book-reports/concurrency.mjs
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-book-ai-reader-notice.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-book-ai-reader-notice.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/book-reports/ai-notice.sql
   browser:
     runs-on: ubuntu-latest
     strategy:
