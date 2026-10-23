@@ -164,7 +164,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,publi
 DECLARE
  uid uuid:=auth.uid(); v_role text; result jsonb; items jsonb; total bigint; req uuid; target uuid; rid uuid; tid uuid; bid text; txt text; v_reason text; v_kind text;
  duration integer; deadline timestamptz; off integer:=greatest(0,least(100000,coalesce((p_payload->>'offset')::integer,0))); days integer:=coalesce((p_payload->>'days')::integer,7);
- r public.book_reports_v2%ROWTYPE; sanction public.mc_sanctions%ROWTYPE; appeal public.mc_appeals%ROWTYPE;
+ v_report public.book_reports_v2%ROWTYPE; sanction public.mc_sanctions%ROWTYPE; appeal public.mc_appeals%ROWTYPE;
  thread public.mc_threads%ROWTYPE; sid uuid; choice text; item record;
 BEGIN
  IF uid IS NULL THEN RAISE EXCEPTION 'Sign in to continue.'; END IF;
@@ -281,9 +281,9 @@ BEGIN
  IF p_action='report' THEN
  rid:=(p_payload->>'id')::uuid;
  result:=public.book_reports_v2_detail(rid,off);
- SELECT * INTO r FROM public.book_reports_v2 WHERE id=rid;
- SELECT user_id INTO target FROM public.library WHERE id::text=r.book_id;
- RETURN result||jsonb_build_object('ownerId',target,'conflict',target=uid OR r.reporter_id=uid,'caseMeta',(SELECT to_jsonb(m) FROM public.mc_case_meta m WHERE report_id=rid),'staff',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'name',public.mc_name(id))),'[]') FROM auth.users WHERE public.mc_role(id)<>''));
+ SELECT * INTO v_report FROM public.book_reports_v2 WHERE id=rid;
+ SELECT user_id INTO target FROM public.library WHERE id::text=v_report.book_id;
+ RETURN result||jsonb_build_object('ownerId',target,'conflict',target=uid OR v_report.reporter_id=uid,'caseMeta',(SELECT to_jsonb(m) FROM public.mc_case_meta m WHERE report_id=rid),'staff',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'name',public.mc_name(id))),'[]') FROM auth.users WHERE public.mc_role(id)<>''));
  END IF;
  IF p_action='books' THEN
  WITH filtered AS (SELECT l.id,l.user_id,left(l.data->>'title',500) AS title,left(l.data->>'author',500) AS author,coalesce(v.visibility,'visible') AS visibility,v.reason,CASE WHEN jsonb_typeof(l.data->'chapters')='array' THEN jsonb_array_length(l.data->'chapters') ELSE 0 END AS chapters,(SELECT count(*) FROM public.book_reports_v2 WHERE book_id=l.id::text) AS reports FROM public.library l LEFT JOIN public.mc_book_visibility v ON v.book_id=l.id::text WHERE (coalesce(p_payload->>'query','')='' OR l.data->>'title' ILIKE '%'||left(p_payload->>'query',100)||'%') AND (coalesce(p_payload->>'status','all')='all' OR coalesce(v.visibility,'visible')=p_payload->>'status'))
@@ -364,16 +364,16 @@ BEGIN
  PERFORM public.mc_log('Staff reply sent',tid::text);
  result:=jsonb_build_object('id',tid);
  ELSIF p_action='report_save' THEN
- rid:=(p_payload->>'id')::uuid; SELECT * INTO r FROM public.book_reports_v2 WHERE id=rid FOR UPDATE;
+ rid:=(p_payload->>'id')::uuid; SELECT * INTO v_report FROM public.book_reports_v2 WHERE id=rid FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'Report not found.'; END IF;
- IF r.version IS DISTINCT FROM (p_payload->>'version')::integer THEN RAISE EXCEPTION 'This report changed. Reload it before saving.'; END IF;
+ IF v_report.version IS DISTINCT FROM (p_payload->>'version')::integer THEN RAISE EXCEPTION 'This report changed. Reload it before saving.'; END IF;
  target:=nullif(p_payload->>'assignee','')::uuid;choice:=p_payload->>'status';
  IF target IS NOT NULL AND public.mc_role(target)='' THEN RAISE EXCEPTION 'Choose a current staff member.'; END IF;
- IF r.reporter_id=uid OR EXISTS(SELECT 1 FROM public.library WHERE id::text=r.book_id AND user_id=uid) THEN
+ IF v_report.reporter_id=uid OR EXISTS(SELECT 1 FROM public.library WHERE id::text=v_report.book_id AND user_id=uid) THEN
  IF target IS NULL OR target=uid THEN RAISE EXCEPTION 'Hand this case to another staff member.'; END IF;
  INSERT INTO public.mc_case_meta(report_id,assigned_id) VALUES(rid,target) ON CONFLICT(report_id) DO UPDATE SET assigned_id=EXCLUDED.assigned_id;
  UPDATE public.book_reports_v2 SET version=version+1,updated_at=clock_timestamp() WHERE id=rid;
- INSERT INTO public.book_report_events_v2(report_id,actor_id,kind,body,from_status,to_status) VALUES(rid,uid,'review',txt,r.status,r.status);
+ INSERT INTO public.book_report_events_v2(report_id,actor_id,kind,body,from_status,to_status) VALUES(rid,uid,'review',txt,v_report.status,v_report.status);
  PERFORM public.mc_log('Case handed off',rid::text,jsonb_build_object('assignee',target));
  ELSE
  IF choice IS NULL OR choice NOT IN ('new','under_review','awaiting_changes','resolved','dismissed') THEN RAISE EXCEPTION 'Choose a valid case status.'; END IF;
