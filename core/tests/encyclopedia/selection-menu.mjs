@@ -9,7 +9,7 @@ const { JSDOM } = createRequire(import.meta.url)(process.env.JSDOM_MODULE || 'js
 const root = new URL('../../../', import.meta.url);
 const pause = () => new Promise(resolve => setTimeout(resolve, 10));
 async function until(predicate) { for (let i = 0; i < 50; i++) { if (predicate()) return; await pause(); } throw new Error('Selection UI did not reach the expected state'); }
-async function harness({ role = 'owner', missing = false, isTouch = false } = {}) {
+async function harness({ role = 'owner', missing = false, isTouch = false, oldEditorShell = false } = {}) {
  const dom = new JSDOM('<article id="page" contenteditable="true"><p><strong>Iris Vale</strong> arrived at dawn.</p><p>Her left eye was green.</p></article><p id="outside">Outside the editor</p>', { url: 'https://alysum.test/editor?book=book-1', pretendToBeVisual: true });
  const { window } = dom, { document } = window;
  window.matchMedia = () => ({ matches: isTouch, addEventListener() {}, removeEventListener() {} });
@@ -23,16 +23,21 @@ async function harness({ role = 'owner', missing = false, isTouch = false } = {}
   const module = new vm.SourceTextModule(await fs.readFile(url, 'utf8'), { context, identifier: url.href }); modules.set(url.href, module);
   await module.link(async (specifier, reference) => load(specifier.startsWith('/') ? specifier : new URL(specifier, reference.identifier).pathname.slice(root.pathname.length))); return module;
  }
- const module = await load('applications/editor/page-ui/selection-menu.js'); await module.evaluate();
+ const module = await load(oldEditorShell ? 'applications/editor/page-ui/story-bible.js' : 'applications/editor/page-ui/selection-menu.js'); await module.evaluate();
  const page = document.getElementById('page'), calls = [], savedEntries = [];
  let chapterId = 'chapter-one', saveStatus = 'saved', saveHook = async () => {}, callbackFailure = false;
  const state = { types: [{ id: 'character-type', name: 'Character', fields: [], sections: [] }, { id: 'location-type', name: 'Location', fields: [], sections: [] }], entries: [{ id: 'mara', typeId: 'character-type', title: 'Mara Vey' }, { id: 'elian', typeId: 'character-type', title: 'Elian Vey' }, { id: 'harbor', typeId: 'location-type', title: 'Northhaven' }] };
  const api = { saveEntry: async entry => { calls.push({ kind: 'entry', entry: structuredClone(entry) }); savedEntries.push(entry); return { ...entry, revision: 1 }; }, addFact: async (bibleId, entryId, fact) => { calls.push({ kind: 'fact', bibleId, entryId, fact: structuredClone(fact) }); } };
  document.execCommand = (command, _show, html) => { assert.equal(command, 'createLink'); const range = window.getSelection().getRangeAt(0); const anchor = document.createElement('a'); anchor.setAttribute('href', html); anchor.append(range.extractContents()); range.insertNode(anchor); page.dispatchEvent(new window.Event('input', { bubbles: true })); return true; };
- const mounted = module.namespace.mountBibleSelectionMenu({ pageEl: page, getBook: () => ({ id: 'book-1' }), getChapterId: () => chapterId,
+ const options = { pageEl: page, getBook: () => ({ id: 'book-1' }), getChapterId: () => chapterId,
   saveCurrent: async () => { await saveHook(); return saveStatus; }, async loadBible(create) { calls.push({ kind: 'open', create }); return { bible: missing && !create ? null : { id: 'bible-1', role }, state, api }; },
   onEntryCreated: async () => { if (callbackFailure) throw new Error('Refresh failed'); }, getEntryUrl: () => null,
- });
+ };
+ let mounted;
+ if (oldEditorShell) {
+  module.namespace.mountStoryBible({ ...options, button: null, session: { mode: 'cloud', user: { id: 'writer-1' } }, supabase: {} });
+  mounted = { touchToolbar: document.querySelector('.bible-selection-touch'), menu: document.querySelector('.bible-selection-menu'), dialog: document.querySelector('.bible-selection-dialog') };
+ } else mounted = module.namespace.mountBibleSelectionMenu(options);
  function select(node = page.querySelector('strong').firstChild, start = 0, end = node.textContent.length) { const range = document.createRange(); range.setStart(node, start); range.setEnd(node, end); const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range); }
  function rightClick({ shiftKey = false } = {}) { const event = new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 30, clientY: 40, shiftKey }); page.dispatchEvent(event); return event; }
  const findButton = text => [...document.querySelectorAll('button')].find(button => button.textContent === text);
@@ -95,12 +100,31 @@ test('phone selection shows a touch action bar while preserving the native long-
  const h = await harness({ isTouch: true }); try {
   h.select(); assert.equal(h.rightClick().defaultPrevented, false);
   h.document.dispatchEvent(new h.window.Event('selectionchange'));
+  assert.equal(h.mounted.touchToolbar.hidden, false, 'actions appear synchronously before the native menu takes focus');
   await until(() => !h.mounted.touchToolbar.hidden);
   assert.equal(h.mounted.menu.hidden, true); assert.match(h.mounted.touchToolbar.textContent, /Iris Vale/);
   const create = [...h.mounted.touchToolbar.querySelectorAll('button')].find(button => button.textContent === 'Create entry');
   create.dispatchEvent(new h.window.MouseEvent('pointerdown', { bubbles: true, cancelable: true })); create.click();
   await until(() => h.mounted.dialog.querySelector('input')); assert.equal(h.field('Entry name').value, 'Iris Vale'); assert.equal(h.mounted.touchToolbar.hidden, true);
   await h.submit(); assert.equal(h.calls.filter(call => call.kind === 'entry').length, 1);
+ } finally { h.mounted.destroy(); h.dom.window.close(); }
+});
+
+test('current editor code still mounts phone actions with a cached shell missing the Story Bible button', async () => {
+ const h = await harness({ isTouch: true, oldEditorShell: true }); try {
+  assert.equal(h.document.getElementById('open-story-bible').textContent, 'Story Bible');
+  h.select(); h.document.dispatchEvent(new h.window.Event('selectionchange'));
+  assert.equal(h.mounted.touchToolbar.hidden, false);
+  assert.match(h.mounted.touchToolbar.textContent, /Iris Vale/);
+  assert.equal(h.rightClick().defaultPrevented, false);
+ } finally { h.dom.window.close(); }
+});
+
+test('phone touchend recovers a selection when the browser omits selectionchange', async () => {
+ const h = await harness({ isTouch: true }); try {
+  h.select(); h.page.dispatchEvent(new h.window.Event('touchend', { bubbles: true }));
+  await until(() => !h.mounted.touchToolbar.hidden);
+  assert.match(h.mounted.touchToolbar.textContent, /Iris Vale/);
  } finally { h.mounted.destroy(); h.dom.window.close(); }
 });
 test('phone detail action opens the character picker and hides when selection clears', async () => {
