@@ -35,3 +35,9 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     },
 });
 
+
+if(typeof window!=='undefined'){
+ const track=session=>{setTimeout(()=>void import('./presence.js?v=2').then(m=>m.wireUserPresence(session,supabase)),0);};
+ supabase.auth.getSession().then(({data})=>track(data?.session)).catch(()=>{});
+ supabase.auth.onAuthStateChange((_event,session)=>track(session));
+}

@@ -3,7 +3,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES = Object.freeze({
     newFollowers: true, authorAnnouncements: true, siteUpdates: false, newBooks: true, newChapters: true,
 });
 export const NOTIFICATION_KINDS = Object.freeze({
-    follower: "Followers", author_announcement: "Author announcements", site_update: "Alysum updates",
+    moderation_message: "Moderation messages", follower: "Followers", author_announcement: "Author announcements", site_update: "Alysum updates",
     new_book: "New books", new_chapter: "New chapters",
     follow_confirmation: "Follow confirmations", subscription_confirmation: "Subscription confirmations",
 });
@@ -112,6 +112,11 @@ export async function markNotificationsRead(client, throughId) {
 }
 export async function resolveNotificationDestination(client, entry) {
     if (["follower", "follow_confirmation"].includes(entry.kind)) return null;
+    if(entry.kind==="moderation_message"){
+        const {data,error}=await client.rpc("mc_call",{p_action:"my_notification",p_payload:{id:requireId(entry.id)}});checkError(error);
+        if(!data?.threadId)throw new Error("This conversation is no longer available.");
+        return "/moderation-inbox?thread="+encodeURIComponent(data.threadId);
+    }
     if (entry.kind === "new_book" || entry.kind === "new_chapter" || entry.kind === "subscription_confirmation") {
         const { data, error } = await client.rpc("get_reading_notification_target", {
             p_notification_id: requireId(entry.id),
