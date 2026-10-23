@@ -1,0 +1,68 @@
+name: Book report checks
+on:
+  pull_request:
+    paths:
+      - 'core/book-reports/**'
+      - 'core/tests/book-reports/**'
+      - 'applications/book-reports/**'
+      - 'applications/library/page-ui/report-book.js'
+      - 'applications/library/page-ui/book.js'
+      - 'applications/library/pages/book.html'
+      - 'site-appearance/components/book-report.js'
+      - 'site-appearance/css-styles/book-reports.css'
+      - 'supabase/live-site/supabase-book-reports-v2.sql'
+      - '.github/workflows/book-report-tests.yml'
+permissions:
+  contents: read
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: book_reports_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/book_reports_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test core/tests/book-reports/*.test.js
+      - name: PostgreSQL permissions and behavior
+        run: |
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/book-reports/setup.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-book-reports-v2.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/book-reports/database.sql
+          node core/tests/book-reports/concurrency.mjs
+  browser:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix "$RUNNER_TEMP/report-browser" playwright@1.61.1
+      - run: '"$RUNNER_TEMP/report-browser/node_modules/.bin/playwright" install --with-deps ${{ matrix.browser }}'
+      - run: node applications/book-reports/tests/browser.mjs
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/report-browser/node_modules/playwright/index.mjs
+          REPORT_BROWSER: ${{ matrix.browser }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-reports-${{ matrix.browser }}
+          path: test-results/book-reports/

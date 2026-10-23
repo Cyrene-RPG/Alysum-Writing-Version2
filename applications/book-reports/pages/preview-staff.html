@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/",
+        "@alysum/statistics/": "/core/statistics/"
+      }
+    }
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes-dim/index.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css">
+    <script src="/site-appearance/js-runtime/body-background-presets-data.js"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js"></script>
+    <script src="/site-appearance/js-runtime/boot.js"></script>
+    <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
+    <script src="/site-appearance/js-runtime/gradient-theme-sync.js" defer></script>
+    <link rel="stylesheet" href="/css/site-responsive.css">
+    <link rel="stylesheet" href="/css/workspace-nav.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/book-reports.css?v=1">
+    <title>Staff report preview — Alysum</title>
+    <meta name="robots" content="noindex, nofollow">
+</head>
+<body class="br-staff">
+<a class="skip-link" href="#main">Skip to content</a>
+    <header class="wd-welcome-bar ui-bar" aria-label="Welcome">
+        <div class="wd-welcome-inner">
+            <div class="wd-pfp-menu" id="welcomePfpMenu">
+                <button type="button" class="wd-pfp-btn" id="welcomePfpBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="welcomePfpDropdown" aria-label="Account menu">
+                    <span class="wd-pfp" id="welcomePfp">
+                        <img id="welcomePfpImg" alt="" hidden />
+                        <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true">A</span>
+                    </span>
+                </button>
+                <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
+                    <a role="menuitem" href="/library" data-close-pfp-menu>Home</a>
+                    <a role="menuitem" href="/overview" data-close-pfp-menu>Profile</a>
+                    <a role="menuitem" href="/settings" data-close-pfp-menu>Settings</a>
+                    <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
+                </div>
+            </div>
+            <div class="wd-welcome-copy">
+                <h1 class="wd-welcome-title" id="welcomeTitle">Staff <span class="wd-name">Reports</span></h1>
+                <p class="wd-welcome-sub" id="welcomeSubtitle"></p>
+            </div>
+        </div>
+    </header>
+    <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
+        <div class="wd-nav">
+            <a href="/studio">Studio</a>
+            <a href="/word-wars-lobby">Word Wars</a>
+            <a href="/library">Library</a>
+            <a href="/updates">What’s New</a>
+        </div>
+    </nav>
+
+<main id="main" class="br-page">
+<div class="br-heading"><div><p class="br-muted">Private staff workspace</p><h1>Book Reports</h1><p>Review reader concerns. Reports never remove books automatically.</p></div><a href="/library">Back to Library</a></div>
+<p id="br-staff-status" role="status" aria-live="polite">Checking staff access…</p>
+<p id="br-staff-signin" hidden><a href="/login?next=%2Fstaff%2Fbook-reports">Sign in with a staff account</a></p>
+<div id="br-staff-content" hidden>
+<div class="br-toolbar"><label for="br-filter-status">Status<select id="br-filter-status"><option value="open">Open reports</option><option value="all">All statuses</option><option value="new">New</option><option value="under_review">Under Review</option><option value="resolved">Resolved</option><option value="dismissed">Dismissed</option></select></label><label for="br-filter-reason">Reason<select id="br-filter-reason"><option value="">All reasons</option></select></label><button type="button" id="br-staff-refresh">Refresh</button></div>
+<div class="br-layout"><section class="br-panel" aria-label="Reported books"><h2>Reported books</h2><div id="br-groups"></div><button type="button" id="br-groups-more" hidden>Load more books</button><div id="br-book-reports" aria-live="polite"></div><button type="button" id="br-book-more" hidden>Load more reports</button></section><section class="br-panel" id="br-report-detail" aria-label="Selected report" aria-live="polite"><p>Select a book and report to review it.</p></section></div>
+</div></main>
+<script type="module" src="/applications/book-reports/page-ui/preview-staff.js"></script>
+</body></html>
