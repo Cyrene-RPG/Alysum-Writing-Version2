@@ -24,26 +24,25 @@ export async function mountBibleShell({ isPreview = false, beforeLogout = async 
         return;
     }
     // Shared appearance behavior comes from site-appearance, never another application.
-    const [{ supabase }, { peekWorkspaceProfile, loadWorkspaceProfile }, { signOutAndGoToHome }, { initAppearanceLoadoutMenu }, { openRoadmap }] = await Promise.all([
+    const [{ supabase }, { peekWorkspaceProfile, loadWorkspaceProfile }, { signOutAndGoToHome }] = await Promise.all([
         import('/core/authentication/client.js'), import('/core/account/workspace-profile.js'),
-        import('/core/authentication/logout.js'), import('/site-appearance/js-runtime/appearance-loadout-menu.js'),
-        import('/core/authentication/open-roadmap.js'),
+        import('/core/authentication/logout.js'),
     ]);
-    initAppearanceLoadoutMenu({ openRoadmap });
     const { data } = await supabase.auth.getSession();
     if (!data.session?.user) return;
     const session = { mode: 'cloud', user: data.session.user };
     function setAvatar(profile) {
-        document.getElementById('welcomePfpInitial').textContent = (profile.name || 'A').slice(0, 1).toUpperCase();
-        if (!profile.imageUrl) return;
+        const initial = document.getElementById('welcomePfpInitial');
         const image = document.getElementById('welcomePfpImg');
-        image.addEventListener('error', () => { image.hidden = true; document.getElementById('welcomePfpInitial').hidden = false; }, { once: true });
-        image.src = profile.imageUrl; image.hidden = false; document.getElementById('welcomePfpInitial').hidden = true;
+        initial.textContent = (profile.name || 'A').trim().slice(0, 1).toUpperCase() || 'A';
+        initial.hidden = false;
+        const url = String(profile.imageUrl || '').trim();
+        initial.classList.toggle('is-hidden', Boolean(url));
+        image.hidden = !url; image.style.display = url ? '' : 'none';
+        image.onerror = () => { image.removeAttribute('src'); image.hidden = true; image.style.display = 'none'; initial.classList.remove('is-hidden'); };
+        if (url) image.src = url;
+        else image.removeAttribute('src');
     }
-    const [{ createNotificationService }, { mountNotificationBell }] = await Promise.all([
-        import('/core/notifications/service.js'), import('/site-appearance/js-runtime/notification-bell.js'),
-    ]);
-    mountNotificationBell({ service: createNotificationService(supabase) });
     setAvatar(peekWorkspaceProfile(session));
     void loadWorkspaceProfile(supabase, session).then(setAvatar).catch(() => {});
     const logout = document.getElementById('bible-logout'); logout.hidden = false;
@@ -53,4 +52,13 @@ export async function mountBibleShell({ isPreview = false, beforeLogout = async 
         const result = await signOutAndGoToHome();
         if (!result.ok) { logout.disabled = false; document.getElementById('bible-status').textContent = 'Could not log out. Please try again.'; }
     });
+    // Optional header tools must not prevent account identity or logout from loading.
+    void Promise.all([
+        import('/site-appearance/js-runtime/appearance-loadout-menu.js'), import('/core/authentication/open-roadmap.js'),
+    ]).then(([{ initAppearanceLoadoutMenu }, { openRoadmap }]) => initAppearanceLoadoutMenu({ openRoadmap }))
+        .catch(error => console.warn('Appearance menu could not load.', error));
+    void Promise.all([
+        import('/core/notifications/service.js'), import('/site-appearance/js-runtime/notification-bell.js'),
+    ]).then(([{ createNotificationService }, { mountNotificationBell }]) => mountNotificationBell({ service: createNotificationService(supabase) }))
+        .catch(error => console.warn('Notification bell could not load.', error));
 }
