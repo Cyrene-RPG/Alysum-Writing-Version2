@@ -97,6 +97,10 @@ END $$;
 CREATE OR REPLACE FUNCTION public.mc_write_guard()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $$
 BEGIN
+ IF TG_TABLE_NAME='library' AND TG_OP<>'DELETE' AND coalesce(to_jsonb(NEW)->'data'->>'isPublished','true')='false' THEN
+ IF NOT public.mc_allowed('account') THEN RAISE EXCEPTION 'Your account is restricted. Open Moderation Messages to view the reason or appeal.'; END IF;
+ RETURN NEW;
+ END IF;
  IF auth.uid() IS NOT NULL AND NOT public.mc_allowed(TG_ARGV[0]) THEN RAISE EXCEPTION 'Your account is restricted. Open Moderation Messages to view the reason or appeal.'; END IF;
  IF TG_OP='DELETE' THEN RETURN OLD; END IF; RETURN NEW;
 END $$;
@@ -173,7 +177,7 @@ BEGIN
  IF p_action='activity' THEN
  IF NOT public.mc_allowed('account') THEN RETURN jsonb_build_object('blocked',true); END IF;
  UPDATE public.users SET last_seen_at=clock_timestamp() WHERE id=uid AND (last_seen_at IS NULL OR last_seen_at<clock_timestamp()-interval '90 seconds');
- INSERT INTO public.mc_activity(user_id,day,reading) VALUES(uid,(clock_timestamp() AT TIME ZONE 'America/Los_Angeles')::date,p_payload->>'kind'='reading')
+ INSERT INTO public.mc_activity(user_id,day,reading) VALUES(uid,(clock_timestamp() AT TIME ZONE 'America/Los_Angeles')::date,coalesce(p_payload->>'kind'='reading',false))
  ON CONFLICT(user_id,day) DO UPDATE SET reading=mc_activity.reading OR EXCLUDED.reading;
  RETURN jsonb_build_object('blocked',false);
  END IF;
@@ -337,7 +341,7 @@ BEGIN
  ELSIF p_action='revoke_sanction' THEN
  rid:=(p_payload->>'id')::uuid; SELECT * INTO sanction FROM public.mc_sanctions WHERE id=rid FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'Restriction not found.'; END IF;
- IF sanction.v_kind='ban' AND v_role<>'admin' THEN RAISE EXCEPTION 'Only admins can reverse a permanent ban.'; END IF;
+ IF sanction.kind='ban' AND v_role<>'admin' THEN RAISE EXCEPTION 'Only admins can reverse a permanent ban.'; END IF;
  UPDATE public.mc_sanctions SET revoked_at=clock_timestamp(),revoked_by=uid WHERE id=rid;
  tid:=public.mc_notice(sanction.user_id,'Account restriction lifted',txt);
  PERFORM public.mc_log('Restriction reversed',rid::text,jsonb_build_object('reason',txt));
@@ -369,6 +373,7 @@ BEGIN
  IF target IS NULL OR target=uid THEN RAISE EXCEPTION 'Hand this case to another staff member.'; END IF;
  INSERT INTO public.mc_case_meta(report_id,assigned_id) VALUES(rid,target) ON CONFLICT(report_id) DO UPDATE SET assigned_id=EXCLUDED.assigned_id;
  UPDATE public.book_reports_v2 SET version=version+1,updated_at=clock_timestamp() WHERE id=rid;
+ INSERT INTO public.book_report_events_v2(report_id,actor_id,kind,body,from_status,to_status) VALUES(rid,uid,'review',txt,r.status,r.status);
  PERFORM public.mc_log('Case handed off',rid::text,jsonb_build_object('assignee',target));
  ELSE
  IF choice IS NULL OR choice NOT IN ('new','under_review','awaiting_changes','resolved','dismissed') THEN RAISE EXCEPTION 'Choose a valid case status.'; END IF;
@@ -395,7 +400,7 @@ BEGIN
  IF sanction.created_by=uid THEN RAISE EXCEPTION 'Another staff member must review your original decision.'; END IF;
  choice:=p_payload->>'decision'; IF choice IS NULL OR choice NOT IN ('awaiting_information','upheld','granted') THEN RAISE EXCEPTION 'Choose an appeal outcome.'; END IF;
  IF choice='granted' THEN
- IF sanction.v_kind='ban' AND v_role<>'admin' THEN RAISE EXCEPTION 'Only admins can reverse permanent bans.'; END IF;
+ IF sanction.kind='ban' AND v_role<>'admin' THEN RAISE EXCEPTION 'Only admins can reverse permanent bans.'; END IF;
  UPDATE public.mc_sanctions SET revoked_at=clock_timestamp(),revoked_by=uid WHERE id=sanction.id;
  END IF;
  UPDATE public.mc_appeals SET status=choice,decision=txt,decided_by=uid,version=version+1,updated_at=clock_timestamp() WHERE id=rid;

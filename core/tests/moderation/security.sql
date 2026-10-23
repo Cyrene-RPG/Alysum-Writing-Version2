@@ -32,6 +32,13 @@ SELECT public.report_test_assert((public.mc_call('access')->>'verified')::boolea
 SELECT public.report_test_assert((public.mc_call('users')->>'total')::int=6,'real user directory');
 SELECT public.report_test_assert((public.mc_call('users','{"view":"active"}')->'items'->0->>'id')='00000000-0000-0000-0000-000000000003','activity ranks real recorded days');
 SELECT public.report_test_assert((public.mc_call('dashboard')->>'users')::int=6,'dashboard real count');
+SELECT public.mc_call('books');
+SELECT public.mc_call('staff');
+SELECT public.mc_call('audit');
+SELECT public.report_test_assert((public.mc_call('reports')->>'total')::int=1,'live report queue');
+SELECT set_config('test.mc.report',(public.mc_call('reports')->'items'->0->>'id'),false);
+SELECT public.mc_call('report',jsonb_build_object('id',current_setting('test.mc.report')));
+SELECT public.mc_call('report_save',jsonb_build_object('requestId',gen_random_uuid(),'id',current_setting('test.mc.report'),'version',1,'status','awaiting_changes','body','Please review missing content warning tags.'));
 SELECT public.report_expect_error($q$SELECT public.mc_call('sanction','{"requestId":"20000000-0000-0000-0000-000000000001","userId":"00000000-0000-0000-0000-000000000002","kind":"ban","reason":"Policy","body":"A protected staff account cannot be banned here."}')$q$,'Protected staff');
 SELECT public.mc_call('sanction','{"requestId":"20000000-0000-0000-0000-000000000002","userId":"00000000-0000-0000-0000-000000000003","kind":"suspension","days":7,"reason":"Community rules","body":"Your account is suspended while a report is reviewed. You can reply or appeal."}');
 SELECT public.mc_call('sanction','{"requestId":"20000000-0000-0000-0000-000000000002","userId":"00000000-0000-0000-0000-000000000003","kind":"suspension","days":7,"reason":"Community rules","body":"Your account is suspended while a report is reviewed. You can reply or appeal."}');
@@ -48,6 +55,12 @@ SELECT public.report_test_assert((SELECT count(*) FROM public.inbox_notification
 SELECT set_config('test.mc.thread',(SELECT id::text FROM public.mc_threads LIMIT 1),false);
 SELECT set_config('test.mc.sanction',(SELECT id::text FROM public.mc_sanctions LIMIT 1),false);
 SELECT public.report_test_assert((SELECT count(*) FROM public.books)=1,'private manuscript preserved');
+SET ROLE authenticated;
+SELECT public.mc_call('user','{"id":"00000000-0000-0000-0000-000000000003"}');
+SELECT public.mc_call('conversations');
+SELECT public.mc_call('conversation',jsonb_build_object('id',current_setting('test.mc.thread')));
+SELECT public.mc_call('staff_reply',jsonb_build_object('requestId',gen_random_uuid(),'threadId',current_setting('test.mc.thread'),'body','This is a staff reply inside the private conversation.'));
+RESET ROLE;
 SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000003';
 SET request.jwt.claims='{"session_id":"10000000-0000-0000-0000-000000000003","aal":"aal1"}';
 SET ROLE authenticated;
