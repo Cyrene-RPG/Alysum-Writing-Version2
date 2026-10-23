@@ -100,7 +100,7 @@ BEGIN
  IF auth.uid() IS NOT NULL AND NOT public.mc_allowed(TG_ARGV[0]) THEN RAISE EXCEPTION 'Your account is restricted. Open Moderation Messages to view the reason or appeal.'; END IF;
  IF TG_OP='DELETE' THEN RETURN OLD; END IF; RETURN NEW;
 END $$;
-DO $
+DO $$
 DECLARE t text; feature text;
 BEGIN
  FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND left(tablename,3)<>'mc_' AND tablename NOT IN ('book_reports_v2','book_report_events_v2','inbox_notifications','notification_preferences') LOOP
@@ -108,7 +108,7 @@ BEGIN
  EXECUTE format('DROP TRIGGER IF EXISTS mc_guard ON public.%I',t);
  EXECUTE format('CREATE TRIGGER mc_guard BEFORE INSERT OR UPDATE OR DELETE ON public.%I FOR EACH ROW EXECUTE FUNCTION public.mc_write_guard(%L)',t,feature);
  END LOOP;
-END $;
+END $$;
 CREATE OR REPLACE FUNCTION public.mc_activity_write()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $$
 DECLARE uid uuid; is_write boolean:=TG_TABLE_NAME='books';
@@ -436,9 +436,9 @@ $$;
 
 
 -- Direct v2 review calls obey the same conflict rule and produce an audit record.
-DO $ BEGIN
+DO $$ BEGIN
  IF to_regprocedure('public.mc_base_v2_review(uuid,text,text,integer)') IS NULL THEN ALTER FUNCTION public.book_reports_v2_review(uuid,text,text,integer) RENAME TO mc_base_v2_review; END IF;
-END $;
+END $$;
 CREATE OR REPLACE FUNCTION public.book_reports_v2_review(p_report_id uuid,p_status text,p_note text,p_expected_version integer)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $
 DECLARE result jsonb;
@@ -449,7 +449,7 @@ BEGIN
  INSERT INTO public.mc_case_meta(report_id,phase) VALUES(p_report_id,p_status) ON CONFLICT(report_id) DO UPDATE SET phase=EXCLUDED.phase;
  PERFORM public.mc_log('Report reviewed: '||p_status,p_report_id::text);
  RETURN result;
-END $;
+END $$;
 REVOKE INSERT,UPDATE,DELETE ON public.moderation_staff FROM PUBLIC,anon,authenticated;
 CREATE INDEX IF NOT EXISTS mc_ip_lookup_idx ON public.mc_ip_blocks(address,expires_at) WHERE revoked_at IS NULL;
 
