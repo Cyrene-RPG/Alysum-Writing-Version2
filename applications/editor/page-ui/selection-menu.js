@@ -184,8 +184,12 @@ export function mountBibleSelectionMenu({ pageEl, getBook, getChapterId, saveCur
                 let linked = false;
                 if (current.link.checked && sourceIsCurrent()) {
                     const span = element('span'); span.setAttribute('data-story-bible-entry', entry.id); span.append(original.range.cloneContents());
-                    pageEl.focus(); const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(original.range);
-                    linked = document.execCommand('insertHTML', false, span.outerHTML);
+                    // A modal makes the manuscript inert. Briefly release it for the native undoable edit.
+                    dialog.close();
+                    try {
+                        pageEl.focus(); const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(original.range);
+                        linked = document.execCommand('insertHTML', false, span.outerHTML);
+                    } finally { dialog.showModal(); }
                     if (linked && await saveCurrent() === 'error') confirmation.textContent = 'Entry created. The selected reference could not be saved yet; retry your manuscript save.';
                 }
                 try { await onEntryCreated(entry); } catch { confirmation.textContent = 'The entry is saved. Reopen the reference panel to refresh its list.'; }
