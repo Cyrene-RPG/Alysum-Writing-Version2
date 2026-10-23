@@ -54,7 +54,7 @@ const button=(text,action,id='',cls='')=>`<button type="button" data-action="${a
 const avatar=u=>`<span class="md-avatar" aria-hidden="true">${esc(initials(u.name))}</span>`;
 function log(action,target,type='Review'){audit.unshift({action,target,actor:actor(),when:'Just now',type});}
 function toast(text){$('#md-toast').textContent=text;$('#md-toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#md-toast').hidden=true,5000);}
-function title(name,description,actions=''){return `<div class="md-heading"><div><p class="md-eyebrow">Alysum / Moderation</p><h1 id="md-page-title" tabindex="-1">${esc(name)}</h1><p>${esc(description)}</p></div><div class="md-heading-actions">${actions}</div></div>`;}
+function title(name,description,actions=''){return `<div class="md-heading"><div><p class="md-eyebrow">Alysum / Moderation</p><h1 class="wd-welcome-title" id="md-page-title" tabindex="-1">${esc(name)}</h1><p>${esc(description)}</p></div><div class="md-heading-actions">${actions}</div></div>`;}
 function panelHeading(name,action=''){return `<div class="md-section-head"><h2>${esc(name)}</h2>${action}</div>`;}
 function modal(name,body){returnFocus=document.activeElement;$('#md-dialog-title').textContent=name;$('#md-dialog-body').innerHTML=body;if(!$('#md-dialog').open){document.body.style.overflow='hidden';$('#md-dialog').showModal();}}
 function closeModal(){if($('#md-dialog').open)$('#md-dialog').close();document.body.style.overflow='';returnFocus?.isConnected&&returnFocus.focus({preventScroll:true});}
@@ -70,6 +70,7 @@ $('#md-nav').innerHTML=tabs.filter(t=>t[0]!=='security'||state.role==='admin').m
 const count=id==='reports'?cases.filter(c=>!['Resolved','Dismissed'].includes(c.status)).length:id==='appeals'?appeals.filter(a=>a.status==='Pending').length:id==='conversations'?threads.filter(t=>t.unread).length:0;
 return `<button type="button" data-action="navigate" data-id="${id}" ${state.view===id?'aria-current="page"':''}>${label}${count?`<span class="md-badge neutral">${count}</span>`:''}</button>`;}).join('');
 $('#md-screen').innerHTML=({overview:dashboard,reports:reportList,users:userList,books:bookList,conversations:conversationList,appeals:appealList,audit:auditList,security:security,profile:profileEntry}[state.view])();
+document.querySelectorAll('#md-screen .md-table').forEach(table=>{const labels=[...table.querySelectorAll('thead th')].map(th=>th.textContent);table.querySelectorAll('tbody tr').forEach(row=>[...row.cells].forEach((cell,index)=>cell.dataset.label=labels[index]||''));});
 if(focusId){const n=document.getElementById(focusId);if(n){n.focus({preventScroll:true});if(typeof position==='number'&&['search','text'].includes(n.type))n.setSelectionRange(position,position);}}
 }
 function dashboard(){
