@@ -1,4 +1,5 @@
 import { fetchSharedExcerpt } from "/core/publishing/excerpt-reader.js";
+import { excerptWatermark } from "/core/publishing/excerpt-watermark.js";
 let generation = 0;
 async function load() {
     const request = ++generation;
@@ -9,6 +10,7 @@ async function load() {
     unavailable.hidden = true;
     status.hidden = false;
     document.getElementById("section-text").textContent = "";
+    document.getElementById("section-text").style.removeProperty("--excerpt-watermark");
     try {
         const token = window.location.hash.slice(1);
         if (!/^[a-f0-9]{48}$/.test(token)) throw new Error("Invalid link");
@@ -20,6 +22,7 @@ async function load() {
         document.getElementById("section-author").hidden = !section.author;
         document.getElementById("section-meta").textContent = `${section.wordCount.toLocaleString()} words · ${Math.max(1, Math.ceil(section.wordCount / 220))} min read`;
         document.getElementById("section-text").textContent = section.excerpt;
+        document.getElementById("section-text").style.setProperty("--excerpt-watermark", excerptWatermark(section.author));
         document.title = `${section.title} — Alysum`;
         content.hidden = false;
     } catch { if (request === generation) { unavailable.hidden = false; document.title = "Section unavailable — Alysum"; } }

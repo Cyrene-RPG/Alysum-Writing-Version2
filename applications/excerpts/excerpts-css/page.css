@@ -17,3 +17,18 @@ footer { color: var(--muted); font-size: 11px; line-height: 1.7; margin-top: 48p
 
 /* Disable native text selection and the mobile Copy callout on shared text. */
 #section-content { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* A repeating, theme-aware overlay remains visible across long excerpt screenshots.
+   Pseudo-content is decorative, so it does not repeat in screen-reader output. */
+#section-text { position: relative; isolation: isolate; }
+#section-text::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-color: var(--text, #808080); opacity: .14;
+    -webkit-mask-image: var(--excerpt-watermark, none); mask-image: var(--excerpt-watermark, none);
+    -webkit-mask-repeat: repeat; mask-repeat: repeat;
+    -webkit-mask-size: 360px 180px; mask-size: 360px 180px;
+}
+@media (max-width: 600px) {
+    #section-text::after { -webkit-mask-size: 300px 150px; mask-size: 300px 150px; }
+}
+@media print { #section-text::after { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
