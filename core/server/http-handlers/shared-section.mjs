@@ -48,7 +48,8 @@ ${metadata('property', 'og:image', image)}${metadata('property', 'og:image:type'
 ${metadata('name', 'twitter:card', 'summary_large_image')}${metadata('name', 'twitter:title', title)}${metadata('name', 'twitter:description', description)}${metadata('name', 'twitter:image', image)}${metadata('name', 'twitter:image:alt', 'Alysum writing studio')}
 <link rel="icon" href="/Alysum-3.png">
 <link rel="stylesheet" href="/site-appearance/css-styles/theme.css"><link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css"><link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes-dim/index.css"><link rel="stylesheet" href="/site-appearance/css-styles/typography.css"><link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css">
-<script src="/site-appearance/js-runtime/body-background-presets-data.js"></script><script src="/site-appearance/js-runtime/text-ink-data.js"></script><script src="/site-appearance/js-runtime/boot.js"></script><link rel="stylesheet" href="/applications/excerpts/excerpts-css/page.css">
+<script src="/site-appearance/js-runtime/body-background-presets-data.js"></script><script src="/site-appearance/js-runtime/text-ink-data.js"></script><script src="/site-appearance/js-runtime/boot.js"></script><link rel="stylesheet" href="/applications/excerpts/excerpts-css/page.css?v=2">
+<script src="/applications/excerpts/page-ui/reading-controls.js?v=1" defer></script>
 </head><body><main class="section-reader"><nav class="section-reader-nav" aria-label="Alysum"><a href="/library">ALYSUM</a><span>Read only</span></nav>${content}</main></body></html>`;
 }
 
