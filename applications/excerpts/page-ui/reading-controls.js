@@ -4,6 +4,21 @@
  */
 (() => {
     const content = () => document.getElementById('section-content');
+    document.getElementById('section-notice-continue')?.addEventListener('click', () => {
+        const notice = document.getElementById('section-copyright-notice');
+        const article = content();
+        if (!notice || notice.hidden || !article) return;
+        notice.hidden = true;
+        article.hidden = false;
+        document.getElementById('section-title')?.focus();
+    });
+    // Reopening a page from browser history requires the notice again.
+    window.addEventListener('pageshow', event => {
+        const article = content();
+        if (!event.persisted || !article || article.hidden) return;
+        article.hidden = true;
+        document.getElementById('section-copyright-notice').hidden = false;
+    });
     const inExcerpt = target => Boolean(target?.closest?.('#section-content'));
     function selectsExcerpt() {
         const article = content();

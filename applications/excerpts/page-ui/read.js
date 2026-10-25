@@ -7,6 +7,7 @@ async function load() {
     const unavailable = document.getElementById("section-unavailable");
     const status = document.getElementById("section-status");
     content.hidden = true;
+    document.getElementById("section-copyright-notice").hidden = true;
     unavailable.hidden = true;
     status.hidden = false;
     document.getElementById("section-text").textContent = "";
@@ -24,7 +25,8 @@ async function load() {
         document.getElementById("section-text").textContent = section.excerpt;
         document.getElementById("section-text").style.setProperty("--excerpt-watermark", excerptWatermark(section.author));
         document.title = `${section.title} — Alysum`;
-        content.hidden = false;
+        document.getElementById("section-notice-author").textContent = section.author || "the author";
+        document.getElementById("section-copyright-notice").hidden = false;
     } catch { if (request === generation) { unavailable.hidden = false; document.title = "Section unavailable — Alysum"; } }
     finally { if (request === generation) status.hidden = true; }
 }

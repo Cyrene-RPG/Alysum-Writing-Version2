@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { firstExcerptSentence, handleSharedSection, readSharedExcerpt } from '../../server/http-handlers/shared-section.mjs';
+import { firstExcerptSentence, handleSharedSection, readSharedExcerpt, renderSharedSection } from '../../server/http-handlers/shared-section.mjs';
 import { onRequest } from '../../../functions/shared-section/[token].js';
 import { createExcerptApi } from '../../publishing/excerpts.js';
 
@@ -95,4 +95,14 @@ test('Cloudflare route serves the same metadata handler and Vercel has the match
     assert.ok((await response.text()).includes('og:description'));
     const config = JSON.parse(readFileSync(new URL('../../../vercel.json', import.meta.url)));
     assert.ok(config.rewrites.some(rule => rule.source === '/shared-section/:token' && rule.destination === '/api/shared-section?token=:token'));
+});
+
+test('available excerpts start behind the author copyright and AI-use notice', () => {
+    const html = renderSharedSection({ ...section, author: 'Writer <One>' }, new URL(url));
+    assert.match(html, /id="section-content" hidden/);
+    assert.match(html, /id="section-copyright-notice" class="section-copyright-notice" aria-labelledby="section-notice-title">/);
+    assert.match(html, /id="section-notice-author">Writer &lt;One&gt;<\/strong>/);
+    for (const restriction of ['AI detectors', 'train, fine-tune, test, or evaluate', 'rewrite, continue, imitate, analyze', 'I understand — Read excerpt']) assert.ok(html.includes(restriction));
+    assert.ok(!renderSharedSection(null, new URL(url)).includes('section-copyright-notice'));
+    assert.match(renderSharedSection({ ...section, author: '' }, new URL(url)), /id="section-notice-author">the author<\/strong>/);
 });
