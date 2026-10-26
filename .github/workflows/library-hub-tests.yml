@@ -9,6 +9,7 @@ on:
       - 'core/tests/library/library-hub*'
       - 'core/tests/library/cloud-reading.test.js'
       - 'supabase/live-site/supabase-library-hub.sql'
+      - 'supabase/live-site/supabase-library-weekly-feature.sql'
       - '.github/workflows/library-hub-tests.yml'
 permissions:
   contents: read
@@ -21,7 +22,10 @@ jobs:
         with:
           node-version: '22'
       - run: node --test core/tests/library/*.test.js
-      - run: npm install --prefix "$RUNNER_TEMP/library-hub" @electric-sql/pglite@0.5.11
+      - run: npm install --prefix "$RUNNER_TEMP/library-hub" @electric-sql/pglite@0.5.11 jsdom@26
+      - run: node --experimental-vm-modules --test applications/library/tests/audit-regressions.mjs
+        env:
+          JSDOM_MODULE: ${{ runner.temp }}/library-hub/node_modules/jsdom/lib/api.js
       - run: node --test core/tests/library/library-hub-database.mjs
         env:
           PGLITE_MODULE: ${{ runner.temp }}/library-hub/node_modules/@electric-sql/pglite/dist/index.js

@@ -15,10 +15,12 @@ async function boot(){
   void loadWorkspaceProfile(supabase,opened.session).then(profile=>initWorkspaceShell({lead:'The ',accent:'Library',name:profile.name,imageUrl:profile.imageUrl})).catch(()=>{});
  }
  if(!opened.state.active)return;
- const api=createLibraryHub(supabase,{readingState:opened.state,subscriptions:opened.snapshot?.subscriptions||[],viewerId:opened.session.user?.id||null});
+ const api=createLibraryHub(supabase,{readingState:opened.state,subscriptions:()=>opened.snapshot?.subscriptions||[],viewerId:opened.session.user?.id||null});
  controller=mountLibraryHub(root,{api,opened});
  void opened.flush().then(saved=>{if(saved&&opened.state.active)void controller.render();}).catch(()=>{});
- document.addEventListener('visibilitychange',()=>{if(document.hidden)void opened.flush().catch(()=>{});});
+ const resumeSync=()=>{void opened.flush().then(saved=>{if(saved&&opened.state.active)void controller.render();}).catch(()=>{});};
+ window.addEventListener('online',resumeSync);
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)void opened.flush().catch(()=>{});else resumeSync();});
  window.addEventListener('pagehide',()=>{void opened.flush().catch(()=>{});document.body.hidden=true;});
  window.addEventListener('pageshow',event=>{if(event.persisted)location.reload();});
 }

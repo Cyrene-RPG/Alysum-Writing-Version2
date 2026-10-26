@@ -44,7 +44,7 @@ export function trackReadingAccount(auth,state,onAccountChange) {
     });
     return ()=>result?.data?.subscription?.unsubscribe();
 }
-export async function openReadingState(supabase,{local=false,storage,onAccountChange,onCloudStatus}={}) {
+export async function openReadingState(supabase,{local=false,storage,onAccountChange,onCloudStatus,cloudReadTimeoutMs}={}) {
     let session={mode:local?'local':'none',user:null};
     if(!local)try{const {data}=await supabase.auth.getSession();if(data.session?.user)session={mode:'cloud',user:data.session.user};}catch{/* Fail closed; a prior account hint never owns anonymous reading state. */}
     if(storage===undefined)try{storage=globalThis.localStorage;}catch{storage=null;}
@@ -53,7 +53,7 @@ export async function openReadingState(supabase,{local=false,storage,onAccountCh
     const stopAuth=trackReadingAccount(supabase.auth,state,()=>{cloud?.stop();onAccountChange?.();});
     let snapshot=null;
     if(session.mode==='cloud'&&typeof supabase.rpc==='function'){
-        cloud=cloudReadingSync(supabase,{userId:session.user.id,state,storage,kinds:READING_KINDS,onStatus:onCloudStatus});snapshot=await cloud.start();
+        cloud=cloudReadingSync(supabase,{userId:session.user.id,state,storage,kinds:READING_KINDS,onStatus:onCloudStatus,readTimeoutMs:cloudReadTimeoutMs});snapshot=await cloud.start();
     }
-    return {state,session,snapshot,get cloudAvailable(){return Boolean(cloud?.ready);},flush:()=>cloud?.flush()||Promise.resolve(false),stop(){stopAuth();cloud?.stop();}};
+    return {state,session,get snapshot(){return cloud?.snapshot||snapshot;},get cloudAvailable(){return Boolean(cloud?.ready);},flush:()=>cloud?.flush()||Promise.resolve(false),stop(){stopAuth();cloud?.stop();}};
 }

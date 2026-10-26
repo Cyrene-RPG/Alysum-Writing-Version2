@@ -75,8 +75,7 @@ export function mountPreviewSession({
             confirmLabel: "Restore",
         }),
         async onRestored() {
-            api.stashBook(bookId, { updated: 0 });
-            const next = await api.getBook(bookId);
+            const next = await api.getBook(bookId, { refresh: true });
             if (!next) return;
             setBook(withUpdatedWords({ ...next, _rev: bumpBookRev() }));
             if (bookTitle) bookTitle.value = getBook().title || "";

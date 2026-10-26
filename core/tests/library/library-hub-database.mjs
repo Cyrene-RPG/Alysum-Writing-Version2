@@ -14,6 +14,14 @@ test('Library metadata, filtering, account isolation, private/public collections
  ('anonymous','00000000-0000-0000-0000-000000000001','{"title":"Anonymous story","author":"PRIVATE AUTHOR","isAnonymous":true,"chapters":[{"id":"one","wordCount":600}]}');`);
  const helper=subscriptions.slice(subscriptions.indexOf('CREATE OR REPLACE FUNCTION public.notification_released_chapters'),subscriptions.indexOf('CREATE OR REPLACE FUNCTION public.set_book_subscription'));await db.exec(helper);
  await db.exec(migration);await db.exec(migration);
+ const weekly=await readFile(new URL('../../../supabase/live-site/supabase-library-weekly-feature.sql',import.meta.url),'utf8');await db.exec(weekly);await db.exec(weekly);
+ const featured=async()=>(await db.query('SELECT public.library_hub_featured() AS value')).rows[0].value;
+ const first=await featured();assert.ok(first.bookId);assert.match(first.weekStart,/^\d{4}-\d{2}-\d{2}$/);
+ await db.exec(`INSERT INTO public.library(id,data) VALUES('new-feature-candidate','{"title":"New book","chapters":[{"id":"one","wordCount":10}]}')`);
+ assert.equal((await featured()).bookId,first.bookId);
+ await db.exec("INSERT INTO public.library_book_moderation VALUES('"+first.bookId+"','hidden')");assert.notEqual((await featured()).bookId,first.bookId);
+ await db.exec('DELETE FROM public.library_book_moderation');await db.exec("DELETE FROM public.library WHERE id='new-feature-candidate'");
+ await db.exec('SET ROLE anon');assert.ok((await featured()).bookId);await assert.rejects(db.exec('SELECT * FROM public.library_hub_weekly_features'),/permission denied/);await db.exec('RESET ROLE');
  const query=async filters=>(await db.query('SELECT public.library_hub_query($1) AS value',[filters||{}])).rows[0].value;
  const all=await query();assert.equal(all.total,3);assert.ok(!JSON.stringify(all).includes('PRIVATE'));assert.equal(all.items.find(b=>b.id==='Book-A').chapters,1);assert.equal(all.items.find(b=>b.id==='Book-A').words,700);
  assert.equal((await query({tags:['found family']})).total,1);assert.equal((await query({excludeTags:['found family']})).total,2);assert.equal((await query({q:'magic'})).total,1);assert.equal((await query({status:'complete'})).total,1);assert.equal((await query({ids:['Book-A']})).items[0].id,'Book-A');

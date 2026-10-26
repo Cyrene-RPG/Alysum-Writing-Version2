@@ -65,6 +65,7 @@ export function fromCloudRow(row) {
         is_published: Boolean(row.is_published ?? row.isPublished),
         created: rowTime(row, ["created", "created_at", "createdAt"]),
         updated: rowTime(row, ["updated", "updated_at", "updatedAt"]),
+        _cloudUpdated: row.updated ?? null,
     };
 }
 
@@ -132,13 +133,17 @@ export async function insertBook(supabase, userId, payload) {
     return fromCloudRow(data);
 }
 
-export async function updateBook(supabase, userId, id, patch) {
-    const { data, error } = await supabase
-        .from("books")
-        .update(toCloudPatch(patch))
-        .eq("id", id)
-        .select("*")
-        .single();
+export async function updateBook(supabase, userId, id, patch, { expectedUpdated } = {}) {
+    if (expectedUpdated == null || !Number.isFinite(Number(expectedUpdated))) {
+        throw Object.assign(new Error("This edit has no confirmed cloud version. Download a backup and import it as a recovered book before reviewing the cloud copy."), { code: "BOOK_CONFLICT" });
+    }
+    const changes = toCloudPatch(patch);
+    changes.updated = Math.max(Date.now(), Number(expectedUpdated) + 1);
+    const { data, error } = await supabase.from("books").update(changes)
+        .eq("id", id).eq("updated", expectedUpdated).select("*").single();
+    if (error?.code === "PGRST116" || (!error && !data)) {
+        throw Object.assign(new Error("This book changed in another tab or device, or your access changed. Your edits were not overwritten. Download a backup before reviewing the other copy."), { code: "BOOK_CONFLICT" });
+    }
     if (error) throw error;
     return fromCloudRow(data);
 }

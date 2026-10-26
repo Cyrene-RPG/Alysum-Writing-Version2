@@ -7,7 +7,7 @@ const csv=v=>String(v||'').split(',').map(x=>x.trim().toLowerCase()).filter(Bool
 const keys=['q','genres','tags','excludeTags','excludeWarnings','status','length','availability','format','rating','sort','shelf'];
 export function mountLibraryHub(root,{api,opened,preview=false}){
  const {state,session}=opened,user=session.mode==='cloud'?session.user:null;
- let active=true;
+ let active=true,lastSnapshot=opened.snapshot;
  let epoch=0,books=new Map(),facets=[],tagChoices=[],warningChoices=[],personal=opened.snapshot||{records:[],subscriptions:[]},pending=false;
  const dialog=document.getElementById('hubDialog'),dialogBody=document.getElementById('hubDialogBody');
  const current=()=>new URL(location.href);
@@ -47,7 +47,8 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
   const catalog=remember(await api.catalog());if(!active||turn!==epoch)return;
   const historyIds=[...new Set([...Object.keys(state.read('read-position')),...Object.keys(state.read('finished-chapters')),...Object.entries(state.read('shelves')).filter(([,v])=>['reading','finished'].includes(v)).map(([id])=>id)])];
   const meta=catalogFacets(catalog);facets=meta.genres;tagChoices=meta.tags;warningChoices=meta.warnings;
-  const feature=selectWeeklyFeature(catalog);
+  const weekly=await api.featured?.();if(!active||turn!==epoch)return;
+  const feature=catalog.find(b=>b.id===weekly?.bookId)||selectWeeklyFeature(catalog);
   const continuing=catalog.filter(b=>{const p=progress(b),saved=shelf(b);return p&&saved!=='finished'&&saved!=='want'&&Number(p.progress||0)<100;}).slice(0,6);
   const favoriteGenres=personal.records?.find(r=>r.kind==='preferences'&&r.bookId==='discovery')?.value?.genres||[];
   const picks=readingRecommendations(catalog,{readIds:historyIds,preferredGenres:favoriteGenres,exclude:feature?[feature.id]:[]});
@@ -61,10 +62,9 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
  function chips(f){return keys.filter(k=>!['sort','shelf'].includes(k)&&f[k]&&f[k]!=='all').flatMap(k=>(Array.isArray(f[k])?f[k]:[f[k]]).map(v=>`<button type="button" data-clear="${k}" data-value="${esc(v)}">${esc(k==='genres'?genreLabel(v):({in_progress:'Ongoing',complete:'Completed',short:'Under 10,000 words',medium:'10,000–49,999 words',long:'50,000+ words',paid:'Contains paid chapters',free:'Free to read',novel:'Novel',manga:'Manga',comic:'Comic',manhwa:'Manhwa',screenplay:'Screenplay',general:'General audiences',mature:'Mature',explicit:'Explicit'}[v]||v))} ×</button>`)).join('');}
  async function browse(turn,{mine=false,catalog=null}={}){
   const url=current(),f=filters(),offset=Math.max(0,Number(url.searchParams.get('offset'))||0);if(mine)f.shelf=f.shelf||'reading';
-  const matches=catalog?filterHubBooks(catalog,f):null;
+  const matches=catalog&&!f.sort?filterHubBooks(catalog,f):null;
   const result=matches?{items:matches.slice(offset,offset+24),total:matches.length,hasMore:matches.length>offset+24}:await api.query(f,offset,24);if(!active||turn!==epoch)return;
   let items=remember(result.items);
-  if(mine&&!api.available){const shelves=state.read('shelves'),positions=state.read('read-position');items=items.filter(b=>f.shelf==='reading'?shelves[b.id]==='reading'||positions[b.id]&&shelves[b.id]!=='finished':shelves[b.id]===f.shelf);}
   const layout=url.searchParams.get('layout')==='list'?'list':'grid';
   return `${mine?`<div class="hub-section-heading"><div><p class="hub-eyebrow">Your reading space</p><h2>Keep every story close.</h2></div><button type="button" data-create-list>Create a shelf</button></div><div class="hub-personal-tabs">${Object.entries(HUB_SHELVES).map(([k,v])=>`<button type="button" data-shelf-view="${k}" aria-pressed="${f.shelf===k}">${v}</button>`).join('')}<button type="button" data-custom-lists>Custom shelves</button></div><p class="hub-help">${opened.cloudAvailable?'Shelves and reading progress sync to your account.':'Your saved books are available on this device. Cloud sync is temporarily unavailable.'}</p>`:''}
   <div class="hub-browse-bar"><div><h2>${mine?esc(HUB_SHELVES[f.shelf]):'All stories'}</h2><p>${result.total} book${result.total===1?'':'s'}${Object.keys(f).length?' found':''}</p></div><div class="hub-browse-controls"><button type="button" data-filters>Filters${chips(f)?' •':''}</button><label class="hub-sort-label">Sort<select id="hubSort">${[['new','Newest arrivals'],['updated','Recently updated'],['trending','Readers this week'],['popular','Most read'],['gems','Worth discovering'],['az','Title A–Z']].map(([v,l])=>`<option value="${v}" ${f.sort===v?'selected':''}>${l}</option>`).join('')}</select></label><button type="button" data-layout="${layout==='grid'?'list':'grid'}">${layout==='grid'?'List view':'Grid view'}</button></div></div>
@@ -82,6 +82,7 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
   return `<div class="hub-section-heading"><div><p class="hub-eyebrow">${list.is_public?'Public reading list':'Private shelf'} · by ${esc(list.ownerName)}</p><h2>${esc(list.title)}</h2><p>${esc(list.description)}</p></div><div>${list.mine?`<button type="button" data-edit-list="${esc(id)}">Edit list</button>`:''}${list.is_public?'<button type="button" data-share-list>Copy link</button>':''}</div></div>${list.mine?'<p class="hub-help">Use “＋ List” on any book to add it to this collection.</p>':''}<div class="hub-grid">${(list.books||[]).map(b=>card(b,{collection:id,mine:list.mine})).join('')}</div>${!list.books?.length?'<p class="hub-empty">No available books in this list yet.</p>':''}`;
  }
  async function render(){
+  if(opened.snapshot&&opened.snapshot!==lastSnapshot){personal=opened.snapshot;lastSnapshot=opened.snapshot;}
   if(!active)return;
   const turn=++epoch,url=current(),view=url.searchParams.get('view')||'discover';shell(view==='mine'||view==='collections'?'mine':view==='browse'?'browse':'discover');
   const content=root.querySelector('#hubContent');
@@ -110,7 +111,7 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
  async function preferences(){if(!needUser())return;if(!facets.length)facets=(await api.facets()).genres||[];const selected=personal.records?.find(r=>r.kind==='preferences')?.value?.genres||[];
   showDialog('Your discovery genres',`<form><p class="hub-help">Choose up to twelve genres. Recommendations use genre matches, never external AI analysis of manuscripts.</p><fieldset class="hub-genre-choices"><legend>Favorite genres</legend>${[...new Set([...(facets.length?facets.map(g=>g.id):matchingGenreKeys('')),...selected])].map(g=>`<label><input type="checkbox" name="genres" value="${esc(g)}" ${selected.includes(g)?'checked':''}>${esc(genreLabel(g))}</label>`).join('')}</fieldset><button type="submit" class="hub-primary">Save genres</button></form>`,async data=>{const genres=data.getAll('genres');if(genres.length>12)throw Error('Choose up to twelve genres.');await api.state(user.id,'preferences','discovery',{genres},true);personal=await api.state(user.id);await render();});
  }
- root.addEventListener('change',event=>{const select=event.target.closest('[data-shelf-select]');if(!select||!active||!user)return;select.disabled=true;state.update('shelves',select.dataset.shelfSelect,select.value||undefined);void opened.flush().then(()=>render()).catch(error=>notice(error.message,true)).finally(()=>{select.disabled=false;});});
+ root.addEventListener('change',event=>{const select=event.target.closest('[data-shelf-select]');if(!select||!active||!user)return;select.disabled=true;state.update('shelves',select.dataset.shelfSelect,select.value||undefined);void opened.flush().then(saved=>saved?render():notice('Saved on this device. Cloud sync will retry when you reconnect.',true)).catch(error=>notice(error.message,true)).finally(()=>{select.disabled=false;});});
  root.addEventListener('click',event=>{if(!active)return;const button=event.target.closest('button,a');if(!button)return;const d=button.dataset;
   const run=async()=>{
    if(d.view){event.preventDefault();route({view:d.view});}

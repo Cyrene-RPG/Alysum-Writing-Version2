@@ -298,7 +298,7 @@ async function boot() {
                     media_format: next.media_format,
                     publish_meta: next.publish_meta || {},
                     published_chapter_ids: next.published_chapter_ids || [],
-                });
+                }, { expectedUpdated: next._cloudUpdated });
                 if (next._rev !== bookRev) return;
                 const nextTitle = String(next.title || "").trim();
                 const savedTitle = String(saved?.title || "").trim();
@@ -400,7 +400,7 @@ async function boot() {
             publish_meta: book.publish_meta || {},
             published_chapter_ids: book.published_chapter_ids || [],
             updated: Date.now(),
-        });
+        }, { expectedUpdated: book._cloudUpdated });
         autosave.schedule(book);
         if (immediate) return autosave.flush();
         return Promise.resolve();
