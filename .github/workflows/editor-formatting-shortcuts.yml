@@ -1,7 +1,7 @@
 name: Editor formatting shortcuts
 on:
   push:
-    branches: [fix/editor-formatting-shortcuts]
+    branches: [fix/editor-formatting-shortcuts, test/editor-shortcuts-firefox]
   pull_request:
     paths:
       - 'applications/editor/page-ui/document.js'
@@ -14,6 +14,10 @@ permissions:
 jobs:
   browser:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,6 +26,6 @@ jobs:
       - name: Install browser
         run: |
           npm install --prefix "$RUNNER_TEMP/editor-browser" --no-audit --no-fund playwright@1.61.1
-          "$RUNNER_TEMP/editor-browser/node_modules/.bin/playwright" install --with-deps chromium
+          "$RUNNER_TEMP/editor-browser/node_modules/.bin/playwright" install --with-deps ${{ matrix.browser }}
       - name: Check real editor shortcuts
-        run: PLAYWRIGHT_MODULE_PATH="$RUNNER_TEMP/editor-browser/node_modules/playwright/index.mjs" node applications/editor/tests/formatting-shortcuts.mjs
+        run: EDITOR_BROWSER="${{ matrix.browser }}" PLAYWRIGHT_MODULE_PATH="$RUNNER_TEMP/editor-browser/node_modules/playwright/index.mjs" node applications/editor/tests/formatting-shortcuts.mjs
