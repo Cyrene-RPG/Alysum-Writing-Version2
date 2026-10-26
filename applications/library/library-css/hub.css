@@ -10,3 +10,8 @@
 .hub-continue .hub-book h3 { font-size:23px; margin-top:0; }
 .hub-continue :is(.hub-tags,.hub-book-meta,.hub-reason,.hub-book-badges,.hub-owner-link) { display:none; }
 .hub-continue .hub-card-actions a { width:auto; }
+
+/* Weekly discovery spotlight, retaining the existing book-card system. */
+.hub-feature{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,28%);gap:24px;align-items:center;padding:26px;margin:18px 0 30px;border:1px solid var(--hub-line);border-radius:var(--glass-radius,14px);background:var(--hub-panel);overflow:hidden}
+.hub-feature-copy{min-width:0}.hub-feature-copy h2{font:600 clamp(30px,4vw,48px)/1.05 "Cormorant Garamond",Georgia,serif;margin:12px 0}.hub-feature-copy>p:not(.hub-eyebrow){font-size:13px;line-height:1.7;color:var(--ui-muted,var(--muted));max-width:60ch}.hub-feature-link{display:inline-block;margin-top:14px;padding:11px 18px;border:1px solid var(--hub-line);border-radius:999px;text-decoration:none;font-size:12px;font-weight:650}.hub-feature-cover{display:block;aspect-ratio:3/4;overflow:hidden;border-radius:10px;background:var(--alysum-ui-raised);text-decoration:none}.hub-feature-cover img{display:block;width:100%;height:100%;object-fit:cover}.hub-feature-cover span{display:grid;place-items:center;height:100%;padding:14px;text-align:center;font:600 24px/1.2 Georgia,serif}
+@media(max-width:600px){.hub-feature{grid-template-columns:minmax(0,1fr) 110px;gap:12px;padding:15px}.hub-feature-copy h2{font-size:29px}.hub-feature-copy>p:not(.hub-eyebrow){font-size:11px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.hub-feature-link{padding:9px 11px;font-size:11px}}
