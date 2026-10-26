@@ -29,6 +29,18 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
   ${user?.id===b.ownerId?`<a class="hub-owner-link" href="/publish?book=${encodeURIComponent(b.id)}">${!b.summary||!b.genres.length?'Improve discovery details':'Edit discovery details'}</a>`:''}
   </div></article>`;
  }
+ function weeklyFeature(items){
+  // Stable across visitors and refreshes for each UTC week. Selection is from
+  // the eligible discovery pool; a server-side rotation can expand this later.
+  const eligible=[...new Map(items.filter(b=>b?.id).map(b=>[b.id,b])).values()].sort((a,b)=>a.id.localeCompare(b.id));
+  if(!eligible.length)return '';
+  const now=new Date(),day=(now.getUTCDay()+6)%7;
+  const monday=Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()-day);
+  const week=Math.floor(monday/604800000);
+  const chosen=eligible[week%eligible.length];
+  const cover=preview&&chosen.coverUrl.startsWith('/applications/library/design/hub-covers/')?chosen.coverUrl:safeCoverUrl(chosen.coverUrl);
+  return `<section class="hub-feature" aria-labelledby="hubFeatureTitle"><div class="hub-feature-copy"><p class="hub-eyebrow">✦ This week's featured story</p><h2 id="hubFeatureTitle">${esc(chosen.title)}</h2><p>by ${esc(chosen.author)}</p><p>${esc(chosen.summary||'Discover a new story from the Alysum community.')}</p><a class="hub-feature-link" href="/book?id=${encodeURIComponent(chosen.id)}">Explore story →</a></div><a class="hub-feature-cover" href="/book?id=${encodeURIComponent(chosen.id)}" aria-label="View ${esc(chosen.title)}">${cover?`<img src="${esc(cover)}" style="${esc(cropFrameStyle(chosen.coverCrop))}" alt="" loading="lazy">`:`<span>${esc(chosen.title)}</span>`}</a></section>`;
+ }
  function listCard(l){return `<a class="hub-list-card" href="/library?view=collection&list=${encodeURIComponent(l.id)}" data-list-link="${esc(l.id)}"><span class="hub-eyebrow">${l.public?'Public reading list':'Private shelf'}</span><h3>${esc(l.title)}</h3><p>${esc(l.description||'A collection of stories worth keeping.')}</p><small>${Number(l.count)||0} books · ${esc(l.ownerName||'You')}</small></a>`;}
  function row(title,copy,items,params,reason=''){if(!items.length)return '';return `<section class="hub-shelf ${reason==='Saved reading progress'?'hub-continue':''}"><div class="hub-section-heading"><div><h2>${esc(title)}</h2><p>${esc(copy)}</p></div><a href="/library?${new URLSearchParams({view:'browse',...params})}" data-see="${esc(JSON.stringify(params))}">See all →</a></div><div class="hub-row">${items.map(b=>card(b,{reason})).join('')}</div></section>`;}
  function shell(view){
@@ -47,9 +59,10 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
   const genres=preferred.length?preferred:[...new Set(continueBooks.flatMap(b=>b.genres))].slice(0,3);
   let recommended=[];if(genres.length){const result=await api.query({genres,sort:'gems'},0,12);if(!active||turn!==epoch)return;recommended=remember(result.items);}
   const used=new Set(continueBooks.map(b=>b.id));const select=items=>diverseBooks(remember(items),{exclude:used,limit:4});
-  let html=continueBooks.length?row('Pick up where you left off','Your place is waiting.',continueBooks,{shelf:'reading'},'Saved reading progress'):'';
+  let html=weeklyFeature(remember([...gems.items,...fresh.items,...complete.items]));
+  html+=continueBooks.length?row('Currently Reading','Pick up right where you left off.',continueBooks,{shelf:'reading'},'Saved reading progress'):'';
   html+=`<section class="hub-explore"><div><p class="hub-eyebrow">Follow your mood</p><h2>Where will you go next?</h2></div><div class="hub-genre-shortcuts">${facets.slice(0,8).map(g=>`<button type="button" data-genre-link="${esc(g.id)}">${esc(genreLabel(g.id))} <span>${g.count}</span></button>`).join('')}</div><button type="button" class="hub-subtle" data-preferences>Choose favorite genres</button></section>`;
-  html+=row('Picked for your genres',preferred.length?'Based on genres you chose.':'Based on genres in your current reading.',select(recommended),{genres},'Matches your genres');
+  html+=row('Top Picks for You',preferred.length?'Based on genres you chose.':'Based on genres in your current reading.',select(recommended),{genres},'Matches your genres');
   html+=row('New to Alysum','Meet a new story from its very first page.',select(fresh.items),{sort:'new'},'Recently published');
   html+=row('Fresh chapters','New releases, not description edits.',select(updates.items),{sort:'updated'},'New chapter released');
   html+=row('Worth discovering','Give an overlooked story its next reader.',select(gems.items),{sort:'gems'},'Less-read books, rotated daily');
