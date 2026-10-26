@@ -215,3 +215,5 @@
 .reader-reply-context[hidden] { display: none; }
 .reader-comment, .reader-comment-body { min-width: 0; overflow-wrap: anywhere; }
 @media(max-width:600px) { .reader-comment-replies { margin-left: 8px; padding-left: 8px; } .reader-comment { padding: 12px; } }
+
+.reader-comment.is-notification-target { outline: 2px solid var(--reader-accent); outline-offset: 3px; }

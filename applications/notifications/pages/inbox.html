@@ -84,7 +84,7 @@
                     <button type="button" id="view-unread" aria-pressed="false">Unread</button>
                 </div>
                 <label class="inbox-category" for="inbox-category">Category
-                    <select id="inbox-category"><option value="">All categories</option><option value="moderation_message">Moderation messages</option><option value="follower">Followers</option><option value="author_announcement">Author announcements</option><option value="site_update">Alysum updates</option><option value="new_book">New books</option><option value="new_chapter">New chapters</option><option value="follow_confirmation">Follow confirmations</option><option value="subscription_confirmation">Subscription confirmations</option></select>
+                    <select id="inbox-category"><option value="">All categories</option><option value="moderation_message">Moderation messages</option><option value="chapter_comment">Comments on your books</option><option value="author_reply">Author replies</option><option value="follower">Followers</option><option value="author_announcement">Author announcements</option><option value="site_update">Alysum updates</option><option value="new_book">New books</option><option value="new_chapter">New chapters</option><option value="follow_confirmation">Follow confirmations</option><option value="subscription_confirmation">Subscription confirmations</option></select>
                 </label>
                 <button id="refresh-inbox" type="button">Refresh</button>
             </div>
@@ -102,6 +102,8 @@
                         <label><input id="pref-authors" type="checkbox"><span><strong>Author announcements</strong><small>Posts from authors you follow.</small></span></label>
                         <label><input id="pref-books" type="checkbox"><span><strong>New books</strong><small>Books published by authors you follow.</small></span></label>
                         <label><input id="pref-chapters" type="checkbox"><span><strong>New chapters</strong><small>Chapter releases for books you subscribe to.</small></span></label>
+                        <label><input type="checkbox" id="pref-comments" checked><span><strong>Comments on your books</strong><small>When a reader comments on one of your chapters.</small></span></label>
+                        <label><input type="checkbox" id="pref-replies" checked><span><strong>Author replies</strong><small>When an author replies to your comment.</small></span></label>
                         <label><input id="pref-site" type="checkbox"><span><strong>Alysum updates</strong><small>Changelogs and site announcements.</small></span></label>
                         <p>These settings apply to future on-site notifications. Email subscriptions will be separate.</p>
                         <button class="inbox-primary" type="submit">Save preferences</button>
@@ -113,5 +115,5 @@
     </div>
 </main>
 <script type="module" src="/applications/notifications/page-ui/shell.js"></script>
-<script type="module" src="/applications/notifications/page-ui/page.js"></script>
+<script type="module" src="/applications/notifications/page-ui/page.js?v=2"></script>
 </body></html>

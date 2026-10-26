@@ -98,7 +98,7 @@ function commentCard(row, { viewerId, ownerId, parentName }) {
 }
 
 export function mountCommentThread(root, {
-    work, chapterId, supabase, session, onPosted, onLayout,
+    work, chapterId, supabase, session, onPosted, onLayout, targetCommentId = "",
 }) {
     const viewerId = session?.mode === "cloud" ? String(session.user?.id || "").trim() : "";
     const ownerId = String(work?.ownerUserId || "").trim();
@@ -144,6 +144,7 @@ export function mountCommentThread(root, {
             <header class="reader-comments-head">
                 <h2>Comments (${n})</h2>
             </header>
+            <p id="readerCommentStatus" role="status"></p>
             <div class="reader-comment-log">${log}</div>
             ${composer}`;
         const editor = root.querySelector("#readerCommentEditor");
@@ -153,6 +154,12 @@ export function mountCommentThread(root, {
         syncReply();
         bindComposer();
         onLayout?.();
+        if (!loading && targetCommentId) {
+            const target = [...root.querySelectorAll("[data-comment]")].find(el => el.dataset.comment === targetCommentId);
+            if (target) { target.classList.add("is-notification-target"); target.focus({preventScroll:true}); target.scrollIntoView?.({block:"center"}); }
+            else root.querySelector("#readerCommentStatus").textContent = "This comment is no longer available.";
+            targetCommentId = "";
+        }
     }
 
     function syncReply() {

@@ -24,6 +24,8 @@ function setPreferences(value) {
     el("pref-site").checked = value.siteUpdates;
     el("pref-books").checked = value.newBooks;
     el("pref-chapters").checked = value.newChapters;
+    if(el("pref-comments")) el("pref-comments").checked = value.newComments;
+    if(el("pref-replies")) el("pref-replies").checked = value.authorReplies;
 }
 function drawRows() {
     list.replaceChildren(...rows.map(entry => renderNotification(entry, { onOpen: openEntry, onToggle: toggleEntry })));
@@ -148,6 +150,7 @@ el("notification-preferences-form").addEventListener("submit", async event => {
             authorAnnouncements: el("pref-authors").checked,
             siteUpdates: el("pref-site").checked,
             newBooks: el("pref-books").checked, newChapters: el("pref-chapters").checked,
+            newComments: el("pref-comments")?.checked ?? true, authorReplies: el("pref-replies")?.checked ?? true,
         });
         if (account !== userId) return;
         preferencesDirty = false;

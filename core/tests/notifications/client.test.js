@@ -43,13 +43,13 @@ test("read mutations pass no recipient or editable content and mark-all retains 
 });
 test("preference defaults opt out of site updates and explicit saves use the authenticated RPC", async () => {
     assert.deepEqual(await getNotificationPreferences(clientFor({ data: null }), "me"), {
-        newFollowers: true, authorAnnouncements: true, siteUpdates: false, newBooks: true, newChapters: true,
+        newFollowers: true, authorAnnouncements: true, siteUpdates: false, newBooks: true, newChapters: true, newComments: true, authorReplies: true,
     });
     const client = clientFor({ data: [{ new_followers: false, author_announcements: true, site_updates: true }] });
-    assert.deepEqual(await saveNotificationPreferences(client, { newFollowers: false, authorAnnouncements: true, siteUpdates: true, newBooks: true, newChapters: true }), {
-        newFollowers: false, authorAnnouncements: true, siteUpdates: true, newBooks: true, newChapters: true,
+    assert.deepEqual(await saveNotificationPreferences(client, { newFollowers: false, authorAnnouncements: true, siteUpdates: true, newBooks: true, newChapters: true, newComments: true, authorReplies: true }), {
+        newFollowers: false, authorAnnouncements: true, siteUpdates: true, newBooks: true, newChapters: true, newComments: true, authorReplies: true,
     });
-    assert.deepEqual(client.calls[0][2], { p_new_followers: false, p_author_announcements: true, p_site_updates: true, p_new_books: true, p_new_chapters: true });
+    assert.deepEqual(client.calls[0][2], { p_new_followers: false, p_author_announcements: true, p_site_updates: true, p_new_books: true, p_new_chapters: true, p_new_comments: true, p_author_replies: true });
     await assert.rejects(saveNotificationPreferences(client, { siteUpdates: true }), /every category/);
 });
 test("follower entries have no invented profile destination and removed announcements stay unavailable", async () => {
@@ -71,4 +71,20 @@ test("summary and row refreshes preserve exact ids and remain account-scoped", a
 test("missing migration and permission failures cannot masquerade as empty success", async () => {
     await assert.rejects(getNotificationSummary(clientFor({ error: { code: "PGRST202", message: "Missing function" } })), /not available yet/);
     await assert.rejects(listNotifications(clientFor({ error: { code: "42501", message: "permission denied" } }), { userId: "me" }), /permission denied/);
+});
+
+test('comment notifications resolve only the authenticated inbox entry, not editable row targets',async()=>{
+ const client=clientFor({data:[{book_id:'book & one',chapter_id:'chapter/one',comment_id:'comment-id'}]});
+ for(const kind of ['chapter_comment','author_reply'])assert.equal(await resolveNotificationDestination(client,{id:'42',kind,bookId:'spoof'}),'/read?id=book%20%26%20one&chapter=chapter%2Fone&comment=comment-id');
+ assert.deepEqual(client.calls[0],['rpc','get_comment_notification_target',{p_notification_id:'42'}]);
+ await assert.rejects(resolveNotificationDestination(clientFor({data:[]}),{id:'42',kind:'author_reply'}),/no longer available/);
+});
+
+test('an existing inbox remains readable before the comment notification migration',async()=>{
+ let selects=0;const query={eq(){return this;},select(){selects++;return this;},async maybeSingle(){return selects===1?{error:{code:'42703',message:'column new_comments does not exist'}}:{data:{new_followers:false}};}};
+ const result=await getNotificationPreferences({from:()=>query},'me');assert.equal(result.newFollowers,false);assert.equal(result.newComments,true);assert.equal(selects,2);
+ const client={rpc:async name=>name==='set_all_notification_preferences'?{error:{code:'PGRST202',message:'Not installed'}}:{data:{new_followers:false}}};
+ const value={newFollowers:false,authorAnnouncements:true,siteUpdates:false,newBooks:true,newChapters:true,newComments:true,authorReplies:true};
+ assert.equal((await saveNotificationPreferences(client,value)).newFollowers,false);
+ await assert.rejects(saveNotificationPreferences(client,{...value,authorReplies:false}),/not available yet/);
 });

@@ -6,7 +6,7 @@ import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
 import { fetchPublishedWork } from "@alysum/library/work.js?v=5";
 import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
 import { mountReaderThemes } from "./reader-theme.js?v=6";
-import { mountReaderEnd } from "./reader-end.js?v=7";
+import { mountReaderEnd } from "./reader-end.js?v=8";
 
 let readingState = null;
 const PREF_KEY = "alysum:reader:prefs";
@@ -300,6 +300,7 @@ async function boot() {
         if (!chapter.locked) mountReaderEnd({
             work,
             chapterId: chapter.id,
+            targetCommentId: chapter.id === fromUrl ? new URLSearchParams(location.search).get("comment") || "" : "",
             supabase,
             session,
             onLayout() {

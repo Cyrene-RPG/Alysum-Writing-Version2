@@ -1,9 +1,10 @@
 export const NOTIFICATION_PAGE_SIZE = 25;
 export const DEFAULT_NOTIFICATION_PREFERENCES = Object.freeze({
-    newFollowers: true, authorAnnouncements: true, siteUpdates: false, newBooks: true, newChapters: true,
+    newFollowers: true, authorAnnouncements: true, siteUpdates: false, newBooks: true, newChapters: true, newComments: true, authorReplies: true,
 });
 export const NOTIFICATION_KINDS = Object.freeze({
     moderation_message: "Moderation messages", follower: "Followers", author_announcement: "Author announcements", site_update: "Alysum updates",
+    chapter_comment: "Comments on your books", author_reply: "Author replies",
     new_book: "New books", new_chapter: "New chapters",
     follow_confirmation: "Follow confirmations", subscription_confirmation: "Subscription confirmations",
 });
@@ -40,6 +41,7 @@ export function normalizeNotificationPreferences(row) {
         authorAnnouncements: row?.author_announcements ?? true,
         siteUpdates: row?.site_updates ?? false,
         newBooks: row?.new_books ?? true, newChapters: row?.new_chapters ?? true,
+        newComments: row?.new_comments ?? true, authorReplies: row?.author_replies ?? true,
     };
 }
 export async function listNotifications(client, { userId, before = "", unreadOnly = false, kind = "", limit = NOTIFICATION_PAGE_SIZE }) {
@@ -76,21 +78,31 @@ export async function getNotificationSummary(client) {
 }
 export async function getNotificationPreferences(client, userId) {
     requireUser(userId);
-    const { data, error } = await client.from("notification_preferences").select("new_followers,author_announcements,site_updates,new_books,new_chapters")
+    let { data, error } = await client.from("notification_preferences").select("new_followers,author_announcements,site_updates,new_books,new_chapters,new_comments,author_replies")
         .eq("user_id", userId).maybeSingle();
+    if (error && ["42703", "PGRST204"].includes(error.code) && /new_comments|author_replies/.test(error.message || "")) {
+        ({data,error} = await client.from("notification_preferences").select("new_followers,author_announcements,site_updates,new_books,new_chapters").eq("user_id",userId).maybeSingle());
+    }
     checkError(error);
     return normalizeNotificationPreferences(data);
 }
 export async function saveNotificationPreferences(client, value) {
-    if (![value.newFollowers, value.authorAnnouncements, value.siteUpdates, value.newBooks, value.newChapters].every(v => typeof v === "boolean")) {
+    if (![value.newFollowers, value.authorAnnouncements, value.siteUpdates, value.newBooks, value.newChapters, value.newComments, value.authorReplies].every(v => typeof v === "boolean")) {
         throw new Error("Choose a setting for every category.");
     }
-    const { data, error } = await client.rpc("set_reading_notification_preferences", {
+    let { data, error } = await client.rpc("set_all_notification_preferences", {
         p_new_followers: value.newFollowers,
         p_author_announcements: value.authorAnnouncements,
         p_site_updates: value.siteUpdates,
         p_new_books: value.newBooks, p_new_chapters: value.newChapters,
+        p_new_comments: value.newComments, p_author_replies: value.authorReplies,
     });
+    if (error && ["PGRST202", "42883"].includes(error.code)) {
+        if (!value.newComments || !value.authorReplies) throw new Error("Comment notification preferences are not available yet. Please try again later.");
+        ({data,error} = await client.rpc("set_reading_notification_preferences", {
+            p_new_followers:value.newFollowers,p_author_announcements:value.authorAnnouncements,p_site_updates:value.siteUpdates,p_new_books:value.newBooks,p_new_chapters:value.newChapters,
+        }));
+    }
     checkError(error);
     const row = Array.isArray(data) ? data[0] : data;
     if (!row) throw new Error("Could not confirm your preferences. Please try again.");
@@ -112,6 +124,13 @@ export async function markNotificationsRead(client, throughId) {
 }
 export async function resolveNotificationDestination(client, entry) {
     if (["follower", "follow_confirmation"].includes(entry.kind)) return null;
+    if (["chapter_comment", "author_reply"].includes(entry.kind)) {
+        const {data,error} = await client.rpc("get_comment_notification_target", {p_notification_id:requireId(entry.id)});
+        checkError(error);
+        const target = Array.isArray(data) ? data[0] : data;
+        if (!target?.book_id || !target.chapter_id || !target.comment_id) throw new Error("This comment is no longer available.");
+        return "/read?id="+encodeURIComponent(target.book_id)+"&chapter="+encodeURIComponent(target.chapter_id)+"&comment="+encodeURIComponent(target.comment_id);
+    }
     if(entry.kind==="moderation_message"){
         const {data,error}=await client.rpc("mc_call",{p_action:"my_notification",p_payload:{id:requireId(entry.id)}});checkError(error);
         if(!data?.threadId)throw new Error("This conversation is no longer available.");
