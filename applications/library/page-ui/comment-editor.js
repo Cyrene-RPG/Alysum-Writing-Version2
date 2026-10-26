@@ -1,7 +1,7 @@
 import { authorProfileUrl } from "/core/library/author-links.js";
 import { authorNameHtml } from "/site-appearance/js-runtime/author-link.js";
 import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
-import { COMMENT_HTML_MAX, deleteChapterComment, fetchChapterComments, postChapterComment, threadChapterComments } from "@alysum/library/book-comments.js?v=4";
+import { COMMENT_HTML_MAX, deleteChapterComment, fetchChapterComments, postChapterComment, threadChapterComments } from "@alysum/library/book-comments.js?v=5";
 import { authorInitial } from "@alysum/library/author-profile.js?v=3";
 import { commentHasText, sanitizeCommentHtml } from "./comment-html.js?v=1";
 
@@ -321,7 +321,7 @@ export function mountCommentThread(root, {
     paint();
     void (async () => {
         try {
-            const rows = await fetchChapterComments(supabase, work.id, chapterId);
+            const rows = await fetchChapterComments(supabase, work.id, chapterId, targetCommentId);
             if (!root.isConnected) return;
             const loaded = new Set(rows.map(row => row.id));
             comments = [...rows, ...comments.filter(row => !loaded.has(row.id))];

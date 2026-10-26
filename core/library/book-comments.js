@@ -26,7 +26,7 @@ export function normalizeBookComment(row) {
     };
 }
 
-export async function fetchChapterComments(supabase, bookId, chapterId) {
+export async function fetchChapterComments(supabase, bookId, chapterId, targetCommentId = "") {
     const id = String(bookId || "").trim();
     const chapter = String(chapterId || "").trim();
     if (!supabase || !id || !chapter) return [];
@@ -40,7 +40,20 @@ export async function fetchChapterComments(supabase, bookId, chapterId) {
         if (isMissingTableError(error)) return [];
         throw error;
     }
-    return (data || []).map(normalizeBookComment).filter(Boolean);
+    const rows = (data || []).map(normalizeBookComment).filter(Boolean);
+    const seen = new Set(rows.map(row => row.id));
+    let target = String(targetCommentId || "").trim();
+    // A notification may point beyond the first server page. Fetch its branch explicitly.
+    for (let depth = 0; target && !seen.has(target) && depth < 32; depth++) {
+        const {data: selected,error: targetError} = await supabase.from("comments")
+            .select("id, book_id, chapter_id, parent_id, user_id, username, display_name, text, created_at")
+            .eq("book_id",id).eq("chapter_id",chapter).eq("id",target).maybeSingle();
+        if (targetError || !selected) break;
+        const row = normalizeBookComment(selected);
+        if (!row) break;
+        rows.push(row); seen.add(row.id); target = row.parentId;
+    }
+    return rows;
 }
 
 export async function postChapterComment(supabase, {

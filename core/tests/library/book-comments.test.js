@@ -15,3 +15,9 @@ test('fetch includes replies and posting persists the exact parent comment',asyn
  assert.equal(inserted.parent_id,'p');assert.equal(reply.parentId,'p');
  await postChapterComment(client,{bookId:'book',chapterId:'chapter',userId:'author',text:'A new comment'});assert.equal(inserted.parent_id,null);
 });
+
+test('notification targets outside the first page load their parent branch with book and chapter scopes',async()=>{
+ const filters=[];let selected='';const client={from(){return{select(){return this;},eq(key,value){filters.push([key,value]);if(key==='id')selected=value;return this;},order:async()=>({data:[]}),maybeSingle:async()=>({data:selected==='target'?{id:'target',text:'Answer',parent_id:'parent'}:{id:'parent',text:'Question',parent_id:null}})};}};
+ const rows=await fetchChapterComments(client,'book','chapter','target');assert.deepEqual(rows.map(row=>row.id),['target','parent']);
+ assert.equal(filters.filter(([key,value])=>key==='book_id'&&value==='book').length,3);assert.equal(filters.filter(([key,value])=>key==='chapter_id'&&value==='chapter').length,3);
+});
