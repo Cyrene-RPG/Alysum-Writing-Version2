@@ -493,3 +493,7 @@ html.reader-page body {
     .reader-body { margin-top: 28px; font-size: calc(var(--reader-size) * 0.9); }
     .reader-pager { margin-top: 32px; }
 }
+
+/* Shared chapter-reading controls; leave search, comments and checkout usable. */
+#chapterBody { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+#chapterBody :is(input, textarea, [contenteditable]) { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
