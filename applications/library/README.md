@@ -37,3 +37,9 @@ My Library has Reading, Want to read, Finished, Following, and custom shelves. A
 `/library?preview=1` uses invented local sample books and never initializes Supabase. Add `&guest=1` to inspect the signed-out flow. Production boot lives in `page-ui/hub-boot.js`; presentation in `page-ui/hub.js`; metadata APIs and cloud state in `core/library/hub.js` and `cloud-reading.js`.
 
 Validation: `node --test core/tests/library/*.test.js`; `PGLITE_MODULE=... node --test core/tests/library/library-hub-database.mjs`; `PLAYWRIGHT_MODULE_PATH=... node applications/library/tests/library-hub-browser.mjs`. The Library hub checks workflow runs PostgreSQL rules and Chromium/Firefox flows, including 320px and 390px layouts.
+
+### Restored Library layout
+
+The homepage follows four sections: weekly spotlight, Currently Reading, Top Picks for You, then a paginated Browse area. Browse cards restore the original horizontal cover/description layout and per-book shelf dropdown. Personal rows retain the original smaller portrait covers. Desktop browsing uses two card columns; phones use one horizontal card per row.
+
+Home loading uses one metadata-only `library_catalog_rows` request. Recommendations compare genres across previously read and finished books, exclude those books, and never send manuscripts to external services. The UTC-week spotlight uses the same deterministic selection for the same public catalog across readers. Search and advanced Browse retain the hub RPC with public-catalog fallback. Read requests have an eight-second deadline; transient catalog fetch failures retry once and failed promises clear so Retry works. Writes are never retried by this read recovery. No extra SQL is needed for this layout.

@@ -1,5 +1,5 @@
-import {HUB_SHELVES,diverseBooks} from '/core/library/hub.js';
 import {selectWeeklyFeature} from '/core/library/weekly-feature.js';
+import {HUB_SHELVES,filterHubBooks,catalogFacets,readingRecommendations} from '/core/library/hub.js';
 import {genreLabel,matchingGenreKeys} from '/core/publishing/genres.js';
 import {safeCoverUrl,cropFrameStyle} from '/core/publishing/cover-upload.js';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -12,7 +12,7 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
  const dialog=document.getElementById('hubDialog'),dialogBody=document.getElementById('hubDialogBody');
  const current=()=>new URL(location.href);
  function filters(url=current()){const f={};for(const k of keys){const value=url.searchParams.get(k);if(value)f[k]=['genres','tags','excludeTags','excludeWarnings'].includes(k)?csv(value):value;}return f;}
- function route(params={},replace=false){if(!active)return;const url=new URL('/library',location.origin);if(preview)url.searchParams.set('preview','1');for(const[k,v]of Object.entries(params))if(v!==undefined&&v!==null&&v!==''&&v!=='all')url.searchParams.set(k,Array.isArray(v)?v.join(','):v);history[replace?'replaceState':'pushState']({libraryScroll:0},'',url);void render();}
+ function route(params={},replace=false){if(!active)return;const url=new URL('/library',location.origin);if(preview){url.searchParams.set('preview','1');if(current().searchParams.has('guest'))url.searchParams.set('guest','1');}for(const[k,v]of Object.entries(params))if(v!==undefined&&v!==null&&v!==''&&v!=='all')url.searchParams.set(k,Array.isArray(v)?v.join(','):v);history[replace?'replaceState':'pushState']({libraryScroll:0},'',url);void render();}
  function notice(text,error=false){const el=root.querySelector('#hubStatus');if(el){el.textContent=text;el.classList.toggle('is-error',error);}}
  function needUser(){if(user)return true;location.href='/login?next='+encodeURIComponent(location.pathname+location.search);return false;}
  function remember(items){for(const book of items)books.set(book.id,book);return items;}
@@ -26,49 +26,43 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
   <p class="hub-description">${esc(b.summary||'A new story waiting to be discovered.')}</p><div class="hub-tags">${b.genres.slice(0,2).map(g=>`<a href="/library?view=browse&genres=${encodeURIComponent(g)}" data-genre-link="${esc(g)}">${esc(genreLabel(g))}</a>`).join('')}${b.tags.slice(0,1).map(t=>`<span>${esc(t)}</span>`).join('')}</div>
   <p class="hub-book-meta">${b.chapters} chapter${b.chapters===1?'':'s'}${b.words?' · '+b.words.toLocaleString()+' words':''}${b.rating?' · '+esc(b.rating):''}</p>${reason?`<p class="hub-reason">${esc(reason)}</p>`:''}
   ${p?`<p class="hub-progress">${Math.min(100,Math.max(0,Number(p.progress)||0))}% read</p>`:''}
-  <div class="hub-card-actions"><a class="hub-read" href="${read}">${p?'Continue':'Start reading'}</a><button type="button" data-save="${esc(b.id)}" aria-label="${saved?'Manage saved book':'Save'} ${esc(b.title)}">${saved?'Saved ✓':'Save'}</button><button type="button" data-add="${esc(b.id)}" aria-label="Add ${esc(b.title)} to a list">＋ List</button>${mine&&collection?`<button type="button" data-remove="${esc(b.id)}" data-list="${esc(collection)}">Remove</button>`:''}</div>
+  <div class="hub-card-actions"><a class="hub-read" href="${p?read:'/book?id='+encodeURIComponent(b.id)}">${p?'Continue':'View book'} <span aria-hidden="true">→</span></a><button type="button" data-add="${esc(b.id)}" aria-label="Add ${esc(b.title)} to a list">＋ List</button>${mine&&collection?`<button type="button" data-remove="${esc(b.id)}" data-list="${esc(collection)}">Remove</button>`:''}</div>
   ${user?.id===b.ownerId?`<a class="hub-owner-link" href="/publish?book=${encodeURIComponent(b.id)}">${!b.summary||!b.genres.length?'Improve discovery details':'Edit discovery details'}</a>`:''}
-  </div></article>`;
+  </div><label class="hub-shelf-picker"><span class="hub-visually-hidden">Shelf for ${esc(b.title)}</span><select data-shelf-select="${esc(b.id)}" ${user?'':'disabled title="Sign in to save books"'}><option value="">Not shelved</option>${Object.entries(HUB_SHELVES).filter(([k])=>k!=='subscriptions').map(([k,v])=>`<option value="${k}" ${saved===k?'selected':''}>${v}</option>`).join('')}</select></label></article>`;
  }
  function listCard(l){return `<a class="hub-list-card" href="/library?view=collection&list=${encodeURIComponent(l.id)}" data-list-link="${esc(l.id)}"><span class="hub-eyebrow">${l.public?'Public reading list':'Private shelf'}</span><h3>${esc(l.title)}</h3><p>${esc(l.description||'A collection of stories worth keeping.')}</p><small>${Number(l.count)||0} books · ${esc(l.ownerName||'You')}</small></a>`;}
  function row(title,copy,items,params,reason=''){if(!items.length)return '';return `<section class="hub-shelf ${reason==='Saved reading progress'?'hub-continue':''}"><div class="hub-section-heading"><div><h2>${esc(title)}</h2><p>${esc(copy)}</p></div><a href="/library?${new URLSearchParams({view:'browse',...params})}" data-see="${esc(JSON.stringify(params))}">See all →</a></div><div class="hub-row">${items.map(b=>card(b,{reason})).join('')}</div></section>`;}
  function shell(view){
-  const f=filters();root.innerHTML=`${preview?'<p class="hub-preview-note">Design preview · Invented books and account data. Nothing affects the live site.</p>':''}<div class="hub-heading"><div><p class="hub-eyebrow">A world of stories</p><h1 class="lib-display-title">${view==='mine'?'Your stories. Your space.':view==='browse'?'Every story, your way.':'Find your next obsession.'}</h1><p>${view==='mine'?'Your saved books, favorite lists, and next chapters.':'Explore new voices. Keep your favorites close.'}</p></div><form id="hubSearch" role="search"><label for="hubSearchInput">Search books, authors, genres, and tags</label><div><input id="hubSearchInput" name="q" type="search" value="${esc(f.q||'')}" placeholder="A title, a trope, a new favorite…"><button type="submit">Search</button></div></form></div>
+  const f=filters();root.innerHTML=`${preview?'<p class="hub-preview-note">Design preview · Invented books and account data. Nothing affects the live site.</p>':''}<div class="hub-heading"><div><p class="hub-eyebrow">The Alysum library</p><h1 class="hub-title">${view==='mine'?'My Library':view==='browse'?'Browse the library':'Find your next story'}</h1><p>${view==='mine'?'Your books, exactly where you left them.':'Independent stories. New worlds. A place to get lost.'}</p></div><form id="hubSearch" role="search"><label for="hubSearchInput">Search books, authors, genres, and tags</label><div><input id="hubSearchInput" name="q" type="search" value="${esc(f.q||'')}" placeholder="Search titles, authors, or tropes…"><button type="submit">Search</button></div></form></div>
   <nav class="hub-tabs" aria-label="Library"><a href="/library?view=discover" data-view="discover" ${view==='discover'?'aria-current="page"':''}>Discover</a><a href="/library?view=browse" data-view="browse" ${view==='browse'?'aria-current="page"':''}>Browse</a><a href="/library?view=mine" data-view="mine" ${view==='mine'?'aria-current="page"':''}>My Library</a></nav>
   <p id="hubStatus" class="hub-status" role="status" aria-live="polite">Loading your Library…</p><div id="hubContent" aria-busy="true"></div>`;
   root.querySelector('#hubSearch').addEventListener('submit',e=>{e.preventDefault();const f=filters();delete f.shelf;route({...f,view:'browse',q:new FormData(e.target).get('q'),offset:0});});
  }
+ function featuredBook(b){
+  if(!b)return '';
+  const cover=preview&&b.coverUrl.startsWith('/applications/library/design/hub-covers/')?b.coverUrl:safeCoverUrl(b.coverUrl);
+  return `<section class="hub-feature" aria-label="Weekly featured book"><a class="hub-feature-cover hub-cover" href="/book?id=${encodeURIComponent(b.id)}" aria-label="View ${esc(b.title)}">${cover?`<img src="${esc(cover)}" style="${esc(cropFrameStyle(b.coverCrop))}" alt="" fetchpriority="high">`:`<span>${esc(b.title)}</span>`}</a><div class="hub-feature-copy"><p class="hub-eyebrow">This week’s spotlight</p><h2><a href="/book?id=${encodeURIComponent(b.id)}">${esc(b.title)}</a></h2><p class="hub-feature-author">by ${b.ownerId?`<a href="/author?id=${encodeURIComponent(b.ownerId)}">${esc(b.author)}</a>`:esc(b.author)}</p><p class="hub-feature-summary">${esc(b.summary||'Discover this week’s story from the Alysum community.')}</p><div class="hub-tags">${b.genres.slice(0,3).map(g=>`<a href="/library?view=browse&genres=${encodeURIComponent(g)}" data-genre-link="${esc(g)}">${esc(genreLabel(g))}</a>`).join('')}</div><a class="hub-feature-cta" href="/book?id=${encodeURIComponent(b.id)}">Explore this story <span aria-hidden="true">→</span></a><p class="hub-feature-note">A randomly selected community story. A new spotlight every week.</p></div></section>`;
+ }
  async function discover(turn){
-  const requests=[api.query({sort:'new'},0,12),api.query({sort:'updated'},0,12),api.query({sort:'gems'},0,12),api.query({status:'complete',sort:'new'},0,12),api.facets(),api.collection('public',null,{limit:6}).catch(()=>[])];
-  if(user)requests.push(api.query({shelf:'reading',sort:'new'},0,6));
-  const settled=await Promise.allSettled(requests);
-  if(settled[0].status==='rejected')throw settled[0].reason;
-  const defaults=[null,{items:[]},{items:[]},{items:[]},{genres:[]},[],{items:[]}];
-  const [fresh,updates,gems,complete,meta,lists,reading]=settled.map((r,i)=>r.status==='fulfilled'?r.value:defaults[i]);if(!active||turn!==epoch)return;
-  facets=meta.genres||[];tagChoices=meta.tags||[];warningChoices=meta.warnings||[];
-  const continueBooks=remember(reading?.items||[]).filter(b=>progress(b));
-  const preferred=personal.records?.find(r=>r.kind==='preferences'&&r.bookId==='discovery')?.value?.genres||[];
-  const genres=preferred.length?preferred:[...new Set(continueBooks.flatMap(b=>b.genres))].slice(0,3);
-  let recommended=[];if(genres.length){const result=await api.query({genres,sort:'gems'},0,12).catch(()=>({items:[]}));if(!active||turn!==epoch)return;recommended=remember(result.items);}
-  const used=new Set(continueBooks.map(b=>b.id));const select=items=>diverseBooks(remember(items),{exclude:used,limit:4});
-  const featured=selectWeeklyFeature(remember([...fresh.items,...updates.items,...gems.items,...complete.items]));
-  let html=featured?`<section class="hub-weekly"><div class="hub-weekly-copy"><p class="hub-eyebrow">✦ Weekly Featured Book</p><h2>${esc(featured.title)}</h2><p class="hub-weekly-author">by ${esc(featured.author)}</p><p class="hub-weekly-summary">${esc(featured.summary||'Discover a story worth reading this week.')}</p><a class="hub-weekly-action" href="/book?id=${encodeURIComponent(featured.id)}">Explore this book →</a></div><a class="hub-weekly-art" href="/book?id=${encodeURIComponent(featured.id)}" aria-label="View ${esc(featured.title)}">${featured.coverUrl?`<img src="${esc(preview&&featured.coverUrl.startsWith('/applications/library/design/hub-covers/')?featured.coverUrl:safeCoverUrl(featured.coverUrl))}" alt="" style="${esc(cropFrameStyle(featured.coverCrop))}">`:`<span>${esc(featured.title)}</span>`}</a></section>`:'';
-  html+=row('Currently Reading','Pick up right where you left off.',continueBooks,{shelf:'reading'},'Saved reading progress');
-  const picks=select(recommended.length?recommended:fresh.items);
-  html+=row('Top Picks for You',genres.length?'Inspired by your reading and favorite genres.':'Explore stories from across Alysum.',picks,{sort:'gems'},genres.length?'Matches your genres':'Discover a new favorite');
-  html+=`<section class="hub-explore"><div><p class="hub-eyebrow">Find your next story</p><h2>Browse Alysum</h2></div><div class="hub-genre-shortcuts">${facets.slice(0,8).map(g=>`<button type="button" data-genre-link="${esc(g.id)}">${esc(genreLabel(g.id))} <span>${g.count}</span></button>`).join('')}</div><button type="button" class="hub-subtle" data-preferences>Choose favorite genres</button></section>`;
-  html+=row('Browse All Books','Explore the newest published stories.',select(fresh.items),{sort:'new'},'Recently published');
-  html+=row('Fresh chapters','New releases, not description edits.',select(updates.items),{sort:'updated'},'New chapter released');
-  html+=row('Worth discovering','Give an overlooked story its next reader.',select(gems.items),{sort:'gems'},'Less-read books, rotated daily');
-  html+=row('Completed stories','Finished books for your next reading stretch.',select(complete.items),{status:'complete',sort:'new'},'Completed story');
-  if(lists.length)html+=`<section class="hub-shelf"><div class="hub-section-heading"><div><h2>From reader to reader</h2><p>Public reading lists from the community.</p></div><button type="button" data-public-lists>See all →</button></div><div class="hub-list-grid">${lists.map(listCard).join('')}</div></section>`;
-  if(!fresh.total)html+='<div class="hub-empty"><h2>The next great story could be yours.</h2><p>No published books are available yet.</p><a href="/studio">Open Studio</a></div>';
+  const catalog=remember(await api.catalog());if(!active||turn!==epoch)return;
+  const historyIds=[...new Set([...Object.keys(state.read('read-position')),...Object.keys(state.read('finished-chapters')),...Object.entries(state.read('shelves')).filter(([,v])=>['reading','finished'].includes(v)).map(([id])=>id)])];
+  const meta=catalogFacets(catalog);facets=meta.genres;tagChoices=meta.tags;warningChoices=meta.warnings;
+  const feature=selectWeeklyFeature(catalog);
+  const continuing=catalog.filter(b=>{const p=progress(b),saved=shelf(b);return p&&saved!=='finished'&&saved!=='want'&&Number(p.progress||0)<100;}).slice(0,6);
+  const favoriteGenres=personal.records?.find(r=>r.kind==='preferences'&&r.bookId==='discovery')?.value?.genres||[];
+  const picks=readingRecommendations(catalog,{readIds:historyIds,preferredGenres:favoriteGenres,exclude:feature?[feature.id]:[]});
+  const recommendations=picks.items,genres=picks.genres;
+  let html=featuredBook(feature);
+  html+=continuing.length?row('Currently reading','Pick up where you left off.',continuing,{shelf:'reading'},'Saved reading progress'):`<section class="hub-shelf hub-reading-empty"><div><h2>Currently reading</h2><p>${user?'Start a story and your place will be waiting here.':'Sign in to keep your place across your stories.'}</p></div><a href="${user?'#hubBrowse':'/login?next=%2Flibrary'}">${user?'Find a story':'Sign in'} →</a></section>`;
+  html+=row('Top picks for you',picks.personalized?'Inspired by your reading and favorite genres.':'Explore the community. Your picks become personal as you read.',recommendations,genres.length?{genres}:{},picks.personalized?'Matches your reading history':'');
+  html+=`<section class="hub-home-browse" id="hubBrowse"><div class="hub-explore"><div><h2>Browse by genre</h2></div><div class="hub-genre-shortcuts">${facets.slice(0,8).map(g=>`<button type="button" data-genre-link="${esc(g.id)}">${esc(genreLabel(g.id))} <span>${g.count}</span></button>`).join('')}</div><button type="button" class="hub-subtle" data-preferences>Choose favorite genres</button></div>${await browse(turn,{catalog})}</section>`;
   return html;
  }
  function chips(f){return keys.filter(k=>!['sort','shelf'].includes(k)&&f[k]&&f[k]!=='all').flatMap(k=>(Array.isArray(f[k])?f[k]:[f[k]]).map(v=>`<button type="button" data-clear="${k}" data-value="${esc(v)}">${esc(k==='genres'?genreLabel(v):({in_progress:'Ongoing',complete:'Completed',short:'Under 10,000 words',medium:'10,000–49,999 words',long:'50,000+ words',paid:'Contains paid chapters',free:'Free to read',novel:'Novel',manga:'Manga',comic:'Comic',manhwa:'Manhwa',screenplay:'Screenplay',general:'General audiences',mature:'Mature',explicit:'Explicit'}[v]||v))} ×</button>`)).join('');}
- async function browse(turn,{mine=false}={}){
+ async function browse(turn,{mine=false,catalog=null}={}){
   const url=current(),f=filters(),offset=Math.max(0,Number(url.searchParams.get('offset'))||0);if(mine)f.shelf=f.shelf||'reading';
-  const result=await api.query(f,offset,24);if(!active||turn!==epoch)return;
+  const matches=catalog?filterHubBooks(catalog,f):null;
+  const result=matches?{items:matches.slice(offset,offset+24),total:matches.length,hasMore:matches.length>offset+24}:await api.query(f,offset,24);if(!active||turn!==epoch)return;
   let items=remember(result.items);
   if(mine&&!api.available){const shelves=state.read('shelves'),positions=state.read('read-position');items=items.filter(b=>f.shelf==='reading'?shelves[b.id]==='reading'||positions[b.id]&&shelves[b.id]!=='finished':shelves[b.id]===f.shelf);}
   const layout=url.searchParams.get('layout')==='list'?'list':'grid';
@@ -100,7 +94,7 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
    const sort=root.querySelector('#hubSort');if(sort)sort.value=filters().sort||'new';
    sort?.addEventListener('change',()=>route({...Object.fromEntries(current().searchParams),sort:sort.value,offset:0}));
    requestAnimationFrame(()=>window.scrollTo(0,Number(history.state?.libraryScroll)||0));
-  }catch(error){if(!active||turn!==epoch)return;content.innerHTML='<div class="hub-empty"><h2>We couldn’t load this part of the Library.</h2><button type="button" data-retry>Try again</button></div>';content.setAttribute('aria-busy','false');notice(error.message,true);}
+  }catch(error){if(!active||turn!==epoch)return;content.innerHTML='<div class="hub-empty"><h2>We couldn’t load this part of the Library.</h2><button type="button" data-retry>Try again</button></div>';content.setAttribute('aria-busy','false');notice(error.message||'We couldn’t reach the Library. Please try again.',true);}
  }
  function showDialog(title,html,onSubmit){document.getElementById('hubDialogTitle').textContent=title;dialogBody.innerHTML=html+'<p class="hub-dialog-error" role="alert"></p>';if(!dialog.open)dialog.showModal();const form=dialogBody.querySelector('form');form?.addEventListener('submit',async event=>{event.preventDefault();const buttons=[...form.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);try{await onSubmit(new FormData(form));dialog.close();}catch(error){dialogBody.querySelector('.hub-dialog-error').textContent=error.message;}finally{buttons.forEach(b=>b.disabled=false);}});}
  async function filterDialog(){
@@ -113,21 +107,16 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
  async function addToList(id){if(!needUser())return;const lists=await api.collection('mine',null,{limit:40});if(!lists.length){createList(id);return;}
   showDialog('Add to a reading list',`<form><label>Choose a list<select name="list">${lists.map(l=>`<option value="${esc(l.id)}">${esc(l.title)}${l.public?' · Public':''}</option>`).join('')}</select></label><p class="hub-help">Books added to a public list are visible to other readers.</p><button type="submit" class="hub-primary">Add book</button></form>`,async data=>{await api.collection('add',data.get('list'),{bookId:id});notice('Added to your reading list.');});
  }
- async function saveBook(id){if(!needUser())return;const b=books.get(id);if(!b)return;
-  async function save(value){const previous=shelf(b);state.update('shelves',id,value||undefined);try{const saved=await opened.flush();notice(saved?'Saved to your account.':'Saved on this device. Cloud sync is temporarily unavailable.');await render();}catch(error){state.update('shelves',id,previous||undefined);throw error;}}
-  if(!shelf(b)){await save('want');return;}
-  showDialog('Manage saved book',`<form><label>Shelf<select name="shelf"><option value="">Remove from shelves</option>${Object.entries(HUB_SHELVES).filter(([k])=>k!=='subscriptions').map(([k,v])=>`<option value="${k}" ${shelf(b)===k?'selected':''}>${v}</option>`).join('')}</select></label><button type="submit" class="hub-primary">Save</button></form>`,async data=>save(data.get('shelf')));
- }
  async function preferences(){if(!needUser())return;if(!facets.length)facets=(await api.facets()).genres||[];const selected=personal.records?.find(r=>r.kind==='preferences')?.value?.genres||[];
   showDialog('Your discovery genres',`<form><p class="hub-help">Choose up to twelve genres. Recommendations use genre matches, never external AI analysis of manuscripts.</p><fieldset class="hub-genre-choices"><legend>Favorite genres</legend>${[...new Set([...(facets.length?facets.map(g=>g.id):matchingGenreKeys('')),...selected])].map(g=>`<label><input type="checkbox" name="genres" value="${esc(g)}" ${selected.includes(g)?'checked':''}>${esc(genreLabel(g))}</label>`).join('')}</fieldset><button type="submit" class="hub-primary">Save genres</button></form>`,async data=>{const genres=data.getAll('genres');if(genres.length>12)throw Error('Choose up to twelve genres.');await api.state(user.id,'preferences','discovery',{genres},true);personal=await api.state(user.id);await render();});
  }
+ root.addEventListener('change',event=>{const select=event.target.closest('[data-shelf-select]');if(!select||!active||!user)return;select.disabled=true;state.update('shelves',select.dataset.shelfSelect,select.value||undefined);void opened.flush().then(()=>render()).catch(error=>notice(error.message,true)).finally(()=>{select.disabled=false;});});
  root.addEventListener('click',event=>{if(!active)return;const button=event.target.closest('button,a');if(!button)return;const d=button.dataset;
   const run=async()=>{
    if(d.view){event.preventDefault();route({view:d.view});}
    else if(d.genreLink){event.preventDefault();route({view:'browse',genres:[d.genreLink]});}
    else if(d.see){event.preventDefault();route({view:'browse',...JSON.parse(d.see)});}
    else if(d.listLink){event.preventDefault();route({view:'collection',list:d.listLink});}
-   else if(d.save){event.preventDefault();await saveBook(d.save);}
    else if(d.add){event.preventDefault();await addToList(d.add);}
    else if(d.remove){await api.collection('remove',d.list,{bookId:d.remove});await render();}
    else if(d.shelfView){route({view:'mine',shelf:d.shelfView});}
@@ -139,7 +128,7 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
    else if('filters'in d){await filterDialog();}
    else if('reset'in d){route({view:current().searchParams.get('view')==='mine'?'mine':'browse',shelf:filters().shelf});}
    else if(d.clear){const f=filters();f[d.clear]=Array.isArray(f[d.clear])?f[d.clear].filter(v=>v!==d.value):'';route({...Object.fromEntries(current().searchParams),...f,offset:0});}
-   else if('page'in d){route({...Object.fromEntries(current().searchParams),offset:d.page});}
+   else if('page'in d){route({...Object.fromEntries(current().searchParams),view:current().searchParams.get('view')||'browse',offset:d.page});}
    else if(d.layout){route({...Object.fromEntries(current().searchParams),layout:d.layout});}
    else if('retry'in d){await render();}
    else if('shareList'in d){try{await navigator.clipboard.writeText(location.href);notice('Reading list link copied.');}catch{showDialog('Share this reading list',`<label>Public link<input readonly value="${esc(location.href)}"></label>`,()=>{});}}
