@@ -18,7 +18,7 @@
 .hub-weekly-author,.hub-weekly-summary{font-size:13px;line-height:1.7;color:var(--ui-muted,var(--muted))}
 .hub-weekly-summary{max-width:55ch}
 .hub-weekly-action{display:inline-flex;align-items:center;margin-top:12px;padding:12px 18px;border-radius:10px;background:var(--btn-primary-bg,var(--accent));color:#fff!important;text-decoration:none;font-size:13px;font-weight:700}
-.hub-weekly-art{display:block;aspect-ratio:3/4;overflow:hidden;border-radius:var(--glass-radius,14px);background:var(--alysum-ui-raised,var(--bg));text-decoration:none}
+.hub-weekly-art{position:relative;display:block;aspect-ratio:3/4;overflow:hidden;border-radius:var(--glass-radius,14px);background:var(--alysum-ui-raised,var(--bg));text-decoration:none}
 .hub-weekly-art img{width:100%;height:100%;object-fit:cover}
 .hub-weekly-art span{height:100%;display:grid;place-items:center;padding:20px;text-align:center;font:600 30px/1.1 "Cormorant Garamond",Georgia,serif}
 @media(max-width:600px){.hub-weekly{grid-template-columns:minmax(0,1fr) 112px;gap:14px;padding:17px}.hub-weekly h2{font-size:30px}.hub-weekly-summary{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.hub-weekly-art span{font-size:17px;padding:10px}}

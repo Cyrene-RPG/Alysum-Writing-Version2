@@ -8,6 +8,7 @@ try{
  page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',route=>{const u=new URL(route.request().url());if(/supabase|auth\/v1|rest\/v1/.test(u.href))backend.push(u.href);return u.origin===base?route.continue():route.abort();});
  await page.goto(base+'/library?preview=1');await page.getByRole('heading',{name:'Browse Alysum'}).waitFor();
  assert.ok(await page.locator('.hub-cover').count()>4);
+ assert.ok(await page.locator('.hub-weekly-art').evaluate(e=>{const image=e.querySelector('img');if(!image)return true;const a=e.getBoundingClientRect(),b=image.getBoundingClientRect();return b.width<innerWidth&&getComputedStyle(e).position==='relative';}),'Cropped feature cover stays inside its frame');
  await page.getByRole('navigation',{name:'Library',exact:true}).getByRole('link',{name:'Browse',exact:true}).click();await page.getByRole('heading',{name:'All stories',exact:true}).waitFor();
  await page.getByRole('searchbox',{name:'Search books, authors, genres, and tags'}).fill('found family');await page.getByRole('button',{name:'Search',exact:true}).click();await page.waitForFunction(()=>new URL(location.href).searchParams.get('q')==='found family');
  await page.waitForFunction(()=>document.querySelector('#hubContent')?.getAttribute('aria-busy')==='false');assert.ok(await page.locator('.hub-book').count()>0);
