@@ -645,6 +645,10 @@ async function boot() {
     }
     onReconnect(async () => {
         if (session.mode !== "cloud") return;
+        if (book._pending || autosave.getStatus() === "error") {
+            await persist(currentBackupSnapshot(), true);
+            return;
+        }
         if (!api.hasPending?.()) {
             paintOfflineStatus();
             return;
