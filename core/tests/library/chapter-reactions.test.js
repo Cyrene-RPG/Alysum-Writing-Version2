@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import { CHAPTER_REACTIONS, normalizeChapterReactions, chapterReactions } from '../../library/chapter-reactions.js';
 
 test('reaction responses expose only supported counts and the current reader selection', () => {
-    assert.equal(CHAPTER_REACTIONS.length, 6);
+    assert.equal(CHAPTER_REACTIONS.length, 24);
+    assert.equal(new Set(CHAPTER_REACTIONS.map(item => item.id)).size, 24);
     assert.deepEqual(normalizeChapterReactions({ counts: { love: 5, laugh: -1, cry: '2', shock: Infinity, anger: 1.5, unknown: 900 }, mine: 'unknown', userId: 'private' }), {
-        counts: { love: 5, laugh: 0, cry: 2, shock: 0, anger: 0, excited: 0 }, mine: null,
+        counts: Object.fromEntries(CHAPTER_REACTIONS.map(({id}) => [id, id === 'love' ? 5 : id === 'cry' ? 2 : 0])), mine: null,
     });
 });
 test('read, set and remove calls never accept caller-supplied reader identity', async () => {
@@ -22,4 +23,11 @@ test('read, set and remove calls never accept caller-supplied reader identity', 
 test('database and setup errors cannot turn into fake successful counts', async () => {
     await assert.rejects(chapterReactions({rpc:async()=>({error:{code:'PGRST202',message:'internal'}})},'book','one'),/temporarily unavailable/);
     await assert.rejects(chapterReactions({rpc:async()=>({error:{message:'Sign in'}})},'book','one',{reaction:'love'}),/Sign in/);
+});
+
+test('every new choice is accepted and a saved expanded reaction survives normalization', async () => {
+    for (const item of CHAPTER_REACTIONS.filter(item => item.category)) {
+        const result = await chapterReactions({rpc: async (_name,args) => ({data:{counts:{[args.p_reaction]:3},mine:args.p_reaction}})}, 'book', 'one', {reaction:item.id});
+        assert.equal(result.mine,item.id);assert.equal(result.counts[item.id],3);
+    }
 });
