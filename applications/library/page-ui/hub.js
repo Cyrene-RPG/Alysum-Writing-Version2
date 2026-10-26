@@ -41,12 +41,15 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
  async function discover(turn){
   const requests=[api.query({sort:'new'},0,12),api.query({sort:'updated'},0,12),api.query({sort:'gems'},0,12),api.query({status:'complete',sort:'new'},0,12),api.facets(),api.collection('public',null,{limit:6}).catch(()=>[])];
   if(user)requests.push(api.query({shelf:'reading',sort:'new'},0,6));
-  const [fresh,updates,gems,complete,meta,lists,reading]=await Promise.all(requests);if(!active||turn!==epoch)return;
+  const settled=await Promise.allSettled(requests);
+  if(settled[0].status==='rejected')throw settled[0].reason;
+  const defaults=[null,{items:[]},{items:[]},{items:[]},{genres:[]},[],{items:[]}];
+  const [fresh,updates,gems,complete,meta,lists,reading]=settled.map((r,i)=>r.status==='fulfilled'?r.value:defaults[i]);if(!active||turn!==epoch)return;
   facets=meta.genres||[];tagChoices=meta.tags||[];warningChoices=meta.warnings||[];
   const continueBooks=remember(reading?.items||[]).filter(b=>progress(b));
   const preferred=personal.records?.find(r=>r.kind==='preferences'&&r.bookId==='discovery')?.value?.genres||[];
   const genres=preferred.length?preferred:[...new Set(continueBooks.flatMap(b=>b.genres))].slice(0,3);
-  let recommended=[];if(genres.length){const result=await api.query({genres,sort:'gems'},0,12);if(!active||turn!==epoch)return;recommended=remember(result.items);}
+  let recommended=[];if(genres.length){const result=await api.query({genres,sort:'gems'},0,12).catch(()=>({items:[]}));if(!active||turn!==epoch)return;recommended=remember(result.items);}
   const used=new Set(continueBooks.map(b=>b.id));const select=items=>diverseBooks(remember(items),{exclude:used,limit:4});
   const featured=selectWeeklyFeature(remember([...fresh.items,...updates.items,...gems.items,...complete.items]));
   let html=featured?`<section class="hub-weekly"><div class="hub-weekly-copy"><p class="hub-eyebrow">✦ Weekly Featured Book</p><h2>${esc(featured.title)}</h2><p class="hub-weekly-author">by ${esc(featured.author)}</p><p class="hub-weekly-summary">${esc(featured.summary||'Discover a story worth reading this week.')}</p><a class="hub-weekly-action" href="/book?id=${encodeURIComponent(featured.id)}">Explore this book →</a></div><a class="hub-weekly-art" href="/book?id=${encodeURIComponent(featured.id)}" aria-label="View ${esc(featured.title)}">${featured.coverUrl?`<img src="${esc(safeCoverUrl(featured.coverUrl))}" alt="" style="${esc(cropFrameStyle(featured.coverCrop))}">`:`<span>${esc(featured.title)}</span>`}</a></section>`:'';

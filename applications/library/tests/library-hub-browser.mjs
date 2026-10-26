@@ -6,7 +6,7 @@ const pw=await import(process.env.PLAYWRIGHT_MODULE_PATH||'playwright'),name=pro
 try{
  const page=await browser.newPage({viewport:{width:1440,height:1050},serviceWorkers:'block'}),errors=[],backend=[];
  page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',route=>{const u=new URL(route.request().url());if(/supabase|auth\/v1|rest\/v1/.test(u.href))backend.push(u.href);return u.origin===base?route.continue():route.abort();});
- await page.goto(base+'/library?preview=1');await page.getByRole('heading',{name:'Where will you go next?'}).waitFor();
+ await page.goto(base+'/library?preview=1');await page.getByRole('heading',{name:'Browse Alysum'}).waitFor();
  assert.ok(await page.locator('.hub-cover').count()>4);
  await page.getByRole('navigation',{name:'Library',exact:true}).getByRole('link',{name:'Browse',exact:true}).click();await page.getByRole('heading',{name:'All stories',exact:true}).waitFor();
  await page.getByRole('searchbox',{name:'Search books, authors, genres, and tags'}).fill('found family');await page.getByRole('button',{name:'Search',exact:true}).click();await page.waitForFunction(()=>new URL(location.href).searchParams.get('q')==='found family');
@@ -23,10 +23,11 @@ try{
  await page.getByRole('navigation',{name:'Library',exact:true}).getByRole('link',{name:'My Library',exact:true}).click();await page.getByRole('button',{name:'Custom shelves',exact:true}).click();await page.getByRole('link',{name:/Rainy day reads/}).click();await page.getByRole('heading',{name:'The Glass Harbor',exact:true}).waitFor();
  await page.getByRole('button',{name:'Edit list',exact:true}).click();await dialog.getByRole('checkbox',{name:'Make this reading list public'}).check();await dialog.getByRole('button',{name:'Save changes',exact:true}).click();await page.getByRole('button',{name:'Copy link',exact:true}).waitFor();
  for(const width of [1440,390,320]){
-  await page.setViewportSize({width,height:900});await page.getByRole('navigation',{name:'Library',exact:true}).getByRole('link',{name:'Discover',exact:true}).click();await page.getByRole('heading',{name:'Where will you go next?'}).waitFor();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Discover fits '+width);await page.screenshot({path:`test-results/library-hub/discover-${width}-${name}.png`,fullPage:true});
+  await page.setViewportSize({width,height:900});await page.getByRole('navigation',{name:'Library',exact:true}).getByRole('link',{name:'Discover',exact:true}).click();await page.getByRole('heading',{name:'Browse Alysum'}).waitFor();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Discover fits '+width);await page.screenshot({path:`test-results/library-hub/discover-${width}-${name}.png`,fullPage:true});
   await page.getByRole('navigation',{name:'Library',exact:true}).getByRole('link',{name:'Browse',exact:true}).click();await page.getByRole('heading',{name:'All stories',exact:true}).waitFor();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Browse fits '+width);
   await page.getByRole('button',{name:'Filters',exact:false}).click();assert.ok(await dialog.evaluate(e=>{const b=e.getBoundingClientRect();return b.width<=innerWidth&&b.height<=innerHeight;}),'Filters fit '+width);await page.screenshot({path:`test-results/library-hub/filters-${width}-${name}.png`});await page.getByRole('button',{name:'Close dialog',exact:true}).click();
  }
+ await page.goto(base+'/library?preview=1&failDiscovery=1');await page.getByRole('heading',{name:'Browse All Books',exact:true}).waitFor();assert.ok(await page.locator('.hub-book').count()>0,'Discovery stays usable when optional sections time out');
  await page.goto(base+'/library?preview=1&guest=1&view=mine');await page.getByRole('link',{name:'Sign in to My Library',exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'Create a shelf',exact:true}).count(),0);
  assert.deepEqual(backend,[]);assert.deepEqual(errors,[]);console.log(name+': Library discovery, filters, personal shelves, public lists and phone layouts passed');
 }finally{await browser.close();server.close();}
