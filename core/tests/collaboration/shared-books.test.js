@@ -31,3 +31,5 @@ test('revoked access keeps unsynced text locally without recreating or listing t
  assert.equal(f.cached()[0].title,'Unsynced writing');assert.equal(f.cached()[0]._pending,true);
  assert.deepEqual(await f.api.syncPending(),{synced:0,failed:1});assert.equal(f.inserts,0);
 });
+
+test('failed cloud saves do not claim a device copy when browser storage is full',async()=>{const f=fixture();await f.api.getBook('shared');f.failWrites();globalThis.localStorage.setItem=()=>{throw Error('Quota exceeded');};const saved=await f.api.updateBook('shared',{title:'Only in the open editor'});assert.equal(saved._synced,false);assert.equal(saved._cached,false);assert.notEqual(f.cached()[0].title,'Only in the open editor');});

@@ -1,0 +1,28 @@
+name: Editor save protection
+on:
+  pull_request:
+    paths:
+      - 'applications/editor/page-ui/autosave.js'
+      - 'applications/editor/page-ui/page.js'
+      - 'applications/editor/page-ui/page/persist-hooks.js'
+      - 'applications/editor/pages/editor.html'
+      - 'applications/editor/tests/autosave.test.js'
+      - 'applications/editor/tests/save-exit.mjs'
+      - 'core/synchronization-engine/books.js'
+      - 'core/tests/collaboration/shared-books.test.js'
+      - '.github/workflows/editor-save-tests.yml'
+permissions:
+  contents: read
+jobs:
+  save-protection:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test applications/editor/tests/autosave.test.js core/tests/collaboration/*.test.js core/tests/writing-engine/*.test.js
+      - run: npm install --prefix "$RUNNER_TEMP/editor-save" jsdom@26
+      - run: node --experimental-vm-modules --test applications/editor/tests/save-exit.mjs
+        env:
+          JSDOM_MODULE: ${{ runner.temp }}/editor-save/node_modules/jsdom/lib/api.js

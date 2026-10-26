@@ -21,7 +21,11 @@ export function createAutosave({ delay = 400, save } = {}) {
                 await save(payload, token);
                 if (token === generation && !pending) status = "saved";
             } catch {
-                if (token === generation && !pending) status = "error";
+                if (token === generation && !pending) {
+                    pending = payload;
+                    status = "error";
+                    return status; // Keep the failed edit for an explicit retry, without a retry loop.
+                }
             } finally {
                 inFlight = null;
             }

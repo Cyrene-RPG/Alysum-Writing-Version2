@@ -148,7 +148,7 @@
             <section class="writer-main">
                 <div class="writer-draft-switch"><span>Editing: <strong id="active-draft-label">Main draft</strong></span><button type="button" id="switch-draft" class="quote-button" aria-haspopup="dialog" aria-expanded="false">Switch draft ▾</button></div>
                 <div class="writer-main-scroll" id="writerWritePane">
-                <span class="writer-status" id="saveStatus" role="status" hidden></span>
+                <div class="writer-save-feedback" id="saveFeedback" hidden><span class="writer-status" id="saveStatus" role="status" hidden></span><div id="saveRecovery" hidden><button type="button" id="retryEditorSave" class="quote-button">Retry save</button> <button type="button" id="downloadEditorBackup" class="quote-button">Download backup</button></div></div>
                 <div class="writer-mobile-titlebar" id="writerMobileTitlebar">
                     <button type="button" class="writer-mobile-trigger" id="mobileTreeOpen" aria-label="Open chapters" aria-controls="chapterTree" aria-expanded="false">☰</button>
                     <div class="writer-title-stack">
