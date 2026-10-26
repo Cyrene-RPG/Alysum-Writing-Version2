@@ -19,3 +19,9 @@ To upgrade from the original six reactions, re-run the updated `supabase/live-si
 ### Existing reaction table compatibility
 
 The migration supports both the original six-column `chapter_reactions` table (`id`, `book_id`, `chapter_id`, `user_id`, `reaction_type`, `created_at`) from `supabase-sibling-tables.sql` and the newer `reaction` layout. It keeps the original table and records intact and imports each account's latest recognized vote per chapter into `library_chapter_reaction_votes`. Original categories are mapped to the nearest current reaction (for example, funny → laugh and spicy → hot). Orphaned or unsupported records remain in the original table. Re-running the migration never overwrites an existing new vote or restores a vote that the reader removed; a null vote marker preserves that removal. Browser roles cannot read or write the new raw table. No reader UI changes are needed.
+
+## Author replies to chapter comments
+
+The book owner can choose Reply on an individual reader comment. The composer identifies its target and can return to a normal comment with Cancel reply without discarding the draft. Confirmed replies are displayed beneath the original thread with an Author badge. Everyone can read the thread. Existing comments.parent_id links and existing comment RLS are used; this does not grant additional database permissions and needs no new SQL when the existing sibling/comment schema is installed. The UI offers the reply control to the book owner; author badges are based on account IDs, not display names.
+
+Reply chains are grouped beneath their original root with context for the actual parent. Existing drafts survive loading, deleting another comment, cancellation and failed posts. Deleting a root removes its cascading reply branch. Late responses to a detached chapter are ignored. A missing profile name falls back to the public author name or Reader, never the account email.

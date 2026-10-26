@@ -1,7 +1,7 @@
 import { authorProfileUrl } from "/core/library/author-links.js";
 import { authorNameHtml } from "/site-appearance/js-runtime/author-link.js";
 import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
-import { COMMENT_HTML_MAX, deleteChapterComment, fetchChapterComments, postChapterComment } from "@alysum/library/book-comments.js?v=3";
+import { COMMENT_HTML_MAX, deleteChapterComment, fetchChapterComments, postChapterComment, threadChapterComments } from "@alysum/library/book-comments.js?v=4";
 import { authorInitial } from "@alysum/library/author-profile.js?v=3";
 import { commentHasText, sanitizeCommentHtml } from "./comment-html.js?v=1";
 
@@ -70,24 +70,30 @@ async function uploadCommentImage(supabase, userId, bookId, file) {
     return url;
 }
 
-function commentCard(row, { viewerId, ownerId }) {
+function commentCard(row, { viewerId, ownerId, parentName }) {
     const name = row.displayName || row.username || "Reader";
     const canDelete = (viewerId && viewerId === row.userId) || (viewerId && ownerId && viewerId === ownerId);
     const body = sanitizeCommentHtml(row.text);
+    const author = Boolean(ownerId && row.userId === ownerId);
+    const reply = viewerId && viewerId === ownerId && !author
+        ? `<button type="button" class="reader-comment-reply" data-reply="${escapeHtml(row.id)}" aria-label="Reply to ${escapeHtml(name)}">Reply</button>` : "";
     const del = canDelete
         ? `<button type="button" class="reader-comment-del" data-delete="${escapeHtml(row.id)}">Delete</button>`
         : "";
     return `
-        <article class="reader-comment" data-comment="${escapeHtml(row.id)}">
+        <article class="reader-comment" tabindex="-1" data-comment="${escapeHtml(row.id)}">
             <div class="reader-comment-head">
                 <span class="reader-comment-av" aria-hidden="true">${escapeHtml(authorInitial(name))}</span>
                 <div class="reader-comment-who">
                     <strong>${row.userId === ownerId ? authorNameHtml({url:authorProfileUrl({userId:ownerId}),label:name}) : escapeHtml(name)}</strong>
+                    ${author ? '<span class="reader-comment-author">Author</span>' : ""}
                     <time>${escapeHtml(formatWhen(row.createdAt))}</time>
                 </div>
                 ${del}
             </div>
+            ${parentName ? `<p class="reader-comment-parent">Replying to ${escapeHtml(parentName)}</p>` : ""}
             <div class="reader-comment-body">${body}</div>
+            ${reply}
         </article>`;
 }
 
@@ -99,16 +105,24 @@ export function mountCommentThread(root, {
     const signedIn = Boolean(viewerId);
     let comments = [];
     let loading = true;
+    let replyTarget = null;
+    let busy = false;
 
     function paint() {
+        if (!root.isConnected) return;
+        const draft = root.querySelector("#readerCommentEditor")?.innerHTML || "";
         const n = comments.length;
         const log = loading
             ? `<div class="reader-comment-skel" aria-hidden="true"></div><div class="reader-comment-skel" aria-hidden="true"></div>`
             : n
-                ? comments.map((row) => commentCard(row, { viewerId, ownerId })).join("")
+                ? threadChapterComments(comments).map(({comment, replies}) => {
+                    const card = row => commentCard(row, { viewerId, ownerId, parentName: row.parentId ? (comments.find(parent => parent.id === row.parentId)?.displayName || comments.find(parent => parent.id === row.parentId)?.username || "Reader") : null });
+                    return `<div class="reader-comment-thread">${card(comment)}${replies.length ? `<div class="reader-comment-replies" aria-label="Replies">${replies.map(card).join("")}</div>` : ""}</div>`;
+                }).join("")
                 : `<p class="reader-comments-empty">No comments on this chapter yet.</p>`;
         const composer = signedIn
             ? `<div class="reader-composer">
+                    <div class="reader-reply-context" id="readerReplyContext" hidden><span id="readerReplyLabel"></span><button type="button" id="readerReplyCancel">Cancel reply</button></div>
                     <div class="reader-composer-tools" role="toolbar" aria-label="Comment formatting">
                         <button type="button" data-cmd="bold" title="Bold">Bold</button>
                         <button type="button" data-cmd="italic" title="Italic">Italic</button>
@@ -117,7 +131,7 @@ export function mountCommentThread(root, {
                         <button type="button" data-cmd="quote" title="Quote">Quote</button>
                         <button type="button" data-cmd="image" title="Image">Image</button>
                     </div>
-                    <div class="reader-composer-page" id="readerCommentEditor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Share your thoughts…"></div>
+                    <div class="reader-composer-page" id="readerCommentEditor" contenteditable="true" role="textbox" aria-label="Write a chapter comment" aria-multiline="true" data-placeholder="Share your thoughts…"></div>
                     <input id="readerCommentFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
                     <div class="reader-composer-foot">
                         <span class="reader-composer-words" id="readerCommentWords">0 words</span>
@@ -132,8 +146,24 @@ export function mountCommentThread(root, {
             </header>
             <div class="reader-comment-log">${log}</div>
             ${composer}`;
+        const editor = root.querySelector("#readerCommentEditor");
+        if (editor) editor.innerHTML = draft;
+        const words = root.querySelector("#readerCommentWords");
+        if (words) words.textContent = `${countWordsInHtml(draft)} words`;
+        syncReply();
         bindComposer();
         onLayout?.();
+    }
+
+    function syncReply() {
+        const context = root.querySelector("#readerReplyContext");
+        if (!context) return;
+        context.hidden = !replyTarget;
+        root.querySelector("#readerReplyLabel").textContent = replyTarget ? `Replying to ${replyTarget.displayName || replyTarget.username || "Reader"}` : "";
+        const editor = root.querySelector("#readerCommentEditor");
+        editor?.setAttribute("aria-label", replyTarget ? "Write an author reply" : "Write a chapter comment");
+        editor?.setAttribute("data-placeholder", replyTarget ? "Write your reply…" : "Share your thoughts…");
+        root.querySelector("#readerCommentPost").textContent = replyTarget ? "Post reply" : "Post";
     }
 
     function hint(msg) {
@@ -152,7 +182,7 @@ export function mountCommentThread(root, {
         });
         root.querySelector(".reader-composer-tools")?.addEventListener("click", (event) => {
             const cmd = event.target.closest("[data-cmd]")?.dataset.cmd;
-            if (!cmd || !editor) return;
+            if (!cmd || !editor || busy) return;
             editor.focus();
             if (cmd === "spoiler") wrapSpoiler(editor);
             else if (cmd === "quote") runCommand("formatBlock", "blockquote");
@@ -162,15 +192,20 @@ export function mountCommentThread(root, {
         file?.addEventListener("change", async () => {
             const picked = file.files?.[0];
             file.value = "";
-            if (!picked || !editor) return;
+            if (!picked || !editor || busy) return;
             hint("");
             try {
                 const url = await uploadCommentImage(supabase, viewerId, work.id, picked);
+                if (!root.isConnected || !root.contains(editor) || busy) return;
                 editor.focus();
                 runCommand("insertHTML", `<img src="${escapeHtml(url)}" alt="">`);
             } catch (error) {
                 hint(error?.message || "Could not add that image.");
             }
+        });
+        root.querySelector("#readerReplyCancel")?.addEventListener("click", () => {
+            if (busy) return;
+            replyTarget = null; syncReply(); editor?.focus(); onLayout?.();
         });
         root.querySelector("#readerCommentPost")?.addEventListener("click", () => void post());
         root.querySelector(".reader-comment-log")?.addEventListener("click", (event) => {
@@ -178,6 +213,11 @@ export function mountCommentThread(root, {
             if (spoiler) {
                 spoiler.classList.toggle("is-open");
                 return;
+            }
+            const targetId = event.target.closest("[data-reply]")?.dataset.reply;
+            if (targetId && viewerId === ownerId && !busy) {
+                replyTarget = comments.find(row => row.id === targetId) || null;
+                syncReply(); editor?.focus(); editor?.scrollIntoView?.({block:"nearest", behavior:"smooth"}); onLayout?.(); return;
             }
             const id = event.target.closest("[data-delete]")?.dataset.delete;
             if (id) void remove(id);
@@ -192,15 +232,18 @@ export function mountCommentThread(root, {
             username = String(data?.username || "").trim();
             displayName = String(data?.display_name || "").trim();
         } catch {
-            /* email fallback */
+            /* Use a public display-name fallback. */
         }
         return {
             username,
-            displayName: displayName || session?.user?.email || "Reader",
+            displayName: displayName || (viewerId === ownerId ? work.author || "Author" : "Reader"),
         };
     }
 
     async function post() {
+        if (busy || !signedIn || !root.isConnected) return;
+        if (replyTarget && (viewerId !== ownerId || !comments.some(row => row.id === replyTarget.id))) { hint("That comment is no longer available."); return; }
+        const parentId = replyTarget?.id || null;
         const editor = root.querySelector("#readerCommentEditor");
         const html = sanitizeCommentHtml(editor?.innerHTML || "");
         if (!commentHasText(html)) {
@@ -212,6 +255,8 @@ export function mountCommentThread(root, {
             return;
         }
         const btn = root.querySelector("#readerCommentPost");
+        busy = true;
+        if (editor) editor.contentEditable = "false";
         if (btn) btn.disabled = true;
         hint("");
         try {
@@ -222,31 +267,57 @@ export function mountCommentThread(root, {
                 userId: viewerId,
                 ...names,
                 text: html,
+                parentId,
             });
-            if (row) comments = [...comments, row];
+            if (!root.isConnected) return;
+            if (!row) throw new Error("Could not confirm your comment. Refresh before trying again.");
+            comments = [...comments, row];
+            replyTarget = null;
+            if (editor) editor.innerHTML = "";
             loading = false;
             paint();
+            if (parentId) {
+                const reply = [...root.querySelectorAll("[data-comment]")].find(el => el.dataset.comment === row.id);
+                reply?.focus({preventScroll:true}); reply?.scrollIntoView?.({block:"nearest",behavior:"smooth"});
+            }
             onPosted?.(comments.length);
         } catch (error) {
-            hint(error?.message || "Could not post.");
-            if (btn) btn.disabled = false;
+            if (root.isConnected) hint(error?.message || "Could not post.");
+        } finally {
+            busy = false;
+            if (root.isConnected) {
+                const current = root.querySelector("#readerCommentEditor");
+                if (current) current.contentEditable = "true";
+                const submit = root.querySelector("#readerCommentPost");
+                if (submit) submit.disabled = false;
+            }
         }
     }
 
     async function remove(id) {
+        if (busy || !root.isConnected) return;
+        busy = true;
         try {
             await deleteChapterComment(supabase, id);
-            comments = comments.filter((row) => row.id !== id);
+            if (!root.isConnected) return;
+            const deleted = new Set([id]);
+            let changed = true;
+            while (changed) { changed = false; for (const row of comments) if (deleted.has(row.parentId) && !deleted.has(row.id)) { deleted.add(row.id); changed = true; } }
+            comments = comments.filter(row => !deleted.has(row.id));
+            if (replyTarget && deleted.has(replyTarget.id)) replyTarget = null;
             paint();
         } catch (error) {
-            hint(error?.message || "Could not delete.");
-        }
+            if (root.isConnected) hint(error?.message || "Could not delete.");
+        } finally { busy = false; }
     }
 
     paint();
     void (async () => {
         try {
-            comments = await fetchChapterComments(supabase, work.id, chapterId);
+            const rows = await fetchChapterComments(supabase, work.id, chapterId);
+            if (!root.isConnected) return;
+            const loaded = new Set(rows.map(row => row.id));
+            comments = [...rows, ...comments.filter(row => !loaded.has(row.id))];
         } catch {
             comments = [];
         }
