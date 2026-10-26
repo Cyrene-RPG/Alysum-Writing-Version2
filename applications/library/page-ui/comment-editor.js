@@ -1,7 +1,7 @@
 import { authorProfileUrl } from "/core/library/author-links.js";
 import { authorNameHtml } from "/site-appearance/js-runtime/author-link.js";
 import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
-import { COMMENT_HTML_MAX, deleteChapterComment, fetchChapterComments, postChapterComment, threadChapterComments } from "@alysum/library/book-comments.js?v=4";
+import { COMMENT_HTML_MAX, deleteChapterComment, fetchChapterComments, postChapterComment, threadChapterComments } from "@alysum/library/book-comments.js?v=5";
 import { authorInitial } from "@alysum/library/author-profile.js?v=3";
 import { commentHasText, sanitizeCommentHtml } from "./comment-html.js?v=1";
 
@@ -98,7 +98,7 @@ function commentCard(row, { viewerId, ownerId, parentName }) {
 }
 
 export function mountCommentThread(root, {
-    work, chapterId, supabase, session, onPosted, onLayout,
+    work, chapterId, supabase, session, onPosted, onLayout, targetCommentId = "",
 }) {
     const viewerId = session?.mode === "cloud" ? String(session.user?.id || "").trim() : "";
     const ownerId = String(work?.ownerUserId || "").trim();
@@ -144,6 +144,7 @@ export function mountCommentThread(root, {
             <header class="reader-comments-head">
                 <h2>Comments (${n})</h2>
             </header>
+            <p id="readerCommentStatus" role="status"></p>
             <div class="reader-comment-log">${log}</div>
             ${composer}`;
         const editor = root.querySelector("#readerCommentEditor");
@@ -153,6 +154,12 @@ export function mountCommentThread(root, {
         syncReply();
         bindComposer();
         onLayout?.();
+        if (!loading && targetCommentId) {
+            const target = [...root.querySelectorAll("[data-comment]")].find(el => el.dataset.comment === targetCommentId);
+            if (target) { target.classList.add("is-notification-target"); target.focus({preventScroll:true}); target.scrollIntoView?.({block:"center"}); }
+            else root.querySelector("#readerCommentStatus").textContent = "This comment is no longer available.";
+            targetCommentId = "";
+        }
     }
 
     function syncReply() {
@@ -314,7 +321,7 @@ export function mountCommentThread(root, {
     paint();
     void (async () => {
         try {
-            const rows = await fetchChapterComments(supabase, work.id, chapterId);
+            const rows = await fetchChapterComments(supabase, work.id, chapterId, targetCommentId);
             if (!root.isConnected) return;
             const loaded = new Set(rows.map(row => row.id));
             comments = [...rows, ...comments.filter(row => !loaded.has(row.id))];

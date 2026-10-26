@@ -17,6 +17,7 @@ on:
       - 'supabase/live-site/supabase-notifications-inbox.sql'
       - 'supabase/live-site/supabase-book-subscriptions.sql'
       - 'supabase/live-site/supabase-notification-confirmations.sql'
+      - 'supabase/live-site/supabase-comment-notifications.sql'
       - '.github/workflows/notifications-tests.yml'
 permissions:
   contents: read
@@ -67,3 +68,15 @@ jobs:
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-private-connections.sql
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-private-connections.sql
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/notifications/connections.sql
+
+  comment-notifications:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix "$RUNNER_TEMP/comment-notifications" @electric-sql/pglite@0.5.11
+      - run: node --test core/tests/notifications/comment-notifications-database.mjs
+        env:
+          PGLITE_MODULE: ${{ runner.temp }}/comment-notifications/node_modules/@electric-sql/pglite/dist/index.js

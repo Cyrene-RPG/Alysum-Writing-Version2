@@ -1,8 +1,8 @@
 import { mountChapterReactions } from "./chapter-reactions.js?v=2";
 import { mountReaderAuthor } from "./reader-author.js?v=3";
-import { mountCommentThread } from "./comment-editor.js?v=2";
+import { mountCommentThread } from "./comment-editor.js?v=3";
 
-export function mountReaderEnd({ work, chapterId, supabase, session, onLayout }) {
+export function mountReaderEnd({ work, chapterId, supabase, session, onLayout, targetCommentId }) {
     const el = document.getElementById("readerEnd");
     if (!el) return;
     el.hidden = false;
@@ -19,6 +19,7 @@ export function mountReaderEnd({ work, chapterId, supabase, session, onLayout })
         mountCommentThread(comments, {
             work,
             chapterId,
+            targetCommentId,
             supabase,
             session,
             onLayout,

@@ -8,7 +8,7 @@ const {JSDOM}=createRequire(import.meta.url)(process.env.JSDOM_MODULE||'jsdom');
 const source=await readFile(new URL('../../../applications/library/page-ui/comment-editor.js',import.meta.url),'utf8');
 const sanitizer=await readFile(new URL('../../../applications/library/page-ui/comment-html.js',import.meta.url),'utf8');
 const tick=()=>new Promise(r=>setTimeout(r,0));
-async function harness({viewer='owner',fail=false,delayed=false}={}){
+async function harness({viewer='owner',fail=false,delayed=false,targetCommentId=""}={}){
  const dom=new JSDOM('<section id="comments"></section>',{url:'https://example.com/read?id=book',runScripts:'outside-only'}),context=dom.getInternalVMContext();
  const roots=[{id:'one',text:'<p>First reader</p>',userId:'reader1',displayName:'Reader One',parentId:null},{id:'two',text:'<p>Second reader</p>',userId:'reader2',displayName:'Reader Two',parentId:null},{id:'oldreply',text:'<p>Earlier answer</p>',userId:'owner',displayName:'Author Name',parentId:'one'}];
  const calls=[];let release,shouldFail=fail;
@@ -21,7 +21,7 @@ async function harness({viewer='owner',fail=false,delayed=false}={}){
   const names=spec.includes('book-comments')?['COMMENT_HTML_MAX','threadChapterComments','fetchChapterComments','deleteChapterComment','postChapterComment']:spec.includes('author-links')?['authorProfileUrl']:spec.includes('author-link.js')?['authorNameHtml']:spec.includes('word-count')?['countWordsInHtml']:['authorInitial'];
   const module=new vm.SyntheticModule(names,function(){for(const n of names)this.setExport(n,mocks[n]);},{context});await module.link(()=>{});await module.evaluate();return module;
  });await main.evaluate();
- const root=dom.window.document.querySelector('section');main.namespace.mountCommentThread(root,{work:{id:'book',ownerUserId:'owner',author:'Author Name'},chapterId:'chapter',supabase:{from:()=>({select(){return this;},eq(){return this;},maybeSingle:async()=>({data:{username:'author',display_name:'Author Name'}})})},session:viewer?{mode:'cloud',user:{id:viewer,email:'private@example.com'}}:null});await tick();
+ const root=dom.window.document.querySelector('section');main.namespace.mountCommentThread(root,{work:{id:'book',ownerUserId:'owner',author:'Author Name'},chapterId:'chapter',targetCommentId,supabase:{from:()=>({select(){return this;},eq(){return this;},maybeSingle:async()=>({data:{username:'author',display_name:'Author Name'}})})},session:viewer?{mode:'cloud',user:{id:viewer,email:'private@example.com'}}:null});await tick();
  return{dom,root,calls,release:()=>release(),setFail:value=>shouldFail=value,close:()=>dom.window.close()};
 }
 test('author replies target a specific comment, preserve failed drafts and nest the confirmed answer',async()=>{
@@ -55,4 +55,11 @@ test('an initial fetch cannot overwrite a comment posted while it was loading',a
   h.root.querySelector('#readerCommentEditor').innerHTML='<p>Posted during loading</p>';h.root.querySelector('#readerCommentPost').click();await tick();h.release();await tick();
   assert.ok(h.root.querySelector('[data-comment="newreply"]'));assert.ok(h.root.querySelector('[data-comment="one"]'));
  }finally{h.close();}
+});
+
+test('notification links focus and highlight the exact comment, with an unavailable state for deleted targets',async()=>{
+ const h=await harness({viewer:null,targetCommentId:'oldreply'});try{
+  assert.equal(h.dom.window.document.activeElement.dataset.comment,'oldreply');assert.ok(h.root.querySelector('[data-comment="oldreply"]').classList.contains('is-notification-target'));
+ }finally{h.close();}
+ const missing=await harness({viewer:null,targetCommentId:'deleted'});try{assert.match(missing.root.querySelector('#readerCommentStatus').textContent,/no longer available/);}finally{missing.close();}
 });
