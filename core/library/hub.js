@@ -7,7 +7,7 @@ export function normalizeHubBook(row){
  return {id:String(row?.id||d.id||''),ownerId:anonymous?'':String(d.ownerId||row?.user_id||d.ownerUserId||''),anonymous,
  title:String(d.title||'Untitled'),author:anonymous?'Anonymous':String(d.author||'Unknown author'),summary:String(d.summary||''),coverUrl:String(d.coverUrl||d.cover_url||''),coverCrop:d.coverCrop||d.cover_crop||null,
  genres:normalizeGenreList(d),tags:Array.isArray(d.tags)?d.tags.map(String):[],warnings:Array.isArray(d.warnings)?d.warnings.map(String):[],
- status:['complete','completed'].includes(d.status||d.serializationStatus)?'complete':'in_progress',rating:String(d.rating||''),format:['comic','manga','manhwa','screenplay'].includes(d.format||d.mediaFormat)?(d.format||d.mediaFormat):'novel',
+ status:['complete','completed'].includes(d.status||d.serializationStatus)?'complete':'in_progress',rating:String(d.rating||'').toLowerCase(),format:['comic','manga','manhwa','screenplay'].includes(d.format||d.mediaFormat)?(d.format||d.mediaFormat):'novel',
  words:Number(d.words)||released.reduce((n,c)=>n+(Number(c.wordCount)||0),0),chapters:typeof d.chapters==='number'?d.chapters:Number(d.publishedChapterCount)||released.length,
  paid:Boolean(d.paid||released.some(c=>c.locked)),publishedAt:d.publishedAt||d.published_at||row?.created_at||null,lastReleaseAt:d.lastReleaseAt||null,
  readers:Math.max(0,Number(d.readers)||0),weeklyReaders:Math.max(0,Number(d.weeklyReaders)||0)};
@@ -15,7 +15,7 @@ export function normalizeHubBook(row){
 export function filterHubBooks(books,filters={}){
  const q=String(filters.q||'').toLowerCase().trim(),genres=filters.genres||[],tags=filters.tags||[],exclude=filters.excludeTags||[],warnings=filters.excludeWarnings||[];
  return books.filter(b=>(!q||[b.title,b.author,b.summary,...b.genres,...b.tags].join(' ').toLowerCase().includes(q))
- &&(!genres.length||genres.some(g=>b.genres.includes(g)))&&tags.every(t=>b.tags.map(x=>x.toLowerCase()).includes(t.toLowerCase()))&&!exclude.some(t=>b.tags.map(x=>x.toLowerCase()).includes(t.toLowerCase()))
+ &&(!genres.length||genres.some(g=>b.genres.some(v=>v.toLowerCase()===String(g).toLowerCase())))&&tags.every(t=>b.tags.map(x=>x.toLowerCase()).includes(t.toLowerCase()))&&!exclude.some(t=>b.tags.map(x=>x.toLowerCase()).includes(t.toLowerCase()))
  &&!warnings.some(t=>b.warnings.map(x=>x.toLowerCase()).includes(t.toLowerCase()))&&(!filters.status||filters.status==='all'||b.status===filters.status)
  &&(!filters.format||filters.format==='all'||b.format===filters.format)&&(!filters.rating||filters.rating==='all'||b.rating===filters.rating)
  &&(!filters.availability||filters.availability==='all'||(filters.availability==='paid'?b.paid:!b.paid))
