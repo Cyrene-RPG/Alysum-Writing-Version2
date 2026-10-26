@@ -67,7 +67,7 @@ html[data-ui-tone=light] { --hub-error: #b42318; }
 .hub-row .hub-cover { width: 100%; }
 .hub-row .hub-tags { display: none; }
 .hub-row .hub-book h3 { font-size: 19px; margin-top: 0; }
-.hub-shelf-picker { display: block; grid-column: 1 / -1; min-width: 0; }
+.hub-shelf-picker { position: relative; display: block; grid-column: 1 / -1; min-width: 0; }
 .hub-page .hub-shelf-picker select { font-size: 11px; background: color-mix(in srgb, var(--text) 3%, var(--hub-panel)); min-height: 40px; }
 .hub-shelf-picker select:disabled { opacity: .5; }
 .hub-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
