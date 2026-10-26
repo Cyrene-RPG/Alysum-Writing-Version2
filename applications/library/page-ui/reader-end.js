@@ -1,3 +1,4 @@
+import { mountChapterReactions } from "./chapter-reactions.js";
 import { mountReaderAuthor } from "./reader-author.js?v=3";
 import { mountCommentThread } from "./comment-editor.js?v=1";
 
@@ -7,8 +8,11 @@ export function mountReaderEnd({ work, chapterId, supabase, session, onLayout })
     el.hidden = false;
     el.innerHTML = `
         <section class="reader-afterword" id="readerAuthor"></section>
+        <section class="reader-reactions" id="readerReactions" aria-label="Chapter reactions"></section>
         <section class="reader-comments" id="readerComments" aria-label="Chapter comments"></section>`;
     const author = document.getElementById("readerAuthor");
+    const reactions = document.getElementById("readerReactions");
+    if (reactions) mountChapterReactions(reactions, { work, chapterId, supabase, session, onLayout });
     const comments = document.getElementById("readerComments");
     if (author) void mountReaderAuthor(author, { work, supabase, session, onLayout }).then(() => onLayout?.());
     if (comments) {
