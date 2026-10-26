@@ -5,10 +5,13 @@ create table if not exists public.chapter_reactions (
     book_id text not null references public.library(id) on delete cascade,
     chapter_id text not null check (length(chapter_id) between 1 and 200),
     user_id uuid not null references auth.users(id) on delete cascade,
-    reaction text not null check (reaction in ('love','laugh','cry','shock','anger','excited')),
+    reaction text not null check (reaction in ('love','laugh','cry','shock','anger','excited','swoon','heartbreak','blush','hot','happy','proud','scared','tense','confused','mindblown','curious','suspicious','inspired','hopeful','relieved','impressed','speechless','melting')),
     updated_at timestamptz not null default now(),
     primary key (book_id, chapter_id, user_id)
 );
+-- Expand the existing constraint without deleting any saved reactions.
+alter table public.chapter_reactions drop constraint if exists chapter_reactions_reaction_check;
+alter table public.chapter_reactions add constraint chapter_reactions_reaction_check check (reaction in ('love','laugh','cry','shock','anger','excited','swoon','heartbreak','blush','hot','happy','proud','scared','tense','confused','mindblown','curious','suspicious','inspired','hopeful','relieved','impressed','speechless','melting'));
 create index if not exists chapter_reactions_counts on public.chapter_reactions(book_id, chapter_id, reaction);
 alter table public.chapter_reactions enable row level security;
 revoke all on public.chapter_reactions from public, anon, authenticated;
@@ -31,7 +34,7 @@ begin
     if p_write then
         if uid is null then raise exception 'Sign in to react to this chapter.'; end if;
         if not public.mc_allowed('commenting',uid) then raise exception 'Reactions are unavailable while your account is restricted.'; end if;
-        if p_reaction is not null and p_reaction not in ('love','laugh','cry','shock','anger','excited') then raise exception 'Choose a chapter reaction.'; end if;
+        if p_reaction is not null and p_reaction not in ('love','laugh','cry','shock','anger','excited','swoon','heartbreak','blush','hot','happy','proud','scared','tense','confused','mindblown','curious','suspicious','inspired','hopeful','relieved','impressed','speechless','melting') then raise exception 'Choose a chapter reaction.'; end if;
         -- Serialize changes by this reader to make switching/removing predictable.
         perform pg_advisory_xact_lock(hashtextextended(jsonb_build_array(p_book,p_chapter,uid)::text,0));
         if p_reaction is null then

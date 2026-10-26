@@ -41,3 +41,13 @@ test('a response for a detached chapter cannot repaint the new chapter',async()=
  let release;const h=await mount(()=>new Promise(resolve=>{release=resolve;}));
  try{h.root.remove();const newRoot=h.dom.window.document.createElement('section');newRoot.textContent='Next chapter';h.dom.window.document.body.append(newRoot);release({data:{counts:{love:99},mine:'love'}});await tick();assert.equal(newRoot.textContent,'Next chapter');}finally{h.close();}
 });
+
+test('expanded choices are grouped and a saved extra reaction automatically opens the picker',async()=>{
+ const h=await mount(async args=>({data:{counts:{mindblown:4},mine:'mindblown'}}));
+ try{
+  const details=h.root.querySelector('details');assert.equal(details.open,true);
+  assert.equal(h.buttons.length,24);assert.equal(details.querySelectorAll('[role=group]').length,3);
+  assert.match(h.root.querySelector('.reader-reaction-help').textContent,/Mind blown/);
+  assert.equal(h.buttons.find(b=>b.getAttribute('aria-label').startsWith('Mind blown')).getAttribute('aria-pressed'),'true');
+ }finally{h.close();}
+});
