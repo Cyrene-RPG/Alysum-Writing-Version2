@@ -1,0 +1,49 @@
+name: Library hub checks
+on:
+  pull_request:
+    paths:
+      - 'applications/library/**'
+      - 'core/library/hub.js'
+      - 'core/library/reading-state.js'
+      - 'core/library/cloud-reading.js'
+      - 'core/tests/library/library-hub*'
+      - 'core/tests/library/cloud-reading.test.js'
+      - 'supabase/live-site/supabase-library-hub.sql'
+      - '.github/workflows/library-hub-tests.yml'
+permissions:
+  contents: read
+jobs:
+  data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test core/tests/library/*.test.js
+      - run: npm install --prefix "$RUNNER_TEMP/library-hub" @electric-sql/pglite@0.5.11
+      - run: node --test core/tests/library/library-hub-database.mjs
+        env:
+          PGLITE_MODULE: ${{ runner.temp }}/library-hub/node_modules/@electric-sql/pglite/dist/index.js
+  browser:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix "$RUNNER_TEMP/library-hub-browser" playwright@1.61.1
+      - run: '"$RUNNER_TEMP/library-hub-browser/node_modules/.bin/playwright" install --with-deps ${{ matrix.browser }}'
+      - run: node applications/library/tests/library-hub-browser.mjs
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/library-hub-browser/node_modules/playwright/index.mjs
+          HUB_BROWSER: ${{ matrix.browser }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: library-hub-${{ matrix.browser }}
+          path: test-results/library-hub/

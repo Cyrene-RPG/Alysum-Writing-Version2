@@ -1,6 +1,6 @@
 # Library
 
-Public browse shelf at `/library`. Uses `core/library`, `core/publishing`, and `site-appearance/`.
+Discover, Browse, and My Library at `/library`. Uses `core/library`, `core/publishing`, and `site-appearance/`.
 
 Authors post from Studio gear → `/publish?book=`. This folder is the reader-facing catalog only.
 
@@ -25,3 +25,15 @@ The migration supports both the original six-column `chapter_reactions` table (`
 The book owner can choose Reply on an individual reader comment. The composer identifies its target and can return to a normal comment with Cancel reply without discarding the draft. Confirmed replies are displayed beneath the original thread with an Author badge. Everyone can read the thread. Existing comments.parent_id links and existing comment RLS are used; this does not grant additional database permissions and needs no new SQL when the existing sibling/comment schema is installed. The UI offers the reply control to the book owner; author badges are based on account IDs, not display names.
 
 Reply chains are grouped beneath their original root with context for the actual parent. Existing drafts survive loading, deleting another comment, cancellation and failed posts. Deleting a root removes its cascading reply branch. Late responses to a detached chapter are ignored. A missing profile name falls back to the public author name or Reader, never the account email.
+
+## Library discovery overhaul
+
+Apply `supabase/live-site/supabase-library-hub.sql` once in the live Supabase SQL Editor. Existing public-reading, book subscriptions, and Moderation Center migrations must already be installed (`library`, `reads`, `users`, `book_subscriptions`, `library_book_moderation`, `mc_visible`, `mc_allowed`). The transaction is additive and rerunnable. It never edits manuscript text. Until installed, browsing uses the existing metadata catalog and personal reading state stays on the device; cloud shelves and custom/public lists require this migration.
+
+Discover provides continuing books, genre-based recommendations, new releases, recently released chapters, completed stories, rotating lesser-read books, and opt-in public lists. Browse supports paginated title/author/genre/tag search and combinable genre, tag, warning, length, format, status, rating, and availability filters. Historical books are not shown as freshly updated unless an actual release timestamp exists; description edits do not bump release order. Popularity counts distinct signed-in readers, excluding author reads.
+
+My Library has Reading, Want to read, Finished, Following, and custom shelves. Account-scoped legacy progress is merged into cloud state after sign-in. Pending offline changes remain account-scoped and retry on reopening; remote removals use tombstones so stale devices do not restore them. Public lists require an explicit publishing checkbox. Public responses expose only available book metadata and curator display names, never private shelves or manuscript bodies. Recommendations use selected genres or currently read genres and have visible explanations; no external AI service is involved.
+
+`/library?preview=1` uses invented local sample books and never initializes Supabase. Add `&guest=1` to inspect the signed-out flow. Production boot lives in `page-ui/hub-boot.js`; presentation in `page-ui/hub.js`; metadata APIs and cloud state in `core/library/hub.js` and `cloud-reading.js`.
+
+Validation: `node --test core/tests/library/*.test.js`; `PGLITE_MODULE=... node --test core/tests/library/library-hub-database.mjs`; `PLAYWRIGHT_MODULE_PATH=... node applications/library/tests/library-hub-browser.mjs`. The Library hub checks workflow runs PostgreSQL rules and Chromium/Firefox flows, including 320px and 390px layouts.
