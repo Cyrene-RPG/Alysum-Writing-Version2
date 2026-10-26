@@ -32,7 +32,7 @@
 .reader-reaction-signin { display: inline-block; min-height: 44px; padding: 10px 0; color: var(--reader-ink); font: 600 12px/1.6 var(--reader-ui); }
 .reader-reaction-retry { min-height: 44px; margin-top: 8px; padding: 8px 14px; font: 600 12px var(--reader-ui); border: 1px solid var(--reader-line); border-radius: 9px; background: var(--reader-chrome); color: var(--reader-ink); cursor: pointer; }
 .reader-reactions :is(button,a):focus-visible { outline: 2px solid var(--reader-accent); outline-offset: 3px; }
-@media(max-width:600px) { .reader-reactions { padding: 18px 14px; } .reader-reaction-options { grid-template-columns: repeat(3,minmax(0,1fr)); } }
+
 
 .reader-reaction-label { font: 500 10px/1.4 var(--reader-ui); text-align: center; overflow-wrap: anywhere; }
 .reader-reaction-more { margin-top: 14px; }
@@ -40,3 +40,12 @@
 .reader-reaction-more > summary:focus-visible { outline: 2px solid var(--reader-accent); outline-offset: 3px; }
 .reader-reaction-category { margin: 18px 0 0; color: var(--reader-muted); font: 600 12px/1.6 var(--reader-ui); }
 .reader-reaction-more .reader-reaction-options { margin-top: 10px; }
+
+@media(max-width:600px) {
+    .reader-reactions { padding: 16px 10px; }
+    .reader-reaction-options { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 5px; }
+    .reader-reaction { min-height: 66px; padding: 8px 3px; gap: 4px; border-radius: 10px; }
+    .reader-reaction-emoji { font-size: 22px; }
+    .reader-reaction-count { font-size: 11px; }
+    .reader-reaction-label { font-size: 9px; }
+}
