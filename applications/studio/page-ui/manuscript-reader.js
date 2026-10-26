@@ -7,10 +7,12 @@
  */
 import { blocksFromText, titleFromFileName } from "@alysum/writing-engine/manuscript-import.js";
 
+import { restoreBookBackup } from "@alysum/writing-engine/book-backup.js";
+
 const MAMMOTH_URL = "https://esm.sh/mammoth@1.12.0";
 export const MAX_FILE_BYTES = 60 * 1024 * 1024;
-export const ACCEPTED_FILES = ".docx,.html,.htm,.txt,.md,.markdown,"
-    + "application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/html,text/plain,text/markdown";
+export const ACCEPTED_FILES = ".docx,.html,.htm,.txt,.md,.markdown,.json,"
+    + "application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/html,text/plain,text/markdown,application/json";
 
 // Private-use marks the Word reader leaves in the text, read back below.
 const PAGE_MARK = "";
@@ -606,6 +608,30 @@ function readerNotes(reader) {
     return notes;
 }
 
+/** Keep inert rich manuscript markup; never import executable HTML or remote styles. */
+export function sanitizeBackupHtml(html) {
+ const doc=new DOMParser().parseFromString(html,'text/html');
+ const allowed=new Set('P DIV SPAN B STRONG I EM U S STRIKE SUP SUB BR H1 H2 H3 H4 H5 H6 UL OL LI BLOCKQUOTE PRE HR FIGURE FIGCAPTION IMG A'.split(' '));
+ for(const el of [...doc.body.querySelectorAll('*')]){
+  if(DROP_TAGS.has(tagOf(el))){el.remove();continue;}
+  if(!allowed.has(tagOf(el))){el.replaceWith(...el.childNodes);continue;}
+  const attrs=[...el.attributes];for(const a of attrs)el.removeAttribute(a.name);
+  for(const {name,value} of attrs){
+   if(name==='class')el.className=value.split(/\s+/).filter(c=>/^scene-break(?:--[a-z-]+)?$|^scene-break-glyph$/.test(c)).join(' ');
+   else if(name==='style'){
+    const style=document.createElement('span').style;style.cssText=value;
+    for(const prop of ['font-weight','font-style','text-decoration','text-align','text-indent','font-size','font-family','line-height','color','background-color','margin-left','margin-right']){
+     const v=style.getPropertyValue(prop);if(v&&!/url\s*\(|expression|[<>\\]/i.test(v))el.style.setProperty(prop,v);
+    }
+   }else if(name==='href'&&el.tagName==='A'&&/^(https?:|mailto:|#)/i.test(value)){el.setAttribute(name,value);el.setAttribute('rel','noopener noreferrer');}
+   else if(name==='src'&&el.tagName==='IMG'&&/^(https:\/\/|data:image\/(png|jpeg|gif|webp);base64,)/i.test(value))el.setAttribute(name,value);
+   else if(['alt','title'].includes(name))el.setAttribute(name,value);
+   else if(['width','height','start','value'].includes(name)&&/^\d{1,5}$/.test(value))el.setAttribute(name,value);
+  }
+ }
+ return doc.body.innerHTML;
+}
+
 /**
  * @param {File} file
  * @returns {Promise<{ blocks: object[], title: string, documentTitle: string, fallbackTitle: string, notes: string[], kind: string }>}
@@ -614,14 +640,21 @@ export async function readManuscriptFile(file) {
     if (!file) throw new ManuscriptReadError("Choose a file to import.");
     const ext = extensionOf(file.name);
     if (UNSUPPORTED[ext]) throw new ManuscriptReadError(UNSUPPORTED[ext]);
-    if (!["docx", "html", "htm", "txt", "md", "markdown"].includes(ext)) {
-        throw new ManuscriptReadError("Alysum can import Word (.docx), web page (.html), and text (.txt or .md) files.");
+    if (!["docx", "html", "htm", "txt", "md", "markdown", "json"].includes(ext)) {
+        throw new ManuscriptReadError("Alysum can import Word (.docx), web page (.html), text (.txt or .md), and Alysum backup (.json) files.");
     }
     if (!file.size) throw new ManuscriptReadError("This file is empty.");
     if (file.size > MAX_FILE_BYTES) {
         throw new ManuscriptReadError("This file is over 60 MB, usually because of pictures. Save a copy without pictures and import that.");
     }
     const fallbackTitle = titleFromFileName(file.name);
+    if (ext === "json") {
+        try {
+            const envelope = JSON.parse(decodeBytes(new Uint8Array(await file.arrayBuffer())));
+            return { backup: restoreBookBackup(envelope, sanitizeBackupHtml), kind: "Alysum backup", notes: [] };
+        } catch (error) { throw new ManuscriptReadError(error?.message || "This backup could not be read."); }
+    }
+
 
     if (ext === "txt" || ext === "md" || ext === "markdown") {
         const text = decodeBytes(new Uint8Array(await file.arrayBuffer()));

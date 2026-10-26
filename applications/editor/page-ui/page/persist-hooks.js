@@ -90,6 +90,7 @@ export function bindPersistHooks({
         if (document.visibilityState === "hidden") snapshotAndFlush(false);
     });
     window.addEventListener("pagehide", () => snapshotAndFlush(true));
+    window.addEventListener("pageshow", () => setClosing(false));
     window.addEventListener("beforeunload", event => {
         const unsaved = getSaveStatus && getSaveStatus() !== "saved";
         snapshotAndFlush(false); // A canceled close must leave the editor editable.

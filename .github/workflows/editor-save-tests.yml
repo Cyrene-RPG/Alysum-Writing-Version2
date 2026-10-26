@@ -9,7 +9,15 @@ on:
       - 'applications/editor/tests/autosave.test.js'
       - 'applications/editor/tests/save-exit.mjs'
       - 'core/synchronization-engine/books.js'
-      - 'core/tests/collaboration/shared-books.test.js'
+      - 'core/tests/collaboration/**'
+      - 'core/authentication/client.js'
+      - 'core/tests/authentication/**'
+      - 'core/writing-engine/book-backup.js'
+      - 'applications/studio/page-ui/manuscript-*.js'
+      - 'applications/studio/tests/backup-import.mjs'
+      - 'applications/editor/page-ui/page/preview-session.js'
+      - 'core/synchronization-engine/cloud-adapter.js'
+      - 'core/synchronization-engine/conflict-resolver.js'
       - '.github/workflows/editor-save-tests.yml'
 permissions:
   contents: read
@@ -23,6 +31,6 @@ jobs:
           node-version: '22'
       - run: node --test applications/editor/tests/autosave.test.js core/tests/collaboration/*.test.js core/tests/writing-engine/*.test.js
       - run: npm install --prefix "$RUNNER_TEMP/editor-save" jsdom@26
-      - run: node --experimental-vm-modules --test applications/editor/tests/save-exit.mjs
+      - run: node --experimental-vm-modules --test applications/editor/tests/save-exit.mjs applications/studio/tests/backup-import.mjs core/tests/authentication/transport.mjs
         env:
           JSDOM_MODULE: ${{ runner.temp }}/editor-save/node_modules/jsdom/lib/api.js

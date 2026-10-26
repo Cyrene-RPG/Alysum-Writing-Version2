@@ -44,7 +44,7 @@ const DIALOG_HTML = `
                 <span class="import-drop-icon" aria-hidden="true">↥</span>
                 <span class="import-drop-title">Drop your manuscript here</span>
                 <span class="import-drop-sub">or <span class="import-drop-link">choose a file</span></span>
-                <span class="import-drop-types">Word (.docx) · web page (.html) · text (.txt, .md)</span>
+                <span class="import-drop-types">Word (.docx) · web page (.html) · text (.txt, .md) · Alysum backup (.json)</span>
             </button>
             <input type="file" id="importFile" hidden />
             <p class="import-tip">From Google Docs, use File → Download → Microsoft Word (.docx). Chapters are found from Heading 1 titles or from lines like “Chapter 1”.</p>
@@ -173,7 +173,8 @@ export function bindManuscriptImport({ api, onCreated, returnFocus }) {
             if (token !== readToken) return;
             parsed = result;
             titleEdited = false;
-            const choices = importSplitChoices(result.blocks);
+            els.split.disabled = Boolean(result.backup);
+            const choices = result.backup ? [{value:"auto",label:"Saved chapters"}] : importSplitChoices(result.blocks);
             els.split.innerHTML = choices
                 .map((choice) => `<option value="${escapeHtml(choice.value)}">${escapeHtml(choice.label)}</option>`)
                 .join("");
@@ -198,7 +199,7 @@ export function bindManuscriptImport({ api, onCreated, returnFocus }) {
 
     function rebuild(split) {
         try {
-            book = buildImportedBook(parsed.blocks, {
+            book = parsed.backup || buildImportedBook(parsed.blocks, {
                 split,
                 title: parsed.title,
                 documentTitle: parsed.documentTitle,
@@ -244,7 +245,7 @@ export function bindManuscriptImport({ api, onCreated, returnFocus }) {
         els.busyText.textContent = `Creating “${title}”…`;
         setStep("saving");
         try {
-            const created = await api.insertBook({ title, sections: book.sections, media_format: "novel" });
+            const created = await api.insertBook({ title, sections: book.sections, media_format: book.media_format || "novel" });
             // Cloud save failed and the device copy didn't fit either: nothing was kept.
             if (!created?.id || (api.mode === "cloud" && created._synced === false && !api.peekBook?.(created.id))) {
                 throw new Error("not-saved");

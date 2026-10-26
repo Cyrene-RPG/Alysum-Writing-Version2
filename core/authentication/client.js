@@ -28,7 +28,8 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     global: {
         fetch: async (input, init) => {
             const response = await fetch(input, init);
-            if (response.status !== 522) return response;
+            const method = String(init?.method || input?.method || "GET").toUpperCase();
+            if (response.status !== 522 || !["GET", "HEAD"].includes(method)) return response;
             await new Promise((resolve) => setTimeout(resolve, 2000));
             return fetch(input, init);
         },

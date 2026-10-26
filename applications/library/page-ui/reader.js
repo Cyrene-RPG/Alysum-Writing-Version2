@@ -161,7 +161,8 @@ async function boot() {
         document.getElementById('readerRoot').hidden=true;window.location.reload();
     }});
     readingState=opened.state;const session=opened.session;
-    document.addEventListener('visibilitychange',()=>{if(document.hidden)void opened.flush().catch(()=>{});});
+    document.addEventListener('visibilitychange',()=>{void opened.flush().catch(()=>{});});
+    window.addEventListener('online',()=>{void opened.flush().catch(()=>{});});
     window.addEventListener('pagehide',()=>{void opened.flush().catch(()=>{});});
     window.addEventListener('pageshow',event=>{if(event.persisted)window.location.reload();});
     window.addEventListener('pagehide',()=>{document.body.hidden=true;});

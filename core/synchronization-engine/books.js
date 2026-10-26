@@ -62,11 +62,15 @@ function withoutPending(book) {
     if (!book || typeof book !== "object") return book;
     const next = stripRuntime(book);
     delete next._pending;
+    delete next._baseUpdated;
+    delete next._localRevision;
+    delete next._writerSession;
+    delete next._createdLocally;
     return next;
 }
 
 function withPending(book, pending) {
-    const next = withoutPending(book);
+    const next = pending ? stripRuntime(book) : withoutPending(book);
     if (pending) next._pending = true;
     return next;
 }
@@ -118,6 +122,8 @@ function stashPatch(previous, id, userId, patch) {
         ...patch,
         id,
         user_id: previous?.user_id || userId,
+        _baseUpdated: previous?._pending ? previous._baseUpdated ?? previous._cloudUpdated ?? null : previous?._cloudUpdated ?? previous?.updated ?? null,
+        _localRevision: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
         updated: patch.updated != null && Number.isFinite(Number(patch.updated))
             ? Number(patch.updated)
             : Date.now(),
@@ -240,6 +246,45 @@ export function createBooksApi(session, supabase) {
 
     let lastReadFromCache = false;
     let syncLock = null;
+    const writerSession = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+    const writeLocks = new Map(), ownAcknowledgements = new Map(), readVersions = new Map();
+    const cacheStamp = row => row?._localRevision || (row ? JSON.stringify(stripRuntime(row)) : "");
+    function remember(book) {
+        const next = book ? normalizeBook({ ...book, _cloudUpdated: book._cloudUpdated ?? (book._pending ? null : book.updated ?? null) }) : null;
+        if (next) readVersions.set(next.id, next._pending ? next._baseUpdated ?? next._cloudUpdated : next._cloudUpdated);
+        return next;
+    }
+    function expectedVersion(id, supplied) {
+        let version = supplied;
+        const acknowledgements = ownAcknowledgements.get(id);
+        const seen = new Set();
+        while (version != null && acknowledgements?.has(String(version)) && !seen.has(String(version))) {
+            seen.add(String(version)); version = acknowledgements.get(String(version));
+        }
+        return version;
+    }
+    async function serializeWrite(id, work) {
+        const previous = writeLocks.get(id) || Promise.resolve();
+        const running = previous.catch(() => {}).then(work); writeLocks.set(id, running);
+        try { return await running; } finally { if (writeLocks.get(id) === running) writeLocks.delete(id); }
+    }
+    function commitSaved(saved, stamp) {
+        const latest = readCache(userId).find(row => row.id === saved.id);
+        if (latest?._pending && cacheStamp(latest) !== stamp) {
+            if (latest._writerSession === writerSession && String(expectedVersion(saved.id, latest._baseUpdated)) === String(saved._cloudUpdated)) {
+                upsertCache(userId, { ...latest, _baseUpdated: saved._cloudUpdated, _cloudUpdated: saved._cloudUpdated });
+            }
+            return;
+        }
+        upsertCache(userId, withoutPending(saved));
+    }
+    function acknowledge(id, baseVersion, saved) {
+        if (baseVersion != null) {
+            if (!ownAcknowledgements.has(id)) ownAcknowledgements.set(id, new Map());
+            ownAcknowledgements.get(id).set(String(baseVersion), saved._cloudUpdated);
+        }
+        readVersions.set(id, saved._cloudUpdated);
+    }
 
     function requireOnline() {
         if (!isProbablyOnline()) throw new Error("offline");
@@ -255,44 +300,32 @@ export function createBooksApi(session, supabase) {
         return withTimeout(cloud.getBook(supabase, userId, id), CLOUD_READ_MS, "cloud-get-timeout");
     }
 
-    async function flushOne(row) {
-        let cloudBook = null;
-        if (!isLocalOnlyId(row.id)) {
-            try {
-                cloudBook = await cloudGet(row.id);
-            } catch {
-                cloudBook = null;
+    async function flushOne(queued) {
+        return serializeWrite(queued.id, async () => {
+            const row = readCache(userId).find(item => item.id === queued.id);
+            if (!row || !cacheIsPending(row)) return true;
+            const stamp = cacheStamp(row);
+            // A failed read is not an authoritative missing row.
+            const remote = isLocalOnlyId(row.id) ? null : await cloudGet(row.id);
+            if (cacheStamp(readCache(userId).find(item => item.id === row.id)) !== stamp) return false;
+            if (row.user_id && String(row.user_id) !== String(userId) && !remote) throw new Error("Editor access could not be verified. Your pending writing is retained.");
+            requireOnline();
+            if (!remote) {
+                if (!row._createdLocally && !isLocalOnlyId(row.id)) throw new Error("This book is no longer available. Download your pending writing as a backup before reviewing access.");
+                const created = await cloud.insertBook(supabase, userId, { ...withoutPending(row), id: isLocalOnlyId(row.id) ? undefined : row.id });
+                if (created.id !== row.id) removeCache(userId, row.id);
+                commitSaved(created, stamp); return true;
             }
-        }
-        if(row.user_id && String(row.user_id)!==String(userId) && !cloudBook)throw new Error("Editor access could not be verified. Your pending text is kept on this device.");
-        const picked = chooseBook(row, cloudBook);
-        if (picked.action === "keep-cloud") {
-            if (picked.book) upsertCache(userId, withoutPending(picked.book));
-            else removeCache(userId, row.id);
-            return true;
-        }
-        if (picked.action === "keep-local") return true;
-        requireOnline();
-        if (picked.action === "insert") {
-            const payload = withoutPending(picked.book);
-            const created = await cloud.insertBook(supabase, userId, {
-                ...payload,
-                id: isLocalOnlyId(payload.id) ? undefined : payload.id,
-            });
-            if (created.id !== payload.id) removeCache(userId, payload.id);
-            upsertCache(userId, withoutPending(created));
-            return true;
-        }
-        if (picked.action === "upload") {
-            const payload = String(cloudBook?.user_id) !== String(userId)
-                ? { title: picked.book.title, sections: picked.book.sections, words: picked.book.words }
-                : cloudWritePayload(picked.book);
-            const pushed = await cloud.updateBook(supabase, userId, row.id, payload);
-            const keep = mergeLoadedBook(picked.book, pushed).book;
-            upsertCache(userId, withoutPending(keep));
-            return true;
-        }
-        return false;
+            const base = expectedVersion(row.id, row._baseUpdated ?? row._cloudUpdated ?? null);
+            const payload = String(remote.user_id) !== String(userId)
+                ? { title: row.title, sections: row.sections, words: row.words } : cloudWritePayload(row);
+            // Legacy queued copies that already equal the server need no blind write.
+            if (base == null && JSON.stringify({ title: row.title, sections: row.sections }) === JSON.stringify({ title: remote.title, sections: remote.sections })) {
+                commitSaved(remote, stamp); return true;
+            }
+            const pushed = await cloud.updateBook(supabase, userId, row.id, payload, { expectedUpdated: base });
+            acknowledge(row.id, base, pushed); commitSaved(pushed, stamp); return true;
+        });
     }
 
     return {
@@ -333,7 +366,7 @@ export function createBooksApi(session, supabase) {
         },
         peekBook(id) {
             const cached = readCache(userId).find((row) => row.id === id) || null;
-            return cached && (!cached.user_id || String(cached.user_id)===String(userId)) ? normalizeBook(cached) : null;
+            return cached && (!cached.user_id || String(cached.user_id)===String(userId)) ? remember(cached) : null;
         },
         async listBooks() {
             const cached = readCache(userId);
@@ -344,31 +377,33 @@ export function createBooksApi(session, supabase) {
             try {
                 const books = await cloudList();
                 lastReadFromCache = false;
-                const byId = new Map(cached.map((row) => [row.id, row]));
+                const currentCache = readCache(userId);
+                const byId = new Map(currentCache.map((row) => [row.id, row]));
                 const merged = books.map((book) => {
                     const prior = byId.get(book.id);
                     if (!prior) return withoutPending(book);
                     return applyChoice(prior, book).book || withoutPending(book);
                 });
                 const serverIds = new Set(books.map((book) => book.id));
-                const extras = cached.filter((row) => !serverIds.has(row.id) && (cacheIsPending(row) || isLocalOnlyId(row.id)));
+                const extras = currentCache.filter((row) => !serverIds.has(row.id) && (cacheIsPending(row) || isLocalOnlyId(row.id)));
                 const hiddenPending=extras.filter(row=>row.user_id && String(row.user_id)!==String(userId));
                 const combined = sortByUpdated([...merged.filter(Boolean), ...extras.filter(row=>!hiddenPending.includes(row))]);
                 writeCache(userId, [...combined,...hiddenPending].map(stripRuntime));
-                return combined.map(normalizeBook).filter(Boolean);
+                return combined.map(remember).filter(Boolean);
             } catch {
                 lastReadFromCache = true;
                 return sortByUpdated(readCache(userId).filter(row=>!row.user_id || String(row.user_id)===String(userId))).map(normalizeBook).filter(Boolean);
             }
         },
-        async getBook(id) {
-            const cached = readCache(userId).find((row) => row.id === id) || null;
+        async getBook(id, { refresh = false } = {}) {
+            let cached = readCache(userId).find((row) => row.id === id) || null;
             if (!isProbablyOnline()) {
                 lastReadFromCache = true;
                 return cached && (!cached.user_id || String(cached.user_id)===String(userId)) ? normalizeBook(cached) : null;
             }
             try {
                 const book = await cloudGet(id);
+                cached = readCache(userId).find(row => row.id === id) || null;
                 lastReadFromCache = false;
                 // Authoritative empty read (the query succeeded, RLS returned no
                 // row) means this book is no longer visible to the writer —
@@ -383,13 +418,14 @@ export function createBooksApi(session, supabase) {
                     if(!cacheIsPending(cached))removeCache(userId,id);
                     return null;
                 }
-                const picked = applyChoice(cached, book);
+                const picked = refresh && book && !cacheIsPending(cached)
+                    ? { book: withoutPending(book) } : applyChoice(cached, book);
                 if (!picked.book) {
                     if (cached && !cacheIsPending(cached)) removeCache(userId, id);
                     return cached && cacheIsPending(cached) ? normalizeBook(cached) : null;
                 }
                 upsertCache(userId, picked.book);
-                return normalizeBook(picked.book);
+                return remember(picked.book);
             } catch {
                 lastReadFromCache = true;
                 return cached && (!cached.user_id || String(cached.user_id)===String(userId)) ? normalizeBook(cached) : null;
@@ -412,30 +448,36 @@ export function createBooksApi(session, supabase) {
                     user_id: userId,
                     created: Date.now(),
                     updated: Date.now(),
+                    _createdLocally: true,
+                    _localRevision: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
+                    _writerSession: writerSession,
                 }, true);
                 upsertCache(userId, fallback);
                 return { ...fallback, _synced: false };
             }
         },
-        async updateBook(id, patch) {
-            const previous = readCache(userId).find((row) => row.id === id);
-            const optimistic = withPending(stashPatch(previous, id, userId, { ...patch, updated: Date.now() }), true);
-            const cached = upsertCache(userId, optimistic);
-            try {
-                requireOnline();
-                const shared = previous?.user_id && String(previous.user_id)!==String(userId);
-                const allowedPatch = shared ? Object.fromEntries(Object.entries(patch).filter(([key])=>["title","sections","words"].includes(key))) : patch;
-                const book = await cloud.updateBook(supabase, userId, id, allowedPatch);
-                const keep = withoutPending(mergeLoadedBook(optimistic, book).book);
-                upsertCache(userId, keep);
-                return { ...normalizeBook(keep), _synced: true };
-            } catch (error) {
-                return { ...normalizeBook(optimistic), _synced: false, _cached: cached, _pending: true, _syncError:error?.message || "Could not save to the cloud." };
-            }
+        async updateBook(id, patch, { expectedUpdated } = {}) {
+            return serializeWrite(id, async () => {
+                const previous = readCache(userId).find(row => row.id === id);
+                const supplied = expectedUpdated ?? readVersions.get(id) ?? previous?._baseUpdated ?? previous?._cloudUpdated ?? (!previous?._pending ? previous?.updated : null);
+                const optimistic = withPending({ ...stashPatch(previous, id, userId, { ...patch, updated: Date.now() }), _writerSession: writerSession, _baseUpdated: supplied ?? null }, true);
+                const stamp = cacheStamp(optimistic), cached = upsertCache(userId, optimistic);
+                try {
+                    requireOnline();
+                    const shared = previous?.user_id && String(previous.user_id) !== String(userId);
+                    const allowedPatch = shared ? Object.fromEntries(Object.entries(patch).filter(([key]) => ["title", "sections", "words"].includes(key))) : patch;
+                    const base = expectedVersion(id, supplied);
+                    const saved = await cloud.updateBook(supabase, userId, id, allowedPatch, { expectedUpdated: base });
+                    acknowledge(id, base, saved); commitSaved(saved, stamp);
+                    return { ...normalizeBook(saved), _synced: true };
+                } catch (error) {
+                    return { ...normalizeBook(optimistic), _synced: false, _cached: cached, _pending: true, _syncError: error?.message || "Could not save to the cloud." };
+                }
+            });
         },
-        stashBook(id, patch) {
+        stashBook(id, patch, { expectedUpdated } = {}) {
             const previous = readCache(userId).find((row) => row.id === id);
-            const optimistic = withPending(stashPatch(previous, id, userId, { ...patch, updated: Date.now() }), true);
+            const optimistic = withPending({ ...stashPatch(previous, id, userId, { ...patch, updated: Date.now() }), _writerSession: writerSession, _baseUpdated: expectedUpdated ?? readVersions.get(id) ?? previous?._baseUpdated ?? previous?._cloudUpdated ?? (!previous?._pending ? previous?.updated : null) }, true);
             upsertCache(userId, optimistic);
             return normalizeBook(optimistic);
         },
@@ -456,8 +498,8 @@ export function createBooksApi(session, supabase) {
                 const rows = readCache(userId).filter((row) => cacheIsPending(row) || isLocalOnlyId(row.id));
                 for (const row of rows) {
                     try {
-                        await flushOne(row);
-                        synced += 1;
+                        if (await flushOne(row)) synced += 1;
+                        else failed += 1;
                     } catch {
                         failed += 1;
                     }

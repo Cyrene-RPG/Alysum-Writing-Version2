@@ -37,7 +37,8 @@ export function chooseBook(local, cloud) {
     }
     const localUpdated = Number(local.updated) || 0;
     const cloudUpdated = Number(cloud.updated) || 0;
-    if (cacheIsPending(local) && localUpdated > cloudUpdated) {
+    // Pending writing is never discarded merely because another device has a later clock.
+    if (cacheIsPending(local)) {
         return { book: local, action: "upload" };
     }
     if (cloudUpdated > localUpdated) {
