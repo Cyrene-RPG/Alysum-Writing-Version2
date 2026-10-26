@@ -1,4 +1,5 @@
 import {HUB_SHELVES,diverseBooks} from '/core/library/hub.js';
+import {selectWeeklyFeature} from '/core/library/weekly-feature.js';
 import {genreLabel,matchingGenreKeys} from '/core/publishing/genres.js';
 import {safeCoverUrl,cropFrameStyle} from '/core/publishing/cover-upload.js';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -47,13 +48,16 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
   const genres=preferred.length?preferred:[...new Set(continueBooks.flatMap(b=>b.genres))].slice(0,3);
   let recommended=[];if(genres.length){const result=await api.query({genres,sort:'gems'},0,12);if(!active||turn!==epoch)return;recommended=remember(result.items);}
   const used=new Set(continueBooks.map(b=>b.id));const select=items=>diverseBooks(remember(items),{exclude:used,limit:4});
-  let html=continueBooks.length?row('Pick up where you left off','Your place is waiting.',continueBooks,{shelf:'reading'},'Saved reading progress'):'';
-  html+=`<section class="hub-explore"><div><p class="hub-eyebrow">Follow your mood</p><h2>Where will you go next?</h2></div><div class="hub-genre-shortcuts">${facets.slice(0,8).map(g=>`<button type="button" data-genre-link="${esc(g.id)}">${esc(genreLabel(g.id))} <span>${g.count}</span></button>`).join('')}</div><button type="button" class="hub-subtle" data-preferences>Choose favorite genres</button></section>`;
-  html+=row('Picked for your genres',preferred.length?'Based on genres you chose.':'Based on genres in your current reading.',select(recommended),{genres},'Matches your genres');
-  html+=row('New to Alysum','Meet a new story from its very first page.',select(fresh.items),{sort:'new'},'Recently published');
+  const featured=selectWeeklyFeature(remember([...fresh.items,...updates.items,...gems.items,...complete.items]));
+  let html=featured?`<section class="hub-weekly"><div class="hub-weekly-copy"><p class="hub-eyebrow">✦ Weekly Featured Book</p><h2>${esc(featured.title)}</h2><p class="hub-weekly-author">by ${esc(featured.author)}</p><p class="hub-weekly-summary">${esc(featured.summary||'Discover a story worth reading this week.')}</p><a class="hub-weekly-action" href="/book?id=${encodeURIComponent(featured.id)}">Explore this book →</a></div><a class="hub-weekly-art" href="/book?id=${encodeURIComponent(featured.id)}" aria-label="View ${esc(featured.title)}">${featured.coverUrl?`<img src="${esc(safeCoverUrl(featured.coverUrl))}" alt="" style="${esc(cropFrameStyle(featured.coverCrop))}">`:`<span>${esc(featured.title)}</span>`}</a></section>`:'';
+  html+=row('Currently Reading','Pick up right where you left off.',continueBooks,{shelf:'reading'},'Saved reading progress');
+  const picks=select(recommended.length?recommended:fresh.items);
+  html+=row('Top Picks for You',genres.length?'Inspired by your reading and favorite genres.':'Explore stories from across Alysum.',picks,{sort:'gems'},genres.length?'Matches your genres':'Discover a new favorite');
+  html+=`<section class="hub-explore"><div><p class="hub-eyebrow">Find your next story</p><h2>Browse Alysum</h2></div><div class="hub-genre-shortcuts">${facets.slice(0,8).map(g=>`<button type="button" data-genre-link="${esc(g.id)}">${esc(genreLabel(g.id))} <span>${g.count}</span></button>`).join('')}</div><button type="button" class="hub-subtle" data-preferences>Choose favorite genres</button></section>`;
+  html+=row('Browse All Books','Explore the newest published stories.',select(fresh.items),{sort:'new'},'Recently published');
   html+=row('Fresh chapters','New releases, not description edits.',select(updates.items),{sort:'updated'},'New chapter released');
   html+=row('Worth discovering','Give an overlooked story its next reader.',select(gems.items),{sort:'gems'},'Less-read books, rotated daily');
-  html+=row('The whole story','Finished books for your next reading stretch.',select(complete.items),{status:'complete',sort:'new'},'Completed story');
+  html+=row('Completed stories','Finished books for your next reading stretch.',select(complete.items),{status:'complete',sort:'new'},'Completed story');
   if(lists.length)html+=`<section class="hub-shelf"><div class="hub-section-heading"><div><h2>From reader to reader</h2><p>Public reading lists from the community.</p></div><button type="button" data-public-lists>See all →</button></div><div class="hub-list-grid">${lists.map(listCard).join('')}</div></section>`;
   if(!fresh.total)html+='<div class="hub-empty"><h2>The next great story could be yours.</h2><p>No published books are available yet.</p><a href="/studio">Open Studio</a></div>';
   return html;
