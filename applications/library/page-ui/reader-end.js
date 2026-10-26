@@ -1,6 +1,6 @@
 import { mountChapterReactions } from "./chapter-reactions.js?v=2";
 import { mountReaderAuthor } from "./reader-author.js?v=3";
-import { mountCommentThread } from "./comment-editor.js?v=1";
+import { mountCommentThread } from "./comment-editor.js?v=2";
 
 export function mountReaderEnd({ work, chapterId, supabase, session, onLayout }) {
     const el = document.getElementById("readerEnd");

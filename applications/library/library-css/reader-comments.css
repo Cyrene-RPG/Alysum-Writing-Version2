@@ -205,3 +205,13 @@
     font-size: 13px;
     color: var(--reader-muted);
 }
+
+.reader-comment-replies { margin: 10px 0 0 16px; padding-left: 12px; border-left: 2px solid var(--reader-accent); display: grid; gap: 10px; }
+.reader-comment-author { display: inline-block; margin: 4px 8px 0 0; padding: 2px 7px; border: 1px solid var(--reader-line); border-radius: 999px; color: var(--reader-accent); font: 600 10px/1.5 var(--reader-ui); }
+.reader-comment-parent { margin: 0 0 8px; color: var(--reader-muted); font: 12px/1.5 var(--reader-ui); overflow-wrap: anywhere; }
+.reader-comment-reply, #readerReplyCancel { min-height: 44px; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--reader-ink); font: 600 12px var(--reader-ui); cursor: pointer; }
+.reader-comment-reply { margin-top: 6px; }
+.reader-reply-context { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--reader-line); color: var(--reader-muted); font: 12px/1.6 var(--reader-ui); }
+.reader-reply-context[hidden] { display: none; }
+.reader-comment, .reader-comment-body { min-width: 0; overflow-wrap: anywhere; }
+@media(max-width:600px) { .reader-comment-replies { margin-left: 8px; padding-left: 8px; } .reader-comment { padding: 12px; } }
