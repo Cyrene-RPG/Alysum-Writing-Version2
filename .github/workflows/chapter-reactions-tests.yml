@@ -1,0 +1,53 @@
+name: Chapter reaction checks
+on:
+  pull_request:
+    paths:
+      - 'core/library/chapter-reactions.js'
+      - 'applications/library/page-ui/chapter-reactions.js'
+      - 'applications/library/page-ui/reader-end.js'
+      - 'applications/library/design/chapter-reactions*'
+      - 'applications/library/library-css/reader-end.css'
+      - 'applications/library/tests/chapter-reactions-browser.mjs'
+      - 'core/tests/library/chapter-reactions*'
+      - 'supabase/live-site/supabase-chapter-reactions.sql'
+      - '.github/workflows/chapter-reactions-tests.yml'
+permissions:
+  contents: read
+jobs:
+  reactions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test core/tests/library/chapter-reactions.test.js core/tests/library/reader-author.test.js
+      - run: npm install --prefix "$RUNNER_TEMP/chapter-reactions" jsdom@26 @electric-sql/pglite@0.5.11
+      - run: node --experimental-vm-modules --test core/tests/library/chapter-reactions-ui.mjs
+        env:
+          JSDOM_MODULE: ${{ runner.temp }}/chapter-reactions/node_modules/jsdom
+      - run: node --test core/tests/library/chapter-reactions-database.mjs
+        env:
+          PGLITE_MODULE: ${{ runner.temp }}/chapter-reactions/node_modules/@electric-sql/pglite/dist/index.js
+  browser:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix "$RUNNER_TEMP/chapter-reaction-browser" playwright@1.61.1
+      - run: '"$RUNNER_TEMP/chapter-reaction-browser/node_modules/.bin/playwright" install --with-deps ${{ matrix.browser }}'
+      - run: node applications/library/tests/chapter-reactions-browser.mjs
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/chapter-reaction-browser/node_modules/playwright/index.mjs
+          REACTION_BROWSER: ${{ matrix.browser }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chapter-reactions-${{ matrix.browser }}
+          path: test-results/chapter-reactions/
