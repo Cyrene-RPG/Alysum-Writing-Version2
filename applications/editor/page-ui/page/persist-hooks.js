@@ -13,6 +13,8 @@ export function bindPersistHooks({
     setClosing,
     persist,
     saveChapter,
+    getSaveStatus,
+    onSaveBlocked,
     selectedKind,
     editor,
     bookTitle,
@@ -22,6 +24,7 @@ export function bindPersistHooks({
     document.addEventListener("click", async (event) => {
         const logoutBtn = event.target.closest("[data-logout-btn]");
         const link = event.target.closest("a[href]");
+        if (link?.hasAttribute("download")) return;
         const href = link?.getAttribute("href") || "";
         let leavingPage = Boolean(logoutBtn);
         if (!leavingPage && href && !href.startsWith("#")) {
@@ -37,7 +40,9 @@ export function bindPersistHooks({
         if (!leavingPage) return;
         event.preventDefault();
         event.stopImmediatePropagation();
-        await saveChapter();
+        try {
+            if (await saveChapter() === "error") { onSaveBlocked?.(); return; }
+        } catch { onSaveBlocked?.(); return; }
         if (logoutBtn) {
             await signOutAndGoToHome();
             return;
@@ -85,5 +90,9 @@ export function bindPersistHooks({
         if (document.visibilityState === "hidden") snapshotAndFlush(false);
     });
     window.addEventListener("pagehide", () => snapshotAndFlush(true));
-    window.addEventListener("beforeunload", () => snapshotAndFlush(true));
+    window.addEventListener("beforeunload", event => {
+        const unsaved = getSaveStatus && getSaveStatus() !== "saved";
+        snapshotAndFlush(false); // A canceled close must leave the editor editable.
+        if (unsaved) { event.preventDefault(); event.returnValue = ""; }
+    });
 }

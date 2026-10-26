@@ -136,6 +136,8 @@ async function boot() {
     const pageEl = document.getElementById("pageEditor");
     const toolbarMount = document.getElementById("writerToolbar");
     const saveStatus = document.getElementById("saveStatus");
+    const saveRecovery = document.getElementById("saveRecovery");
+    const retryEditorSave = document.getElementById("retryEditorSave");
     let saveStatusTimer = 0;
     function setSaveStatus(text, hideAfterMs) {
         if (!saveStatus) return;
@@ -143,6 +145,9 @@ async function boot() {
         const label = String(text || "").trim();
         saveStatus.textContent = label;
         saveStatus.hidden = !label;
+        const feedback = document.getElementById("saveFeedback");
+        if (feedback) feedback.hidden = !label;
+        if (!label && saveRecovery) saveRecovery.hidden = true;
         if (label && hideAfterMs) {
             saveStatusTimer = setTimeout(() => {
                 saveStatus.textContent = "";
@@ -160,8 +165,13 @@ async function boot() {
             setSaveStatus("");
             return;
         }
+        if (saved?._synced === false && saveRecovery) saveRecovery.hidden = false;
+        if (saved?._cached === false) {
+            setSaveStatus("Not saved online or on this device. Keep this tab open and download a backup before leaving.");
+            return;
+        }
         if(saved?._synced===false && isProbablyOnline()){
-            setSaveStatus(saved._syncError || "Cloud save failed — your text is kept on this device. Check your connection and book access.");
+            setSaveStatus("Not saved online. " + (saved._syncError || "Check your connection and book access.") + (saved._cached === true ? " Your writing is kept on this device." : ""));
             return;
         }
         if (cloudLooksOffline(saved)) {
@@ -310,10 +320,11 @@ async function boot() {
                     publish_meta: saved?.publish_meta || next.publish_meta || {},
                     published_chapter_ids: saved?.published_chapter_ids || next.published_chapter_ids || [],
                     _rev: next._rev,
+                    _pending: saved?._synced === false,
                 });
                 if (saved?._synced === false) {
                     paintOfflineStatus(saved);
-                    return;
+                    throw Object.assign(new Error(saved._syncError || "Cloud save is not confirmed."), { saveWarningShown: true });
                 }
                 setSaveStatus("");
                 if(session.mode!=="cloud" || String(book.user_id)===String(session.user?.id))void maybeCreateAutoVersion({
@@ -324,10 +335,29 @@ async function boot() {
                     book,
                 }).catch(() => {});
             } catch (err) {
-                setSaveStatus("Couldn't save.", 4000);
+                if (!err?.saveWarningShown) {
+                    setSaveStatus("Couldn't save. Keep this tab open, retry, or download a backup.");
+                    if (saveRecovery) saveRecovery.hidden = false;
+                }
                 throw err;
             }
         },
+    });
+
+    function currentBackupSnapshot() {
+        return withUpdatedWords({ ...book, title: bookTitle?.value || book.title,
+            sections: selectedKind() === "folder" ? book.sections : setChapterContent(book.sections, selectedId, editor.getHtml()) });
+    }
+    retryEditorSave?.addEventListener("click", async () => {
+        retryEditorSave.disabled = true;
+        try { await persist(currentBackupSnapshot(), true); } finally { retryEditorSave.disabled = false; }
+    });
+    document.getElementById("downloadEditorBackup")?.addEventListener("click", () => {
+        const snapshot = currentBackupSnapshot();
+        const blob = new Blob([JSON.stringify({ format: "alysum-book-backup", version: 1, book: snapshot }, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob), link = document.createElement("a");
+        link.href = url; link.download = (String(snapshot.title || "book").replace(/[^a-z0-9_-]+/gi, "-").slice(0, 60) || "book") + "-backup.json";
+        document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
 
     let closing = false;
@@ -533,7 +563,9 @@ async function boot() {
         getClosing: () => closing,
         setClosing: (value) => { closing = value; },
         persist,
-        saveChapter,
+        saveChapter: () => book._pending && autosave.getStatus() === "saved" ? persist(currentBackupSnapshot(), true) : saveChapter(),
+        getSaveStatus: () => book._pending ? "error" : autosave.getStatus(),
+        onSaveBlocked: () => { if (saveRecovery) saveRecovery.hidden = false; },
         selectedKind,
         editor,
         bookTitle,
@@ -585,7 +617,7 @@ async function boot() {
     });
     mountStoryBible({ button: document.getElementById("open-story-bible"), pageEl, supabase, session,
         getBook: () => book, getChapterId: () => selectedId, saveCurrent: saveChapter });
-    paintOfflineStatus();
+    paintOfflineStatus(book._pending ? { ...book, _synced: false, _cached: true } : undefined);
     if (openedFromCache && session.mode === "cloud") {
         void api.getBook(bookId).then((fresh) => {
             if (!fresh) {

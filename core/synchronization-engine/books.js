@@ -42,8 +42,9 @@ function readCache(userId) {
 function writeCache(userId, books) {
     try {
         localStorage.setItem(cacheKey(userId), JSON.stringify(Array.isArray(books) ? books : []));
+        return true;
     } catch {
-        /* ignore quota */
+        return false;
     }
 }
 
@@ -52,6 +53,8 @@ function stripRuntime(book) {
     const next = { ...book };
     delete next._rev;
     delete next._synced;
+    delete next._cached;
+    delete next._syncError;
     return next;
 }
 
@@ -73,7 +76,7 @@ function upsertCache(userId, book) {
     const stored = stripRuntime(book);
     const books = readCache(userId).filter((row) => row.id !== stored.id);
     books.unshift(stored);
-    writeCache(userId, books);
+    return writeCache(userId, books);
 }
 
 function removeCache(userId, id) {
@@ -417,7 +420,7 @@ export function createBooksApi(session, supabase) {
         async updateBook(id, patch) {
             const previous = readCache(userId).find((row) => row.id === id);
             const optimistic = withPending(stashPatch(previous, id, userId, { ...patch, updated: Date.now() }), true);
-            upsertCache(userId, optimistic);
+            const cached = upsertCache(userId, optimistic);
             try {
                 requireOnline();
                 const shared = previous?.user_id && String(previous.user_id)!==String(userId);
@@ -427,7 +430,7 @@ export function createBooksApi(session, supabase) {
                 upsertCache(userId, keep);
                 return { ...normalizeBook(keep), _synced: true };
             } catch (error) {
-                return { ...normalizeBook(optimistic), _synced: false, _pending: true, _syncError:error?.message || "Could not save to the cloud." };
+                return { ...normalizeBook(optimistic), _synced: false, _cached: cached, _pending: true, _syncError:error?.message || "Could not save to the cloud." };
             }
         },
         stashBook(id, patch) {

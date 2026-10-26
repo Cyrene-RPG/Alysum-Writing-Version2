@@ -213,3 +213,9 @@
     font-weight: 800;
     white-space: nowrap;
 }
+
+.writer-save-feedback { position: sticky; top: 0; z-index: 20; padding: 12px 16px; margin: 8px 14px; border: 1px solid var(--border, #ffffff26); border-radius: 8px; background: var(--alysum-ui-panel, var(--bg)); }
+.writer-save-feedback[hidden], #saveRecovery[hidden] { display: none !important; }
+.writer-save-feedback .writer-status { position: static; display: block; color: var(--text); line-height: 1.5; overflow-wrap: anywhere; }
+#saveRecovery { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 9px; }
+#saveRecovery button { min-height: 44px; font: inherit; font-size: 12px; }
