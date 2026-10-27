@@ -5,6 +5,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES = Object.freeze({
 export const NOTIFICATION_KINDS = Object.freeze({
     moderation_message: "Moderation messages", follower: "Followers", author_announcement: "Author announcements", site_update: "Alysum updates",
     chapter_comment: "Comments on your books", author_reply: "Author replies",
+    book_inactivity: "Book inactivity reminders",
     new_book: "New books", new_chapter: "New chapters",
     follow_confirmation: "Follow confirmations", subscription_confirmation: "Subscription confirmations",
 });
@@ -124,6 +125,13 @@ export async function markNotificationsRead(client, throughId) {
 }
 export async function resolveNotificationDestination(client, entry) {
     if (["follower", "follow_confirmation"].includes(entry.kind)) return null;
+    if (entry.kind === "book_inactivity") {
+        const { data, error } = await client.rpc("get_book_inactivity_notification_target", { p_notification_id: requireId(entry.id) });
+        checkError(error);
+        const target = Array.isArray(data) ? data[0] : data;
+        if (!target?.book_id) throw new Error("This book is no longer available.");
+        return "/book?id=" + encodeURIComponent(target.book_id);
+    }
     if (["chapter_comment", "author_reply"].includes(entry.kind)) {
         const {data,error} = await client.rpc("get_comment_notification_target", {p_notification_id:requireId(entry.id)});
         checkError(error);
