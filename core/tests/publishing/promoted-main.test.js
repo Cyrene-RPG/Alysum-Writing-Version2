@@ -25,3 +25,23 @@ test('publishing a promoted manuscript keeps the existing listing ID',()=>{
     const payload=buildLibraryPayload(book,{isPublished:true,title:'Book',author:'Author',genres:['fantasy'],chapterIds:['chapter']});
     assert.equal(payload.id,'main');assert.equal(payload.bookId,'main');assert.equal(payload.chapters.length,1);
 });
+
+test('failed publication exposes the cloud reason and keeps the form open',async()=>{
+    const {runPublishSave}=await publishSave();const before=globalThis.window;let redirects=0,listingWrites=0;
+    globalThis.window={location:{replace(){redirects++;}}};
+    const supabase={from(){return {select(){return this;},eq(){return this;},async maybeSingle(){return {data:{id:'main'}};},update(){listingWrites++;return this;},then(resolve){resolve({error:null});}};}};
+    try{await assert.rejects(runPublishSave({isPublished:true,listed:true,session:{mode:'cloud',user:{id:'owner'}},supabase,
+        api:{async updateBook(){return {_synced:false,_pending:true,_syncCode:'BOOK_CONFLICT',_syncError:'The online copy is different from this screen.'};}},
+        book:{id:'main',user_id:'owner',sections:{body:[]}},chapters:[{id:'chapter',title:'Chapter',content:'word '.repeat(3000)}],
+        readForm:()=>({title:'Book',genres:['fantasy'],rating:'Teen',chapterIds:['chapter'],warningMeta:{version:1,reviewed:true,noneApply:true,coreIds:[],entries:[],note:''}}),
+        postError:{},async loadDraftCoverFile(){return null;}}),error=>error.code==='BOOK_CONFLICT'&&/listing was updated.*online copy is different/.test(error.message));
+        assert.equal(listingWrites,1);assert.equal(redirects,0);
+    }finally{globalThis.window=before;}
+});
+
+test('failed draft settings do not claim the public listing changed',async()=>{
+    const {runPublishSave}=await publishSave();
+    await assert.rejects(runPublishSave({isPublished:false,session:{mode:'cloud'},book:{id:'main'},
+        readForm:()=>({title:'Book',chapterIds:[]}),postError:{},api:{async updateBook(){return {_synced:false,_syncError:'permission denied for table books'};}}}),
+    error=>/settings save was not confirmed.*permission denied/.test(error.message)&&!/listing/.test(error.message));
+});

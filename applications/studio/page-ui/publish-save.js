@@ -71,6 +71,13 @@ export function bookSaveFailed(saved) {
     return Boolean(saved && (saved._synced === false || saved._pending));
 }
 
+export function bookSaveError(saved, context) {
+    const reason = String(saved?._syncError || "").trim();
+    const error = new Error(`${context}${reason ? ` ${reason}` : " Keep this tab open and try again when your connection is available."}`);
+    if (saved?._syncCode) error.code = saved._syncCode;
+    return error;
+}
+
 export function publishMetaFromForm(form) {
     return {
         author: form.author,
@@ -192,7 +199,7 @@ export async function runPublishSave({
                 is_published: false,
             });
             if (bookSaveFailed(saved)) {
-                throw new Error("Could not save the book after taking the listing down.");
+                throw bookSaveError(saved, "The listing was taken down, but the book save was not confirmed.");
             }
             window.location.replace(`/book?id=${encodeURIComponent(book.id)}`);
             return;
@@ -222,7 +229,9 @@ export async function runPublishSave({
     if (isPublished) patch.is_published = true;
     const saved = await api.updateBook(book.id, patch);
     if (bookSaveFailed(saved)) {
-        throw new Error("Could not save the book after updating the listing.");
+        throw bookSaveError(saved, isPublished
+            ? "The listing was updated, but the book save was not confirmed."
+            : "The book settings save was not confirmed.");
     }
     window.location.replace(isPublished
         ? `/book?id=${encodeURIComponent(book.id)}`
