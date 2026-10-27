@@ -97,6 +97,11 @@
                     <p class="book-label">Notes</p>
                     <div class="book-synopsis" id="bookNotes"></div>
                 </div>
+                <section id="bookHiatus" class="book-hiatus" hidden aria-label="Book status">
+                    <p id="bookHiatusMessage"></p>
+                    <button type="button" id="bookHiatusToggle" class="book-subscribe" hidden></button>
+                </section>
+                <p id="bookHiatusFeedback" class="book-cta-cap" role="status" aria-live="polite"></p>
                 <a class="book-cta" id="readCta" href="/read">Start reading</a>
                 <p class="book-cta-cap" id="readCaption" hidden></p>
                 <div id="book-subscription" class="book-subscription" hidden>
@@ -134,6 +139,14 @@
         <p>This book isn’t available yet.</p>
         <a href="/library">Back to Library</a>
     </div>
+    <dialog id="bookHiatusDialog" class="book-hiatus-dialog" aria-labelledby="bookHiatusDialogTitle" aria-describedby="bookHiatusDialogMessage">
+        <h2 id="bookHiatusDialogTitle">This book is on hiatus</h2>
+        <p id="bookHiatusDialogMessage"></p>
+        <div class="book-hiatus-actions">
+            <button type="button" id="bookHiatusCancel" class="book-subscribe" autofocus>Back to book</button>
+            <a id="bookHiatusContinue" class="book-subscribe" href="/read">Read anyway</a>
+        </div>
+    </dialog>
     <script type="module" src="/js/library/book.js?v=37"></script>
 </body>
 </html>

@@ -1,3 +1,4 @@
+import { mountBookHiatus } from "./hiatus.js";
 import {mountReporting} from "./report-book.js?v=2";
 import { renderContentWarnings } from "/site-appearance/components/content-warnings.js";
 import { authorProfileUrl } from "/core/library/author-links.js";
@@ -283,6 +284,8 @@ async function boot() {
         cta.href = readHref(work.id, chapters[0].id);
         cap.hidden = true;
     }
+
+    if (session.mode !== "local") void mountBookHiatus({ client: supabase, work, isActive: () => readingState.active });
 
     paintChapters(work, owner, saved);
 
