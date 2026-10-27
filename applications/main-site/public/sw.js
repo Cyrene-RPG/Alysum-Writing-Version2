@@ -1,6 +1,7 @@
 /* Alysum service worker
  * Strategy:
- *   - Workspace HTML (studio/editor): cache-first, then refresh in the background
+ *   - Studio HTML: network-first with a short timeout and offline cache fallback
+ *   - Editor HTML: cache-first, then refresh in the background
  *   - Other HTML documents: network-first (fall back to cache, then offline page)
  *   - Same-origin static assets (css/js/fonts/images): network-first, 4s timeout -> cache
  *   - Cross-origin (Firebase, gstatic, googleapis, etc.): bypass entirely
@@ -9,7 +10,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v2.53.1';
+const SW_VERSION = 'v2.53.2';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -126,9 +127,11 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(Response.redirect(dest.href, 302));
         return;
       }
-      // Studio / Editor: serve the cached shell instantly, refresh in the
-      // background. Lets the writing surfaces open with no / flaky network.
-      event.respondWith(staleWhileRevalidateHtml(event));
+      // Studio menus need the current document on the first online reload.
+      // Keep the editor's instant offline-writing startup behavior.
+      event.respondWith(/\/editor(?:\.html)?$/i.test(url.pathname)
+        ? staleWhileRevalidateHtml(event)
+        : networkFirstStudioHtml(event));
       return;
     }
     event.respondWith(networkFirstHtml(event));
@@ -140,6 +143,40 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 });
+
+async function networkFirstStudioHtml(event) {
+  const cache = await caches.open(SHELL_CACHE);
+  const network = (async () => {
+    try {
+      const preload = event.preloadResponse ? await event.preloadResponse : null;
+      const fresh = preload || await fetch(event.request, { cache: 'no-store' });
+      if (fresh && fresh.ok) await cache.put(event.request, fresh.clone());
+      return fresh;
+    } catch (_) {
+      return null;
+    }
+  })();
+  let timer;
+  const first = await Promise.race([
+    network,
+    new Promise(resolve => { timer = setTimeout(() => resolve(null), 4000); }),
+  ]);
+  clearTimeout(timer);
+  if (first && first.ok) return first;
+
+  event.waitUntil(network);
+  const cached = await cache.match(event.request)
+    || await cache.match(new URL(event.request.url).pathname)
+    || await cache.match('/studio.html');
+  if (cached) return cached;
+  const late = await network;
+  if (late) return late;
+  return new Response(
+    '<!doctype html><meta charset="utf-8"><title>Offline</title>' +
+    '<h1>Offline</h1><p>Reconnect to open Studio for the first time on this device.</p>',
+    { headers: { 'Content-Type': 'text/html; charset=utf-8' }, status: 200 }
+  );
+}
 
 async function staleWhileRevalidateHtml(event) {
   const cache = await caches.open(SHELL_CACHE);
