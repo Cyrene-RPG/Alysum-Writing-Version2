@@ -404,7 +404,6 @@ async function boot() {
             published_chapter_ids: book.published_chapter_ids || [],
             updated: Date.now(),
         }, { expectedUpdated: book._cloudUpdated });
-        pendingRecovery.refresh();
         autosave.schedule(book);
         if (immediate) return autosave.flush();
         return Promise.resolve();

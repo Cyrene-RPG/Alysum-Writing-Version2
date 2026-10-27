@@ -5,12 +5,13 @@ export function keepPendingCopy(storage, user, book) {
     if (!book?._pending) return false;
     try { storage.setItem(keyFor(user, book), JSON.stringify(book)); return true; } catch { return false; }
 }
-export function pendingCopies(storage, user, bookId) {
+export function pendingCopies(storage, user, bookId, excludeWriter) {
     const result = [];
     try {
         for (let i = 0; i < storage.length; i++) {
             const key = storage.key(i);
-            if (!key?.startsWith(prefix(user))) continue;
+            const wantedPrefix = prefix(user) + (bookId ? encodeURIComponent(bookId) + ':' : '');
+            if (!key?.startsWith(wantedPrefix) || (excludeWriter && key.endsWith(':' + encodeURIComponent(excludeWriter)))) continue;
             try {
                 const book = JSON.parse(storage.getItem(key));
                 if (book?._pending && (!bookId || book.id === bookId)) result.push({ key, book });

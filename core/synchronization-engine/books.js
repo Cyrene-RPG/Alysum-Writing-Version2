@@ -381,7 +381,7 @@ export function createBooksApi(session, supabase, { writeTimeoutMs = 15000 } = {
     return {
         mode: "cloud",
         listRecoveryCopies(id) {
-            try { return pendingCopies(localStorage, userId, id).filter(copy => copy.book._writerSession !== writerSession); } catch { return []; }
+            try { return pendingCopies(localStorage, userId, id, writerSession); } catch { return []; }
         },
         async promoteDraft(id) {
             requireOnline();
