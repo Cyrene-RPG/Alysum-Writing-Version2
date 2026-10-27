@@ -3,6 +3,7 @@ export function mountPendingRecovery({ api, bookId, anchor }) {
     if (!anchor || !api.listRecoveryCopies) return { refresh() {} };
     const panel = document.createElement('div');
     panel.className = 'writer-save-feedback';
+    panel.style.position = 'static'; // Keep the sticky save-error controls unobscured.
     panel.setAttribute('role', 'status');
     anchor.after(panel);
     function refresh() {
