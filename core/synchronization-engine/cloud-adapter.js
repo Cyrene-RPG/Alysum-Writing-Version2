@@ -168,12 +168,14 @@ export async function updateBook(supabase, userId, id, patch, { expectedUpdated,
     const changes = toCloudPatch(patch);
     changes.updated = Math.max(Date.now(), Number(expectedUpdated) + 1);
     const { data, error } = await writeWithDeadline(supabase.from("books").update(changes)
-        .eq("id", id).eq("updated", expectedUpdated).select("*").single(), writeTimeoutMs);
-    if (error?.code === "PGRST116" || (!error && !data)) {
-        throw Object.assign(new Error("This book changed in another tab or device, or your access changed. Your edits were not overwritten. Download a backup before reviewing the other copy."), { code: "BOOK_CONFLICT" });
+        .eq("id", id).eq("updated", expectedUpdated).select("*"), writeTimeoutMs);
+    // A version mismatch is an ordinary empty result, not a singular HTTP 406.
+    if (error?.code === "PGRST116" || (!error && Array.isArray(data) && data.length === 0)) {
+        throw Object.assign(new Error("This book changed in another tab or device, or your access changed. Choose Review versions to compare the copies and resolve this save."), { code: "BOOK_CONFLICT" });
     }
     if (error) throw error;
-    return fromCloudRow(data);
+    if (!Array.isArray(data) || data.length !== 1) throw new Error("The save response could not be verified. Keep this tab open and download a backup.");
+    return fromCloudRow(data[0]);
 }
 
 export async function deleteBook(supabase, userId, id) {

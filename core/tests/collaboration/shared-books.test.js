@@ -8,7 +8,7 @@ function fixture(){
  let row={id:'shared',user_id:'owner',title:'Shared book',updated:1,created:1,sections:{front:[],body:[{id:'ch',kind:'chapter',title:'Chapter',content:'<p>Original.</p>'}],back:[]},words:1,media_format:'novel',publish_meta:{},published_chapter_ids:[]};
  let failRead=false,failWrite=false,lastPatch,inserts=0;
  const client={rpc:async(name)=>{assert.equal(name,'list_editable_books');if(failRead)throw Error('Network');return {data:row?[structuredClone(row)]:[]};},from:()=>{
-  const q={select(){return q;},eq(){return q;},async maybeSingle(){if(failRead)throw Error('Network');return {data:structuredClone(row)};},update(patch){lastPatch=patch;return q;},async single(){if(failWrite)throw Error('permission denied');row={...row,...lastPatch};return {data:structuredClone(row)};},insert(){inserts++;throw Error('Unexpected insert');}};return q;
+  const q={then(resolve,reject){return q.single().then(result=>resolve(result.error?.code==='PGRST116'?{data:[],error:null}:result.error?result:{data:result.data?[result.data]:[],error:null}),reject);},select(){return q;},eq(){return q;},async maybeSingle(){if(failRead)throw Error('Network');return {data:structuredClone(row)};},update(patch){lastPatch=patch;return q;},async single(){if(failWrite)throw Error('permission denied');row={...row,...lastPatch};return {data:structuredClone(row)};},insert(){inserts++;throw Error('Unexpected insert');}};return q;
  }};
  return {api:createBooksApi({mode:'cloud',user:{id:'editor'}},client),get patch(){return lastPatch;},get inserts(){return inserts;},revoke(){row=null;},failReads(){failRead=true;},failWrites(){failWrite=true;},cached(){return JSON.parse(store.get(cacheKey)||'[]');}};
 }

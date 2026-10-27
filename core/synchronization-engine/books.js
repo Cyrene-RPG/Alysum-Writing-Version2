@@ -57,6 +57,7 @@ function stripRuntime(book) {
     delete next._synced;
     delete next._cached;
     delete next._syncError;
+    delete next._syncCode;
     return next;
 }
 
@@ -383,6 +384,56 @@ export function createBooksApi(session, supabase, { writeTimeoutMs = 15000 } = {
         listRecoveryCopies(id) {
             try { return pendingCopies(localStorage, userId, id, writerSession); } catch { return []; }
         },
+        async readOnlineBook(id) {
+            const book = await cloudGet(id);
+            if (!book) throw new Error("This book is unavailable online, or your editing access changed. Your device copy is still available for backup.");
+            return normalizeBook(book);
+        },
+        async resolveSaveConflict(id, local, { onlineUpdated, choice, recoveryIds } = {}) {
+            if (!local || local.id !== id || !local.sections) throw new Error("The manuscript being reviewed does not match this book.");
+            if (!["local", "online"].includes(choice)) throw new Error("Choose which manuscript to keep in the original book.");
+            if (!recoveryIds?.local || !recoveryIds?.online || recoveryIds.local === recoveryIds.online || [recoveryIds.local, recoveryIds.online].includes(id)) throw new Error("Recovery book IDs are required.");
+            return serializeWrite(id, async () => {
+                requireOnline();
+                const online = await cloudGet(id);
+                if (!online) throw new Error("Online access could not be verified. Your writing has not been replaced.");
+                if (onlineUpdated == null || String(online._cloudUpdated) !== String(onlineUpdated)) throw new Error("The online version changed again. Reload the online preview before choosing a version.");
+                if (choice === "local" && local.media_format !== online.media_format) throw new Error("These versions use different manuscript formats. Keep the online version and recover this tab as its own book.");
+                const copy = (book, label) => ({ title: `${book.title || "Untitled"} — recovery ${label}`, sections: book.sections, words: book.words, media_format: book.media_format || "novel" });
+                async function ensureRecovery(copyId, payload) {
+                    const existing = await cloudGet(copyId);
+                    if (existing) {
+                        if (String(existing.user_id) !== String(userId) || existing.is_published || !cloud.matchesBookPatch(existing, payload)) throw new Error("This recovery book changed. Reopen review to make fresh recovery copies.");
+                        return existing;
+                    }
+                    let saved;
+                    try { saved = await cloud.insertBook(supabase, userId, { ...payload, id: copyId }, { writeTimeoutMs }); }
+                    catch (error) {
+                        const found = await cloudGet(copyId).catch(() => null);
+                        if (!found || String(found.user_id) !== String(userId) || found.is_published || !cloud.matchesBookPatch(found, payload)) throw error;
+                        saved = found;
+                    }
+                    upsertCache(userId, withoutPending(saved));
+                    return saved;
+                }
+                // Both manuscripts are confirmed online as private books before choosing a winner.
+                const localRecovery = await ensureRecovery(recoveryIds.local, copy(local, "from this tab"));
+                const onlineRecovery = await ensureRecovery(recoveryIds.online, copy(online, "from online"));
+                const current = readCache(userId).find(row => row.id === id);
+                const pendingRow = current?._writerSession === writerSession && cloud.matchesBookPatch(current, { title: local.title, sections: local.sections, words: local.words }) ? current : null;
+                let saved;
+                if (choice === "local") {
+                    // Resolve manuscript writing only. Keep the latest online publication settings.
+                    saved = await verifiedUpdate(id, { title: local.title, sections: local.sections, words: local.words }, onlineUpdated);
+                } else {
+                    saved = await cloudGet(id);
+                    if (!saved || String(saved._cloudUpdated) !== String(onlineUpdated)) throw new Error("The online version changed again. Reload the online preview before choosing a version. Both recovery copies are saved.");
+                }
+                ownAcknowledgements.delete(id); readVersions.set(id, saved._cloudUpdated);
+                commitSaved(saved, cacheStamp(pendingRow), pendingRow);
+                return { ...normalizeBook(saved), _synced: true, _recoveryBooks: [localRecovery.id, onlineRecovery.id] };
+            });
+        },
         async promoteDraft(id) {
             requireOnline();
             const cached=readCache(userId);
@@ -526,7 +577,7 @@ export function createBooksApi(session, supabase, { writeTimeoutMs = 15000 } = {
                     acknowledge(id, base, saved); commitSaved(saved, stamp, optimistic);
                     return { ...normalizeBook(saved), _synced: true };
                 } catch (error) {
-                    return { ...normalizeBook(optimistic), _synced: false, _cached: cached, _pending: true, _syncError: error?.message || "Could not save to the cloud." };
+                    return { ...normalizeBook(optimistic), _synced: false, _cached: cached, _pending: true, _syncCode: error?.code || "", _syncError: error?.message || "Could not save to the cloud." };
                 }
             });
         },

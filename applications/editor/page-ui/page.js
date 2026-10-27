@@ -1,3 +1,4 @@
+import { mountSaveConflict } from "./save-conflict.js";
 import { mountPendingRecovery } from "./pending-recovery.js";
 import { mountStoryBible } from "./story-bible.js";
 import { chapterContentChanged } from "/core/writing-engine/draft-revisions.js";
@@ -289,6 +290,7 @@ async function boot() {
     if (bookTitle) bookTitle.value = book.title || "";
 
     let bookRev = 0;
+    let reviewingSaveConflict = false;
     const autosave = createAutosave({
         delay: 400,
         save: async (next) => {
@@ -366,6 +368,7 @@ async function boot() {
     let closing = false;
 
     function persist(next, immediate = false, options = {}) {
+        if (reviewingSaveConflict) return Promise.resolve("error");
         if (!options.skipClean) {
             next = { ...next, sections: cleanSections(next.sections) };
         }
@@ -576,6 +579,22 @@ async function boot() {
         drawTree,
     });
 
+    mountSaveConflict({
+        api, bookId, container: saveRecovery,
+        async prepare() { await persist(currentBackupSnapshot(), true); return currentBackupSnapshot(); },
+        onReviewing: value => { reviewingSaveConflict = value; },
+        onResolved(saved) {
+            autosave.acceptConfirmedSave();
+            book = withUpdatedWords({ ...saved, _rev: ++bookRev, _pending: false });
+            if (bookTitle) bookTitle.value = book.title || "";
+            const keep = currentChapter(book, selectedId);
+            setSelectedId(keep?.id || fallbackChapterId(book.sections, listBodyChapters(book.sections)[0]?.id || ""));
+            showChapter(selectedId, { rebuildTree: true });
+            setWelcomeCopy({ lead: "Working On ", accent: book.title || "Untitled Book" });
+            pendingRecovery.refresh(); setSaveStatus("Saved. Both recovery books are available in Studio.", 6000);
+        },
+    });
+
     // Review sentences on tab hide / navigate away, and once shortly after load.
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") void runSentenceReview();
@@ -647,7 +666,7 @@ async function boot() {
         }).catch(() => {});
     }
     onReconnect(async () => {
-        if (session.mode !== "cloud") return;
+        if (session.mode !== "cloud" || reviewingSaveConflict) return;
         if (book._pending || autosave.getStatus() === "error") {
             await persist(currentBackupSnapshot(), true);
             return;

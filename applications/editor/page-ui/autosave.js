@@ -36,6 +36,10 @@ export function createAutosave({ delay = 400, save } = {}) {
     }
 
     return {
+        acceptConfirmedSave() {
+            if (inFlight) throw new Error("Wait for the current save before accepting a reviewed version.");
+            clearTimeout(timer); pending = null; generation += 1; status = "saved";
+        },
         getStatus() {
             return status;
         },
