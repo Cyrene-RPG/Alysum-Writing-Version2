@@ -170,3 +170,8 @@ button:disabled {
         padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
     }
 }
+
+.separate-account-notice { margin: 0 0 16px; padding: 12px 14px; border: 1px solid var(--border, #ccc); border-radius: 12px; font-size: 13px; line-height: 1.5; }
+.separate-account-notice[hidden] { display: none !important; }
+.separate-account-link { margin: 0 0 18px; font-size: 13px; text-align: center; }
+.separate-account-link a { color: var(--accent-soft, var(--purple, #6d28d9)); }

@@ -1,3 +1,5 @@
+import { getTabSessionContext } from "./tab-session.js";
+
 /**
  * Canonical production origin for Supabase OAuth / password-reset redirects.
  * Must match Supabase → Authentication → URL Configuration (Site URL + Redirect URLs).
@@ -30,7 +32,11 @@ export function authRedirectUrl(relativePath) {
         ? location.origin
         : PRODUCTION_ORIGIN;
     const base = origin.endsWith("/") ? origin : `${origin}/`;
-    return new URL(path, base).href;
+    const redirect = new URL(path, base);
+    // Email confirmation/recovery links can open in a new tab. Carry only the
+    // isolation choice so they never replace the normal account's saved session.
+    if (getTabSessionContext().isSeparateTab) redirect.searchParams.set("separateAccount", "1");
+    return redirect.href;
 }
 
 /** @deprecated Legacy key shared by login/signup; cleared on load. */

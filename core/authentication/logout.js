@@ -1,3 +1,4 @@
+import { tabSignOutOptions } from "./tab-session.js";
 import { supabase } from "./client.js";
 import {
     clearAuthCallbackFromUrl,
@@ -38,7 +39,7 @@ export async function signOutAndGoToHome() {
             goToSignedOutHome();
             return { ok: true };
         }
-        const { error } = await supabase.auth.signOut();
+        const { error } = await supabase.auth.signOut(tabSignOutOptions());
         if (error) throw error;
         clearSessionHint();
         clearBetaAgeVerifiedLocally();

@@ -1,3 +1,4 @@
+import { authStorageOptions } from "./tab-session.js";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 /** Deleted Supabase project — purge stale browser sessions so refresh does not hit a dead domain. */
@@ -23,7 +24,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
-        storage: typeof window !== "undefined" ? window.localStorage : undefined
+        ...authStorageOptions(new URL(supabaseUrl).hostname.split(".")[0])
     },
     global: {
         fetch: async (input, init) => {

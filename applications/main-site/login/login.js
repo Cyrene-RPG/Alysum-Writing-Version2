@@ -1,3 +1,5 @@
+import { getTabSessionContext, tabSignOutOptions } from "@alysum/authentication/tab-session.js";
+import { clearSessionHint } from "@alysum/authentication/session-hint.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { homeUrlForUserData, WRITER_HOME_URL } from "@alysum/account/mode.js";
 import {
@@ -39,6 +41,9 @@ import {
 import { wireForgotPassword } from "/js/login-reset.js";
 
 let oauthRedirectHandled = false;
+const separateAccountNotice = document.getElementById("separate-account-notice");
+if (separateAccountNotice) separateAccountNotice.hidden = !getTabSessionContext().isSeparateTab;
+
 
 function applyLoginReturnContext() {
     const params = new URLSearchParams(window.location.search);
@@ -186,7 +191,9 @@ signOutBtn?.addEventListener("click", async () => {
     clearSuccess();
     signOutBtn.disabled = true;
     try {
-        await supabase.auth.signOut();
+        const { error } = await supabase.auth.signOut(tabSignOutOptions());
+        if (error) throw error;
+        clearSessionHint();
         clearOAuthPending(OAUTH_PENDING_LOGIN_KEY);
         clearAuthCallbackFromUrl();
         oauthRedirectHandled = false;

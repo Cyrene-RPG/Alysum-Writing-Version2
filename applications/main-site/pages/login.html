@@ -92,6 +92,15 @@
 <div class="card">
     <h2>Welcome Back</h2>
 
+    <p id="separate-account-notice" class="separate-account-notice" role="status" hidden>
+        <strong>Separate account tab</strong><br>
+        Sign in here without changing the account in your other tabs.
+        This sign-in lasts for this tab and survives refreshes.
+    </p>
+    <p class="separate-account-link">
+        <a href="/login?separateAccount=1" target="_blank" rel="noopener noreferrer">Open another account in a separate tab ↗</a>
+    </p>
+
     <div class="beta-invite-banner" id="beta-invite-banner" role="status">
         <strong>Private beta invite.</strong> Sign in below — we'll bring you back to the draft right after you're in.
     </div>
@@ -139,7 +148,7 @@
     </p>
 </div>
 
-<script type="module" src="/js/login.js"></script>
+<script type="module" src="/applications/main-site/login/start.js"></script>
 
 </body>
 </html>
