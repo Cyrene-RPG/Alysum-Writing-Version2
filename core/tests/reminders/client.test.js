@@ -19,7 +19,7 @@ test('inbox targets and popup claims never trust caller-provided book or recipie
 test('reminder settings and popup mounts exist only in Studio, never in Library or Publish',async()=>{
  const read=path=>readFile(new URL('../../../'+path,import.meta.url),'utf8');
  const studio=await read('applications/studio/pages/studio.html');assert.match(studio,/id="bookReminderForm"/);assert.match(studio,/id="bookMenuReminders"/);
- const dashboard=await read('applications/studio/page-ui/page.js');assert.match(dashboard,/mountStudioBookReminders/);assert.match(dashboard,/mountBookReminderPopup/);
- for(const file of ['applications/studio/pages/publish.html','applications/library/pages/library.html','applications/library/pages/book.html','applications/main-site/pages/settings.html'])assert.doesNotMatch(await read(file),/id="bookReminderForm"/);
+ const dashboard=await read('applications/studio/page-ui/page.js');assert.match(dashboard,/mountStudioBookReminders/);assert.match(dashboard,/if\(reminders\) mountBookReminderPopup/);
+ for(const file of ['applications/studio/pages/screenplay-preview.html','applications/studio/pages/audiobook-preview.html','applications/studio/pages/publish.html','applications/library/pages/library.html','applications/library/pages/book.html','applications/main-site/pages/settings.html'])assert.doesNotMatch(await read(file),/id="bookReminderForm"/);
  for(const file of ['applications/studio/page-ui/shell.js','applications/studio/page-ui/publish.js','applications/main-site/page-ui/workspace-nav.js','site-appearance/js-runtime/notification-bell.js','applications/library/page-ui/book.js'])assert.doesNotMatch(await read(file),/mountBookReminderPopup|mountStudioBookReminders/);
 });

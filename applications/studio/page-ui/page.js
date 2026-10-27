@@ -443,7 +443,7 @@ async function boot() {
     }
 
     const reminders = mountStudioBookReminders({client:supabase,session});
-    if(session.mode==="cloud") mountBookReminderPopup({service:createNotificationService(supabase)});
+    if(reminders) mountBookReminderPopup({service:createNotificationService(supabase)});
     const bookMenu = bindBookMenu({
         onReminders: book => reminders?.open(book),
         getBooks: () => books,
