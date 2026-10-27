@@ -6,6 +6,7 @@ import {
     publishWordCount,
 } from "@alysum/publishing/chapter-length.js?v=1";
 import { saveLibraryListing, unlistLibraryListing } from "@alysum/publishing/post-work.js?v=14";
+import { readPublicationVersion, savePublicationSettings } from "@alysum/publishing/publication-save.js";
 
 export function paintPostError(el, message) {
     if (!el) return;
@@ -126,6 +127,7 @@ export async function runPublishSave({
     supabase,
     api,
     book,
+    publicationBaseline = book,
     chapters,
     readForm,
     postError,
@@ -190,14 +192,15 @@ export async function runPublishSave({
         form.chapterIds = resolved.chapterIds;
         if (resolved.note) paintPostError(postError, resolved.note);
         if (resolved.unlist) {
+            await readPublicationVersion(api, publicationBaseline, session.user.id);
             if (status) status.textContent = "Updating…";
             await unlistLibraryListing(supabase, session.user.id, book.id);
-            const saved = await api.updateBook(book.id, {
+            const saved = await savePublicationSettings(api, publicationBaseline, {
                 title: title || book.title || "Untitled",
                 publish_meta: publishMetaFromForm(form),
                 published_chapter_ids: [],
                 is_published: false,
-            });
+            }, session.user.id);
             if (bookSaveFailed(saved)) {
                 throw bookSaveError(saved, "The listing was taken down, but the book save was not confirmed.");
             }
@@ -205,6 +208,7 @@ export async function runPublishSave({
             return;
         }
     }
+    if (isPublished) await readPublicationVersion(api, publicationBaseline, session.user.id);
     if (status) status.textContent = isPublished ? (listed ? "Updating…" : "Posting…") : "Saving…";
     if (isPublished) {
         const draftFile = await loadDraftCoverFile(book.id);
@@ -227,7 +231,9 @@ export async function runPublishSave({
         patch.published_chapter_ids = form.chapterIds;
     }
     if (isPublished) patch.is_published = true;
-    const saved = await api.updateBook(book.id, patch);
+    const saved = isPublished
+        ? await savePublicationSettings(api, publicationBaseline, patch, session.user.id)
+        : await api.updateBook(book.id, patch);
     if (bookSaveFailed(saved)) {
         throw bookSaveError(saved, isPublished
             ? "The listing was updated, but the book save was not confirmed."

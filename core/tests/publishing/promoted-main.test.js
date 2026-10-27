@@ -31,7 +31,7 @@ test('failed publication exposes the cloud reason and keeps the form open',async
     globalThis.window={location:{replace(){redirects++;}}};
     const supabase={from(){return {select(){return this;},eq(){return this;},async maybeSingle(){return {data:{id:'main'}};},update(){listingWrites++;return this;},then(resolve){resolve({error:null});}};}};
     try{await assert.rejects(runPublishSave({isPublished:true,listed:true,session:{mode:'cloud',user:{id:'owner'}},supabase,
-        api:{async updateBook(){return {_synced:false,_pending:true,_syncCode:'BOOK_CONFLICT',_syncError:'The online copy is different from this screen.'};}},
+        api:{async readOnlineBook(){return {id:'main',user_id:'owner',sections:{body:[]},_cloudUpdated:1};},async updateBook(){return {_synced:false,_pending:true,_syncCode:'BOOK_CONFLICT',_syncError:'The online copy is different from this screen.'};}},
         book:{id:'main',user_id:'owner',sections:{body:[]}},chapters:[{id:'chapter',title:'Chapter',content:'word '.repeat(3000)}],
         readForm:()=>({title:'Book',genres:['fantasy'],rating:'Teen',chapterIds:['chapter'],warningMeta:{version:1,reviewed:true,noneApply:true,coreIds:[],entries:[],note:''}}),
         postError:{},async loadDraftCoverFile(){return null;}}),error=>error.code==='BOOK_CONFLICT'&&/listing was updated.*online copy is different/.test(error.message));

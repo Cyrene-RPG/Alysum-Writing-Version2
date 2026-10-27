@@ -2,6 +2,7 @@ import { bindChapterAccess } from "./publish-access.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=11";
+import { loadPublicationBook } from "@alysum/publishing/publication-save.js";
 import { listBodyChapters, listBodyChaptersWithDepth } from "@alysum/writing-engine/manuscript.js?v=6";
 import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
 import { peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
@@ -104,7 +105,9 @@ async function boot() {
         return;
     }
     const api = createBooksApi(session, supabase);
-    const book = await api.getBook(bookId);
+    const { book, baseline: publicationBaseline } = session.mode === "cloud"
+        ? await loadPublicationBook(api, bookId, session.user.id)
+        : { book: await api.getBook(bookId), baseline: null };
     if (!book) {
         if (status) status.textContent = "Book not found.";
         return;
@@ -286,6 +289,7 @@ async function boot() {
                 supabase,
                 api,
                 book,
+                publicationBaseline,
                 chapters,
                 readForm,
                 postError,

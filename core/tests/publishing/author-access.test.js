@@ -127,7 +127,7 @@ test('a failed private snapshot save stops publication before any public write',
     await assert.rejects(runPublishSave({isPublished:true,listed:true,session:{mode:'cloud',user:{id:owner}},book:source,chapters:source.sections.body,
         readForm:()=>({title:'Book',genres:['fantasy'],rating:'general',warningMeta:{version:1,reviewed:true,noneApply:true,coreIds:[],entries:[],note:''},chapterIds:['free','locked'],lockedChapterIds:['locked']}),
         loadDraftCoverFile:async()=>null,saveChapterAccess:async()=>{throw Error('Private save unavailable');},
-        api:{updateBook(){assert.fail('Must not save');}},supabase:{from(){assert.fail('Must not publish');}},postError:{}}),/Private save unavailable/);
+        api:{async readOnlineBook(){return {...source,user_id:owner,_cloudUpdated:1};},updateBook(){assert.fail('Must not save');}},supabase:{from(){assert.fail('Must not publish');}},postError:{}}),/Private save unavailable/);
 });
 
 test('real Supabase adapter requests a JSON representation when saving the connection',async()=>{
