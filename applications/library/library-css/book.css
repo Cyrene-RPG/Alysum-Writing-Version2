@@ -455,6 +455,7 @@ body {
 .book-by .author-link:focus-visible {outline:2px solid var(--accent);outline-offset:3px}
 
 .book-hiatus { margin: 1.2rem 0; padding: 1rem; border: 1px solid var(--border, #777); border-radius: 12px; }
+.book-hiatus[hidden], .book-hiatus [hidden] { display: none !important; }
 .book-hiatus p { margin: 0 0 .8rem; }
 .book-hiatus-dialog { box-sizing: border-box; width: min(90vw, 480px); padding: 1.5rem; border: 1px solid var(--border, #777); border-radius: 16px; background: var(--alysum-ui-panel, #202029); color: var(--text, #fff); }
 .book-hiatus-dialog::backdrop { background: rgb(0 0 0 / 65%); }
