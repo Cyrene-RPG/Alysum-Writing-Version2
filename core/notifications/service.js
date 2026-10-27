@@ -1,7 +1,7 @@
 import {
     DEFAULT_NOTIFICATION_PREFERENCES, listNotifications, getNotificationsByIds,
     getNotificationSummary, getNotificationPreferences, saveNotificationPreferences,
-    setNotificationRead, markNotificationsRead, resolveNotificationDestination,
+    setNotificationRead, markNotificationsRead, resolveNotificationDestination, claimBookReminderPopup,
 } from "./client.js";
 import { isDesktopLocalHost } from "../desktop/app.js";
 
@@ -88,6 +88,7 @@ export function createNotificationService(client, { isEnabled = () => !isDesktop
     }
     const service = {
         getState: () => state,
+        claimReminderPopup: () => guard(() => claimBookReminderPopup(client)),
         subscribe(fn) {
             listeners.add(fn);
             fn(state);

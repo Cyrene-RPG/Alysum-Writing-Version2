@@ -594,3 +594,15 @@ body {
 .studio-head-actions .studio-action:hover {border-color:var(--accent)}
 .studio-head-actions .studio-action:focus-visible {outline:2px solid var(--accent);outline-offset:3px}
 @media(max-width:600px){.studio-head-actions{flex-wrap:wrap;min-width:0}}
+
+.studio-reminder-dialog { box-sizing: border-box; width: min(94vw, 560px); max-height: 88vh; overflow: auto; padding: 24px; border: 1px solid var(--border, #666); border-radius: 16px; background: var(--alysum-ui-panel, #202029); color: var(--text, #fff); font-family: var(--font-sans, sans-serif); }
+.studio-reminder-dialog:not([open]) { display: none; }
+.studio-reminder-dialog::backdrop { background: rgb(0 0 0 / 60%); }
+.studio-reminder-dialog fieldset { border: 1px solid var(--border, #777); border-radius: 12px; padding: 16px; margin: 12px 0; min-width: 0; }
+.studio-reminder-dialog label { display: block; margin: 14px 0 6px; }
+.studio-reminder-dialog input:not([type="checkbox"]),.studio-reminder-dialog select { display: block; box-sizing: border-box; width: 100%; min-height: 44px; padding: 10px; border: 1px solid var(--border, #777); border-radius: 8px; background: var(--alysum-ui-input, #202029); color: inherit; font: inherit; }
+.studio-reminder-dialog input[type="checkbox"] { width: auto; margin-right: 8px; }
+.studio-reminder-dialog button { min-height: 44px; padding: 10px 16px; background: var(--alysum-ui-raised, transparent); color: inherit; border: 1px solid var(--border, #777); border-radius: 10px; font: inherit; cursor: pointer; }
+.studio-reminder-dialog button:disabled { opacity: .6; cursor: wait; }
+.studio-reminder-dialog button:focus-visible { outline: 2px solid var(--accent, #b9a0ff); outline-offset: 3px; }
+.studio-reminder-dialog p { font-size: .9rem; line-height: 1.5; }

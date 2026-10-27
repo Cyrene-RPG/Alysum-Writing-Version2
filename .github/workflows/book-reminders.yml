@@ -1,0 +1,43 @@
+name: Studio book reminder checks
+on:
+  pull_request:
+    paths:
+      - 'applications/studio/page-ui/book-reminders.js'
+      - 'applications/studio/page-ui/book-menu.js'
+      - 'applications/studio/page-ui/page.js'
+      - 'applications/studio/pages/studio.html'
+      - 'applications/studio/studio-css/page.css'
+      - 'core/publishing/reminders*'
+      - 'core/notifications/**'
+      - 'core/tests/reminders/**'
+      - 'site-appearance/js-runtime/book-reminder-popup.js'
+      - 'site-appearance/css-styles/book-reminder-popup.css'
+      - 'supabase/live-site/supabase-book-reminders.sql'
+      - '.github/workflows/book-reminders.yml'
+permissions:
+  contents: read
+jobs:
+  reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test core/tests/reminders/*.test.js core/tests/notifications/*.test.js
+      - run: npm install --prefix "$RUNNER_TEMP/reminders" --no-audit --no-fund @electric-sql/pglite@0.5.11 jsdom@26 playwright@1.61.1
+      - run: node --test core/tests/reminders/popup.mjs
+        env:
+          JSDOM_MODULE: ${{ runner.temp }}/reminders/node_modules/jsdom/lib/api.js
+      - run: node --test core/tests/reminders/database.mjs
+        env:
+          PGLITE_MODULE: ${{ runner.temp }}/reminders/node_modules/@electric-sql/pglite/dist/index.js
+      - run: '"$RUNNER_TEMP/reminders/node_modules/.bin/playwright" install --with-deps chromium'
+      - run: node core/tests/reminders/browser.mjs
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/reminders/node_modules/playwright/index.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: studio-reminder-screenshots
+          path: test-results/reminders
