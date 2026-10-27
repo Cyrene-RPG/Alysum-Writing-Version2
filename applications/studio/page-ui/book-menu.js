@@ -77,7 +77,7 @@ function confirmAction({
     });
 }
 
-export function bindBookMenu({ getBooks, setBooks, paintShelf, api, supabase, session, status }) {
+export function bindBookMenu({ getBooks, setBooks, paintShelf, api, supabase, session, status, onReminders }) {
     const gearPop = document.getElementById("gearPopover");
     const gearMenuPane = document.getElementById("gearMenuPane");
     const gearPublishPane = document.getElementById("gearPublishPane");
@@ -118,6 +118,8 @@ export function bindBookMenu({ getBooks, setBooks, paintShelf, api, supabase, se
         menuBook = book;
         menuGear = gear;
         const listed = isLibraryListed(book);
+        const remindersButton = document.getElementById("bookMenuReminders");
+        if(remindersButton)remindersButton.hidden=session.mode!=="cloud" || Boolean(book.user_id && book.user_id!==session.user?.id);
         const bibleButton = document.getElementById("bookMenuBible");
         if (bibleButton) bibleButton.hidden = session.mode !== "cloud";
         const publishBtn = document.getElementById("bookMenuPublish");
@@ -198,6 +200,9 @@ export function bindBookMenu({ getBooks, setBooks, paintShelf, api, supabase, se
         if (event.key !== "Escape" || !gearPop || gearPop.hidden) return;
         if (gearPublishPane && !gearPublishPane.hidden) return;
         closeBookMenu();
+    });
+    document.getElementById("bookMenuReminders")?.addEventListener("click", () => {
+        const book=menuBook;closeBookMenu();if(book)onReminders?.(book);
     });
     document.getElementById("bookMenuBible")?.addEventListener("click", () => {
         if (menuBook && session.mode === "cloud") window.location.href = `/story-bible?book=${encodeURIComponent(menuBook.id)}`;

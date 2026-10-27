@@ -107,6 +107,7 @@
             <button type="button" class="studio-gear-pop-danger" id="bookMenuDelete">Delete book</button>
             <button type="button" id="bookMenuBible">Story Bible</button>
             <button type="button" id="bookMenuSettings">Settings</button>
+            <button type="button" id="bookMenuReminders">Reminders</button>
         </div>
         <div id="gearPublishPane" hidden>
             <p class="studio-gear-pop-copy" id="publishPopCopy"></p>
@@ -114,6 +115,35 @@
             <button type="button" id="publishPopNo">Cancel</button>
         </div>
     </div>
+        <dialog class="studio-reminder-dialog" id="bookReminders" aria-labelledby="bookRemindersTitle">
+            <h2 id="bookRemindersTitle">Book reminders</h2>
+            <p id="bookReminderTitle"></p>
+            <button type="button" id="closeBookReminders" aria-label="Close reminder settings">Close</button>
+            <p class="pub-hint">Optional reminders just for this book. We’ll check your schedule and notify you only if you haven’t updated during the period. Completed books and books on hiatus are skipped.</p>
+            <form id="bookReminderForm">
+                <fieldset id="bookReminderFields" disabled>
+                    <legend>Your reminder schedule</legend>
+                    <label><input name="enabled" type="checkbox"> Remind me about this book</label>
+                    <label for="bookReminderGoal">What counts as an update?</label>
+                    <select name="goal" id="bookReminderGoal"><option value="update">Writing edits or a posted update</option><option value="post">A posted chapter/update only</option></select>
+                    <label for="bookReminderCadence">How often?</label>
+                    <select name="cadence" id="bookReminderCadence"><option value="weekly">Weekly</option><option value="biweekly">Every two weeks</option><option value="monthly">Monthly</option><option value="days">Every N days</option></select>
+                    <label for="bookReminderDays">Number of days (for “Every N days”)</label>
+                    <input name="everyDays" id="bookReminderDays" type="number" min="1" max="365" value="7" required>
+                    <label for="bookReminderFirst">First reminder date and time</label>
+                    <input name="firstDueLocal" id="bookReminderFirst" type="datetime-local" required>
+                    <label for="bookReminderTimezone">Timezone</label>
+                    <input name="timezone" id="bookReminderTimezone" type="text" placeholder="America/Los_Angeles" maxlength="100" required>
+                    <p class="pub-hint">Choose the first day/time you want. Later checks repeat from that date in this timezone. Change the first date to a future date when restarting or changing a schedule.</p>
+                    <label><input name="popupEnabled" type="checkbox" checked> Also show a popup on my Studio dashboard</label>
+                    <p class="pub-hint">Reminders arrive in your Alysum inbox. Popups appear on your Studio dashboard, not as phone or email alerts. Saving this schedule does not publish the book.</p>
+                </fieldset>
+                <button type="submit" class="pub-ghost" id="saveBookReminder" disabled>Save reminder</button>
+                <p class="pub-hint" id="bookReminderNext"></p>
+                <p class="pub-status" id="bookReminderStatus" role="status" aria-live="polite"></p>
+            </form>
+        </dialog>
+
     <div class="confirm-overlay" id="confirmOverlay" hidden>
         <div class="confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
             <div class="confirm-icon" aria-hidden="true">?</div>

@@ -1,3 +1,6 @@
+import { mountStudioBookReminders } from "./book-reminders.js";
+import { createNotificationService } from "/core/notifications/service.js";
+import { mountBookReminderPopup } from "/site-appearance/js-runtime/book-reminder-popup.js";
 import { createScreenplaysApi } from "/core/screenplays/client.js?v=2";
 import { createAudiobooksApi } from "/core/audiobooks/client.js";
 import { mountBookFormatChoice } from "./book-format-choice.js";
@@ -439,7 +442,10 @@ async function boot() {
         void api.syncPending();
     }
 
+    const reminders = mountStudioBookReminders({client:supabase,session});
+    if(session.mode==="cloud") mountBookReminderPopup({service:createNotificationService(supabase)});
     const bookMenu = bindBookMenu({
+        onReminders: book => reminders?.open(book),
         getBooks: () => books,
         setBooks(next) { books = next; },
         paintShelf,
