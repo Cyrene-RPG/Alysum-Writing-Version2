@@ -1,0 +1,28 @@
+name: Separate account tab checks
+on:
+  pull_request:
+    paths:
+      - 'core/authentication/**'
+      - 'core/tests/authentication/**'
+      - 'applications/main-site/login/**'
+      - 'applications/main-site/pages/login.html'
+      - 'applications/main-site/pages/settings.html'
+      - 'applications/main-site/page-ui/workspace-nav.js'
+      - '.github/workflows/separate-account-tabs.yml'
+permissions:
+  contents: read
+jobs:
+  sessions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --experimental-vm-modules --test core/tests/authentication/*.test.js core/tests/authentication/transport.mjs core/tests/authentication/session-hint.mjs core/tests/authentication/tab-redirect.mjs
+      - run: npm install --prefix "$RUNNER_TEMP/accounts" --no-audit --no-fund @supabase/supabase-js@2 playwright@1.61.1
+      - run: '"$RUNNER_TEMP/accounts/node_modules/.bin/playwright" install --with-deps chromium'
+      - run: node core/tests/authentication/tab-browser.mjs
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/accounts/node_modules/playwright/index.mjs
+          SUPABASE_BROWSER_BUNDLE: ${{ runner.temp }}/accounts/node_modules/@supabase/supabase-js/dist/umd/supabase.js

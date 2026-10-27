@@ -44,6 +44,7 @@ function renderNavHtml(active) {
                         <a role="menuitem" href="/library" data-close-pfp-menu>Home</a>
                         <a role="menuitem" href="/overview" data-close-pfp-menu>Profile</a>
                         <a role="menuitem" href="/settings" data-close-pfp-menu>Settings</a>
+                        <a role="menuitem" href="/login?separateAccount=1" target="_blank" rel="noopener noreferrer" data-close-pfp-menu>Open another account ↗</a>
                         <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
                     </div>
                 </div>
