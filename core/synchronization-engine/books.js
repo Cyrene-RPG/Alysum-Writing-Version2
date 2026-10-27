@@ -21,6 +21,8 @@ import {
 import { cacheIsPending, chooseBook, isLocalOnlyId } from "./conflict-resolver.js";
 import { isProbablyOnline, withTimeout } from "./network.js";
 
+import { keepPendingCopy, pendingCopies, confirmPendingCopy } from "./pending-copies.js";
+
 const CACHE_PREFIX = "alysum:editor:draft-cache-";
 const CLOUD_READ_MS = 3000;
 
@@ -66,6 +68,7 @@ function withoutPending(book) {
     delete next._localRevision;
     delete next._writerSession;
     delete next._createdLocally;
+    delete next._creationSnapshot;
     return next;
 }
 
@@ -78,9 +81,19 @@ function withPending(book, pending) {
 function upsertCache(userId, book) {
     if (!book?.id) return;
     const stored = stripRuntime(book);
+    // Journal first, under a tab-specific key. Preserve legacy pending copies too.
+    let journaled = false;
+    try {
+        for (const prior of readCache(userId)) {
+            if (stored._pending && prior.id === stored.id && prior._pending && prior._writerSession !== stored._writerSession) {
+                if (!keepPendingCopy(localStorage, userId, prior)) return false;
+            }
+        }
+        journaled = keepPendingCopy(localStorage, userId, stored);
+    } catch { /* The cache write below may still succeed. */ }
     const books = readCache(userId).filter((row) => row.id !== stored.id);
     books.unshift(stored);
-    return writeCache(userId, books);
+    return writeCache(userId, books) || journaled;
 }
 
 function removeCache(userId, id) {
@@ -236,7 +249,7 @@ function localApi() {
  * @param {{ mode: "cloud" | "local" | "none", user: { id: string } | null }} session
  * @param {import("@supabase/supabase-js").SupabaseClient} [supabase]
  */
-export function createBooksApi(session, supabase) {
+export function createBooksApi(session, supabase, { writeTimeoutMs = 15000 } = {}) {
     const mode = session?.mode === "cloud" ? "cloud" : "local";
     const userId = session?.user?.id || "";
 
@@ -268,11 +281,12 @@ export function createBooksApi(session, supabase) {
         const running = previous.catch(() => {}).then(work); writeLocks.set(id, running);
         try { return await running; } finally { if (writeLocks.get(id) === running) writeLocks.delete(id); }
     }
-    function commitSaved(saved, stamp) {
+    function commitSaved(saved, stamp, pendingRow) {
+        try { confirmPendingCopy(localStorage, userId, pendingRow); } catch {}
         const latest = readCache(userId).find(row => row.id === saved.id);
         if (latest?._pending && cacheStamp(latest) !== stamp) {
-            if (latest._writerSession === writerSession && String(expectedVersion(saved.id, latest._baseUpdated)) === String(saved._cloudUpdated)) {
-                upsertCache(userId, { ...latest, _baseUpdated: saved._cloudUpdated, _cloudUpdated: saved._cloudUpdated });
+            if (latest._writerSession === writerSession && (String(expectedVersion(saved.id, latest._baseUpdated)) === String(saved._cloudUpdated) || (latest._createdLocally && latest._baseUpdated == null))) {
+                upsertCache(userId, { ...latest, _baseUpdated: saved._cloudUpdated, _cloudUpdated: saved._cloudUpdated, _createdLocally: false });
             }
             return;
         }
@@ -300,6 +314,38 @@ export function createBooksApi(session, supabase) {
         return withTimeout(cloud.getBook(supabase, userId, id), CLOUD_READ_MS, "cloud-get-timeout");
     }
 
+    async function verifiedUpdate(id, patch, base) {
+        try { return await cloud.updateBook(supabase, userId, id, patch, { expectedUpdated: base, writeTimeoutMs }); }
+        catch (error) {
+            // The server may have committed even when its response was lost.
+            // Only acknowledge an authoritative read matching every requested field.
+            if (error?.code !== "SAVE_TIMEOUT") {
+                try { const remote = await cloudGet(id); if (cloud.matchesBookPatch(remote, patch)) return remote; } catch {}
+            }
+            throw error;
+        }
+    }
+    async function saveCreated(row) {
+        const remote = await cloudGet(row.id);
+        const patch = cloudWritePayload(row);
+        const insertSnapshot = { title: row.title, sections: row.sections, words: row.words, media_format: row.media_format, publish_meta: {}, published_chapter_ids: [], is_published: false };
+        const finish = saved => cloud.matchesBookPatch(saved, patch) ? saved : verifiedUpdate(row.id, patch, saved._cloudUpdated);
+        if (remote) {
+            if (cloud.matchesBookPatch(remote, patch)) return remote;
+            if (cloud.matchesBookPatch(remote, insertSnapshot) || (row._creationSnapshot && cloud.matchesBookPatch(remote, row._creationSnapshot))) {
+                return finish(remote);
+            }
+            throw new Error("This book already exists with different writing. Your pending copy is retained for backup.");
+        }
+        try { return await finish(await cloud.insertBook(supabase, userId, { ...withoutPending(row), id: row.id }, { writeTimeoutMs })); }
+        catch (error) {
+            if (error?.code !== "SAVE_TIMEOUT") {
+                try { const found = await cloudGet(row.id); if (cloud.matchesBookPatch(found, patch)) return found; if (cloud.matchesBookPatch(found, insertSnapshot)) return finish(found); } catch {}
+            }
+            throw error;
+        }
+    }
+
     async function flushOne(queued) {
         return serializeWrite(queued.id, async () => {
             const row = readCache(userId).find(item => item.id === queued.id);
@@ -312,24 +358,31 @@ export function createBooksApi(session, supabase) {
             requireOnline();
             if (!remote) {
                 if (!row._createdLocally && !isLocalOnlyId(row.id)) throw new Error("This book is no longer available. Download your pending writing as a backup before reviewing access.");
-                const created = await cloud.insertBook(supabase, userId, { ...withoutPending(row), id: isLocalOnlyId(row.id) ? undefined : row.id });
+                const created = await saveCreated(row);
                 if (created.id !== row.id) removeCache(userId, row.id);
-                commitSaved(created, stamp); return true;
+                acknowledge(row.id, row._baseUpdated, created); commitSaved(created, stamp, row); return true;
             }
             const base = expectedVersion(row.id, row._baseUpdated ?? row._cloudUpdated ?? null);
+            if (row._createdLocally && base == null) {
+                const created = await saveCreated(row);
+                acknowledge(row.id, base, created); commitSaved(created, stamp, row); return true;
+            }
             const payload = String(remote.user_id) !== String(userId)
                 ? { title: row.title, sections: row.sections, words: row.words } : cloudWritePayload(row);
             // Legacy queued copies that already equal the server need no blind write.
-            if (base == null && JSON.stringify({ title: row.title, sections: row.sections }) === JSON.stringify({ title: remote.title, sections: remote.sections })) {
-                commitSaved(remote, stamp); return true;
+            if (base == null && cloud.matchesBookPatch(remote, payload)) {
+                commitSaved(remote, stamp, row); return true;
             }
-            const pushed = await cloud.updateBook(supabase, userId, row.id, payload, { expectedUpdated: base });
-            acknowledge(row.id, base, pushed); commitSaved(pushed, stamp); return true;
+            const pushed = await verifiedUpdate(row.id, payload, base);
+            acknowledge(row.id, base, pushed); commitSaved(pushed, stamp, row); return true;
         });
     }
 
     return {
         mode: "cloud",
+        listRecoveryCopies(id) {
+            try { return pendingCopies(localStorage, userId, id).filter(copy => copy.book._writerSession !== writerSession); } catch { return []; }
+        },
         async promoteDraft(id) {
             requireOnline();
             const cached=readCache(userId);
@@ -432,10 +485,10 @@ export function createBooksApi(session, supabase) {
             }
         },
         async insertBook(payload, { strict = false } = {}) {
-            const seed = asBook(payload);
+            const seed = { ...asBook(payload), id: payload?.id || newOfflineBookId() };
             try {
                 requireOnline();
-                const book = await cloud.insertBook(supabase, userId, seed);
+                const book = await cloud.insertBook(supabase, userId, seed, { writeTimeoutMs });
                 lastReadFromCache = false;
                 upsertCache(userId, withoutPending(book));
                 return { ...book, _synced: true };
@@ -449,6 +502,7 @@ export function createBooksApi(session, supabase) {
                     created: Date.now(),
                     updated: Date.now(),
                     _createdLocally: true,
+                    _creationSnapshot: { title: seed.title, sections: seed.sections, words: seed.words, media_format: seed.media_format, publish_meta: {}, published_chapter_ids: [], is_published: false },
                     _localRevision: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
                     _writerSession: writerSession,
                 }, true);
@@ -467,8 +521,9 @@ export function createBooksApi(session, supabase) {
                     const shared = previous?.user_id && String(previous.user_id) !== String(userId);
                     const allowedPatch = shared ? Object.fromEntries(Object.entries(patch).filter(([key]) => ["title", "sections", "words"].includes(key))) : patch;
                     const base = expectedVersion(id, supplied);
-                    const saved = await cloud.updateBook(supabase, userId, id, allowedPatch, { expectedUpdated: base });
-                    acknowledge(id, base, saved); commitSaved(saved, stamp);
+                    const saved = optimistic._createdLocally && base == null
+                        ? await saveCreated(optimistic) : await verifiedUpdate(id, allowedPatch, base);
+                    acknowledge(id, base, saved); commitSaved(saved, stamp, optimistic);
                     return { ...normalizeBook(saved), _synced: true };
                 } catch (error) {
                     return { ...normalizeBook(optimistic), _synced: false, _cached: cached, _pending: true, _syncError: error?.message || "Could not save to the cloud." };

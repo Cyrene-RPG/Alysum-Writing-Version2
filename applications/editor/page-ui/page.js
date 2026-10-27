@@ -1,3 +1,4 @@
+import { mountPendingRecovery } from "./pending-recovery.js";
 import { mountStoryBible } from "./story-bible.js";
 import { chapterContentChanged } from "/core/writing-engine/draft-revisions.js";
 import { mountDraftSwitcher } from "./draft-switcher.js";
@@ -138,6 +139,7 @@ async function boot() {
     const saveStatus = document.getElementById("saveStatus");
     const saveRecovery = document.getElementById("saveRecovery");
     const retryEditorSave = document.getElementById("retryEditorSave");
+    const pendingRecovery = mountPendingRecovery({ api, bookId, anchor: document.getElementById("saveFeedback") });
     let saveStatusTimer = 0;
     function setSaveStatus(text, hideAfterMs) {
         if (!saveStatus) return;
@@ -299,6 +301,7 @@ async function boot() {
                     publish_meta: next.publish_meta || {},
                     published_chapter_ids: next.published_chapter_ids || [],
                 }, { expectedUpdated: next._cloudUpdated });
+                pendingRecovery.refresh();
                 if (next._rev !== bookRev) return;
                 const nextTitle = String(next.title || "").trim();
                 const savedTitle = String(saved?.title || "").trim();
@@ -401,6 +404,7 @@ async function boot() {
             published_chapter_ids: book.published_chapter_ids || [],
             updated: Date.now(),
         }, { expectedUpdated: book._cloudUpdated });
+        pendingRecovery.refresh();
         autosave.schedule(book);
         if (immediate) return autosave.flush();
         return Promise.resolve();
@@ -663,6 +667,7 @@ async function boot() {
     });
     if (session.mode === "cloud" && isProbablyOnline()) {
         void api.syncPending().then((result) => {
+            pendingRecovery.refresh();
             if (result?.failed) paintOfflineStatus({ _synced: false });
         });
     }

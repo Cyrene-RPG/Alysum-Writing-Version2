@@ -126,21 +126,49 @@ export async function getBook(supabase, userId, id) {
     return fromCloudRow(data);
 }
 
-export async function insertBook(supabase, userId, payload) {
+/** A timeout means unconfirmed, never permission to replay a mutation blindly. */
+async function writeWithDeadline(request, timeoutMs = 15000) {
+    const controller = new AbortController();
+    if (typeof request.abortSignal === "function") request = request.abortSignal(controller.signal);
+    let timer;
+    try {
+        return await Promise.race([request, new Promise((_, reject) => {
+            timer = setTimeout(() => {
+                reject(Object.assign(new Error("The save took too long to confirm. Your pending writing is retained; retry or download a backup."), { code: "SAVE_TIMEOUT" }));
+                controller.abort();
+            }, timeoutMs);
+        })]);
+    } finally { clearTimeout(timer); }
+}
+
+function canonical(value) {
+    if (Array.isArray(value)) return value.map(canonical);
+    if (value && typeof value === "object") return Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])]));
+    return value;
+}
+/** Compare every requested field, including private notes and publication metadata. */
+export function matchesBookPatch(book, patch) {
+    if (!book) return false;
+    const wanted = toCloudPatch(patch), actual = toCloudPatch(book);
+    delete wanted.updated; delete actual.updated;
+    return Object.keys(wanted).every(key => JSON.stringify(canonical(actual[key])) === JSON.stringify(canonical(wanted[key])));
+}
+
+export async function insertBook(supabase, userId, payload, { writeTimeoutMs } = {}) {
     const row = toCloudInsert(payload, userId);
-    const { data, error } = await supabase.from("books").insert(row).select("*").single();
+    const { data, error } = await writeWithDeadline(supabase.from("books").insert(row).select("*").single(), writeTimeoutMs);
     if (error) throw error;
     return fromCloudRow(data);
 }
 
-export async function updateBook(supabase, userId, id, patch, { expectedUpdated } = {}) {
+export async function updateBook(supabase, userId, id, patch, { expectedUpdated, writeTimeoutMs } = {}) {
     if (expectedUpdated == null || !Number.isFinite(Number(expectedUpdated))) {
         throw Object.assign(new Error("This edit has no confirmed cloud version. Download a backup and import it as a recovered book before reviewing the cloud copy."), { code: "BOOK_CONFLICT" });
     }
     const changes = toCloudPatch(patch);
     changes.updated = Math.max(Date.now(), Number(expectedUpdated) + 1);
-    const { data, error } = await supabase.from("books").update(changes)
-        .eq("id", id).eq("updated", expectedUpdated).select("*").single();
+    const { data, error } = await writeWithDeadline(supabase.from("books").update(changes)
+        .eq("id", id).eq("updated", expectedUpdated).select("*").single(), writeTimeoutMs);
     if (error?.code === "PGRST116" || (!error && !data)) {
         throw Object.assign(new Error("This book changed in another tab or device, or your access changed. Your edits were not overwritten. Download a backup before reviewing the other copy."), { code: "BOOK_CONFLICT" });
     }
