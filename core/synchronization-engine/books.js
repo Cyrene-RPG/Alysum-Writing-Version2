@@ -564,7 +564,8 @@ export function createBooksApi(session, supabase, { writeTimeoutMs = 15000 } = {
         async updateBook(id, patch, { expectedUpdated } = {}) {
             return serializeWrite(id, async () => {
                 const previous = readCache(userId).find(row => row.id === id);
-                const supplied = expectedUpdated ?? readVersions.get(id) ?? previous?._baseUpdated ?? previous?._cloudUpdated ?? (!previous?._pending ? previous?.updated : null);
+                // Queue the version this tab's own saves reached; acknowledgements are lost on reload.
+                const supplied = expectedVersion(id, expectedUpdated ?? readVersions.get(id) ?? previous?._baseUpdated ?? previous?._cloudUpdated ?? (!previous?._pending ? previous?.updated : null));
                 const optimistic = withPending({ ...stashPatch(previous, id, userId, { ...patch, updated: Date.now() }), _writerSession: writerSession, _baseUpdated: supplied ?? null }, true);
                 const stamp = cacheStamp(optimistic), cached = upsertCache(userId, optimistic);
                 try {
@@ -583,7 +584,7 @@ export function createBooksApi(session, supabase, { writeTimeoutMs = 15000 } = {
         },
         stashBook(id, patch, { expectedUpdated } = {}) {
             const previous = readCache(userId).find((row) => row.id === id);
-            const optimistic = withPending({ ...stashPatch(previous, id, userId, { ...patch, updated: Date.now() }), _writerSession: writerSession, _baseUpdated: expectedUpdated ?? readVersions.get(id) ?? previous?._baseUpdated ?? previous?._cloudUpdated ?? (!previous?._pending ? previous?.updated : null) }, true);
+            const optimistic = withPending({ ...stashPatch(previous, id, userId, { ...patch, updated: Date.now() }), _writerSession: writerSession, _baseUpdated: expectedVersion(id, expectedUpdated ?? readVersions.get(id) ?? previous?._baseUpdated ?? previous?._cloudUpdated ?? (!previous?._pending ? previous?.updated : null)) }, true);
             upsertCache(userId, optimistic);
             return normalizeBook(optimistic);
         },

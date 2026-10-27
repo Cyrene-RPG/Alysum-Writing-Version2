@@ -82,3 +82,11 @@ test('storage pressure cannot replace another tab’s unjournaled pending copy',
  const original=globalThis.localStorage.setItem;globalThis.localStorage.setItem=(key,value)=>{if(key.startsWith('alysum:editor:pending-copy:'))throw Error('Quota');original(key,value);};
  f.failWrite();const result=await f.api.updateBook('book',{title:'New tab B'});assert.equal(result._synced,false);assert.equal(result._cached,false);assert.equal(f.cache().title,'Legacy pending A');
 });
+test('typing during a save, then reloading, still saves the latest writing',async()=>{
+ // Mirrors the editor page: it keeps passing the version it opened with while a save is in flight.
+ const f=fixture(),g=gate();const opened=await f.api.getBook('book');f.writeGate(g.promise);
+ const save=f.api.updateBook('book',{title:'First'},{expectedUpdated:opened._cloudUpdated});await f.writing;
+ f.api.stashBook('book',{title:'Second'},{expectedUpdated:opened._cloudUpdated});g.resolve();f.writeGate(null);assert.equal((await save)._synced,true);
+ f.api.stashBook('book',{title:'Typed before closing'},{expectedUpdated:opened._cloudUpdated});
+ const reopened=f.another();assert.deepEqual(await reopened.syncPending(),{synced:1,failed:0});assert.equal(f.server().title,'Typed before closing');
+});

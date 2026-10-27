@@ -171,7 +171,7 @@ export async function updateBook(supabase, userId, id, patch, { expectedUpdated,
         .eq("id", id).eq("updated", expectedUpdated).select("*"), writeTimeoutMs);
     // A version mismatch is an ordinary empty result, not a singular HTTP 406.
     if (error?.code === "PGRST116" || (!error && Array.isArray(data) && data.length === 0)) {
-        throw Object.assign(new Error("This book changed in another tab or device, or your access changed. Choose Review versions to compare the copies and resolve this save."), { code: "BOOK_CONFLICT" });
+        throw Object.assign(new Error("The online copy is different from this screen, possibly from another tab or device. To keep what you see here, click Review versions, then Save this tab to original. Both copies are backed up first."), { code: "BOOK_CONFLICT" });
     }
     if (error) throw error;
     if (!Array.isArray(data) || data.length !== 1) throw new Error("The save response could not be verified. Keep this tab open and download a backup.");
