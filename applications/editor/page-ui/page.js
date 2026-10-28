@@ -639,7 +639,9 @@ async function boot() {
     });
     mountStoryBible({ button: document.getElementById("open-story-bible"), pageEl, supabase, session,
         getBook: () => book, getChapterId: () => selectedId, saveCurrent: saveChapter });
-    paintOfflineStatus(book._pending ? { ...book, _synced: false, _cached: true } : undefined);
+    // A copy left unsaved from an earlier visit: point at the buttons that fix it, not at the connection.
+    const unsavedOnOpen = "Some writing on this device was not saved online during an earlier visit. Click Retry save. If this message stays, click Review versions, then Save this tab to original.";
+    paintOfflineStatus(book._pending ? { ...book, _synced: false, _cached: true, _syncError: unsavedOnOpen } : undefined);
     if (openedFromCache && session.mode === "cloud") {
         void api.getBook(bookId).then((fresh) => {
             if (!fresh) {
@@ -686,7 +688,8 @@ async function boot() {
     if (session.mode === "cloud" && isProbablyOnline()) {
         void api.syncPending().then((result) => {
             pendingRecovery.refresh();
-            if (result?.failed) paintOfflineStatus({ _synced: false });
+            if (result?.failed && book._pending) paintOfflineStatus({ _synced: false, _cached: true, _syncError: unsavedOnOpen });
+            else if (result?.failed) paintOfflineStatus({ _synced: false });
         });
     }
 }

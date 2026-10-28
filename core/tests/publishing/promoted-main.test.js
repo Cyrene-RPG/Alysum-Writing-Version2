@@ -34,7 +34,7 @@ test('failed publication exposes the cloud reason and keeps the form open',async
         api:{async readOnlineBook(){return {id:'main',user_id:'owner',sections:{body:[]},_cloudUpdated:1};},async updateBook(){return {_synced:false,_pending:true,_syncCode:'BOOK_CONFLICT',_syncError:'The online copy is different from this screen.'};}},
         book:{id:'main',user_id:'owner',sections:{body:[]}},chapters:[{id:'chapter',title:'Chapter',content:'word '.repeat(3000)}],
         readForm:()=>({title:'Book',genres:['fantasy'],rating:'Teen',chapterIds:['chapter'],warningMeta:{version:1,reviewed:true,noneApply:true,coreIds:[],entries:[],note:''}}),
-        postError:{},async loadDraftCoverFile(){return null;}}),error=>error.code==='BOOK_CONFLICT'&&/listing was updated.*online copy is different/.test(error.message));
+        postError:{},async loadDraftCoverFile(){return null;}}),error=>error.code==='BOOK_CONFLICT'&&/listing was updated.*online book is different.*Open this book in the Editor/.test(error.message));
         assert.equal(listingWrites,1);assert.equal(redirects,0);
     }finally{globalThis.window=before;}
 });

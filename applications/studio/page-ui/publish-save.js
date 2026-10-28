@@ -73,7 +73,10 @@ export function bookSaveFailed(saved) {
 }
 
 export function bookSaveError(saved, context) {
-    const reason = String(saved?._syncError || "").trim();
+    // The editor's conflict text points at an Editor-only button, so give publishing its own steps.
+    const reason = saved?._syncCode === "BOOK_CONFLICT"
+        ? "The online book is different from the copy on this device. Open this book in the Editor, click Review versions, then Save this tab to original. Then come back here and click Update again."
+        : String(saved?._syncError || "").trim();
     const error = new Error(`${context}${reason ? ` ${reason}` : " Keep this tab open and try again when your connection is available."}`);
     if (saved?._syncCode) error.code = saved._syncCode;
     return error;
