@@ -97,7 +97,7 @@ export async function handleAuthorAccess(request, env, injected = {}) {
                 fail(400,`Select these locked chapters under Manuscript, or turn off their locks: ${missingNames || missingSelection.join(', ')}.`);
             }
             const manuscript = listBodyChapters(source.sections);
-            if (chapterIds.length && chapterIds.length === manuscript.length && body.complete !== true) fail(400,'Mark the book complete before locking every chapter, or leave a free sample.');
+            // Completion describes the story, independently of which current chapters are paid.
             const chapters = manuscript.filter(ch=>chapterIds.includes(String(ch.id))).map(ch=>({id:String(ch.id),title:String(ch.title || 'Untitled').slice(0,300),text:manuscriptPlainText(ch.content || ''),wordCount:countWordsInHtml(ch.content || '')}));
             if (chapters.length !== chapterIds.length || chapters.some(ch=>ch.wordCount < 500) || JSON.stringify(chapters).length > 2000000) fail(400,'Locked chapters must contain at least 500 words each, up to two million characters per book.');
             let connectionId = null, productKey = '', purchaseUrl = '', minimum = 0, currency = '';

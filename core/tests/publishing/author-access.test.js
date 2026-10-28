@@ -100,7 +100,7 @@ test('mismatched product links and locks on unselected chapters cannot be publis
     const f=await fixture();
     assert.equal((await f.run(request('configure',{method:'POST',body:{...config(),purchaseUrl:'https://ko-fi.com/s/otherproduct'}}))).status,400);
     assert.equal((await f.run(request('configure',{method:'POST',body:{...config(),selectedIds:['free']}}))).status,400);
-    assert.equal((await f.run(request('configure',{method:'POST',body:{...config(),chapterIds:['free','locked']}}))).status,400);assert.equal(f.writes.length,0);
+    assert.equal(f.writes.length,0);
 });
 test('a completed book can lock all chapters with one product',async()=>{
     const f=await fixture();assert.equal((await f.run(request('configure',{method:'POST',body:{...config(),complete:true,chapterIds:['free','locked']}}))).status,200);assert.equal(f.writes.at(-1).body.p_chapters.length,2);
@@ -236,4 +236,24 @@ test('mixed public placeholders use the bundle link for 1–2 and the single-pro
     const payload=buildLibraryPayload(mixedSource,{chapterIds:['sample','one','two','three'],lockedChapterIds:['one','two','three'],isPublished:true,chapterAccess:{pricingMode:'mixed',chapterProducts:products}});
     assert.deepEqual(payload.chapters.filter(ch=>ch.locked).map(ch=>ch.purchaseUrl),['https://ko-fi.com/s/pack12','https://ko-fi.com/s/pack12','https://ko-fi.com/s/chapter3']);
     assert.ok(payload.chapters.filter(ch=>ch.locked).every(ch=>ch.content===''));
+});
+
+test('ongoing books can sell every current chapter as a bundle, singles or mixed products without a free sample',async()=>{
+    for(const pricingMode of ['bundle','individual','mixed']) {
+        const ongoing={...source,publish_meta:{complete:false},sections:{body:['one','two','three'].map(id=>({id,title:id,content:'PRIVATE '+('word '.repeat(600))}))}};
+        const body={...config(),pricingMode,complete:false,selectedIds:['one','two','three'],chapterIds:['one','two','three'],chapterProducts:['one','two','three'].map((chapterId,index)=>({chapterId,purchaseUrl:'https://ko-fi.com/s/'+(pricingMode==='mixed'&&index<2?'pack12':chapterId),minimumAmount:pricingMode==='mixed'&&index<2?150:75}))};
+        const f=await fixture('kofi',{source:ongoing});const response=await f.run(request('configure',{method:'POST',body}));
+        assert.equal(response.status,200,pricingMode+': '+await response.text());
+        assert.deepEqual(f.writes.at(-1).body.p_chapters.map(ch=>ch.id),['one','two','three']);
+        assert.equal(ongoing.publish_meta.complete,false);
+        const payload=buildLibraryPayload(ongoing,{chapterIds:body.selectedIds,lockedChapterIds:body.chapterIds,isPublished:true,complete:false,chapterAccess:{pricingMode,productUrl:body.purchaseUrl,chapterProducts:body.chapterProducts.map(p=>({chapterId:p.chapterId,productUrl:p.purchaseUrl}))}});
+        assert.ok(payload.chapters.every(ch=>ch.locked && ch.content===''));
+        assert.doesNotMatch(JSON.stringify(payload),/PRIVATE/);
+    }
+});
+test('ongoing all-paid books still require real selected chapters and minimum chapter lengths',async()=>{
+    const tooShort={...source,publish_meta:{complete:false},sections:{body:[{id:'short',title:'Short chapter',content:'word '.repeat(100)}]}};
+    const f=await fixture('kofi',{source:tooShort});
+    const response=await f.run(request('configure',{method:'POST',body:{...config(),complete:false,selectedIds:['short'],chapterIds:['short']}}));
+    assert.equal(response.status,400);assert.equal(f.writes.length,0);assert.match(await response.text(),/500 words/);
 });
