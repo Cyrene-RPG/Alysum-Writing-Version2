@@ -38,12 +38,35 @@ export function mountWriterChrome({
     let railDrawerOpen = false;
     let drawerOpener = null;
 
+    const editorActions = document.getElementById("editorActions");
+    const mobileActions = document.getElementById("writerMobileActions");
+    const railTitle = document.querySelector("#writerRail .writer-rail-title");
+    const desktopRailTitle = railTitle?.textContent;
+    const actionsAnchor = editorActions ? document.createComment("Editor action row") : null;
+    if (actionsAnchor) editorActions.before(actionsAnchor);
+    function syncEditorActions() {
+        const inDrawer = mobileQuery.matches && !document.documentElement.classList.contains("is-typewriter");
+        if (editorActions && mobileActions && actionsAnchor?.parentNode) {
+            if (inDrawer && editorActions.parentNode !== mobileActions) mobileActions.append(editorActions);
+            else if (!inDrawer && editorActions.parentNode !== actionsAnchor.parentNode) actionsAnchor.after(editorActions);
+        }
+        if (railTitle) railTitle.textContent = mobileQuery.matches ? "Editor tools" : desktopRailTitle;
+    }
+    syncEditorActions();
+    // Typewriter hides the sidebars; keep the existing action row available there.
+    const actionObserver = new MutationObserver(syncEditorActions);
+    actionObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    mobileActions?.addEventListener("click", (event) => {
+        if (event.target.closest("#open-story-bible, #compare-drafts, #share-snippet")) setRailDrawerOpen(false);
+    }, true);
+
     function syncBackdrop() {
+        if (mobileActions) mobileActions.inert = mobileQuery.matches && !railDrawerOpen;
         if (!backdrop) return;
         backdrop.hidden = !(treeDrawerOpen || railDrawerOpen);
     }
     function setTreeDrawerOpen(open, opener) {
-        if (!mobileQuery.matches) return;
+        if (!mobileQuery.matches && open) return;
         treeDrawerOpen = open;
         if (open) railDrawerOpen = false;
         shell?.classList.toggle("is-tree-drawer-open", treeDrawerOpen);
@@ -62,7 +85,7 @@ export function mountWriterChrome({
         }
     }
     function setRailDrawerOpen(open, opener) {
-        if (!mobileQuery.matches) return;
+        if (!mobileQuery.matches && open) return;
         railDrawerOpen = open;
         if (open) treeDrawerOpen = false;
         shell?.classList.toggle("is-rail-drawer-open", railDrawerOpen);
@@ -101,6 +124,7 @@ export function mountWriterChrome({
     });
     mobileQuery.addEventListener("change", (event) => {
         if (!event.matches) closeDrawers();
+        syncEditorActions();
         setTreeCollapsed(treeCollapsed());
         setRailCollapsed(railCollapsed());
     });
