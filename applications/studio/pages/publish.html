@@ -196,13 +196,19 @@
                 <label for="chapterConnection">1. Choose your shop</label><select id="chapterConnection"><option value="">Choose your connected shop</option></select>
                 <p><a class="payment-back" id="chapterShopSettings" href="/applications/studio/pages/connected-payments">Connect or manage your shop →</a></p>
                 <label for="chapterPricingMode">2. Sell together or separately</label>
-                <select id="chapterPricingMode"><option value="bundle">Together (one product)</option><option value="individual">Separately (per chapter)</option></select>
+                <select id="chapterPricingMode"><option value="bundle">Together (one product)</option><option value="individual">Separately (per chapter)</option><option value="mixed">Bundles + single chapters</option></select>
                 <p id="chapterSaleInstructions" class="pub-hint">Create one shop product for the checked chapters, then paste its link and price below.</p>
                 <p id="chapterPricingSetup" class="pub-hint" hidden>Individual prices need the updated <a href="/applications/studio/pages/payment-setup">chapter access setup</a>. Existing bundle prices still work.</p>
                 <label for="chapterCurrency">Currency</label><select id="chapterCurrency"><option>USD</option><option>GBP</option><option>EUR</option><option>CAD</option><option>AUD</option></select>
                 <h3 class="chapter-payment-step">3. Choose paid chapters</h3>
                 <p class="pub-hint">Check the chapters a purchase should unlock. Other chapters selected under Manuscript stay free.</p>
                 <div id="chapterLocks" class="payment-chapters"></div>
+                <p id="chapterMixedSetup" class="pub-hint" hidden>To mix bundles and single chapters, run the updated <a href="/applications/studio/pages/payment-setup">chapter access setup</a>. Your current products still work.</p>
+                <div id="chapterMixedFields" hidden>
+                    <div id="chapterMixedProducts"></div>
+                    <button type="button" id="chapterAddProduct">Add another shop product</button>
+                    <p class="pub-hint">New chapters stay outside existing products until you select them. Earlier purchases keep the chapters they originally unlocked.</p>
+                </div>
                 <p><button type="button" id="chapterUseCalculator">Fill prices from calculator</button></p>
                 <p id="chapterCalculatorHint" class="pub-hint">Fills prices for checked chapters only. Set the same amounts in your shop; this button does not change shop prices.</p>
                 <p id="chapterCalculatorStatus" class="pub-hint" role="status"></p>
@@ -211,7 +217,7 @@
                     <label for="chapterMinimum">Price charged by your shop</label><input id="chapterMinimum" type="number" min="0.50" max="1000" step="0.01" inputmode="decimal" placeholder="3.00">
                 </div>
                 <details class="chapter-payment-help"><summary>How purchases unlock chapters</summary>
-                    <p class="pub-hint">Use one-time shop products. Each separately sold chapter needs its own product link. Tips, gifts and memberships do not unlock chapters.</p>
+                    <p class="pub-hint">Use one-time shop products. A shop product can contain one chapter or a bundle. In mixed mode, choose its chapters on its product card. Tips, gifts and memberships do not unlock chapters.</p>
                     <p class="pub-hint">Readers use the same email as their verified Alysum account at checkout. A confirmed purchase unlocks only its included chapters at that time.</p>
                     <p class="pub-hint">Prices here must match your shop. Discounts below these amounts will not unlock access. Payment is handled by your shop.</p>
                 </details>

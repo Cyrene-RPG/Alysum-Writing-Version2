@@ -23,3 +23,9 @@ JSDOM_MODULE=/path/to/jsdom/lib/api.js PGLITE_MODULE=/path/to/@electric-sql/pgli
 The second command uses disposable test databases and synthetic manuscript data; it does not connect to production.
 
 The paid-chapter form groups setup into shop, sale type and chapter selection. **Fill prices from calculator** applies suggestions to checked paid chapters, or to their single bundle. It uses word counts and explicit calculator edits, floors paid suggestions at $0.50, and supports USD suggestions. Existing saved prices are preserved until the author clicks the button. Authors must set matching prices in their external shop; this feature does not create products, charge readers or change checkout prices. No additional SQL migration is required for this form change.
+
+## Mixed bundles and single chapters
+
+Select **Bundles + single chapters** in Paid chapters. Each shop product card has one product link, its full product price and a chapter checklist. For example, assign Chapters 1–2 to the first product and Chapter 3 to the second. Add another product for later chapters. A chapter belongs to one product at a time. Existing bundle and individual modes remain available. The calculator fills one price per product and applies the discount only to multi-chapter products.
+
+Rerun `supabase/live-site/supabase-author-chapter-access.sql` after deploying this update. Pricing capability version 2 counts a bundled product's price once, rather than once per chapter. Mixed mode stays disabled on older SQL; existing bundle and individual modes continue working. Existing purchases retain their original chapter IDs even when product contents change or later chapters are added.

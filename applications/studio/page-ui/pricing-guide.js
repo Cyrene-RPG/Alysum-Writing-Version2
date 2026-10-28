@@ -22,7 +22,7 @@ export function bindPricingGuide(chapters, loadLatestChapters) {
         if (!button) return;
         const usd=$('chapterCurrency')?.value==='USD';
         button.disabled=!usd || !paidRows().length;
-        $('chapterCalculatorHint').textContent=!usd ? 'Calculator suggestions are in USD. Enter the prices from your shop for other currencies.' : 'Fills prices for checked chapters only. Set the same amounts in your shop; this button does not change shop prices.';
+        $('chapterCalculatorHint').textContent=!usd ? 'Calculator suggestions are in USD. Enter the prices from your shop for other currencies.' : $('chapterPricingMode')?.value==='mixed' ? 'Fills one price per shop product from its checked chapters. Bundle discounts apply to multi-chapter products. Match the amounts in your shop.' : 'Fills prices for checked chapters only. Set the same amounts in your shop; this button does not change shop prices.';
     };
     const refresh = (keepRows = false) => {
         if ($('chapterCalculatorStatus')) $('chapterCalculatorStatus').textContent='';
@@ -61,7 +61,24 @@ export function bindPricingGuide(chapters, loadLatestChapters) {
             $('chapterCalculatorStatus').textContent='Save some chapter text first so the calculator can suggest a price.';
             return;
         }
-        if ($('chapterPricingMode').value==='individual') {
+        if ($('chapterPricingMode').value==='mixed') {
+            let filled=0;
+            for(const card of document.querySelectorAll('.chapter-mixed-product')) {
+                const ids=new Set([...card.querySelectorAll('[data-offer-chapter-id]:checked')].map(input=>input.dataset.offerChapterId));
+                const members=included.filter(ch=>ids.has(String(ch.id)));
+                if(!members.length)continue;
+                const prices=members.map(ch=>{
+                    const value=estimates.get(String(ch.id));
+                    return value===undefined || value==='' ? undefined : Math.round(Number(value)*100);
+                });
+                const result=calculatePricing(members.map(ch=>countWordsInHtml(ch.content || '')),{discountPercent:Number($('pricingDiscount').value),chapterPrices:prices});
+                const cents=members.length===1 ? result.chapterPrices[0] : result.suggestedBook;
+                const input=card.querySelector('[data-mixed-price]');
+                input.value=(Math.min(100000,Math.max(50,cents))/100).toFixed(2);
+                input.dispatchEvent(new Event('input',{bubbles:true}));filled++;
+            }
+            $('chapterCalculatorStatus').textContent='Filled '+filled+' product price(s). Each product includes only its checked chapters. Match these amounts in your shop.';
+        } else if ($('chapterPricingMode').value==='individual') {
             const prices=new Map(included.map((ch,index)=>[String(ch.id),suggestion.chapterPrices[index]]));
             for (const row of document.querySelectorAll('.chapter-price-row')) {
                 const id=row.querySelector('[data-lock-chapter-id]')?.dataset.lockChapterId;

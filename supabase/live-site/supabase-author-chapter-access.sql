@@ -116,10 +116,17 @@ begin
         select b.owner_id,b.book_id,p_connection,p_transaction,p_email_hash,matched.chapter_ids,'paid'
         from public.author_access_books b
         cross join lateral (
-            select jsonb_agg(c->>'id') as chapter_ids,
-                sum((c->>'minimumAmount')::integer) as minimum_amount
-            from jsonb_array_elements(b.chapters) c
-            where c ? 'productKey' and p_products ? (c->>'productKey') and c->>'currency'=p_currency
+            -- A product can contain several chapters. Count its full price once,
+            -- while retaining every included chapter in the grant snapshot.
+            select (select jsonb_agg(c->>'id') from jsonb_array_elements(b.chapters) c
+                where c ? 'productKey' and p_products ? (c->>'productKey') and c->>'currency'=p_currency) as chapter_ids,
+                sum(products.price) as minimum_amount
+            from (
+                select c->>'productKey' as product_key,max((c->>'minimumAmount')::integer) as price
+                from jsonb_array_elements(b.chapters) c
+                where c ? 'productKey' and p_products ? (c->>'productKey') and c->>'currency'=p_currency
+                group by c->>'productKey'
+            ) products
         ) individual
         cross join lateral (
             select case when b.product_key<>'' and p_products ? b.product_key and b.currency=p_currency and b.minimum_amount<=p_amount
@@ -158,7 +165,7 @@ end;
 $$;
 -- Capability check prevents new application code from using individual prices on old SQL.
 create or replace function public.author_access_pricing_version()
-returns integer language sql immutable as $$ select 1 $$;
+returns integer language sql immutable as $$ select 2 $$;
 revoke all on function public.author_access_pricing_version() from public,anon,authenticated;
 grant execute on function public.author_access_pricing_version() to service_role;
 

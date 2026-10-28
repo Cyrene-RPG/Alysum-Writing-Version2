@@ -91,7 +91,8 @@ export function publishMetaFromForm(form) {
         chapterAccessPending: !form.isPublished,
         chapterAccess: form.chapterAccess ? {
             connectionId: String(form.chapterAccess.connectionId || ''),
-            pricingMode: form.chapterAccess.pricingMode === 'individual' ? 'individual' : 'bundle',
+            pricingMode: ['individual','mixed'].includes(form.chapterAccess.pricingMode) ? form.chapterAccess.pricingMode : 'bundle',
+            mixedProducts: (form.chapterAccess.mixedProducts || []).map(p=>({productUrl:normalizePurchaseUrl(p.productUrl),minimum:String(p.minimum || ''),chapterIds:(p.chapterIds || []).map(String)})),
             chapterProducts: (form.chapterAccess.chapterProducts || []).map(p=>({chapterId:String(p.chapterId),productUrl:normalizePurchaseUrl(p.productUrl),minimum:String(p.minimum || '')})),
             productUrl: normalizePurchaseUrl(form.chapterAccess.productUrl),
             minimum: String(form.chapterAccess.minimum || ''),

@@ -23,9 +23,9 @@ async function fixture(provider='kofi',options={}) {
         async user(req,required=true){const uid=req.headers.get('Authorization')?.slice(7);if(!uid){if(required)throw Error('Sign in to Alysum.');return null;}return {id:uid,email:uid===buyer?'Reader@Example.com':'owner@example.com',email_confirmed_at:'now'};},
         async db(table,{method='GET',query={},body}={}) {
             if(table==='author_access_connections') {if(method==='POST'){writes.push({table,body});return[];}return (!query.owner_id || query.owner_id===`eq.${owner}`)?[connection]:[];}
-            if(table==='books')return query.user_id===`eq.${owner}`?[source]:[];
+            if(table==='books')return query.user_id===`eq.${owner}`?[options.source || source]:[];
             if(table==='author_access_books')return options.savedConfig ? [structuredClone(options.savedConfig)] : [];
-            if(table==='rpc/author_access_pricing_version'){if(options.oldSetup)throw Error('Missing function');return 1;}
+            if(table==='rpc/author_access_pricing_version'){if(options.oldSetup)throw Error('Missing function');return options.version ?? 2;}
             if(table==='rpc/save_author_access_book'){writes.push({table,body});return null;}
             if(table==='rpc/apply_author_access_sale') {
                 writes.push({table,body});const key=body.p_transaction;const old=transactions.get(key);const reversed=Boolean(old?.reversed || body.p_reversed);
@@ -205,7 +205,7 @@ test('public placeholders link to each chapter product without leaking private t
 
 test('old database setup keeps bundle saves working and rejects individual saves before a write',async()=>{
     const f=await fixture('kofi',{oldSetup:true});
-    assert.deepEqual(await (await f.run(request('status'))).json(),{ready:true,individualPricing:false});
+    assert.deepEqual(await (await f.run(request('status'))).json(),{ready:true,individualPricing:false,mixedPricing:false});
     assert.equal((await f.run(request('configure',{method:'POST',body:individualConfig()}))).status,503);
     assert.equal(f.writes.length,0);
     assert.equal((await f.run(request('configure',{method:'POST',body:config()}))).status,200);
@@ -215,4 +215,25 @@ test('owner configuration returns editable chapter products without returning pr
     const response=await f.run(request('book',{query:{book:'book'}}));
     const text=await response.text();assert.doesNotMatch(text,/PRIVATE BODY/);
     assert.deepEqual(JSON.parse(text).config.chapterProducts,[{chapterId:'locked',productUrl:'https://ko-fi.com/s/chapter2',minimum:'0.75'}]);
+});
+
+const mixedSource={...source,sections:{body:['sample','one','two','three'].map(id=>({id,title:id,content:'PRIVATE '+('word '.repeat(600))}))}};
+const mixedConfig=()=>({...config(),selectedIds:['sample','one','two','three'],chapterIds:['one','two','three'],pricingMode:'mixed',chapterProducts:[{chapterId:'one',purchaseUrl:'https://ko-fi.com/s/pack12',minimumAmount:150},{chapterId:'two',purchaseUrl:'https://ko-fi.com/s/pack12',minimumAmount:150},{chapterId:'three',purchaseUrl:'https://ko-fi.com/s/chapter3',minimumAmount:75}]});
+test('mixed products save a 1–2 bundle and a separate Chapter 3 without changing product prices',async()=>{
+    const f=await fixture('kofi',{source:mixedSource});
+    const response=await f.run(request('configure',{method:'POST',body:mixedConfig()}));assert.equal(response.status,200);
+    const saved=f.writes.at(-1).body;assert.equal(saved.p_product,'');
+    assert.deepEqual(saved.p_chapters.map(ch=>[ch.id,ch.productKey,ch.minimumAmount,ch.offerMode]),[['one','pack12',150,'mixed'],['two','pack12',150,'mixed'],['three','chapter3',75,'mixed']]);
+});
+test('mixed products reject conflicting prices for the same product and old SQL before writing',async()=>{
+    const body=mixedConfig();body.chapterProducts[1].minimumAmount=75;
+    const conflict=await fixture('kofi',{source:mixedSource});assert.equal((await conflict.run(request('configure',{method:'POST',body}))).status,400);assert.equal(conflict.writes.length,0);
+    const old=await fixture('kofi',{source:mixedSource,version:1});assert.equal((await old.run(request('configure',{method:'POST',body:mixedConfig()}))).status,503);assert.equal(old.writes.length,0);
+    assert.deepEqual(await (await old.run(request('status'))).json(),{ready:true,individualPricing:true,mixedPricing:false});
+});
+test('mixed public placeholders use the bundle link for 1–2 and the single-product link for 3',()=>{
+    const products=mixedConfig().chapterProducts.map(p=>({chapterId:p.chapterId,productUrl:p.purchaseUrl,minimum:String(p.minimumAmount/100)}));
+    const payload=buildLibraryPayload(mixedSource,{chapterIds:['sample','one','two','three'],lockedChapterIds:['one','two','three'],isPublished:true,chapterAccess:{pricingMode:'mixed',chapterProducts:products}});
+    assert.deepEqual(payload.chapters.filter(ch=>ch.locked).map(ch=>ch.purchaseUrl),['https://ko-fi.com/s/pack12','https://ko-fi.com/s/pack12','https://ko-fi.com/s/chapter3']);
+    assert.ok(payload.chapters.filter(ch=>ch.locked).every(ch=>ch.content===''));
 });
