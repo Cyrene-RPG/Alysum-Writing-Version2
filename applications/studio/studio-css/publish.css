@@ -477,3 +477,9 @@ h1 {
     #pricingRecalculate { width: 100%; }
     #chapterList { display: block; }
 }
+
+/* Product labels must stack above fields, including inside the lock picker. */
+#chapterLocks .chapter-product-fields,
+#chapterLocks .chapter-product-fields label { min-width: 0; }
+#chapterLocks .chapter-product-fields label { display: block; }
+#chapterLocks .chapter-product-fields input { display: block; min-width: 0; }
