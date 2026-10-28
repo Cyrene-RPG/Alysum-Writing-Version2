@@ -130,13 +130,7 @@ async function boot() {
         if (postBtn) postBtn.textContent = "Update";
     }
     const chapters = listBodyChapters(book.sections);
-    bindPricingGuide(chapters, async () => {
-        const latest = session.mode === "cloud"
-            ? (await loadPublicationBook(api, bookId, session.user.id)).book
-            : await api.getBook(bookId);
-        if (!latest) throw new Error("Book not found");
-        return listBodyChapters(latest.sections);
-    });
+
     const chapterDepth = new Map(
         listBodyChaptersWithDepth(book.sections).map((row) => [String(row.chapter.id), row.depth]),
     );
@@ -512,6 +506,13 @@ async function boot() {
         }).join("");
         select.addEventListener("change", () => paintPreview(shown[Number(select.value)]));
     }
+    bindPricingGuide(chapters, async () => {
+        const latest = session.mode === "cloud"
+            ? (await loadPublicationBook(api, bookId, session.user.id)).book
+            : await api.getBook(bookId);
+        if (!latest) throw new Error("Book not found");
+        return listBodyChapters(latest.sections);
+    });
     chapterAccess = await bindChapterAccess({supabase,book,chapters});
     paintPreview(shown[0]);
     paintChapterSummary();

@@ -16,7 +16,7 @@ function request(action,{method='GET',body,as=owner,headers={},query={},form=fal
     const url=new URL('/api/author-access',origin);url.searchParams.set('action',action);for(const [k,v] of Object.entries(query))url.searchParams.set(k,v);
     return new Request(url,{method,headers:{...(as?{Authorization:`Bearer ${as}`} : {}),Origin:origin,...headers},body:body===undefined?undefined:form?new URLSearchParams({data:JSON.stringify(body)}).toString():JSON.stringify(body)});
 }
-async function fixture(provider='kofi') {
+async function fixture(provider='kofi',options={}) {
     const connection={id:connectionId,owner_id:owner,provider,enabled:true,verifier_hash:await sha256(secret)};
     const writes=[],transactions=new Map(),grants=new Map();
     const services={
@@ -24,7 +24,8 @@ async function fixture(provider='kofi') {
         async db(table,{method='GET',query={},body}={}) {
             if(table==='author_access_connections') {if(method==='POST'){writes.push({table,body});return[];}return (!query.owner_id || query.owner_id===`eq.${owner}`)?[connection]:[];}
             if(table==='books')return query.user_id===`eq.${owner}`?[source]:[];
-            if(table==='author_access_books')return[];
+            if(table==='author_access_books')return options.savedConfig ? [structuredClone(options.savedConfig)] : [];
+            if(table==='rpc/author_access_pricing_version'){if(options.oldSetup)throw Error('Missing function');return 1;}
             if(table==='rpc/save_author_access_book'){writes.push({table,body});return null;}
             if(table==='rpc/apply_author_access_sale') {
                 writes.push({table,body});const key=body.p_transaction;const old=transactions.get(key);const reversed=Boolean(old?.reversed || body.p_reversed);
@@ -176,4 +177,42 @@ test('restored locks select publication, and unpublishing clears the lock contro
     const publish=new Checkbox(false),lock=new Checkbox(true);bindLockSelection(publish,lock);assert.equal(publish.checked,true);
     publish.checked=false;publish.dispatchEvent(new Event('change'));assert.equal(lock.checked,false);
     lock.checked=true;lock.dispatchEvent(new Event('change'));assert.equal(publish.checked,true);
+});
+
+const individualConfig=()=>({...config(),pricingMode:'individual',chapterProducts:[{chapterId:'locked',purchaseUrl:'https://ko-fi.com/s/chapter2',minimumAmount:75}]});
+test('individual prices save validated product metadata on the owned private chapter snapshot',async()=>{
+    const f=await fixture();const response=await f.run(request('configure',{method:'POST',body:individualConfig()}));
+    assert.equal(response.status,200);const saved=f.writes.at(-1).body;
+    assert.equal(saved.p_product,'');assert.equal(saved.p_url,'');
+    assert.equal(saved.p_chapters[0].productKey,'chapter2');assert.equal(saved.p_chapters[0].minimumAmount,75);
+    assert.equal(saved.p_chapters[0].currency,'USD');assert.match(saved.p_chapters[0].text,/PRIVATE BODY/);
+});
+test('individual pricing rejects missing, wrong-provider, duplicated and under-minimum products before writes',async()=>{
+    for(const chapterProducts of [[],[{chapterId:'locked',purchaseUrl:'https://payhip.com/b/wrong',minimumAmount:75}],
+        [{chapterId:'locked',purchaseUrl:'https://ko-fi.com/s/chapter2',minimumAmount:49}],
+        [{chapterId:'wrong',purchaseUrl:'https://ko-fi.com/s/chapter2',minimumAmount:75}],
+        [{chapterId:'locked',purchaseUrl:'https://ko-fi.com/s/chapter2',minimumAmount:75.5}]]) {
+        const f=await fixture();assert.equal((await f.run(request('configure',{method:'POST',body:{...individualConfig(),chapterProducts}}))).status,400);assert.equal(f.writes.length,0);
+    }
+    const f=await fixture();const body={...individualConfig(),complete:true,chapterIds:['free','locked'],chapterProducts:['free','locked'].map(chapterId=>({chapterId,purchaseUrl:'https://ko-fi.com/s/sameproduct',minimumAmount:75}))};
+    assert.equal((await f.run(request('configure',{method:'POST',body}))).status,400);assert.equal(f.writes.length,0);
+});
+test('public placeholders link to each chapter product without leaking private text',()=>{
+    const payload=buildLibraryPayload(source,{chapterIds:['free','locked'],lockedChapterIds:['locked'],isPublished:true,chapterAccess:{pricingMode:'individual',chapterProducts:[{chapterId:'locked',productUrl:'https://ko-fi.com/s/chapter2',minimum:'0.75'}]}});
+    assert.equal(payload.chapters.find(ch=>ch.id==='locked').purchaseUrl,'https://ko-fi.com/s/chapter2');
+    assert.doesNotMatch(JSON.stringify(payload),/PRIVATE BODY/);
+});
+
+test('old database setup keeps bundle saves working and rejects individual saves before a write',async()=>{
+    const f=await fixture('kofi',{oldSetup:true});
+    assert.deepEqual(await (await f.run(request('status'))).json(),{ready:true,individualPricing:false});
+    assert.equal((await f.run(request('configure',{method:'POST',body:individualConfig()}))).status,503);
+    assert.equal(f.writes.length,0);
+    assert.equal((await f.run(request('configure',{method:'POST',body:config()}))).status,200);
+});
+test('owner configuration returns editable chapter products without returning private bodies',async()=>{
+    const f=await fixture('kofi',{savedConfig:{chapter_ids:['locked'],chapters:[{id:'locked',text:'PRIVATE BODY',productKey:'chapter2',purchaseUrl:'https://ko-fi.com/s/chapter2',minimumAmount:75,currency:'USD'}]}});
+    const response=await f.run(request('book',{query:{book:'book'}}));
+    const text=await response.text();assert.doesNotMatch(text,/PRIVATE BODY/);
+    assert.deepEqual(JSON.parse(text).config.chapterProducts,[{chapterId:'locked',productUrl:'https://ko-fi.com/s/chapter2',minimum:'0.75'}]);
 });

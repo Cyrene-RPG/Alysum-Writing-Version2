@@ -20,3 +20,12 @@ test('handles empty, invalid and serialized selections', () => {
     assert.equal(result.discountPercent, 80);
     assert.equal(result.complete, false);
 });
+
+test('individual chapter estimates drive the bundle total with integer-cent rounding', () => {
+    const result=calculatePricing([10000,10000,10000],{chapterPrices:[75,125,200],discountPercent:15});
+    assert.deepEqual(result.chapterPrices,[75,125,200]);
+    assert.equal(result.chapterTotal,400);
+    assert.equal(result.suggestedBook,340);
+    assert.deepEqual(calculatePricing([1000,3000],{chapterPrices:[-5,NaN]}).chapterPrices,[49,99]);
+    assert.equal(calculatePricing([Infinity,NaN,-1]).totalWords,0);
+});

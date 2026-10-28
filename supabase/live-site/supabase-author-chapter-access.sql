@@ -67,7 +67,7 @@ begin
     new.data=jsonb_set(new.data,'{chapters}',coalesce((
         select jsonb_agg(case when config.chapter_ids ? (c.chapter->>'id') then
             jsonb_build_object('id',c.chapter->>'id','title',coalesce(p.chapter->>'title','Untitled'),
-                'wordCount',coalesce((p.chapter->>'wordCount')::integer,0),'content','','locked',true,'purchaseUrl',config.purchase_url)
+                'wordCount',coalesce((p.chapter->>'wordCount')::integer,0),'content','','locked',true,'purchaseUrl',coalesce(p.chapter->>'purchaseUrl',config.purchase_url))
             else c.chapter end order by c.position)
         from jsonb_array_elements(coalesce(new.data->'chapters','[]'::jsonb)) with ordinality c(chapter,position)
         left join lateral (select value as chapter from jsonb_array_elements(config.chapters) where value->>'id'=c.chapter->>'id' limit 1) p on true
@@ -113,8 +113,21 @@ begin
         update public.author_access_sales set status='reversed' where connection_id=p_connection and transaction_id=p_transaction;
     else
         insert into public.author_access_sales(owner_id,book_id,connection_id,transaction_id,email_hash,chapter_ids,status)
-        select owner_id,book_id,p_connection,p_transaction,p_email_hash,chapter_ids,'paid' from public.author_access_books
-        where connection_id=p_connection and p_products ? product_key and currency=p_currency and minimum_amount<=p_amount and jsonb_array_length(chapter_ids)>0
+        select b.owner_id,b.book_id,p_connection,p_transaction,p_email_hash,matched.chapter_ids,'paid'
+        from public.author_access_books b
+        cross join lateral (
+            select jsonb_agg(c->>'id') as chapter_ids,
+                sum((c->>'minimumAmount')::integer) as minimum_amount
+            from jsonb_array_elements(b.chapters) c
+            where c ? 'productKey' and p_products ? (c->>'productKey') and c->>'currency'=p_currency
+        ) individual
+        cross join lateral (
+            select case when b.product_key<>'' and p_products ? b.product_key and b.currency=p_currency and b.minimum_amount<=p_amount
+                then b.chapter_ids
+                when individual.minimum_amount<=p_amount then individual.chapter_ids
+                else '[]'::jsonb end as chapter_ids
+        ) matched
+        where b.connection_id=p_connection and jsonb_array_length(coalesce(matched.chapter_ids,'[]'::jsonb))>0
         on conflict(connection_id,transaction_id,book_id) do nothing;
     end if;
     update public.author_access_connections set verified_at=now() where id=p_connection;
@@ -143,6 +156,12 @@ begin
     return result;
 end;
 $$;
+-- Capability check prevents new application code from using individual prices on old SQL.
+create or replace function public.author_access_pricing_version()
+returns integer language sql immutable as $$ select 1 $$;
+revoke all on function public.author_access_pricing_version() from public,anon,authenticated;
+grant execute on function public.author_access_pricing_version() to service_role;
+
 revoke all on function public.protect_author_access_listing() from public,anon,authenticated;
 revoke all on function public.save_author_access_book(text,uuid,uuid,text,text,integer,text,jsonb) from public,anon,authenticated;
 revoke all on function public.apply_author_access_sale(uuid,text,text,jsonb,integer,text,boolean) from public,anon,authenticated;
