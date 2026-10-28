@@ -64,6 +64,7 @@ try {
     await page.locator('#manuscriptPreview summary').tap();await page.locator('#previewBody').waitFor({state:'visible'});
     await page.locator('#manuscriptPreview').screenshot({path:out+'/'+name+'-390-preview.png'});
     await page.locator('#manuscriptPreview summary').tap();assert.equal(await page.locator('#previewBody').isVisible(),false);
+    assert.ok(await page.locator('.chapter-product-fields input').evaluateAll(nodes=>nodes.every(n=>parseFloat(getComputedStyle(n).fontSize)>=16)),'chapter fields use a mobile text size that avoids focus zoom');
     await page.locator('#pricingSales').fill('10');assert.equal(await page.locator('#pricingEarnings').textContent(),'$29.90');
     const prices=page.locator('.chapter-product-fields input[type=number]');await prices.first().fill('1.50');
     assert.equal(await page.locator('#pricingChapterTotal').textContent(),'$4.75');

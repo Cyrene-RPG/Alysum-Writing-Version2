@@ -483,3 +483,11 @@ h1 {
 #chapterLocks .chapter-product-fields label { min-width: 0; }
 #chapterLocks .chapter-product-fields label { display: block; }
 #chapterLocks .chapter-product-fields input { display: block; min-width: 0; }
+
+.pub-card input[type="file"] { display: block; width: 100%; max-width: 100%; min-width: 0; font: inherit; }
+#chapterLocks > .chapter-price-row > .pub-chapter { min-height: 44px; cursor: pointer; }
+.pub-chapters summary, #pricingGuide summary { min-height: 44px; }
+@media (max-width: 768px) {
+    #chapterAccessCard .chapter-product-fields input,
+    #pricingGuide input[type="number"] { font-size: 16px; }
+}
