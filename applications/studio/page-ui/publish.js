@@ -1,3 +1,4 @@
+import { bindPricingGuide } from "./pricing-guide.js";
 import { bindChapterAccess } from "./publish-access.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
@@ -129,6 +130,7 @@ async function boot() {
         if (postBtn) postBtn.textContent = "Update";
     }
     const chapters = listBodyChapters(book.sections);
+    bindPricingGuide(chapters);
     const chapterDepth = new Map(
         listBodyChaptersWithDepth(book.sections).map((row) => [String(row.chapter.id), row.depth]),
     );
