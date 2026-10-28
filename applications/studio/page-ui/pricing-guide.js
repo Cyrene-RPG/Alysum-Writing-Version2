@@ -1,13 +1,14 @@
 import { calculatePricing, dollars } from '@alysum/publishing/pricing-guide.js';
 import { countWordsInHtml } from '@alysum/writing-engine/word-count.js';
 
-export function bindPricingGuide(chapters) {
+export function bindPricingGuide(chapters, loadLatestChapters) {
     const section = document.getElementById('pricingGuide');
     if (!section) return;
     const $ = id => document.getElementById(id);
     const escape = value => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    let currentChapters = chapters || [];
     const refresh = () => {
-        const rows = (chapters || []).map(ch => ({ id: String(ch.id), title: ch.title || 'Untitled chapter', words: countWordsInHtml(ch.content || '') }));
+        const rows = currentChapters.map(ch => ({ id: String(ch.id), title: ch.title || 'Untitled chapter', words: countWordsInHtml(ch.content || '') }));
         const selected = new Set([...document.querySelectorAll('#chapterList [data-chapter-id]:checked')].map(el => String(el.dataset.chapterId)));
         const included = rows.filter(row => selected.has(row.id));
         const result = calculatePricing(included.map(row => row.words), { discountPercent: Number($('pricingDiscount').value), complete: Boolean($('workComplete')?.checked) });
@@ -25,7 +26,22 @@ export function bindPricingGuide(chapters) {
     };
     ['pricingDiscount','pricingCustomPrice','pricingSales','workComplete'].forEach(id => $(id)?.addEventListener('input', refresh));
     $('chapterList')?.addEventListener('change', refresh);
-    $('pricingRecalculate')?.addEventListener('click', () => window.location.reload());
+    const recalculateButton = $('pricingRecalculate');
+    recalculateButton?.addEventListener('click', async () => {
+        recalculateButton.disabled = true;
+        const originalLabel = recalculateButton.textContent;
+        recalculateButton.textContent = 'Updating…';
+        try {
+            if (loadLatestChapters) currentChapters = await loadLatestChapters();
+            refresh();
+            $('pricingUpdateStatus').textContent = 'Updated using the latest saved chapter text.';
+        } catch (error) {
+            $('pricingUpdateStatus').textContent = 'Could not load saved chapters: ' + (error?.message || 'Please try again.');
+        } finally {
+            recalculateButton.disabled = false;
+            recalculateButton.textContent = originalLabel;
+        }
+    });
     const chapterList = $('chapterList');
     const observer = chapterList ? new MutationObserver(refresh) : null;
     if (observer) observer.observe(chapterList, { childList: true, subtree: true });
