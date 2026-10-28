@@ -156,46 +156,56 @@
                 <summary id="chapterSummary">Chapters to post (0)</summary>
                 <div id="chapterList"></div>
             </details>
-            <label for="chapterSelect">Preview</label>
-            <select id="chapterSelect"></select>
-            <div class="pub-preview">
+            <details class="pub-chapters" id="manuscriptPreview">
+                <summary>Chapter preview</summary>
+                <label for="chapterSelect">Choose a chapter</label>
+                <select id="chapterSelect"></select>
+                <div class="pub-preview">
                 <div class="pub-preview-head">
                     <span id="previewLabel">Chapter preview</span>
                     <span id="previewWords"></span>
                 </div>
                 <div class="pub-preview-body writer-page" id="previewBody">Select a chapter.</div>
             </div>
+            </details>
         </section>
 
         <section class="pub-card" id="pricingGuide" aria-labelledby="pricingTitle">
-            <h2 id="pricingTitle">Author pricing guide</h2>
-            <p class="pub-hint">Suggestions use the actual word count of each selected chapter. Alysum takes 0% commission. These are recommendations only: your connected Ko-fi or Payhip shop controls the real checkout price.</p>
+            <h2 id="pricingTitle">Price calculator</h2>
+            <p class="pub-hint">Calculate chapter prices, a bundle discount and estimated sales revenue from your selected manuscript chapters. Enter your own chapter estimates in the table below. Alysum takes 0% commission. These are recommendations only: your connected Ko-fi or Payhip shop controls the real checkout price.</p>
             <p class="pub-hint"><strong id="pricingFormat">Published chapters / ongoing story</strong> · <span id="pricingChapterCount">0</span> chapters · <span id="pricingWordCount">0</span> words</p>
-            <div class="access-grid"><div><label for="pricingDiscount">Whole-book discount target (%)</label><input id="pricingDiscount" type="number" min="0" max="80" value="20"></div><div><label for="pricingCustomPrice">Your planned whole-book price (USD, optional)</label><input id="pricingCustomPrice" type="number" min="0" step="0.01" placeholder="Use suggested price"></div><div><label for="pricingSales">Example number of book sales</label><input id="pricingSales" type="number" min="0" step="1" value="100"></div></div>
+            <div class="access-grid pricing-inputs"><div><label for="pricingDiscount">Whole-book discount target (%)</label><input id="pricingDiscount" type="number" min="0" max="80" value="20"></div><div><label for="pricingCustomPrice">Your planned whole-book price (USD, optional)</label><input id="pricingCustomPrice" type="number" min="0" step="0.01" placeholder="Use suggested price"></div><div><label for="pricingSales">Example number of book sales</label><input id="pricingSales" type="number" min="0" step="1" value="100"></div></div>
             <p><button type="button" id="pricingRecalculate">Update chapter counts &amp; recalculate</button></p>
             <p class="pub-hint">Prices update automatically when you change selections or inputs. After saving manuscript edits, tap Update to recalculate here without reloading the page.</p><p id="pricingUpdateStatus" role="status" class="pub-hint"></p>
-            <p>All selected chapters separately: <strong id="pricingChapterTotal">$0.00</strong></p>
-            <p>Suggested complete selection price: <strong id="pricingBookSuggestion">$0.00</strong></p>
-            <p>Illustrative author revenue before processing fees, refunds and taxes: <strong id="pricingEarnings">$0.00</strong></p>
+            <div class="pricing-results" aria-live="polite" aria-atomic="true">
+                <div><span>Selected chapters separately</span><output id="pricingChapterTotal">$0.00</output></div>
+                <div><span>Suggested bundle price</span><output id="pricingBookSuggestion">$0.00</output></div>
+                <div class="pricing-revenue"><span>Estimated revenue before fees, refunds and taxes</span><output id="pricingEarnings">$0.00</output></div>
+            </div>
             <p id="pricingNotice" role="status" class="pub-hint"></p>
-            <details><summary>See suggested price for each chapter</summary><div style="overflow-x:auto"><table style="width:100%;text-align:left"><thead><tr><th>Chapter</th><th>Words</th><th>Suggestion</th></tr></thead><tbody id="pricingChapterRows"></tbody></table></div></details>
-            <p class="pub-hint">For serialized work, suggestions cover the selected published chapters, not unpublished future chapters. This calculator does not change prices or create payment products.</p>
+            <details><summary>See chapter prices and word counts</summary><div style="overflow-x:auto"><table style="width:100%;text-align:left"><thead><tr><th>Chapter</th><th>Words</th><th>Suggested (USD)</th><th>Your price (USD)</th></tr></thead><tbody id="pricingChapterRows"></tbody></table></div></details>
+            <p class="pub-hint">For serialized work, suggestions cover the selected published chapters, not unpublished future chapters. Chapter estimates default to word-count suggestions. Individual USD chapter prices also fill these estimates; other currencies must be estimated in USD here. Calculator edits do not change shop checkout prices or create products.</p>
         </section>
 
         <section class="pub-card" id="chapterAccessCard">
             <h2>Locked chapters</h2>
-            <p class="pub-hint">Readers buy a product from your shop, then read its chapters here. Use one product to unlock the chapters checked below.</p>
+            <p class="pub-hint">Readers buy a product from your shop, then read its chapters here. Choose a bundle or set a different shop product and price for each locked chapter.</p>
             <p id="chapterAccessUnavailable" role="status">Checking chapter access…</p>
             <a id="chapterAccessSetup" class="payment-back" href="/applications/studio/pages/payment-setup" hidden>Site owner: prepare chapter access</a>
             <fieldset id="chapterAccessFields" class="payment-fields" hidden>
                 <p><a class="payment-back" id="chapterShopSettings" href="/applications/studio/pages/connected-payments">Connect or manage your shop →</a></p>
                 <label for="chapterConnection">Your connected shop</label><select id="chapterConnection"><option value="">Choose your connected shop</option></select>
-                <label for="chapterProduct">Product link</label><input id="chapterProduct" type="url" placeholder="https://ko-fi.com/s/your-product" maxlength="2000">
+                <label for="chapterPricingMode">How to sell locked chapters</label>
+                <select id="chapterPricingMode"><option value="bundle">One product for all locked chapters</option><option value="individual">Individual chapter prices</option></select>
+                <p id="chapterPricingSetup" class="pub-hint" hidden>Individual prices need the updated <a href="/applications/studio/pages/payment-setup">chapter access setup</a>. Existing bundle prices still work.</p>
+                <div id="chapterBundleFields">
+                <label for="chapterProduct">Bundle product link</label><input id="chapterProduct" type="url" placeholder="https://ko-fi.com/s/your-product" maxlength="2000">
                 <div class="access-grid"><div><label for="chapterMinimum">Product price</label><input id="chapterMinimum" inputmode="decimal" placeholder="3.00"></div>
-                <div><label for="chapterCurrency">Currency</label><select id="chapterCurrency"><option>USD</option><option>GBP</option><option>EUR</option><option>CAD</option><option>AUD</option></select></div></div>
+                </div></div>
+                <div><label for="chapterCurrency">Currency for chapter products</label><select id="chapterCurrency"><option>USD</option><option>GBP</option><option>EUR</option><option>CAD</option><option>AUD</option></select></div>
                 <p class="pub-hint">Use a one-time shop product. Tips, gifts and memberships do not unlock chapters. Discounts below this price will not unlock access.</p>
                 <div id="chapterLocks" class="payment-chapters"></div>
-                <p class="pub-hint">Checked chapters are locked when you post or update. Readers must use their verified Alysum email at checkout. Each purchase unlocks the chapters included at that time.</p>
+                <p class="pub-hint">Checked chapters are locked when you post or update. Readers must use their verified Alysum email at checkout. Individual purchases unlock only their matching chapter. A bundle purchase unlocks its included chapters at that time. Set the same prices in your shop; this form does not change shop checkout prices.</p>
             </fieldset>
         </section>
 

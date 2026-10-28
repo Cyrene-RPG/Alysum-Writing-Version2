@@ -1,0 +1,29 @@
+name: Chapter pricing and calculator checks
+on:
+  pull_request:
+    paths:
+      - 'applications/studio/page-ui/**'
+      - 'applications/studio/pages/publish.html'
+      - 'applications/studio/studio-css/publish.css'
+      - 'core/publishing/**'
+      - 'core/server/http-handlers/author-access.mjs'
+      - 'core/tests/publishing/**'
+      - 'supabase/live-site/supabase-author-chapter-access.sql'
+      - 'pricing-calculator/**'
+      - '.github/workflows/chapter-pricing-tests.yml'
+permissions:
+  contents: read
+jobs:
+  pricing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test core/tests/publishing/*.test.js
+      - run: npm install --prefix "$RUNNER_TEMP/chapter-pricing" --no-audit --no-fund jsdom@26 @electric-sql/pglite@0.3.14
+      - run: node --test core/tests/publishing/chapter-pricing-ui.mjs core/tests/publishing/chapter-pricing-database.mjs
+        env:
+          JSDOM_MODULE: ${{ runner.temp }}/chapter-pricing/node_modules/jsdom/lib/api.js
+          PGLITE_MODULE: ${{ runner.temp }}/chapter-pricing/node_modules/@electric-sql/pglite/dist/index.js

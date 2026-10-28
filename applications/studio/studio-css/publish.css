@@ -447,3 +447,33 @@ h1 {
     margin-top: 8px;
 }
 [data-book-title-custom][hidden] { display: none; }
+
+/* Calculator inputs and results share the publishing page's active theme. */
+#pricingGuide input[type="number"] {
+    width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px;
+    border: 1px solid var(--border, #ffffff30); border-radius: 10px;
+    background: var(--alysum-ui-chrome, #0b1220); color: var(--text, #f9fafb); font: inherit;
+}
+#pricingGuide h2 { font-size: 20px; letter-spacing: normal; text-transform: none; color: var(--text); }
+.pricing-inputs { align-items: end; }
+.pricing-results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 20px 0; }
+.pricing-results > div { padding: 18px; border: 1px solid var(--border, #ffffff30); border-radius: 12px; background: var(--alysum-ui-chrome, #0b1220); }
+.pricing-results span { display: block; font-size: 13px; line-height: 1.5; color: var(--muted, #cbd5e1); }
+.pricing-results output { display: block; margin-top: 6px; font-size: clamp(24px, 5vw, 34px); font-weight: 750; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pricing-results .pricing-revenue { grid-column: 1 / -1; border-color: var(--accent, #8cbcff); }
+#pricingRecalculate { min-height: 44px; padding: 12px 16px; border: 1px solid var(--border, #ffffff30); border-radius: 10px; background: var(--alysum-ui-raised, #243047); color: var(--text); font: inherit; font-weight: 700; cursor: pointer; }
+#pricingRecalculate:disabled { opacity: .6; cursor: wait; }
+#pricingGuide summary { cursor: pointer; padding: 10px 0; font-weight: 600; }
+#pricingGuide th, #pricingGuide td { padding: 10px 8px; border-bottom: 1px solid var(--border, #ffffff30); font-size: 13px; }
+#pricingGuide td input { min-width: 90px; }
+#pricingGuide :is(input, button):focus-visible { outline: 2px solid var(--accent, #8cbcff); outline-offset: 3px; }
+#pricingNotice:empty, #pricingUpdateStatus:empty { display: none; }
+.chapter-price-row { padding: 12px 0; border-bottom: 1px solid var(--border, #ffffff30); }
+.chapter-product-fields label { margin-top: 4px; }
+.chapter-product-fields input { margin-top: 8px; }
+#chapterAccessCard .chapter-product-fields[hidden] { display: none; }
+@media (max-width: 480px) {
+    .pricing-results { grid-template-columns: minmax(0, 1fr); }
+    #pricingRecalculate { width: 100%; }
+    #chapterList { display: block; }
+}

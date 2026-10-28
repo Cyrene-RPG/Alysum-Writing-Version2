@@ -31,7 +31,9 @@ export async function handleAuthorAccess(request, env, injected = {}) {
         }
         const { db, user } = injected.services || createPaymentServices(env,injected.fetcher);
         if (action === 'status' && request.method === 'GET') {
-            try { await db('author_access_connections',{query:{select:'id',limit:0}}); return reply({ready:true}); }
+            try { await db('author_access_connections',{query:{select:'id',limit:0}}); let individualPricing = false;
+                try { individualPricing = await db('rpc/author_access_pricing_version',{method:'POST',body:{}}) === 1; } catch { /* Bundle setup remains usable. */ }
+                return reply({ready:true,individualPricing}); }
             catch { return reply({ready:false}); }
         }
         if (action === 'webhook' && request.method === 'POST') {
@@ -73,7 +75,11 @@ export async function handleAuthorAccess(request, env, injected = {}) {
             const sourceId = bookId(url.searchParams.get('book'));
             const [source] = await db('books',{query:{id:`eq.${sourceId}`,user_id:`eq.${owner.id}`,select:'id',limit:1}});
             if (!source) fail(404,'Book not found.');
-            const [config] = await db('author_access_books',{query:{book_id:`eq.${sourceId}`,owner_id:`eq.${owner.id}`,select:'connection_id,product_key,purchase_url,minimum_amount,currency,chapter_ids',limit:1}});
+            const [config] = await db('author_access_books',{query:{book_id:`eq.${sourceId}`,owner_id:`eq.${owner.id}`,select:'connection_id,product_key,purchase_url,minimum_amount,currency,chapter_ids,chapters',limit:1}});
+            if (config) {
+                config.chapterProducts = (config.chapters || []).filter(ch=>ch.productKey).map(ch=>({chapterId:ch.id,productUrl:ch.purchaseUrl,minimum:String(ch.minimumAmount/100)}));
+                delete config.chapters;
+            }
             return reply({config:config || null});
         }
         if (action === 'configure' && request.method === 'POST') {
@@ -98,12 +104,35 @@ export async function handleAuthorAccess(request, env, injected = {}) {
                 connectionId = id(body.connectionId);
                 const [connection] = await db('author_access_connections',{query:{id:`eq.${connectionId}`,owner_id:`eq.${owner.id}`,enabled:'eq.true',limit:1}});
                 if (!connection) fail(409,'Connect your shop first.');
-                productKey = normalizeProductKey(connection.provider,body.productKey);
-                purchaseUrl = normalizePurchaseUrl(body.purchaseUrl);
-                const expectedHost = connection.provider === 'kofi' ? 'ko-fi.com' : 'payhip.com';
-                if (!productKey || !purchaseUrl || new URL(purchaseUrl).hostname.replace(/^www\./,'') !== expectedHost || normalizeProductKey(connection.provider,purchaseUrl) !== productKey) fail(400,'Use the exact shop product link that unlocks these chapters.');
-                minimum = Number(body.minimumAmount); currency = String(body.currency || '').toUpperCase();
-                if (!Number.isSafeInteger(minimum) || minimum < 50 || minimum > 100000 || !['USD','GBP','EUR','CAD','AUD'].includes(currency)) fail(400,'Set a price from 0.50 to 1,000 and choose a currency.');
+                currency = String(body.currency || '').toUpperCase();
+                if (!['USD','GBP','EUR','CAD','AUD'].includes(currency)) fail(400,'Choose a supported currency.');
+                const validateProduct = (rawUrl, rawAmount, suppliedKey) => {
+                    const purchaseUrl = normalizePurchaseUrl(rawUrl);
+                    const productKey = normalizeProductKey(connection.provider,purchaseUrl);
+                    if (!productKey || (suppliedKey && normalizeProductKey(connection.provider,suppliedKey) !== productKey)) fail(400,'Use the exact shop product link for your connected shop.');
+                    const minimumAmount = Number(rawAmount);
+                    if (!Number.isSafeInteger(minimumAmount) || minimumAmount < 50 || minimumAmount > 100000) fail(400,'Set each product price from 0.50 to 1,000.');
+                    return {productKey,purchaseUrl,minimumAmount,currency};
+                };
+                if (body.pricingMode === 'individual') {
+                    let version = 0;
+                    try { version = await db('rpc/author_access_pricing_version',{method:'POST',body:{}}); } catch { /* Fail before saving on the old setup. */ }
+                    if (version !== 1) fail(503,'Individual chapter prices need the chapter-access SQL update.');
+                    const products = Array.isArray(body.chapterProducts) ? body.chapterProducts : [];
+                    if (products.length !== chapterIds.length || new Set(products.map(p=>String(p.chapterId))).size !== products.length) fail(400,'Set a product and price for each locked chapter.');
+                    const keys = new Set();
+                    for (const chapter of chapters) {
+                        const product = products.find(p=>String(p.chapterId) === chapter.id);
+                        if (!product) fail(400,'Set a product and price for each locked chapter.');
+                        const validated = validateProduct(product.purchaseUrl,product.minimumAmount);
+                        if (keys.has(validated.productKey)) fail(400,'Use a different shop product for each individually priced chapter.');
+                        keys.add(validated.productKey);
+                        Object.assign(chapter,validated);
+                    }
+                } else {
+                    const product = validateProduct(body.purchaseUrl,body.minimumAmount,body.productKey);
+                    productKey = product.productKey; purchaseUrl = product.purchaseUrl; minimum = product.minimumAmount;
+                }
             }
             await db('rpc/save_author_access_book',{method:'POST',body:{p_book:sourceId,p_owner:owner.id,p_connection:connectionId,p_product:productKey,p_url:purchaseUrl,p_minimum:minimum,p_currency:currency,p_chapters:chapters}});
             return reply({saved:true});

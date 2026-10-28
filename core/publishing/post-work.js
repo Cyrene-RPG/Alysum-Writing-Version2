@@ -107,7 +107,7 @@ export function buildLibraryPayload(book, form) {
         if (!chapterMeetsPublishLength(ch)) continue;
         seen.add(String(ch.id));
         if (locked.has(String(ch.id))) {
-            posted.push({id:ch.id,title:ch.title || 'Untitled',content:'',wordCount:countWordsInHtml(ch.content || ''),locked:true,purchaseUrl:normalizePurchaseUrl(form.chapterAccess?.productUrl)});
+            posted.push({id:ch.id,title:ch.title || 'Untitled',content:'',wordCount:countWordsInHtml(ch.content || ''),locked:true,purchaseUrl:normalizePurchaseUrl(form.chapterAccess?.pricingMode === 'individual' ? form.chapterAccess.chapterProducts?.find(p=>String(p.chapterId)===String(ch.id))?.productUrl : form.chapterAccess?.productUrl)});
             continue;
         }
         const content = stripStoryBibleMetadata(stripReviewMarks(String(ch.content || "")));

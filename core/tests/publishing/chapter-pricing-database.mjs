@@ -1,0 +1,45 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+const {PGlite}=await import(process.env.PGLITE_MODULE || '@electric-sql/pglite');
+const owner='10000000-0000-4000-8000-000000000001',buyer='20000000-0000-4000-8000-000000000002',connection='30000000-0000-4000-8000-000000000003';
+const hash='a'.repeat(64);
+test('real SQL isolates chapter purchases, preserves bundle grants, rejects underpayment and keeps refunds terminal',async()=>{
+    const db=new PGlite();
+    try {
+        await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role; CREATE SCHEMA auth;
+            CREATE TABLE auth.users(id uuid PRIMARY KEY); CREATE TABLE public.books(id text PRIMARY KEY,user_id uuid);
+            CREATE TABLE public.library(id text PRIMARY KEY,user_id uuid,data jsonb);
+            CREATE TABLE public.library_book_moderation(book_id text,visibility text);
+            INSERT INTO auth.users VALUES('${owner}'),('${buyer}'); INSERT INTO public.books VALUES('book','${owner}');`);
+        const sql=await readFile(new URL('../../../supabase/live-site/supabase-author-chapter-access.sql',import.meta.url),'utf8');
+        await db.exec(sql);await db.exec(sql);
+        await db.query('INSERT INTO author_access_connections(id,owner_id,provider,verifier_hash) VALUES($1,$2,\'kofi\',$3)',[connection,owner,hash]);
+        const chapters=[{id:'one',title:'One',text:'PRIVATE ONE',wordCount:1000},{id:'two',title:'Two',text:'PRIVATE TWO',wordCount:2000}];
+        const save=async(individual=true)=>db.query('SELECT save_author_access_book($1,$2,$3,$4,$5,$6,$7,$8)', ['book',owner,connection,individual?'':'bundle',individual?'':'https://ko-fi.com/s/bundle',individual?0:200,'USD',JSON.stringify(chapters.map((ch,i)=>individual?{...ch,productKey:ch.id,purchaseUrl:'https://ko-fi.com/s/'+ch.id,minimumAmount:i?125:75,currency:'USD'}:ch))]);
+        const sale=(tx,products,amount=75,reversed=false,currency='USD')=>db.query('SELECT apply_author_access_sale($1,$2,$3,$4,$5,$6,$7)',[connection,tx,hash,JSON.stringify(products),amount,currency,reversed]);
+        const grant=async tx=>(await db.query('SELECT chapter_ids,status FROM author_access_sales WHERE transaction_id=$1',[tx])).rows;
+        await save(false);
+        await db.query('INSERT INTO library VALUES($1,$2,$3)',['book',owner,JSON.stringify({isPublished:true,publishedChapterIds:['one','two'],chapters:chapters.map(ch=>({...ch,content:ch.text}))})]);
+        await sale('old-bundle',['bundle'],200);assert.deepEqual((await grant('old-bundle'))[0].chapter_ids,['one','two']);
+        await save();
+        const listing=(await db.query('SELECT data FROM library')).rows[0].data;
+        assert.doesNotMatch(JSON.stringify(listing),/PRIVATE/);
+        assert.deepEqual(listing.chapters.map(ch=>ch.purchaseUrl),['https://ko-fi.com/s/one','https://ko-fi.com/s/two']);
+        await sale('chapter-one',['one']);assert.deepEqual((await grant('chapter-one'))[0].chapter_ids,['one']);
+        await sale('chapter-one',['one']);assert.equal((await grant('chapter-one')).length,1);
+        await sale('too-low',['two'],75);assert.equal((await grant('too-low')).length,0);
+        await sale('both-underpaid',['one','two'],125);assert.equal((await grant('both-underpaid')).length,0);
+        await sale('both',['one','two'],200);assert.deepEqual((await grant('both'))[0].chapter_ids,['one','two']);
+        await sale('other',['unrelated'],1000);assert.equal((await grant('other')).length,0);
+        await sale('wrong-currency',['one'],75,false,'EUR');assert.equal((await grant('wrong-currency')).length,0);
+        const read=async()=>(await db.query('SELECT read_author_access($1,$2,$3) AS chapters',['book',buyer,hash])).rows[0].chapters;
+        await sale('old-bundle',['bundle'],200,true);await sale('both',['one','two'],200,true);
+        assert.deepEqual((await read()).map(ch=>ch.id),['one']);
+        await sale('chapter-one',['one'],75,true);await sale('chapter-one',['one']);
+        assert.equal((await grant('chapter-one'))[0].status,'reversed');assert.deepEqual(await read(),[]);
+        await db.exec('SET ROLE anon');await assert.rejects(db.query('SELECT * FROM author_access_books'),/permission denied/);
+        await assert.rejects(db.query('SELECT author_access_pricing_version()'),/permission denied/);
+        await db.exec('RESET ROLE');
+    } finally {await db.close();}
+});

@@ -91,6 +91,8 @@ export function publishMetaFromForm(form) {
         chapterAccessPending: !form.isPublished,
         chapterAccess: form.chapterAccess ? {
             connectionId: String(form.chapterAccess.connectionId || ''),
+            pricingMode: form.chapterAccess.pricingMode === 'individual' ? 'individual' : 'bundle',
+            chapterProducts: (form.chapterAccess.chapterProducts || []).map(p=>({chapterId:String(p.chapterId),productUrl:normalizePurchaseUrl(p.productUrl),minimum:String(p.minimum || '')})),
             productUrl: normalizePurchaseUrl(form.chapterAccess.productUrl),
             minimum: String(form.chapterAccess.minimum || ''),
             currency: String(form.chapterAccess.currency || 'USD'),

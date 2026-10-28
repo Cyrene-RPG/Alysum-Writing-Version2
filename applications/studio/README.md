@@ -3,3 +3,21 @@
 Writer hub: book list, new drafts, and manuscript import (`page-ui/manuscript-import.js` dialog, `page-ui/manuscript-reader.js` file reader). Opens `editor.html`.
 
 Uses `core/writing-engine`, `core/synchronization-engine`, `core/authentication`, `core/desktop`, and `site-appearance/`.
+
+
+## Individual chapter prices
+
+On the publishing page, select **Locked chapters → How to sell locked chapters → Individual chapter prices**. Each checked chapter gets its own one-time Ko-fi or Payhip product URL and price. Products must be different for each chapter; set the same prices in the connected shop. The existing one-product bundle option remains available. Draft saves preserve these fields.
+
+Before enabling individual pricing in production, rerun `supabase/live-site/supabase-author-chapter-access.sql` in the live Supabase SQL Editor. This script updates purchase matching and public chapter links while preserving existing sales and access. The site's `/applications/studio/pages/payment-setup` page copies the current script and checks readiness. Application code keeps the individual option disabled until the updated SQL is detected; bundle publishing continues to work with the old setup. No new environment variables are required.
+
+The publishing calculator uses selected chapters' current word counts and editable USD chapter estimates. Configured individual USD product prices populate estimates, and the bundle discount and sales inputs update totals immediately. Estimates do not write to external shops. The standalone `/pricing-calculator/` uses the same pricing rules and retains custom prices when word counts change.
+
+Regression checks:
+
+```sh
+node --test core/tests/publishing/*.test.js
+JSDOM_MODULE=/path/to/jsdom/lib/api.js PGLITE_MODULE=/path/to/@electric-sql/pglite/dist/index.js node --test core/tests/publishing/chapter-pricing-ui.mjs core/tests/publishing/chapter-pricing-database.mjs
+```
+
+The second command uses disposable test databases and synthetic manuscript data; it does not connect to production.
