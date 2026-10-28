@@ -46,6 +46,10 @@
     ],
     "rewrites": [
       {
+        "source": "/book-studio",
+        "destination": "/applications/book-studio/pages/book-studio.html"
+      },
+      {
         "source": "/story-bible-selection-preview",
         "destination": "/applications/editor/pages/story-bible-preview.html"
       },

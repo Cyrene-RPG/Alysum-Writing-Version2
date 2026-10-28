@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Book Studio — Alysum</title>
+<script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/",
+        "@alysum/statistics/": "/core/statistics/"
+      }
+    }
+    </script>
+<link rel="stylesheet" href="/site-appearance/css-styles/theme.css"><link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css"><link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes-dim/index.css"><link rel="stylesheet" href="/site-appearance/css-styles/typography.css"><link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css"><script src="/site-appearance/js-runtime/boot.js"></script>
+<link rel="stylesheet" href="/applications/book-studio/studio-css/page.css"></head>
+<body><header class="studio-header"><a href="/studio" class="brand">Alysum <span> / Book Studio</span></a><span class="badge">TEST EDITION</span><span id="save-status" role="status">Local workspace</span><button id="save-project">Download project</button><button id="export-epub">Export EPUB</button><button id="print-book" class="primary">Print / PDF proof</button></header>
+<main class="workspace"><aside class="structure"><div class="panel-heading"><span class="eyebrow">YOUR MANUSCRIPT</span><h1>Make it a book.</h1><p>Your words, thoughtfully set.</p></div>
+<label>Book title<input id="book-title" maxlength="200"></label><label>Author<input id="book-author" maxlength="200" placeholder="Your pen name"></label>
+<button id="import-file" class="wide">↑ Import manuscript / project</button><input type="file" id="file-input" accept=".docx,.txt,.html,.json" hidden><p class="hint">Word, text, HTML, Alysum backup, or Book Studio project. Imports replace this workspace after confirmation.</p>
+<button id="open-books" class="wide">Open an Alysum book</button><div class="section-heading"><h2>Contents</h2><button id="add-section" aria-label="Add section">＋</button></div><ol id="chapter-list"></ol>
+<p class="hint">A separate formatting copy. Changes here never update your original manuscript. Autosave stays in this browser tab; download a project to keep it.</p><a href="/studio">← Back to Writing Studio</a></aside>
+<section class="preview-area" aria-label="Book preview"><div class="preview-toolbar"><span id="page-summary" role="status">Preparing pages…</span><label>Zoom<select id="zoom"><option value="0.65">65%</option><option value="0.85" selected>85%</option><option value="1">100%</option></select></label></div><div id="message" role="status"></div><div id="pages"></div></section>
+<aside class="controls"><div class="panel-heading"><span class="eyebrow">DESIGN YOUR EDITION</span><h2>The finishing touches</h2></div>
+<fieldset><legend>01 · Theme</legend><div class="theme-grid" id="themes"></div></fieldset>
+<fieldset><legend>02 · Page & type</legend><label>Trim size<select data-setting="trim"><option value="5x8">5 × 8 in</option><option value="5.5x8.5">5.5 × 8.5 in</option><option value="6x9">6 × 9 in</option></select></label><label>Body font<select data-setting="font"><option>Georgia</option><option>Palatino Linotype</option><option>Times New Roman</option><option>Arial</option></select></label>
+<div class="two-column"><label>Size (pt)<input type="number" data-setting="size" min="9" max="18" step="0.5"></label><label>Line spacing<input type="number" data-setting="leading" min="1.1" max="2" step="0.1"></label><label>Margins (in)<input type="number" data-setting="margin" min="0.4" max="1" step="0.05"></label><label>Extra gutter (in)<input type="number" data-setting="gutter" min="0" max="0.5" step="0.05"></label></div><label>Paragraph indent (em)<input type="number" data-setting="indent" min="0" max="2" step="0.1"></label></fieldset>
+<fieldset><legend>03 · Chapter details</legend><label class="check"><input type="checkbox" data-setting="dropCap"> Drop caps</label><label class="check"><input type="checkbox" data-setting="recto"> Start sections on right-hand pages</label><label class="check"><input type="checkbox" data-setting="numbers"> Page numbers</label></fieldset>
+<fieldset><legend>Selected section</legend><label>Title<input id="section-title" maxlength="200"></label><label>Section type<select id="section-kind"><option value="front">Front matter</option><option value="body">Chapter</option><option value="back">Back matter</option></select></label><div class="two-column"><button id="move-up">Move up</button><button id="move-down">Move down</button></div><button id="edit-section" class="wide">Edit section text</button><button id="remove-section" class="wide">Remove section</button></fieldset>
+<p class="hint">PDF proof: use the selected paper size, 100% scale, no browser headers or margins. Bleed, advanced artwork, and print-provider validation are not included yet.</p></aside></main>
+<dialog id="editor-dialog"><form method="dialog"><h2>Edit section text</h2><p>Plain-text editing replaces this section’s inline formatting. Blank lines separate paragraphs; *** makes a scene break.</p><textarea id="section-text" rows="16"></textarea><div class="dialog-actions"><button value="cancel">Cancel</button><button id="apply-text" type="button" class="primary">Apply text</button></div></form></dialog>
+<dialog id="books-dialog"><h2>Your Alysum books</h2><p id="books-status" role="status"></p><div id="books-list"></div><form method="dialog"><button>Close</button></form></dialog>
+<script type="module" src="/applications/book-studio/page-ui/page.js"></script></body></html>

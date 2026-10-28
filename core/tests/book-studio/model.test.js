@@ -1,0 +1,8 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createProject, validateProject, moveChapter } from '../../book-studio/model.js';
+import { createArchive } from '../../book-studio/archive.js';
+const project = () => createProject('Novel',[{id:'a',title:'One',html:'<p>Hello</p>'},{id:'b',title:'Two',html:'<p>Goodbye</p>'}]);
+test('formatting snapshots and reordering never mutate their inputs',()=>{const original=project();const reordered=moveChapter(original,0,1);assert.deepEqual(original.chapters.map(c=>c.id),['a','b']);assert.deepEqual(reordered.chapters.map(c=>c.id),['b','a']);reordered.chapters[0].html='Changed';assert.equal(original.chapters[1].html,'<p>Goodbye</p>');});
+test('malformed project and unsafe CSS settings are rejected',()=>{for(const settings of [{size:NaN},{size:100},{font:'url(https://bad)'},{margin:-1},{trim:'99x99'},{theme:'__proto__'}]) assert.throws(()=>validateProject({...project(),settings}));assert.throws(()=>validateProject({...project(),version:2}));assert.throws(()=>validateProject({...project(),chapters:[]}));assert.throws(()=>validateProject({...project(),chapters:[{id:'x',html:''},{id:'x',html:''}]}));});
+test('EPUB ZIP starts with stored mimetype, UTF-8 content and a central directory',async()=>{const blob=createArchive([['mimetype','application/epub+zip'],['EPUB/test.xhtml','é <p>Story</p>']]);const bytes=new Uint8Array(await blob.arrayBuffer());const view=new DataView(bytes.buffer);assert.equal(view.getUint32(0,true),0x04034b50);assert.equal(view.getUint16(8,true),0);assert.equal(new TextDecoder().decode(bytes.slice(30,38)),'mimetype');assert.equal(view.getUint32(bytes.length-22,true),0x06054b50);assert.equal(view.getUint16(bytes.length-12,true),2);});

@@ -1,0 +1,27 @@
+name: Book Studio checks
+on:
+  push:
+    branches: [test/book-formatting-studio]
+  pull_request:
+    paths:
+      - 'applications/book-studio/**'
+      - 'core/book-studio/**'
+      - 'core/tests/book-studio/**'
+      - '.github/workflows/book-studio-tests.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test core/tests/book-studio/*.test.js
+      - run: npm install --prefix "$RUNNER_TEMP/book-studio" playwright@1.58.2
+      - run: node "$RUNNER_TEMP/book-studio/node_modules/playwright/cli.js" install --with-deps chromium
+      - run: |
+          python3 core/server/dev.py > "$RUNNER_TEMP/book-studio-server.log" 2>&1 &
+          for attempt in $(seq 1 30); do curl -fsS http://127.0.0.1:3000/book-studio >/dev/null && break; sleep 1; done
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/book-studio/node_modules/playwright" node applications/book-studio/tests/browser.cjs
