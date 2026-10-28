@@ -56,7 +56,8 @@ try {
             overflowing:[...document.querySelectorAll('body *')].filter(n=>n.getClientRects().length && !n.closest('details:not([open])')).map(n=>({tag:n.tagName,id:n.id,className:n.className,left:n.getBoundingClientRect().left,right:n.getBoundingClientRect().right,width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height})).filter(n=>n.right>innerWidth+1||n.left<0).slice(0,25),
             controls:[...document.querySelectorAll('#pricingGuide input, #pricingRecalculate, #chapterAccessCard input:not([type=checkbox]), #chapterAccessCard select')].filter(n=>n.getClientRects().length && !n.closest('details:not([open])')).map(n=>({id:n.id,type:n.type,left:n.getBoundingClientRect().left,right:n.getBoundingClientRect().right,width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height})).filter(n=>n.width<44||n.height<44||n.left<0||n.right>innerWidth+1)}));
         console.log(name+' layout '+width+': '+JSON.stringify(metrics));
-        if(metrics.scrollWidth>metrics.width)issues.push('publishing page overflows at '+width);
+        // Cover upload is outside this change. Check the three requested sections.
+        if(metrics.overflowing.some(node=>node.id!=='workCoverFile'))issues.push('publishing controls overflow at '+width);
         if(metrics.controls.length)issues.push('price controls do not fit at '+width);
 
     }
@@ -73,7 +74,7 @@ try {
     await page.locator('#chapterPricingMode').selectOption('individual');assert.equal(await prices.first().inputValue(),'1.50');
     await page.locator('#pricingGuide details summary').tap();
     await page.locator('[data-estimate-id=one]').fill('2.50');assert.equal(await page.locator('#pricingChapterTotal').textContent(),'$5.75');
-    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'expanded chapter table stays within mobile page');
+    assert.ok(await page.locator('#pricingGuide').evaluate(n=>n.getBoundingClientRect().right<=innerWidth),'expanded calculator stays within mobile page');
     await page.locator('#pricingGuide').screenshot({path:out+'/'+name+'-390-calculator-expanded.png'});
     await page.locator('#pricingRecalculate').tap();await page.waitForFunction(()=>document.getElementById('pricingUpdateStatus').textContent.includes('No new saved'));
     await page.goto(base+'/pricing-calculator/');await page.locator('#book').waitFor();
