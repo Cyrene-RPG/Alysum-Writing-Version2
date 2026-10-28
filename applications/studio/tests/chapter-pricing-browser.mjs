@@ -14,7 +14,7 @@ $('chapterSelect').innerHTML=chapters.map(ch=>'<option>'+ch.title+'</option>').j
 $('previewBody').innerHTML='<p>The lantern glowed in the quiet window. A new chapter was about to begin.</p>';
 $('previewLabel').textContent=chapters[0].title;$('previewWords').textContent='1,000 words';
 bindPricingGuide(chapters,async()=>chapters);
-const access=await bindChapterAccess({supabase:{},book:{id:'test-book',publish_meta:{chapterAccessPending:true,lockedChapterIds:['one','two','three'],chapterAccess:{pricingMode:'individual',connectionId:'shop',currency:'USD',chapterProducts:chapters.map((ch,i)=>({chapterId:ch.id,productUrl:'https://ko-fi.com/s/chapter'+(i+1),minimum:['0.75','1.25','2.00'][i]}))}}},chapters});
+const access=await bindChapterAccess({supabase:{},book:{id:'test-book',publish_meta:{chapterAccessPending:true,lockedChapterIds:['one','two','three'],chapterAccess:{pricingMode:location.search.includes('mixed=1')?'mixed':'individual',mixedProducts:[{productUrl:'https://ko-fi.com/s/pack12',minimum:'1.50',chapterIds:['one','two']},{productUrl:'https://ko-fi.com/s/chapter3',minimum:'0.75',chapterIds:['three']}],connectionId:'shop',currency:'USD',chapterProducts:chapters.map((ch,i)=>({chapterId:ch.id,productUrl:'https://ko-fi.com/s/chapter'+(i+1),minimum:['0.75','1.25','2.00'][i]}))}}},chapters});
 window.pricingTest={access,ready:true};`;
 const responses=[];
 const server=createServer(async(req,res)=>{
@@ -29,7 +29,7 @@ const server=createServer(async(req,res)=>{
         const file=resolve(root,'.'+path);if(!file.startsWith(root+'/'))throw Error('Invalid file');
         let bytes=await readFile(file);
         if(pathname==='/mobile-publishing-test')bytes=Buffer.from(bytes.toString().replace(/<script type="module" src="\/js\/studio\/publish.js[^>]*><\/script>/,'<script type="module">'+fixture+'</script>'));
-        if(path==='/applications/studio/page-ui/publish-access.js')bytes=Buffer.from(bytes.toString().replace("import { authorAccessRequest } from '/core/publishing/author-access-client.js';",`const authorAccessRequest=async(s,action)=>action==='status'?{ready:true,individualPricing:true}:action==='connections'?{connections:[{id:'shop',provider:'kofi',enabled:true}]}:{config:null};`));
+        if(path==='/applications/studio/page-ui/publish-access.js')bytes=Buffer.from(bytes.toString().replace("import { authorAccessRequest } from '/core/publishing/author-access-client.js';",`const authorAccessRequest=async(s,action)=>action==='status'?{ready:true,individualPricing:true,mixedPricing:true}:action==='connections'?{connections:[{id:'shop',provider:'kofi',enabled:true}]}:{config:null};`));
         res.setHeader('Content-Type',({'.html':'text/html','.css':'text/css','.js':'text/javascript','.webmanifest':'application/manifest+json'}[extname(file)]||'application/octet-stream'));res.end(bytes);
     }catch(error){responses.push(req.url);res.statusCode=404;res.end();}
 });
@@ -97,6 +97,18 @@ try {
     }
     await page.locator('#customBook').fill('7.25');await page.locator('#words').fill('100000');
     assert.equal(await page.locator('#customBook').inputValue(),'7.25');assert.equal(await page.locator('#earnings').textContent(),'$725.00');
+    await page.goto(base+'/mobile-publishing-test?mixed=1');await page.waitForFunction(()=>window.pricingTest?.ready);
+    assert.deepEqual(await page.evaluate(()=>window.pricingTest.access.read().chapterProducts.map(p=>[p.chapterId,p.minimum])),[['one','1.50'],['two','1.50'],['three','0.75']]);
+    for(const width of [320,390,768]){
+        await page.setViewportSize({width,height:844});
+        assert.ok(await page.locator('#chapterMixedFields input:not([type=checkbox]), #chapterMixedFields button').evaluateAll(nodes=>nodes.filter(n=>n.getClientRects().length).every(n=>{const b=n.getBoundingClientRect();return b.width>=44&&b.height>=44&&b.left>=0&&b.right<=innerWidth+1;})),'mixed product controls fit '+width);
+        await page.locator('#chapterAccessCard').screenshot({path:out+'/'+name+'-'+width+'-mixed-products.png'});
+    }
+    await page.setViewportSize({width:390,height:844});
+    await page.locator('#chapterUseCalculator').tap();
+    assert.deepEqual(await page.locator('[data-mixed-price]').evaluateAll(nodes=>nodes.map(n=>n.value)),['1.18','1.99']);
+    await page.locator('#chapterAddProduct').tap();assert.equal(await page.locator('.chapter-mixed-product').count(),3);
+    await page.locator('.chapter-mixed-product').last().getByRole('button',{name:'Remove this product'}).tap();assert.equal(await page.locator('.chapter-mixed-product').count(),2);
     assert.deepEqual(issues,[]);assert.deepEqual(errors,[]);assert.deepEqual(responses.filter(path=>!path.startsWith('/favicon.ico')),[]);
     console.log(name+': mobile widths 320/360/390/430/768, touch interactions, preview, prices, live totals and standalone calculator passed.');
 }finally{await browser.close();server.close();}

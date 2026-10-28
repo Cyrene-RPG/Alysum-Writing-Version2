@@ -38,6 +38,24 @@ test('real SQL isolates chapter purchases, preserves bundle grants, rejects unde
         assert.deepEqual((await read()).map(ch=>ch.id),['one']);
         await sale('chapter-one',['one'],75,true);await sale('chapter-one',['one']);
         assert.equal((await grant('chapter-one'))[0].status,'reversed');assert.deepEqual(await read(),[]);
+        // Bundle 1–2 and single Chapter 3 coexist; full bundle price is counted once.
+        const grouped=[...chapters.map(ch=>({...ch,productKey:'pack12',purchaseUrl:'https://ko-fi.com/s/pack12',minimumAmount:150,currency:'USD',offerMode:'mixed'})),{id:'three',title:'Three',text:'PRIVATE THREE',wordCount:1000,productKey:'chapter3',purchaseUrl:'https://ko-fi.com/s/chapter3',minimumAmount:75,currency:'USD',offerMode:'mixed'}];
+        const saveGroups=()=>db.query('SELECT save_author_access_book($1,$2,$3,$4,$5,$6,$7,$8)',['book',owner,connection,'','',0,'USD',JSON.stringify(grouped)]);
+        await saveGroups();
+        await sale('mixed-bundle',['pack12'],150);assert.deepEqual((await grant('mixed-bundle'))[0].chapter_ids,['one','two']);
+        await sale('mixed-single',['chapter3'],75);assert.deepEqual((await grant('mixed-single'))[0].chapter_ids,['three']);
+        await sale('mixed-cart-low',['pack12','chapter3'],150);assert.equal((await grant('mixed-cart-low')).length,0);
+        await sale('mixed-cart',['pack12','chapter3'],225);assert.deepEqual((await grant('mixed-cart'))[0].chapter_ids,['one','two','three']);
+        grouped.push({id:'four',title:'Four',text:'PRIVATE FOUR',wordCount:1000,productKey:'chapter4',purchaseUrl:'https://ko-fi.com/s/chapter4',minimumAmount:50,currency:'USD',offerMode:'mixed'});
+        await saveGroups();await sale('mixed-bundle',['pack12'],150);
+        assert.deepEqual((await grant('mixed-bundle'))[0].chapter_ids,['one','two']);
+        await sale('new-chapter',['chapter4'],50);assert.deepEqual((await grant('new-chapter'))[0].chapter_ids,['four']);
+        Object.assign(grouped.at(-1),{productKey:'pack12',purchaseUrl:'https://ko-fi.com/s/pack12',minimumAmount:150});
+        await saveGroups();await sale('mixed-bundle',['pack12'],150);
+        assert.deepEqual((await grant('mixed-bundle'))[0].chapter_ids,['one','two']);
+        await sale('expanded-bundle',['pack12'],150);assert.deepEqual((await grant('expanded-bundle'))[0].chapter_ids,['one','two','four']);
+        await sale('mixed-bundle',['pack12'],150,true);assert.equal((await grant('mixed-bundle'))[0].status,'reversed');assert.equal((await grant('mixed-single'))[0].status,'paid');
+        await db.exec(sql);assert.deepEqual((await grant('mixed-single'))[0].chapter_ids,['three']);
         await db.exec('SET ROLE anon');await assert.rejects(db.query('SELECT * FROM author_access_books'),/permission denied/);
         await assert.rejects(db.query('SELECT author_access_pricing_version()'),/permission denied/);
         await db.exec('RESET ROLE');

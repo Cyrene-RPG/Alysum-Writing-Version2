@@ -31,9 +31,9 @@ export async function handleAuthorAccess(request, env, injected = {}) {
         }
         const { db, user } = injected.services || createPaymentServices(env,injected.fetcher);
         if (action === 'status' && request.method === 'GET') {
-            try { await db('author_access_connections',{query:{select:'id',limit:0}}); let individualPricing = false;
-                try { individualPricing = await db('rpc/author_access_pricing_version',{method:'POST',body:{}}) === 1; } catch { /* Bundle setup remains usable. */ }
-                return reply({ready:true,individualPricing}); }
+            try { await db('author_access_connections',{query:{select:'id',limit:0}}); let version = 0;
+                try { version = await db('rpc/author_access_pricing_version',{method:'POST',body:{}}); } catch { /* Bundle setup remains usable. */ }
+                return reply({ready:true,individualPricing:version>=1,mixedPricing:version>=2}); }
             catch { return reply({ready:false}); }
         }
         if (action === 'webhook' && request.method === 'POST') {
@@ -78,6 +78,7 @@ export async function handleAuthorAccess(request, env, injected = {}) {
             const [config] = await db('author_access_books',{query:{book_id:`eq.${sourceId}`,owner_id:`eq.${owner.id}`,select:'connection_id,product_key,purchase_url,minimum_amount,currency,chapter_ids,chapters',limit:1}});
             if (config) {
                 config.chapterProducts = (config.chapters || []).filter(ch=>ch.productKey).map(ch=>({chapterId:ch.id,productUrl:ch.purchaseUrl,minimum:String(ch.minimumAmount/100)}));
+                config.pricingMode=config.chapters.some(ch=>ch.offerMode==='mixed') ? 'mixed' : config.chapterProducts.length ? 'individual' : 'bundle';
                 delete config.chapters;
             }
             return reply({config:config || null});
@@ -114,20 +115,23 @@ export async function handleAuthorAccess(request, env, injected = {}) {
                     if (!Number.isSafeInteger(minimumAmount) || minimumAmount < 50 || minimumAmount > 100000) fail(400,'Set each product price from 0.50 to 1,000.');
                     return {productKey,purchaseUrl,minimumAmount,currency};
                 };
-                if (body.pricingMode === 'individual') {
+                if (['individual','mixed'].includes(body.pricingMode)) {
                     let version = 0;
                     try { version = await db('rpc/author_access_pricing_version',{method:'POST',body:{}}); } catch { /* Fail before saving on the old setup. */ }
-                    if (version !== 1) fail(503,'Individual chapter prices need the chapter-access SQL update.');
+                    if (version < (body.pricingMode === 'mixed' ? 2 : 1)) fail(503,'Chapter products need the latest chapter-access SQL update.');
                     const products = Array.isArray(body.chapterProducts) ? body.chapterProducts : [];
                     if (products.length !== chapterIds.length || new Set(products.map(p=>String(p.chapterId))).size !== products.length) fail(400,'Set a product and price for each locked chapter.');
-                    const keys = new Set();
+                    const keys = new Map();
                     for (const chapter of chapters) {
                         const product = products.find(p=>String(p.chapterId) === chapter.id);
                         if (!product) fail(400,'Set a product and price for each locked chapter.');
                         const validated = validateProduct(product.purchaseUrl,product.minimumAmount);
-                        if (keys.has(validated.productKey)) fail(400,'Use a different shop product for each individually priced chapter.');
-                        keys.add(validated.productKey);
-                        Object.assign(chapter,validated);
+                        if (keys.has(validated.productKey)) {
+                            if (body.pricingMode !== 'mixed') fail(400,'Use a different shop product for each individually priced chapter.');
+                            if (keys.get(validated.productKey)!==validated.minimumAmount) fail(400,'Every chapter in the same product must use that product’s full price.');
+                        }
+                        keys.set(validated.productKey,validated.minimumAmount);
+                        Object.assign(chapter,validated,{offerMode:body.pricingMode});
                     }
                 } else {
                     const product = validateProduct(body.purchaseUrl,body.minimumAmount,body.productKey);
