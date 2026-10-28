@@ -1,0 +1,24 @@
+name: Author pricing calculator tests
+on:
+  push:
+    branches: [feature/automatic-book-pricing]
+  pull_request:
+    paths:
+      - 'core/publishing/pricing-guide.js'
+      - 'core/tests/publishing/pricing-guide.test.js'
+      - 'applications/studio/page-ui/pricing-guide.js'
+      - 'applications/studio/page-ui/publish.js'
+      - 'applications/studio/pages/publish.html'
+      - '.github/workflows/pricing-calculator-tests.yml'
+jobs:
+  pricing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test core/tests/publishing/pricing-guide.test.js
+      - run: node --check core/publishing/pricing-guide.js
+      - run: node --check applications/studio/page-ui/pricing-guide.js
+      - run: node --check applications/studio/page-ui/publish.js
