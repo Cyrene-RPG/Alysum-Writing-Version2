@@ -27,3 +27,25 @@ jobs:
         env:
           JSDOM_MODULE: ${{ runner.temp }}/chapter-pricing/node_modules/jsdom/lib/api.js
           PGLITE_MODULE: ${{ runner.temp }}/chapter-pricing/node_modules/@electric-sql/pglite/dist/index.js
+  mobile-browser:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix "$RUNNER_TEMP/pricing-browser" --no-audit --no-fund playwright@1.61.1
+      - run: '"$RUNNER_TEMP/pricing-browser/node_modules/.bin/playwright" install --with-deps ${{ matrix.browser }}'
+      - run: node applications/studio/tests/chapter-pricing-browser.mjs
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/pricing-browser/node_modules/playwright/index.mjs
+          PRICING_BROWSER: ${{ matrix.browser }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chapter-pricing-${{ matrix.browser }}
+          path: test-results/chapter-pricing/
