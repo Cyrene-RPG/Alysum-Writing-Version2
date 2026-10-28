@@ -32,9 +32,14 @@ export function bindPricingGuide(chapters, loadLatestChapters) {
         const originalLabel = recalculateButton.textContent;
         recalculateButton.textContent = 'Updating…';
         try {
+            const before = new Map(currentChapters.map(ch => [String(ch.id), String(ch.content || '')]));
             if (loadLatestChapters) currentChapters = await loadLatestChapters();
+            const changed = currentChapters.filter(ch => before.get(String(ch.id)) !== String(ch.content || '')).length;
+            const removed = [...before.keys()].filter(id => !currentChapters.some(ch => String(ch.id) === id)).length;
             refresh();
-            $('pricingUpdateStatus').textContent = 'Updated using the latest saved chapter text.';
+            $('pricingUpdateStatus').textContent = changed || removed
+                ? 'Recalculated: ' + changed + ' changed or added chapter(s)' + (removed ? ', ' + removed + ' removed' : '') + '. Prices may stay the same within a word-count range.'
+                : 'No new saved chapter text was found. Word counts and suggested prices are unchanged. Make sure edits are saved in the manuscript editor.';
         } catch (error) {
             $('pricingUpdateStatus').textContent = 'Could not load saved chapters: ' + (error?.message || 'Please try again.');
         } finally {
