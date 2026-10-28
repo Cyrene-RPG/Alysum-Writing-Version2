@@ -167,6 +167,19 @@
             </div>
         </section>
 
+        <section class="pub-card" id="pricingGuide" aria-labelledby="pricingTitle">
+            <h2 id="pricingTitle">Author pricing guide</h2>
+            <p class="pub-hint">Suggestions use the actual word count of each selected chapter. Alysum takes 0% commission. These are recommendations only: your connected Ko-fi or Payhip shop controls the real checkout price.</p>
+            <p class="pub-hint"><strong id="pricingFormat">Published chapters / ongoing story</strong> · <span id="pricingChapterCount">0</span> chapters · <span id="pricingWordCount">0</span> words</p>
+            <div class="access-grid"><div><label for="pricingDiscount">Whole-book discount target (%)</label><input id="pricingDiscount" type="number" min="0" max="80" value="20"></div><div><label for="pricingCustomPrice">Your planned whole-book price (USD, optional)</label><input id="pricingCustomPrice" type="number" min="0" step="0.01" placeholder="Use suggested price"></div><div><label for="pricingSales">Example number of book sales</label><input id="pricingSales" type="number" min="0" step="1" value="100"></div></div>
+            <p>All selected chapters separately: <strong id="pricingChapterTotal">$0.00</strong></p>
+            <p>Suggested complete selection price: <strong id="pricingBookSuggestion">$0.00</strong></p>
+            <p>Illustrative author revenue before processing fees, refunds and taxes: <strong id="pricingEarnings">$0.00</strong></p>
+            <p id="pricingNotice" role="status" class="pub-hint"></p>
+            <details><summary>See suggested price for each chapter</summary><div style="overflow-x:auto"><table style="width:100%;text-align:left"><thead><tr><th>Chapter</th><th>Words</th><th>Suggestion</th></tr></thead><tbody id="pricingChapterRows"></tbody></table></div></details>
+            <p class="pub-hint">For serialized work, suggestions cover the selected published chapters, not unpublished future chapters. This calculator does not change prices or create payment products.</p>
+        </section>
+
         <section class="pub-card" id="chapterAccessCard">
             <h2>Locked chapters</h2>
             <p class="pub-hint">Readers buy a product from your shop, then read its chapters here. Use one product to unlock the chapters checked below.</p>
