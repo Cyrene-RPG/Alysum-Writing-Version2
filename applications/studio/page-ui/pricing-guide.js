@@ -9,7 +9,7 @@ export function bindPricingGuide(chapters) {
     const escape = value => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const refresh = () => {
         const selected = new Set([...document.querySelectorAll('#chapterList [data-chapter-id]:checked')].map(el => String(el.dataset.chapterId)));
-        const included = selected.size ? rows.filter(row => selected.has(row.id)) : rows;
+        const included = rows.filter(row => selected.has(row.id));
         const result = calculatePricing(included.map(row => row.words), { discountPercent: Number($('pricingDiscount').value), complete: Boolean($('workComplete')?.checked) });
         $('pricingChapterCount').textContent = String(result.chapterCount);
         $('pricingWordCount').textContent = result.totalWords.toLocaleString();
@@ -20,13 +20,14 @@ export function bindPricingGuide(chapters) {
         const price = $('pricingCustomPrice').value.trim() === '' ? result.suggestedBook / 100 : Math.max(0, Number.isFinite(sale) ? sale : 0);
         const sales = Math.max(0, Math.floor(Number($('pricingSales').value) || 0));
         $('pricingEarnings').textContent = dollars(Math.round(price * 100) * sales);
-        $('pricingNotice').textContent = !result.totalWords ? 'Add manuscript content to receive a suggestion.' : price * 100 > result.chapterTotal ? 'Your custom book price exceeds the sum of its chapters.' : price * 100 > result.suggestedBook * 1.5 ? 'Your price is significantly above the suggested range.' : '';
+        $('pricingNotice').textContent = !result.chapterCount ? 'Select chapters to receive a suggestion.' : !result.totalWords ? 'Add manuscript content to receive a suggestion.' : price * 100 > result.chapterTotal ? 'Your custom book price exceeds the sum of its chapters.' : price * 100 > result.suggestedBook * 1.5 ? 'Your price is significantly above the suggested range.' : '';
         $('pricingFormat').textContent = result.complete ? 'Completed book' : 'Published chapters / ongoing story';
     };
     ['pricingDiscount','pricingCustomPrice','pricingSales','workComplete'].forEach(id => $(id)?.addEventListener('input', refresh));
     $('chapterList')?.addEventListener('change', refresh);
-    const observer = new MutationObserver(refresh);
-    observer.observe($('chapterList'), { childList: true, subtree: true });
+    const chapterList = $('chapterList');
+    const observer = chapterList ? new MutationObserver(refresh) : null;
+    if (observer) observer.observe(chapterList, { childList: true, subtree: true });
     refresh();
-    return () => observer.disconnect();
+    return () => observer?.disconnect();
 }
