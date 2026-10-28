@@ -65,6 +65,7 @@ test('publish calculator, per-chapter controls, draft restore, save and collapse
         $('chapterCurrency').value='EUR';$('chapterCurrency').dispatchEvent(new Event('change'));
         assert.equal($('chapterUseCalculator').disabled,true);
         assert.match($('chapterCalculatorHint').textContent,/USD/);
+        assert.equal($('chapterCalculatorStatus').textContent,'');
         $('chapterCurrency').value='USD';$('chapterCurrency').dispatchEvent(new Event('change'));
         $('chapterPricingMode').value='individual';$('chapterPricingMode').dispatchEvent(new Event('change'));
         // Only checked paid chapters get prices; an unchecked chapter is untouched.

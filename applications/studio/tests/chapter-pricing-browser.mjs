@@ -87,6 +87,7 @@ try {
     await page.locator('#chapterCurrency').selectOption('EUR');assert.equal(await page.locator('#chapterUseCalculator').isDisabled(),true);
     await page.locator('#chapterCurrency').selectOption('USD');
     await page.locator('#chapterPricingMode').selectOption('individual');
+    assert.equal(await page.locator('#chapterCalculatorStatus').textContent(),'');
     await page.locator('#chapterAccessCard').screenshot({path:out+'/'+name+'-390-simple-payment-setup.png'});
     await page.goto(base+'/pricing-calculator/');await page.locator('#book').waitFor();
     for(const width of [320,390,768]){

@@ -25,6 +25,7 @@ export function bindPricingGuide(chapters, loadLatestChapters) {
         $('chapterCalculatorHint').textContent=!usd ? 'Calculator suggestions are in USD. Enter the prices from your shop for other currencies.' : 'Fills prices for checked chapters only. Set the same amounts in your shop; this button does not change shop prices.';
     };
     const refresh = (keepRows = false) => {
+        if ($('chapterCalculatorStatus')) $('chapterCalculatorStatus').textContent='';
         const rows = currentChapters.map(ch => ({ id: String(ch.id), title: ch.title || 'Untitled chapter', words: countWordsInHtml(ch.content || '') }));
         const selected = new Set([...document.querySelectorAll('#chapterList [data-chapter-id]:checked')].map(el => String(el.dataset.chapterId)));
         const included = rows.filter(row => selected.has(row.id));
