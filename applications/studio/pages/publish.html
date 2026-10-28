@@ -188,24 +188,33 @@
         </section>
 
         <section class="pub-card" id="chapterAccessCard">
-            <h2>Locked chapters</h2>
-            <p class="pub-hint">Readers buy a product from your shop, then read its chapters here. Choose a bundle or set a different shop product and price for each locked chapter.</p>
+            <h2>Paid chapters</h2>
+            <p class="pub-hint">Readers pay you through your own Ko-fi or Payhip shop. Alysum confirms the purchase and unlocks their chapters.</p>
             <p id="chapterAccessUnavailable" role="status">Checking chapter access…</p>
             <a id="chapterAccessSetup" class="payment-back" href="/applications/studio/pages/payment-setup" hidden>Site owner: prepare chapter access</a>
             <fieldset id="chapterAccessFields" class="payment-fields" hidden>
+                <label for="chapterConnection">1. Choose your shop</label><select id="chapterConnection"><option value="">Choose your connected shop</option></select>
                 <p><a class="payment-back" id="chapterShopSettings" href="/applications/studio/pages/connected-payments">Connect or manage your shop →</a></p>
-                <label for="chapterConnection">Your connected shop</label><select id="chapterConnection"><option value="">Choose your connected shop</option></select>
-                <label for="chapterPricingMode">How to sell locked chapters</label>
-                <select id="chapterPricingMode"><option value="bundle">One product for all locked chapters</option><option value="individual">Individual chapter prices</option></select>
+                <label for="chapterPricingMode">2. Sell together or separately</label>
+                <select id="chapterPricingMode"><option value="bundle">Together (one product)</option><option value="individual">Separately (per chapter)</option></select>
+                <p id="chapterSaleInstructions" class="pub-hint">Create one shop product for the checked chapters, then paste its link and price below.</p>
                 <p id="chapterPricingSetup" class="pub-hint" hidden>Individual prices need the updated <a href="/applications/studio/pages/payment-setup">chapter access setup</a>. Existing bundle prices still work.</p>
-                <div id="chapterBundleFields">
-                <label for="chapterProduct">Bundle product link</label><input id="chapterProduct" type="url" placeholder="https://ko-fi.com/s/your-product" maxlength="2000">
-                <div class="access-grid"><div><label for="chapterMinimum">Product price</label><input id="chapterMinimum" inputmode="decimal" placeholder="3.00"></div>
-                </div></div>
-                <div><label for="chapterCurrency">Currency for chapter products</label><select id="chapterCurrency"><option>USD</option><option>GBP</option><option>EUR</option><option>CAD</option><option>AUD</option></select></div>
-                <p class="pub-hint">Use a one-time shop product. Tips, gifts and memberships do not unlock chapters. Discounts below this price will not unlock access.</p>
+                <label for="chapterCurrency">Currency</label><select id="chapterCurrency"><option>USD</option><option>GBP</option><option>EUR</option><option>CAD</option><option>AUD</option></select>
+                <h3 class="chapter-payment-step">3. Choose paid chapters</h3>
+                <p class="pub-hint">Check the chapters a purchase should unlock. Other chapters selected under Manuscript stay free.</p>
                 <div id="chapterLocks" class="payment-chapters"></div>
-                <p class="pub-hint">Checked chapters are locked when you post or update. Readers must use their verified Alysum email at checkout. Individual purchases unlock only their matching chapter. A bundle purchase unlocks its included chapters at that time. Set the same prices in your shop; this form does not change shop checkout prices.</p>
+                <p><button type="button" id="chapterUseCalculator">Fill prices from calculator</button></p>
+                <p id="chapterCalculatorHint" class="pub-hint">Fills prices for checked chapters only. Set the same amounts in your shop; this button does not change shop prices.</p>
+                <p id="chapterCalculatorStatus" class="pub-hint" role="status"></p>
+                <div id="chapterBundleFields">
+                    <label for="chapterProduct">Shop product link for these chapters</label><input id="chapterProduct" type="url" placeholder="https://ko-fi.com/s/your-product" maxlength="2000">
+                    <label for="chapterMinimum">Price charged by your shop</label><input id="chapterMinimum" type="number" min="0.50" max="1000" step="0.01" inputmode="decimal" placeholder="3.00">
+                </div>
+                <details class="chapter-payment-help"><summary>How purchases unlock chapters</summary>
+                    <p class="pub-hint">Use one-time shop products. Each separately sold chapter needs its own product link. Tips, gifts and memberships do not unlock chapters.</p>
+                    <p class="pub-hint">Readers use the same email as their verified Alysum account at checkout. A confirmed purchase unlocks only its included chapters at that time.</p>
+                    <p class="pub-hint">Prices here must match your shop. Discounts below these amounts will not unlock access. Payment is handled by your shop.</p>
+                </details>
             </fieldset>
         </section>
 

@@ -31,6 +31,7 @@ export async function bindChapterAccess({supabase,book,chapters}) {
                 $('chapterConnection').value=pending.connectionId || '';$('chapterProduct').value=pending.productUrl || '';$('chapterMinimum').value=pending.minimum || '';$('chapterCurrency').value=pending.currency || 'USD';
             } else if(config) { $('chapterConnection').value=config.connection_id || ''; $('chapterProduct').value=config.purchase_url; $('chapterMinimum').value=config.minimum_amount?String(config.minimum_amount/100):''; $('chapterCurrency').value=config.currency || 'USD'; }
         }
+        if (ready && !$('chapterConnection').value && $('chapterConnection').options.length === 2) $('chapterConnection').selectedIndex=1;
         loaded=true;
     } catch(error) { ready=false;failure=error.message; }
     $('chapterAccessUnavailable').hidden=ready;
@@ -48,10 +49,10 @@ export async function bindChapterAccess({supabase,book,chapters}) {
         const row=document.createElement('div');row.className='chapter-price-row';
         const fields=document.createElement('div');fields.className='chapter-product-fields access-grid';
         const saved=savedProducts.find(p=>String(p.chapterId)===String(chapter.id));
-        const urlLabel=document.createElement('label');urlLabel.textContent='Chapter product link';
+        const urlLabel=document.createElement('label');urlLabel.textContent='Shop link for this chapter';
         const url=document.createElement('input');url.type='url';url.maxLength=2000;url.placeholder='https://ko-fi.com/s/chapter-product';url.value=saved?.productUrl || '';
         urlLabel.append(url);
-        const priceLabel=document.createElement('label');priceLabel.textContent='Chapter price';
+        const priceLabel=document.createElement('label');priceLabel.textContent='Price charged by your shop';
         const price=document.createElement('input');price.type='number';price.min='0.50';price.max='1000';price.step='0.01';price.inputMode='decimal';price.placeholder='0.75';price.value=saved?.minimum || '';
         priceLabel.append(price);fields.append(urlLabel,priceLabel);
         label.append(checkbox,document.createTextNode(`Lock: ${chapter.title || 'Untitled'}`));row.append(label,fields);list.append(row);
@@ -60,6 +61,7 @@ export async function bindChapterAccess({supabase,book,chapters}) {
     const updateMode=()=>{
         const individual=mode.value==='individual';
         $('chapterBundleFields').hidden=individual;
+        if ($('chapterSaleInstructions')) $('chapterSaleInstructions').textContent=individual ? 'Create a separate shop product for each checked chapter. Paste each product link beside its chapter.' : 'Create one shop product for the checked chapters, then paste its link and price below.';
         for(const row of productControls) {
             row.fields.hidden=!individual || !row.checkbox.checked;
             row.url.disabled=row.price.disabled=!individual || !row.checkbox.checked;

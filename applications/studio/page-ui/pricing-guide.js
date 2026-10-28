@@ -13,6 +13,17 @@ export function bindPricingGuide(chapters, loadLatestChapters) {
         const value=estimates.get(id) ?? shopEstimates.get(id);
         return value === undefined || value === '' ? undefined : Math.round(Number(value)*100);
     };
+    const paidRows = () => {
+        const locked=new Set([...document.querySelectorAll('#chapterLocks [data-lock-chapter-id]:checked')].map(el=>el.dataset.lockChapterId));
+        return currentChapters.filter(ch=>locked.has(String(ch.id)));
+    };
+    const updatePriceButton = () => {
+        const button=$('chapterUseCalculator');
+        if (!button) return;
+        const usd=$('chapterCurrency')?.value==='USD';
+        button.disabled=!usd || !paidRows().length;
+        $('chapterCalculatorHint').textContent=!usd ? 'Calculator suggestions are in USD. Enter the prices from your shop for other currencies.' : 'Fills prices for checked chapters only. Set the same amounts in your shop; this button does not change shop prices.';
+    };
     const refresh = (keepRows = false) => {
         const rows = currentChapters.map(ch => ({ id: String(ch.id), title: ch.title || 'Untitled chapter', words: countWordsInHtml(ch.content || '') }));
         const selected = new Set([...document.querySelectorAll('#chapterList [data-chapter-id]:checked')].map(el => String(el.dataset.chapterId)));
@@ -33,7 +44,44 @@ export function bindPricingGuide(chapters, loadLatestChapters) {
         $('pricingEarnings').textContent = dollars(Math.round(price * 100) * sales);
         $('pricingNotice').textContent = !result.chapterCount ? 'Select chapters to receive a suggestion.' : !result.totalWords ? 'Add manuscript content to receive a suggestion.' : price * 100 > result.chapterTotal ? 'Your custom book price exceeds the sum of its chapters.' : price * 100 > result.suggestedBook * 1.5 ? 'Your price is significantly above the suggested range.' : '';
         $('pricingFormat').textContent = result.complete ? 'Completed book' : 'Published chapters / ongoing story';
+        updatePriceButton();
     };
+    $('chapterUseCalculator')?.addEventListener('click',()=>{
+        const included=paidRows();
+        if ($('chapterCurrency')?.value!=='USD' || !included.length) return;
+        // Suggest from manuscript length or the author's explicit calculator edits,
+        // rather than copying old shop prices back into the same fields.
+        const customPrices=included.map(ch=>{
+            const value=estimates.get(String(ch.id));
+            return value === undefined || value === '' ? undefined : Math.round(Number(value)*100);
+        });
+        const suggestion=calculatePricing(included.map(ch=>countWordsInHtml(ch.content || '')), {discountPercent:Number($('pricingDiscount').value),chapterPrices:customPrices});
+        if (!suggestion.totalWords) {
+            $('chapterCalculatorStatus').textContent='Save some chapter text first so the calculator can suggest a price.';
+            return;
+        }
+        if ($('chapterPricingMode').value==='individual') {
+            const prices=new Map(included.map((ch,index)=>[String(ch.id),suggestion.chapterPrices[index]]));
+            for (const row of document.querySelectorAll('.chapter-price-row')) {
+                const id=row.querySelector('[data-lock-chapter-id]')?.dataset.lockChapterId;
+                if (!prices.has(id)) continue;
+                const input=row.querySelector('input[type=number]');
+                input.value=(Math.min(100000,Math.max(50,prices.get(id)))/100).toFixed(2);
+                estimates.delete(id);
+            }
+            useChapterPrices();
+            $('chapterCalculatorStatus').textContent='Filled '+included.length+' chapter price(s). Match these amounts in your shop, then save or update your listing.';
+        } else {
+            const planned=$('pricingCustomPrice').value.trim();
+            const amount=planned === '' ? suggestion.suggestedBook : Math.round(Number(planned)*100);
+            if (!Number.isFinite(amount) || amount<50 || amount>100000) {
+                // Word-count bands can suggest 0.49; paid access requires at least 0.50.
+                if (planned !== '') { $('chapterCalculatorStatus').textContent='Enter a planned price from $0.50 to $1,000, or leave it blank for a suggestion.'; return; }
+            }
+            $('chapterMinimum').value=(Math.min(100000,Math.max(50,amount))/100).toFixed(2);
+            $('chapterCalculatorStatus').textContent='Filled '+dollars(Math.min(100000,Math.max(50,amount)))+' for the checked chapters together. Match this amount in your shop, then save or update your listing.';
+        }
+    });
     $('pricingChapterRows').addEventListener('input', event=>{
         if (!event.target.matches('[data-estimate-id]')) return;
         estimates.set(event.target.dataset.estimateId,event.target.value);

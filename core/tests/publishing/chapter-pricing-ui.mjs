@@ -51,6 +51,27 @@ test('publish calculator, per-chapter controls, draft restore, save and collapse
         $('chapterCurrency').value='USD';$('chapterCurrency').dispatchEvent(new Event('change'));
         await access.save({chapterAccess:access.read(),chapterIds:['one','two'],complete:true});
         assert.deepEqual(writes[0].chapterProducts.map(p=>p.minimumAmount),[75,125]);
+        // Explicit application replaces old prices, keeps product links, and makes no API write.
+        const previousWrites=writes.length;
+        $('chapterUseCalculator').click();
+        assert.deepEqual(access.read().chapterProducts.map(p=>p.minimum),['0.50','0.99']);
+        assert.equal(access.read().chapterProducts[0].productUrl,'https://ko-fi.com/s/one');
+        assert.equal(writes.length,previousWrites);
+        assert.equal($('pricingChapterTotal').textContent,'$1.49');
+        $('chapterPricingMode').value='bundle';$('chapterPricingMode').dispatchEvent(new Event('change'));
+        $('chapterUseCalculator').click();assert.equal($('chapterMinimum').value,'1.18');
+        $('pricingCustomPrice').value='2.75';$('chapterUseCalculator').click();assert.equal($('chapterMinimum').value,'2.75');
+        $('pricingCustomPrice').value='';$('pricingCustomPrice').dispatchEvent(new Event('input'));
+        $('chapterCurrency').value='EUR';$('chapterCurrency').dispatchEvent(new Event('change'));
+        assert.equal($('chapterUseCalculator').disabled,true);
+        assert.match($('chapterCalculatorHint').textContent,/USD/);
+        $('chapterCurrency').value='USD';$('chapterCurrency').dispatchEvent(new Event('change'));
+        $('chapterPricingMode').value='individual';$('chapterPricingMode').dispatchEvent(new Event('change'));
+        // Only checked paid chapters get prices; an unchecked chapter is untouched.
+        const firstLock=document.querySelector('[data-lock-chapter-id="one"]');
+        firstLock.checked=false;firstLock.dispatchEvent(new Event('change',{bubbles:true}));
+        const firstPrice=document.querySelector('.chapter-product-fields input[type=number]');firstPrice.value='7.00';
+        $('chapterUseCalculator').click();assert.equal(firstPrice.value,'7.00');
         $('pricingRecalculate').click();await new Promise(resolve=>setTimeout(resolve,0));
         assert.equal($('pricingWordCount').textContent,'10,000');assert.equal($('pricingRecalculate').disabled,false);
         failRefresh=true;$('pricingRecalculate').click();await new Promise(resolve=>setTimeout(resolve,0));
@@ -59,6 +80,7 @@ test('publish calculator, per-chapter controls, draft restore, save and collapse
         assert.equal($('pricingChapterTotal').textContent,'$0.00');assert.equal($('pricingEarnings').textContent,'$0.00');
         assert.equal(document.querySelector('[data-lock-chapter-id]').checked,false);
         assert.equal(document.querySelector('.chapter-product-fields').hidden,true);
+        assert.equal($('chapterUseCalculator').disabled,true);
         dispose();
     } finally {delete globalThis.accessRequest;for(const [key,value] of Object.entries(savedGlobals))globalThis[key]=value;dom.window.close();}
 });
