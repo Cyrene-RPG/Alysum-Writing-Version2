@@ -39,6 +39,7 @@ const name=process.env.PRICING_BROWSER||'chromium';const browser=await pw[name].
 const out='test-results/chapter-pricing';await mkdir(out,{recursive:true});
 try {
     const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:1});
+    const issues=[];
     const errors=[];page.on('pageerror',error=>errors.push(error.message));
     await page.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
     await page.goto(base+'/mobile-publishing-test');
@@ -49,10 +50,15 @@ try {
     for(const width of [320,360,390,430,768]){
         await page.setViewportSize({width,height:844});
         await page.locator('#pricingGuide').scrollIntoViewIfNeeded();
-        assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'publishing page fits '+width);
-        assert.ok(await page.locator('#pricingGuide input, #pricingRecalculate, #chapterAccessCard input:not([type=checkbox]), #chapterAccessCard select').evaluateAll(nodes=>nodes.filter(n=>n.getClientRects().length).every(n=>{const b=n.getBoundingClientRect();return b.width>=44&&b.height>=44&&b.left>=0&&b.right<=innerWidth;})),'price controls fit and have touch target height at '+width);
         await page.locator('#pricingGuide').screenshot({path:out+'/'+name+'-'+width+'-calculator.png'});
         await page.locator('#chapterAccessCard').screenshot({path:out+'/'+name+'-'+width+'-chapter-prices.png'});
+        const metrics=await page.evaluate(()=>({width:innerWidth,scrollWidth:document.documentElement.scrollWidth,
+            overflowing:[...document.querySelectorAll('body *')].filter(n=>n.getClientRects().length && !n.closest('details:not([open])')).map(n=>({tag:n.tagName,id:n.id,className:n.className,left:n.getBoundingClientRect().left,right:n.getBoundingClientRect().right,width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height})).filter(n=>n.right>innerWidth+1||n.left<0).slice(0,25),
+            controls:[...document.querySelectorAll('#pricingGuide input, #pricingRecalculate, #chapterAccessCard input:not([type=checkbox]), #chapterAccessCard select')].filter(n=>n.getClientRects().length && !n.closest('details:not([open])')).map(n=>({id:n.id,type:n.type,left:n.getBoundingClientRect().left,right:n.getBoundingClientRect().right,width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height})).filter(n=>n.width<44||n.height<44||n.left<0||n.right>innerWidth+1)}));
+        console.log(name+' layout '+width+': '+JSON.stringify(metrics));
+        if(metrics.scrollWidth>metrics.width)issues.push('publishing page overflows at '+width);
+        if(metrics.controls.length)issues.push('price controls do not fit at '+width);
+
     }
     await page.setViewportSize({width:390,height:844});
     await page.locator('#manuscriptPreview summary').tap();await page.locator('#previewBody').waitFor({state:'visible'});
@@ -77,6 +83,6 @@ try {
     }
     await page.locator('#customBook').fill('7.25');await page.locator('#words').fill('100000');
     assert.equal(await page.locator('#customBook').inputValue(),'7.25');assert.equal(await page.locator('#earnings').textContent(),'$725.00');
-    assert.deepEqual(errors,[]);assert.deepEqual(responses.filter(path=>!path.startsWith('/favicon.ico')),[]);
+    assert.deepEqual(issues,[]);assert.deepEqual(errors,[]);assert.deepEqual(responses.filter(path=>!path.startsWith('/favicon.ico')),[]);
     console.log(name+': mobile widths 320/360/390/430/768, touch interactions, preview, prices, live totals and standalone calculator passed.');
 }finally{await browser.close();server.close();}
