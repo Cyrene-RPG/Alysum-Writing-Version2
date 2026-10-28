@@ -465,7 +465,7 @@ h1 {
 #pricingRecalculate:disabled { opacity: .6; cursor: wait; }
 #pricingGuide summary { cursor: pointer; padding: 10px 0; font-weight: 600; }
 #pricingGuide th, #pricingGuide td { padding: 10px 8px; border-bottom: 1px solid var(--border, #ffffff30); font-size: 13px; }
-#pricingGuide td input { min-width: 90px; }
+#pricingGuide td input[type="number"] { width: 96px; min-width: 96px; }
 #pricingGuide :is(input, button):focus-visible { outline: 2px solid var(--accent, #8cbcff); outline-offset: 3px; }
 #pricingNotice:empty, #pricingUpdateStatus:empty { display: none; }
 .chapter-price-row { padding: 12px 0; border-bottom: 1px solid var(--border, #ffffff30); }

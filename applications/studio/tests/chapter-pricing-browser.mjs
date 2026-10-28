@@ -23,13 +23,14 @@ const server=createServer(async(req,res)=>{
         let path=pathname;
         if(path.startsWith('/css/studio/'))path=path.replace('/css/studio/','/applications/studio/studio-css/');
         if(path.startsWith('/css/editor/'))path=path.replace('/css/editor/','/applications/editor/editor-css/');
+        if(path==='/manifest.webmanifest')path='/applications/main-site/public/manifest.webmanifest';
         if(path==='/pricing-calculator/')path='/pricing-calculator/index.html';
         if(path==='/mobile-publishing-test')path='/applications/studio/pages/publish.html';
         const file=resolve(root,'.'+path);if(!file.startsWith(root+'/'))throw Error('Invalid file');
         let bytes=await readFile(file);
         if(pathname==='/mobile-publishing-test')bytes=Buffer.from(bytes.toString().replace(/<script type="module" src="\/js\/studio\/publish.js[^>]*><\/script>/,'<script type="module">'+fixture+'</script>'));
         if(path==='/applications/studio/page-ui/publish-access.js')bytes=Buffer.from(bytes.toString().replace("import { authorAccessRequest } from '/core/publishing/author-access-client.js';",`const authorAccessRequest=async(s,action)=>action==='status'?{ready:true,individualPricing:true}:action==='connections'?{connections:[{id:'shop',provider:'kofi',enabled:true}]}:{config:null};`));
-        res.setHeader('Content-Type',({'.html':'text/html','.css':'text/css','.js':'text/javascript'}[extname(file)]||'application/octet-stream'));res.end(bytes);
+        res.setHeader('Content-Type',({'.html':'text/html','.css':'text/css','.js':'text/javascript','.webmanifest':'application/manifest+json'}[extname(file)]||'application/octet-stream'));res.end(bytes);
     }catch(error){responses.push(req.url);res.statusCode=404;res.end();}
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -73,6 +74,7 @@ try {
     assert.equal(await prices.first().isVisible(),false);
     await page.locator('#chapterPricingMode').selectOption('individual');assert.equal(await prices.first().inputValue(),'1.50');
     await page.locator('#pricingGuide details summary').tap();
+    assert.ok(await page.locator('[data-estimate-id]').evaluateAll(nodes=>nodes.every(n=>n.getBoundingClientRect().width>=90)),'chapter estimates remain readable in the mobile table');
     await page.locator('[data-estimate-id=one]').fill('2.50');assert.equal(await page.locator('#pricingChapterTotal').textContent(),'$5.75');
     assert.ok(await page.locator('#pricingGuide').evaluate(n=>n.getBoundingClientRect().right<=innerWidth),'expanded calculator stays within mobile page');
     await page.locator('#pricingGuide').screenshot({path:out+'/'+name+'-390-calculator-expanded.png'});
