@@ -79,6 +79,16 @@ try {
     assert.ok(await page.locator('#pricingGuide').evaluate(n=>n.getBoundingClientRect().right<=innerWidth),'expanded calculator stays within mobile page');
     await page.locator('#pricingGuide').screenshot({path:out+'/'+name+'-390-calculator-expanded.png'});
     await page.locator('#pricingRecalculate').tap();await page.waitForFunction(()=>document.getElementById('pricingUpdateStatus').textContent.includes('No new saved'));
+    // Calculator applies to paid chapters without making purchases or changing products.
+    await page.locator('#chapterUseCalculator').tap();
+    assert.deepEqual(await prices.evaluateAll(nodes=>nodes.map(n=>n.value)),['2.50','0.99','1.99']);
+    await page.locator('#chapterPricingMode').selectOption('bundle');
+    await page.locator('#chapterUseCalculator').tap();assert.equal(await page.locator('#chapterMinimum').inputValue(),'2.78');
+    await page.locator('#chapterCurrency').selectOption('EUR');assert.equal(await page.locator('#chapterUseCalculator').isDisabled(),true);
+    await page.locator('#chapterCurrency').selectOption('USD');
+    await page.locator('#chapterPricingMode').selectOption('individual');
+    assert.equal(await page.locator('#chapterCalculatorStatus').textContent(),'');
+    await page.locator('#chapterAccessCard').screenshot({path:out+'/'+name+'-390-simple-payment-setup.png'});
     await page.goto(base+'/pricing-calculator/');await page.locator('#book').waitFor();
     for(const width of [320,390,768]){
         await page.setViewportSize({width,height:844});

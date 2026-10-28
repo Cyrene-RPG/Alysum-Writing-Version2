@@ -489,3 +489,13 @@ h1 {
     #chapterAccessCard #chapterLocks .chapter-product-fields input,
     #pricingGuide input[type="number"] { font-size: 16px; }
 }
+
+/* Payment setup stays within the existing publishing card. */
+#chapterUseCalculator { min-height: 44px; padding: 10px 16px; border: 1px solid var(--border, #ffffff30); border-radius: 8px; background: var(--alysum-ui-raised, #243047); color: var(--text); font: inherit; font-weight: 700; cursor: pointer; }
+#chapterUseCalculator:disabled { opacity: .6; cursor: default; }
+#chapterUseCalculator:focus-visible { outline: 2px solid var(--accent, #8cbcff); outline-offset: 3px; }
+#chapterCalculatorStatus:empty { display: none; }
+.chapter-payment-step { font-size: 14px; margin: 24px 0 8px; }
+.chapter-payment-help { margin-top: 16px; }
+.chapter-payment-help summary { cursor: pointer; min-height: 44px; padding: 12px 0; }
+@media (max-width: 480px) { #chapterUseCalculator { width: 100%; } }

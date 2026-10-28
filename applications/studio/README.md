@@ -21,3 +21,5 @@ JSDOM_MODULE=/path/to/jsdom/lib/api.js PGLITE_MODULE=/path/to/@electric-sql/pgli
 ```
 
 The second command uses disposable test databases and synthetic manuscript data; it does not connect to production.
+
+The paid-chapter form groups setup into shop, sale type and chapter selection. **Fill prices from calculator** applies suggestions to checked paid chapters, or to their single bundle. It uses word counts and explicit calculator edits, floors paid suggestions at $0.50, and supports USD suggestions. Existing saved prices are preserved until the author clicks the button. Authors must set matching prices in their external shop; this feature does not create products, charge readers or change checkout prices. No additional SQL migration is required for this form change.
