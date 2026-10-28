@@ -157,13 +157,13 @@
                             <input class="writer-chapter-title" id="chapterTitle" aria-label="Chapter title" />
                         </div>
                     </div>
-                    <button type="button" class="writer-mobile-trigger" id="mobileRailOpen" aria-label="Open listing look" aria-controls="writerRail" aria-expanded="false">☰</button>
+                    <button type="button" class="writer-mobile-trigger" id="mobileRailOpen" aria-label="Open editor tools" aria-controls="writerRail" aria-expanded="false">☰</button>
                 </div>
                 <div class="writer-folder-view" id="folderView" hidden>
                     <p class="writer-folder-meta" id="folderMeta"></p>
                     <ul class="writer-folder-list" id="folderList"></ul>
                 </div>
-                <div class="snippet-editor-action"><button type="button" id="open-story-bible" class="quote-button" aria-expanded="false">Story Bible</button><button type="button" id="compare-drafts" class="quote-button" aria-haspopup="dialog" aria-expanded="false">Drafts / Reference</button><button type="button" id="share-snippet" class="quote-button" aria-haspopup="dialog">Share excerpt</button></div>
+                <div class="snippet-editor-action" id="editorActions"><button type="button" id="open-story-bible" class="quote-button" aria-expanded="false">Story Bible</button><button type="button" id="compare-drafts" class="quote-button" aria-haspopup="dialog" aria-expanded="false">Drafts / Reference</button><button type="button" id="share-snippet" class="quote-button" aria-haspopup="dialog">Share excerpt</button></div>
                 <div class="writer-toolbar" id="writerToolbar" role="toolbar" aria-label="Formatting">
                     <span class="writer-wordcount" aria-live="polite">
                         <span id="chapterWords">0</span> / <span id="totalWords">0</span>
@@ -178,6 +178,7 @@
                     <p class="writer-rail-title">Listing look</p>
                     <button type="button" class="writer-tree-toggle" id="railToggle" aria-expanded="true" title="Hide sidebar">›</button>
                 </div>
+                <div class="writer-mobile-actions" id="writerMobileActions" aria-label="Editor tools"></div>
             </aside>
             <div class="writer-shell-backdrop" id="writerShellBackdrop" hidden aria-hidden="true"></div>
         </div>
