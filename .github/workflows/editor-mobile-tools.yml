@@ -10,6 +10,7 @@ on:
       - 'applications/editor/page-ui/page.js'
       - 'applications/editor/page-ui/toolbar.js'
       - 'applications/editor/editor-css/page/shell.css'
+      - 'applications/editor/editor-css/page/typewriter.css'
       - 'applications/editor/tests/mobile-tools.mjs'
       - '.github/workflows/editor-mobile-tools.yml'
 permissions:

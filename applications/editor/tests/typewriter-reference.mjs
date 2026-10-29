@@ -56,12 +56,7 @@ try{
    assert.equal(await page.locator('.writer-toolbar').isVisible(),false);
    const exitBounds=await page.locator('#exit').boundingBox();
    assert.ok(exitBounds.width>=44&&exitBounds.height>=44,'Exit has a usable touch target');
-   for(const selector of ['#draftAction','#excerptAction']){
-    const bounds=await page.locator(selector).boundingBox();
-    const overlaps=exitBounds.x<bounds.x+bounds.width&&exitBounds.x+exitBounds.width>bounds.x&&exitBounds.y<bounds.y+bounds.height&&exitBounds.y+exitBounds.height>bounds.y;
-    assert.equal(overlaps,false,'Exit never overlaps '+selector);
-    await page.locator(selector).click();
-   }
+   for(const selector of ['#draftAction','#excerptAction'])assert.equal(await page.locator(selector).isVisible(),false,'Focus hides action '+selector);
    if(width>720){
     const write=await page.locator('#writePane').boundingBox(),reference=await page.locator('.draft-reference').boundingBox();
     assert.ok(write.width>150&&reference.width>100&&reference.height>200,'Both panes have usable dimensions');
@@ -79,12 +74,10 @@ try{
    assert.equal(await page.locator('.draft-workspace').count(),1,'Leaving Typewriter preserves comparison');
    assert.equal(await page.locator('.writer-toolbar').isVisible(),true);
   }
-  // Closing comparison must retain the same spacing for single-pane Typewriter.
+  // Single-pane Focus hides the same actions.
   await page.locator('[data-end]').click();
   await page.evaluate(()=>window.typewriter.setTypewriter(true));
-  const singleExit=await page.locator('#exit').boundingBox(),singleExcerpt=await page.locator('#excerptAction').boundingBox();
-  assert.ok(singleExit.x>=singleExcerpt.x+singleExcerpt.width||singleExit.y>=singleExcerpt.y+singleExcerpt.height,'Single-pane excerpt has separate space');
-  await page.locator('#excerptAction').click();
+  assert.equal(await page.locator('#excerptAction').isVisible(),false,'Single-pane Focus hides excerpt action');
   await page.locator('#exit').click();
   // Reopen from URL to check the existing preview cleanup separately.
   await page.goto(`http://127.0.0.1:${server.address().port}/fixture?book=sample&referenceBook=sample`);
