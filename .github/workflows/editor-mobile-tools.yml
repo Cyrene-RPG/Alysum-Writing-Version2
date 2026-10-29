@@ -4,6 +4,9 @@ on:
     paths:
       - 'applications/editor/pages/editor.html'
       - 'applications/editor/page-ui/page/chrome.js'
+      - 'applications/editor/page-ui/page/typewriter.js'
+      - 'applications/editor/page-ui/page.js'
+      - 'applications/editor/page-ui/toolbar.js'
       - 'applications/editor/editor-css/page/shell.css'
       - 'applications/editor/tests/mobile-tools.mjs'
       - '.github/workflows/editor-mobile-tools.yml'

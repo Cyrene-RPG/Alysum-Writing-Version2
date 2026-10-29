@@ -5,6 +5,7 @@ import {resolve,extname} from 'node:path';
 const root=resolve(new URL('../../../',import.meta.url).pathname);
 const setup=`
 import {mountWriterChrome} from '/applications/editor/page-ui/page/chrome.js';
+import {mountTypewriter} from '/applications/editor/page-ui/page/typewriter.js';
 const $=id=>document.getElementById(id);
 $('loadingPanel').classList.add('hidden');$('writerShell').classList.remove('hidden');
 $('bookTitle').value='Sample manuscript';$('chapterTitle').value='Chapter 4';
@@ -14,6 +15,7 @@ for(const id of ['open-story-bible','compare-drafts','share-snippet'])$(id).addE
 const ids=['treeToggle','settingsCollapse','railToggle','tabChapters','tabBook','chaptersPane','bookPane','bookTree','settingsPane','settingsTopbar','writerTabs','bookFootSettings','tabSettings','settingsBackTop','mobileTreeOpen','mobileRailOpen'];
 const args=Object.fromEntries(ids.map(id=>[id,$(id)]));
 mountWriterChrome({...args,shell:$('writerShell'),tree:$('chapterTree'),backdrop:$('writerShellBackdrop')});
+mountTypewriter({pageEl:$('pageEditor'),editor:{focus:()=>$('pageEditor').focus()},typewriterExit:$('typewriterExit'),focusMode:$('focusMode')});
 window.toolsReady=true;`;
 const server=createServer(async(req,res)=>{
  try {
@@ -41,15 +43,15 @@ try {
   await page.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
   await page.goto(base+'/fixture');await page.waitForFunction(()=>window.toolsReady);
   const inDrawer=()=>page.locator('#editorActions').evaluate(node=>node.parentElement.id);
-  assert.equal(await inDrawer(),width<=720?'writerMobileActions':'writerWritePane');
+  assert.equal(await inDrawer(),width<=720?'writerMobileActions':'editorActionRow');
   assert.ok(await page.evaluate(()=>document.getElementById('editorActions')===window.originalActions));
   const actionIds=['open-story-bible','compare-drafts','share-snippet'];
   for(const id of actionIds)assert.equal(await page.locator('#'+id).count(),1);
   if(width<=720){
    assert.equal(await page.locator('#writerWritePane > .snippet-editor-action').count(),0,'no action row above formatting on phones');
    assert.equal(await page.locator('#writerMobileActions').evaluate(n=>n.inert),true,'closed drawer actions are inert');
-   const title=await page.locator('#writerMobileTitlebar').boundingBox(),toolbar=await page.locator('#writerToolbar').boundingBox();
-   assert.ok(toolbar.y<=title.y+title.height+2,'formatting follows title without the old button row');
+   const title=await page.locator('#writerMobileTitlebar').boundingBox(),focus=await page.locator('#focusMode').boundingBox(),toolbar=await page.locator('#writerToolbar').boundingBox();
+   assert.ok(focus.y>=title.y+title.height && focus.y+focus.height<=toolbar.y,'Focus mode is between title and formatting');
    await page.screenshot({path:out+'/'+name+'-'+width+'-editor.png',fullPage:true});
    for(const id of actionIds){
     await page.locator('#mobileRailOpen').tap();
@@ -64,13 +66,14 @@ try {
    assert.deepEqual(await page.evaluate(()=>window.actionCalls),actionIds,'existing button listeners still fire once');
    await page.locator('#mobileRailOpen').tap();await page.keyboard.press('Escape');
    assert.equal(await page.locator('#mobileRailOpen').getAttribute('aria-expanded'),'false');
-   await page.evaluate(()=>document.documentElement.classList.add('is-typewriter'));
-   await page.waitForFunction(()=>document.getElementById('editorActions').parentElement.id==='writerWritePane');
+   await page.locator('#focusMode').tap();
+   assert.equal(await page.locator('html').evaluate(n=>n.classList.contains('is-typewriter')),true,'Focus mode enters the existing distraction-free view');
+   await page.waitForFunction(()=>document.getElementById('editorActions').parentElement.id==='editorActionRow');
    assert.equal(await page.locator('#share-snippet').isVisible(),true,'Typewriter retains its existing controls');
-   await page.evaluate(()=>document.documentElement.classList.remove('is-typewriter'));
+   await page.locator('#typewriterExit').tap();
    await page.waitForFunction(()=>document.getElementById('editorActions').parentElement.id==='writerMobileActions');
    await page.locator('#mobileRailOpen').tap();await page.setViewportSize({width:1280,height:844});
-   await page.waitForFunction(()=>document.getElementById('editorActions').parentElement.id==='writerWritePane');
+   await page.waitForFunction(()=>document.getElementById('editorActions').parentElement.id==='editorActionRow');
    assert.equal(await page.locator('#writerShell').evaluate(n=>n.classList.contains('is-rail-drawer-open')),false,'resize clears stale drawer state');
    assert.equal(await page.locator('#writerRail .writer-rail-title').textContent(),'Listing look');
    await page.setViewportSize({width,height:844});await page.waitForFunction(()=>document.getElementById('editorActions').parentElement.id==='writerMobileActions');
@@ -79,6 +82,12 @@ try {
    assert.equal(await page.locator('#writerMobileActions').isVisible(),false);
    await page.screenshot({path:out+'/'+name+'-'+width+'-desktop.png',fullPage:true});
   }
+  assert.equal(await page.locator('#focusMode').textContent(),'Focus mode');
+  assert.equal(await page.locator('#focusMode').isVisible(),true);
+  await page.locator('#focusMode').click();
+  assert.equal(await page.locator('#typewriterExit').isVisible(),true);
+  await page.locator('#typewriterExit').click();
+  assert.equal(await page.locator('#typewriterExit').isVisible(),false);
   assert.ok(await page.evaluate(()=>document.getElementById('pageEditor')===window.originalEditor));
   assert.equal(await page.locator('#pageEditor').textContent(),'Keep this manuscript and its editing state unchanged.');
   assert.deepEqual(errors,[]);await page.close();

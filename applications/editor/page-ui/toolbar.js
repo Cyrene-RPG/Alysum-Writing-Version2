@@ -151,7 +151,6 @@ export function mountToolbar({
     mount,
     editor,
     pageEl,
-    onTypewriter,
     onFind,
     onTypographyChange,
     getChapterTypography
@@ -187,7 +186,6 @@ export function mountToolbar({
         menuBlock("spacing", "Spacing", "Writing view spacing — manuscript export has separate settings", spacingMenuHtml()),
         menuBlock("breaks", "Breaks", "Scene break", breakMenuHtml()),
         `<button type="button" class="writer-tool writer-tool--find" data-find-toggle title="Find" aria-label="Find">${SEARCH_ICON}</button>`,
-        `<button type="button" class="writer-tool writer-tool--type" data-typewriter title="Typewriter mode" aria-label="Typewriter mode">Type</button>`,
         `</div>`,
         `<div class="writer-tool-menu writer-toolbar-more" data-menu="more" hidden>`,
         `<button type="button" class="writer-tool writer-tool--more" data-menu-toggle="more" aria-expanded="false" aria-haspopup="true" title="More" aria-label="More">${MORE_ICON}</button>`,
@@ -263,11 +261,6 @@ export function mountToolbar({
             indentBtn.setAttribute("aria-pressed", next ? "true" : "false");
             writeAutoIndent(next);
             editor.setAutoIndent(next);
-            return;
-        }
-        if (event.target.closest("[data-typewriter]")) {
-            closeMenus();
-            onTypewriter?.();
             return;
         }
         if (event.target.closest("[data-find-toggle]")) {

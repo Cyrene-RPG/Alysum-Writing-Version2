@@ -1,4 +1,4 @@
-export function mountTypewriter({ pageEl, editor, typewriterExit }) {
+export function mountTypewriter({ pageEl, editor, typewriterExit, focusMode }) {
     let findUi;
     let toolbarApi;
 
@@ -20,6 +20,7 @@ export function mountTypewriter({ pageEl, editor, typewriterExit }) {
         }
     }
 
+    focusMode?.addEventListener("click", () => setTypewriter(true));
     typewriterExit?.addEventListener("click", () => setTypewriter(false));
     window.addEventListener("keydown", (event) => {
         if (event.key !== "Escape") return;

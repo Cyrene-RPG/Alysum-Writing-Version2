@@ -472,13 +472,12 @@ async function boot() {
     });
 
     const typewriterExit = document.getElementById("typewriterExit");
-    const typewriter = mountTypewriter({ pageEl, editor, typewriterExit });
+    const typewriter = mountTypewriter({ pageEl, editor, typewriterExit, focusMode: document.getElementById("focusMode") });
 
     const toolbarApi = mountToolbar({
         mount: toolbarMount,
         editor,
         pageEl,
-        onTypewriter: () => typewriter.setTypewriter(true),
         onFind: () => findUi?.toggle(),
         getChapterTypography: () => {
             const ch = currentChapter(book, selectedId);
