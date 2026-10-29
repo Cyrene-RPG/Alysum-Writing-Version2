@@ -14,6 +14,7 @@ test('Library metadata, filtering, account isolation, private/public collections
  ('anonymous','00000000-0000-0000-0000-000000000001','{"title":"Anonymous story","author":"PRIVATE AUTHOR","isAnonymous":true,"chapters":[{"id":"one","wordCount":600}]}');`);
  const helper=subscriptions.slice(subscriptions.indexOf('CREATE OR REPLACE FUNCTION public.notification_released_chapters'),subscriptions.indexOf('CREATE OR REPLACE FUNCTION public.set_book_subscription'));await db.exec(helper);
  await db.exec(migration);await db.exec(migration);
+ const readerShelves=await readFile(new URL('../../../supabase/live-site/supabase-library-reader-shelves.sql',import.meta.url),'utf8');await db.exec(readerShelves);await db.exec(readerShelves);
  const weekly=await readFile(new URL('../../../supabase/live-site/supabase-library-weekly-feature.sql',import.meta.url),'utf8');await db.exec(weekly);await db.exec(weekly);
  const featured=async()=>(await db.query('SELECT public.library_hub_featured() AS value')).rows[0].value;
  const first=await featured();assert.ok(first.bookId);assert.match(first.weekStart,/^\d{4}-\d{2}-\d{2}$/);
@@ -31,6 +32,20 @@ test('Library metadata, filtering, account isolation, private/public collections
  await db.exec("INSERT INTO public.reads VALUES('self','Book-A','00000000-0000-0000-0000-000000000001',now()),('real','Book-A','00000000-0000-0000-0000-000000000002',now()),('repeat','Book-A','00000000-0000-0000-0000-000000000002',now())");assert.equal((await query({sort:'trending'})).items[0].weeklyReaders,1);
  const as=async n=>{await db.exec('RESET ROLE');await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[n?'00000000-0000-0000-0000-00000000000'+n:'']);await db.exec('SET ROLE '+(n?'authenticated':'anon'));};
  const uid='00000000-0000-0000-0000-000000000001';await as(1);await db.query("SELECT public.library_hub_state($1,'shelves','Book-A','\"want\"',true)",[uid]);await assert.rejects(db.exec('SELECT * FROM public.library_hub_reader_state'),/permission denied/);
+ await db.query("SELECT public.library_hub_state($1,'read-position','Book-A',$2,true)",[uid,{chapterId:'one',progress:37}]);
+ await db.query("SELECT public.library_hub_state($1,'bookmarks','Book-A',$2,true)",[uid,['one']]);
+ for(const status of ['dnf','removed']){
+  await db.query("SELECT public.library_hub_state($1,'shelves','Book-A',$2,true)",[uid,JSON.stringify(status)]);
+  assert.equal((await query({shelf:'reading'})).total,0);
+  assert.equal((await query({shelf:'dnf'})).total,status==='dnf'?1:0);
+  const snapshot=(await db.query('SELECT public.library_hub_state($1) AS value',[uid])).rows[0].value;
+  assert.equal(snapshot.records.find(r=>r.kind==='read-position').value.progress,37);
+  assert.deepEqual(snapshot.records.find(r=>r.kind==='bookmarks').value,['one']);
+  assert.ok((await query()).items.some(b=>b.id==='Book-A'),'published book remains available');
+ }
+ await db.query("SELECT public.library_hub_state($1,'shelves','Book-A',$2,true)",[uid,JSON.stringify('reading')]);
+ assert.equal((await query({shelf:'reading'})).total,1);
+ await assert.rejects(db.query("SELECT public.library_hub_state($1,'shelves','Book-A',$2,true)",[uid,JSON.stringify('invalid')]),/Choose a shelf/);
  const created=(await db.query("SELECT public.library_hub_collection('create',null,'{\"title\":\"My shelf\"}') AS value")).rows[0].value;await db.query("SELECT public.library_hub_collection('add',$1,'{\"bookId\":\"Book-A\"}')",[created.id]);
  await as(2);await assert.rejects(db.query('SELECT public.library_hub_state($1)',[uid]),/own Library/);await assert.rejects(db.query("SELECT public.library_hub_collection('get',$1)",[created.id]),/private/);await assert.rejects(db.query("SELECT public.library_hub_collection('update',$1,'{\"public\":true}')",[created.id]),/unavailable/);
  await as(1);await db.query("SELECT public.library_hub_collection('update',$1,'{\"public\":true}')",[created.id]);

@@ -20,6 +20,34 @@ try{
  await page.getByRole('button',{name:'Grid view',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.hub-list-view'));
  await page.getByLabel('Shelf for A Court of Quiet Stars',{exact:true}).selectOption('want');await page.waitForFunction(()=>document.querySelector('#hubContent')?.getAttribute('aria-busy')==='false');
  await page.getByRole('navigation',{name:'Library',exact:true}).getByRole('link',{name:'My Library',exact:true}).click();await page.getByRole('button',{name:'Want to read',exact:true}).click();await page.getByRole('heading',{name:'A Court of Quiet Stars',exact:true}).waitFor();
+ // Reader actions preserve progress and move books out of the reading shelf.
+ await page.getByRole('button',{name:'Currently reading',exact:true}).click();
+ await page.getByRole('heading',{name:'The Glass Harbor',exact:true}).waitFor();
+ await page.getByLabel('Shelf for The Glass Harbor',{exact:true}).selectOption('dnf');
+ await page.getByRole('button',{name:'DNF (Did Not Finish)',exact:true}).click();
+ await page.getByRole('heading',{name:'The Glass Harbor',exact:true}).waitFor();
+ for(const width of [390,320]){
+  await page.setViewportSize({width,height:900});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'DNF shelf fits '+width);
+  await page.screenshot({path:`test-results/library-hub/dnf-${width}-${name}.png`,fullPage:true});
+ }
+ await page.getByRole('button',{name:'Remove The Glass Harbor from My Library',exact:true}).click();
+ await page.getByRole('heading',{name:'Your next chapter starts here.',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Currently reading',exact:true}).click();
+ await page.getByRole('heading',{name:'Your next chapter starts here.',exact:true}).waitFor();
+ await page.getByRole('navigation',{name:'Library',exact:true}).getByRole('link',{name:'Browse',exact:true}).click();
+ await page.getByLabel('Shelf for The Glass Harbor',{exact:true}).selectOption('reading');
+ await page.getByRole('navigation',{name:'Library',exact:true}).getByRole('link',{name:'My Library',exact:true}).click();
+ await page.getByRole('heading',{name:'The Glass Harbor',exact:true}).waitFor();
+ assert.match(await page.locator('.hub-book').filter({has:page.getByRole('heading',{name:'The Glass Harbor',exact:true})}).textContent(),/37% read/,'restoring a book retains progress');
+ await page.getByLabel('Shelf for The Glass Harbor',{exact:true}).selectOption('');
+ await page.getByRole('heading',{name:'Your next chapter starts here.',exact:true}).waitFor();
+ await page.getByRole('navigation',{name:'Library',exact:true}).getByRole('link',{name:'Discover',exact:true}).click();
+ await page.getByRole('heading',{name:'Browse by genre',exact:true}).waitFor();
+ assert.equal(await page.locator('.hub-continue').count(),0,'removed book is absent from Continue reading');
+ await page.setViewportSize({width:1440,height:1050});
+ await page.getByRole('navigation',{name:'Library',exact:true}).getByRole('link',{name:'My Library',exact:true}).click();
+ await page.getByRole('button',{name:'Want to read',exact:true}).click();
  await page.getByRole('button',{name:'Create a shelf',exact:true}).click();await dialog.getByLabel('Shelf name').fill('Rainy day reads');await dialog.getByLabel('Description').fill('Stories for a quiet evening.');await dialog.getByRole('button',{name:'Create shelf',exact:true}).click();await page.getByRole('heading',{name:'Rainy day reads',exact:true}).waitFor();assert.match(await page.locator('.hub-section-heading').textContent(),/Private shelf/);
  await page.getByRole('navigation',{name:'Library',exact:true}).getByRole('link',{name:'Browse',exact:true}).click();await page.getByRole('button',{name:'Add The Glass Harbor to a list',exact:true}).click();await dialog.getByLabel('Choose a list').selectOption({label:'Rainy day reads'});await dialog.getByRole('button',{name:'Add book',exact:true}).click();
  await page.getByRole('navigation',{name:'Library',exact:true}).getByRole('link',{name:'My Library',exact:true}).click();await page.getByRole('button',{name:'Custom shelves',exact:true}).click();await page.getByRole('link',{name:/Rainy day reads/}).click();await page.getByRole('heading',{name:'The Glass Harbor',exact:true}).waitFor();

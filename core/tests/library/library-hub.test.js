@@ -15,3 +15,13 @@ test('a hung read has a deadline and recovers without retrying writes',async()=>
 test('recommendations use finished and previously read genres and exclude already read books',()=>{const history=normalizeHubBook({id:'read',title:'Past fantasy',genres:['fantasy']});const match=normalizeHubBook({id:'next',title:'New fantasy',genres:['fantasy']});const other=normalizeHubBook({id:'other',title:'Other',genres:['horror']});assert.deepEqual(readingRecommendations([history,match,other],{readIds:['read']}).items.map(b=>b.id),['next']);assert.equal(readingRecommendations([history,match,other],{readIds:['read']}).personalized,true);});
 
 test('weekly spotlight is shared across catalog order and stable through the UTC week',async()=>{const {selectWeeklyFeature,weeklyFeatureKey}=await import('../../library/weekly-feature.js');const books=[b,{...b,id:'B'},{...b,id:'C'}];assert.equal(weeklyFeatureKey(new Date('2026-10-26T00:01:00Z')),'2026-10-26');assert.equal(selectWeeklyFeature(books,new Date('2026-10-26T12:00:00Z')).id,selectWeeklyFeature([...books].reverse(),new Date('2026-11-01T23:59:59Z')).id);});
+
+
+test('personal shelf fallback excludes DNF and removed books from reading without clearing progress',async()=>{
+ const shelves={A:'dnf',B:'removed',C:'reading'},positions={A:{progress:37},B:{progress:12},C:{progress:20},D:{progress:5}};
+ const api=createLibraryHub({rpc:async name=>name==='library_catalog_rows'?{data:['A','B','C','D'].map(id=>({id,data:{title:id}}))}:{error:{code:'PGRST202'}}},{readingState:{read:kind=>kind==='shelves'?shelves:positions}});
+ assert.deepEqual((await api.query({shelf:'reading'})).items.map(b=>b.id),['C','D']);
+ assert.deepEqual((await api.query({shelf:'dnf'})).items.map(b=>b.id),['A']);
+ assert.equal(positions.A.progress,37);assert.equal(positions.B.progress,12);
+ shelves.A='reading';assert.ok((await api.query({shelf:'reading'})).items.some(b=>b.id==='A'));
+});

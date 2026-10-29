@@ -26,9 +26,9 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
   <p class="hub-description">${esc(b.summary||'A new story waiting to be discovered.')}</p><div class="hub-tags">${b.genres.slice(0,2).map(g=>`<a href="/library?view=browse&genres=${encodeURIComponent(g)}" data-genre-link="${esc(g)}">${esc(genreLabel(g))}</a>`).join('')}${b.tags.slice(0,1).map(t=>`<span>${esc(t)}</span>`).join('')}</div>
   <p class="hub-book-meta">${b.chapters} chapter${b.chapters===1?'':'s'}${b.words?' · '+b.words.toLocaleString()+' words':''}${b.rating?' · '+esc(b.rating):''}</p>${reason?`<p class="hub-reason">${esc(reason)}</p>`:''}
   ${p?`<p class="hub-progress">${Math.min(100,Math.max(0,Number(p.progress)||0))}% read</p>`:''}
-  <div class="hub-card-actions"><a class="hub-read" href="${p?read:'/book?id='+encodeURIComponent(b.id)}">${p?'Continue':'View book'} <span aria-hidden="true">→</span></a><button type="button" data-add="${esc(b.id)}" aria-label="Add ${esc(b.title)} to a list">＋ List</button>${mine&&collection?`<button type="button" data-remove="${esc(b.id)}" data-list="${esc(collection)}">Remove</button>`:''}</div>
+  <div class="hub-card-actions"><a class="hub-read" href="${p?read:'/book?id='+encodeURIComponent(b.id)}">${p?'Continue':'View book'} <span aria-hidden="true">→</span></a><button type="button" data-add="${esc(b.id)}" aria-label="Add ${esc(b.title)} to a list">＋ List</button>${user&&saved!=='removed'&&(saved||p)?`<button type="button" data-remove-library="${esc(b.id)}" aria-label="Remove ${esc(b.title)} from My Library">Remove from My Library</button>`:''}${mine&&collection?`<button type="button" data-remove="${esc(b.id)}" data-list="${esc(collection)}">Remove</button>`:''}</div>
   ${user?.id===b.ownerId?`<a class="hub-owner-link" href="/publish?book=${encodeURIComponent(b.id)}">${!b.summary||!b.genres.length?'Improve discovery details':'Edit discovery details'}</a>`:''}
-  </div><label class="hub-shelf-picker"><span class="hub-visually-hidden">Shelf for ${esc(b.title)}</span><select aria-label="Shelf for ${esc(b.title)}" data-shelf-select="${esc(b.id)}" ${user?'':'disabled title="Sign in to save books"'}><option value="">Not shelved</option>${Object.entries(HUB_SHELVES).filter(([k])=>k!=='subscriptions').map(([k,v])=>`<option value="${k}" ${saved===k?'selected':''}>${v}</option>`).join('')}</select></label></article>`;
+  </div><label class="hub-shelf-picker"><span class="hub-visually-hidden">Shelf for ${esc(b.title)}</span><select aria-label="Shelf for ${esc(b.title)}" data-shelf-select="${esc(b.id)}" ${user?'':'disabled title="Sign in to save books"'}><option value="" ${!saved||saved==='removed'?'selected':''}>${saved&&saved!=='removed'||p&&saved!=='removed'?'Remove from My Library':'Add to shelf'}</option>${Object.entries(HUB_SHELVES).filter(([k])=>k!=='subscriptions').map(([k,v])=>`<option value="${k}" ${saved===k?'selected':''}>${v}</option>`).join('')}</select></label></article>`;
  }
  function listCard(l){return `<a class="hub-list-card" href="/library?view=collection&list=${encodeURIComponent(l.id)}" data-list-link="${esc(l.id)}"><span class="hub-eyebrow">${l.public?'Public reading list':'Private shelf'}</span><h3>${esc(l.title)}</h3><p>${esc(l.description||'A collection of stories worth keeping.')}</p><small>${Number(l.count)||0} books · ${esc(l.ownerName||'You')}</small></a>`;}
  function row(title,copy,items,params,reason=''){if(!items.length)return '';return `<section class="hub-shelf ${reason==='Saved reading progress'?'hub-continue':''}"><div class="hub-section-heading"><div><h2>${esc(title)}</h2><p>${esc(copy)}</p></div><a href="/library?${new URLSearchParams({view:'browse',...params})}" data-see="${esc(JSON.stringify(params))}">See all →</a></div><div class="hub-row">${items.map(b=>card(b,{reason})).join('')}</div></section>`;}
@@ -45,11 +45,11 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
  }
  async function discover(turn){
   const catalog=remember(await api.catalog());if(!active||turn!==epoch)return;
-  const historyIds=[...new Set([...Object.keys(state.read('read-position')),...Object.keys(state.read('finished-chapters')),...Object.entries(state.read('shelves')).filter(([,v])=>['reading','finished'].includes(v)).map(([id])=>id)])];
+  const historyIds=[...new Set([...Object.keys(state.read('read-position')),...Object.keys(state.read('finished-chapters')),...Object.entries(state.read('shelves')).filter(([,v])=>['reading','finished','dnf'].includes(v)).map(([id])=>id)])];
   const meta=catalogFacets(catalog);facets=meta.genres;tagChoices=meta.tags;warningChoices=meta.warnings;
   const weekly=await api.featured?.();if(!active||turn!==epoch)return;
   const feature=catalog.find(b=>b.id===weekly?.bookId)||selectWeeklyFeature(catalog);
-  const continuing=catalog.filter(b=>{const p=progress(b),saved=shelf(b);return p&&saved!=='finished'&&saved!=='want'&&Number(p.progress||0)<100;}).slice(0,6);
+  const continuing=catalog.filter(b=>{const p=progress(b),saved=shelf(b);return p&&!['finished','want','dnf','removed'].includes(saved)&&Number(p.progress||0)<100;}).slice(0,6);
   const favoriteGenres=personal.records?.find(r=>r.kind==='preferences'&&r.bookId==='discovery')?.value?.genres||[];
   const picks=readingRecommendations(catalog,{readIds:historyIds,preferredGenres:favoriteGenres,exclude:feature?[feature.id]:[]});
   const recommendations=picks.items,genres=picks.genres;
@@ -111,7 +111,13 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
  async function preferences(){if(!needUser())return;if(!facets.length)facets=(await api.facets()).genres||[];const selected=personal.records?.find(r=>r.kind==='preferences')?.value?.genres||[];
   showDialog('Your discovery genres',`<form><p class="hub-help">Choose up to twelve genres. Recommendations use genre matches, never external AI analysis of manuscripts.</p><fieldset class="hub-genre-choices"><legend>Favorite genres</legend>${[...new Set([...(facets.length?facets.map(g=>g.id):matchingGenreKeys('')),...selected])].map(g=>`<label><input type="checkbox" name="genres" value="${esc(g)}" ${selected.includes(g)?'checked':''}>${esc(genreLabel(g))}</label>`).join('')}</fieldset><button type="submit" class="hub-primary">Save genres</button></form>`,async data=>{const genres=data.getAll('genres');if(genres.length>12)throw Error('Choose up to twelve genres.');await api.state(user.id,'preferences','discovery',{genres},true);personal=await api.state(user.id);await render();});
  }
- root.addEventListener('change',event=>{const select=event.target.closest('[data-shelf-select]');if(!select||!active||!user)return;select.disabled=true;state.update('shelves',select.dataset.shelfSelect,select.value||undefined);void opened.flush().then(saved=>saved?render():notice('Saved on this device. Cloud sync will retry when you reconnect.',true)).catch(error=>notice(error.message,true)).finally(()=>{select.disabled=false;});});
+ async function changeShelf(id,value){
+  state.update('shelves',id,value||'removed');
+  let syncError='';
+  try{if(!await opened.flush())syncError='Saved on this device. Cloud sync will retry when you reconnect.';}catch(error){syncError=error.message||'Saved on this device. Cloud sync will retry when you reconnect.';}
+  await render();if(syncError)notice(syncError,true);
+ }
+ root.addEventListener('change',event=>{const select=event.target.closest('[data-shelf-select]');if(!select||!active||!user)return;select.disabled=true;void changeShelf(select.dataset.shelfSelect,select.value).catch(error=>notice(error.message,true)).finally(()=>{select.disabled=false;});});
  root.addEventListener('click',event=>{if(!active)return;const button=event.target.closest('button,a');if(!button)return;const d=button.dataset;
   const run=async()=>{
    if(d.view){event.preventDefault();route({view:d.view});}
@@ -119,6 +125,7 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
    else if(d.see){event.preventDefault();route({view:'browse',...JSON.parse(d.see)});}
    else if(d.listLink){event.preventDefault();route({view:'collection',list:d.listLink});}
    else if(d.add){event.preventDefault();await addToList(d.add);}
+   else if(d.removeLibrary){if(!needUser())return;button.disabled=true;await changeShelf(d.removeLibrary,'removed');}
    else if(d.remove){await api.collection('remove',d.list,{bookId:d.remove});await render();}
    else if(d.shelfView){route({view:'mine',shelf:d.shelfView});}
    else if('customLists'in d){route({view:'collections'});}
@@ -134,9 +141,9 @@ export function mountLibraryHub(root,{api,opened,preview=false}){
    else if('retry'in d){await render();}
    else if('shareList'in d){try{await navigator.clipboard.writeText(location.href);notice('Reading list link copied.');}catch{showDialog('Share this reading list',`<label>Public link<input readonly value="${esc(location.href)}"></label>`,()=>{});}}
   };
-  if(pending&&['save','remove'].some(k=>k in d))return;
-  if('save'in d||'remove'in d)pending=true;
-  void run().catch(error=>notice(error.message,true)).finally(()=>{pending=false;});
+  if(pending&&['save','remove','removeLibrary'].some(k=>k in d))return;
+  if('save'in d||'remove'in d||'removeLibrary'in d)pending=true;
+  void run().catch(error=>notice(error.message,true)).finally(()=>{pending=false;button.disabled=false;});
  });
  dialog.addEventListener('click',event=>{const id=event.target.closest('[data-delete-list]')?.dataset.deleteList;if(id){showDialog('Delete this list?','<form><p>This removes the list and its saved membership. Books and reading progress will stay intact.</p><button type="submit" class="hub-primary">Delete list</button></form>',async()=>{await api.collection('delete',id);route({view:'collections'});});}});
  document.getElementById('hubDialogClose').addEventListener('click',()=>dialog.close());
