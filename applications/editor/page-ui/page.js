@@ -1,3 +1,4 @@
+import { mountEditorDailyGoal } from "./daily-goal.js";
 import { mountSaveConflict } from "./save-conflict.js";
 import { mountPendingRecovery } from "./pending-recovery.js";
 import { mountStoryBible } from "./story-bible.js";
@@ -246,6 +247,7 @@ async function boot() {
             imageUrl: profile.imageUrl,
         });
         primeGoalMilestones();
+        dailyGoal.refresh();
     });
 
     // Daily Goal (track) mode set to "hidden": no Studio bar, so celebrate each
@@ -256,6 +258,7 @@ async function boot() {
     function goalStatsNow() {
         return getWritingStats(profile || {}, { userId: session.user?.id });
     }
+    const dailyGoal = mountEditorDailyGoal({ anchor: document.getElementById("editorActionRow"), getStats: goalStatsNow });
     function primeGoalMilestones() {
         lastGoalHit = goalStatsNow().checkpoint?.hit || 0;
         goalMilestonesPrimed = true;
@@ -391,6 +394,7 @@ async function boot() {
             added: Math.max(0, wordChange),
             removed: Math.max(0, -wordChange),
         });
+        if (wordChange !== 0) dailyGoal.refresh();
         if (wordChange > 0) checkGoalMilestones();
         book._rev = ++bookRev;
         paintWordCount(chapterWordsEl, totalWordsEl, book, selectedId);
