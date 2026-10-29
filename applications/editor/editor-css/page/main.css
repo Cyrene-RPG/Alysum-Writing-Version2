@@ -219,3 +219,6 @@
 .writer-save-feedback .writer-status { position: static; display: block; color: var(--text); line-height: 1.5; overflow-wrap: anywhere; }
 #saveRecovery { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 9px; }
 #saveRecovery button { min-height: 44px; font: inherit; font-size: 12px; }
+
+.writer-recovery-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.writer-recovery-actions .quote-button { min-height: 44px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }

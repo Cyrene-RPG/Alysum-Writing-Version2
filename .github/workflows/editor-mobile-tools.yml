@@ -4,6 +4,8 @@ on:
     paths:
       - 'applications/editor/pages/editor.html'
       - 'applications/editor/page-ui/page/chrome.js'
+      - 'applications/editor/page-ui/pending-recovery.js'
+      - 'applications/editor/editor-css/page/main.css'
       - 'applications/editor/page-ui/page/typewriter.js'
       - 'applications/editor/page-ui/page.js'
       - 'applications/editor/page-ui/toolbar.js'

@@ -6,6 +6,7 @@ const root=resolve(new URL('../../../',import.meta.url).pathname);
 const setup=`
 import {mountWriterChrome} from '/applications/editor/page-ui/page/chrome.js';
 import {mountTypewriter} from '/applications/editor/page-ui/page/typewriter.js';
+import {mountPendingRecovery} from '/applications/editor/page-ui/pending-recovery.js';
 const $=id=>document.getElementById(id);
 $('loadingPanel').classList.add('hidden');$('writerShell').classList.remove('hidden');
 $('bookTitle').value='Sample manuscript';$('chapterTitle').value='Chapter 4';
@@ -16,6 +17,7 @@ const ids=['treeToggle','settingsCollapse','railToggle','tabChapters','tabBook',
 const args=Object.fromEntries(ids.map(id=>[id,$(id)]));
 mountWriterChrome({...args,shell:$('writerShell'),tree:$('chapterTree'),backdrop:$('writerShellBackdrop')});
 mountTypewriter({pageEl:$('pageEditor'),editor:{focus:()=>$('pageEditor').focus()},typewriterExit:$('typewriterExit')});
+if(new URL(location.href).searchParams.has('recovery'))mountPendingRecovery({api:{listRecoveryCopies:()=>[{key:'test:book:tab',book:{id:'test',updated:1,_localRevision:'one',sections:{}}}]},bookId:'test',anchor:$('saveFeedback')});
 window.toolsReady=true;`;
 const server=createServer(async(req,res)=>{
  try {
@@ -94,5 +96,16 @@ try {
   assert.equal(await page.locator('#pageEditor').textContent(),'Keep this manuscript and its editing state unchanged.');
   assert.deepEqual(errors,[]);await page.close();
  }
+ const recoveryPage=await browser.newPage({viewport:{width:320,height:844},isMobile:true,hasTouch:true});
+ await recoveryPage.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
+ await recoveryPage.goto(base+'/fixture?recovery=1');await recoveryPage.waitForFunction(()=>window.toolsReady);
+ const dismiss=recoveryPage.getByRole('button',{name:'Dismiss recovery notice'});
+ assert.ok(await dismiss.isVisible());
+ assert.ok(await dismiss.evaluate(n=>n.getBoundingClientRect().height>=44));
+ assert.ok(await recoveryPage.locator('.writer-recovery-actions').evaluate(n=>Array.from(n.children).every(c=>c.getBoundingClientRect().right<=320)),'recovery buttons fit narrow phones');
+ await recoveryPage.screenshot({path:out+'/'+name+'-320-recovery.png',fullPage:true});
+ await dismiss.tap();assert.equal(await dismiss.isVisible(),false);
+ await recoveryPage.reload();await recoveryPage.waitForFunction(()=>window.toolsReady);assert.equal(await dismiss.isVisible(),false,'dismissal persists after reload');
+ await recoveryPage.close();
  console.log(name+': editor tools move at phone widths, preserve desktop/Typewriter behavior and button listeners, close on selection/Escape and survive resize without replacing manuscript DOM.');
 }finally{await browser.close();server.close();}
