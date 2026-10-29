@@ -1,0 +1,51 @@
+name: Updates multi-reactions
+on:
+  pull_request:
+    paths:
+      - 'applications/updates/**'
+      - 'core/publishing/announcements.js'
+      - 'core/publishing/update-reactions.js'
+      - 'core/tests/publishing/announcement*.test.js'
+      - 'core/tests/publishing/update-reactions*'
+      - 'supabase/live-site/supabase-update-reactions.sql'
+      - '.github/workflows/update-reactions-tests.yml'
+permissions:
+  contents: read
+jobs:
+  data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test core/tests/publishing/announcement*.test.js core/tests/publishing/update-reactions.test.js
+      - run: npm install --prefix "$RUNNER_TEMP/update-data" --no-audit --no-fund @electric-sql/pglite@0.5.11 jsdom@26
+      - run: node --test core/tests/publishing/update-reactions-database.mjs
+        env:
+          PGLITE_MODULE: ${{ runner.temp }}/update-data/node_modules/@electric-sql/pglite/dist/index.js
+      - run: node --experimental-vm-modules --test core/tests/publishing/update-reactions-ui.mjs
+        env:
+          JSDOM_MODULE: ${{ runner.temp }}/update-data/node_modules/jsdom/lib/api.js
+  browser:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix "$RUNNER_TEMP/update-browser" --no-audit --no-fund playwright@1.61.1
+      - run: '"$RUNNER_TEMP/update-browser/node_modules/.bin/playwright" install --with-deps ${{ matrix.browser }}'
+      - run: node applications/updates/tests/reactions-browser.mjs
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/update-browser/node_modules/playwright/index.mjs
+          UPDATE_BROWSER: ${{ matrix.browser }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: update-reactions-${{ matrix.browser }}
+          path: test-results/update-reactions/

@@ -67,3 +67,13 @@ body { margin: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemF
     .form-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .form-actions .primary { grid-column: 1 / -1; }
 }
+
+.update-reactions { margin-top: 18px; }
+.update-reaction-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.updates-page .update-reaction { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 56px; min-height: 44px; padding: 8px 10px; border-radius: 99px; }
+.update-reaction > span:first-child { font-size: 18px; line-height: 1; }
+.update-reaction-count { font-size: 12px; font-variant-numeric: tabular-nums; }
+.updates-page .update-reaction[aria-pressed="true"] { border-color: var(--accent, #a78bfa); background: color-mix(in srgb, var(--accent, #a78bfa) 16%, var(--alysum-ui-panel, #141b29)); }
+.update-reaction-status, .update-reaction-signin { font-size: 11px; line-height: 1.6; color: var(--muted); }
+.update-reaction-status:empty { display: none; }
+.update-reaction-signin { display: inline-block; margin-top: 10px; }
