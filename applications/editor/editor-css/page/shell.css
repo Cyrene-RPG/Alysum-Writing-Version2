@@ -499,3 +499,12 @@ html.is-typewriter .writer-shell-backdrop {
 .writer-editor-actions > .snippet-editor-action { padding: 0; flex-wrap: wrap; gap: 8px; }
 .writer-editor-actions > #focusMode { min-height: 44px; }
 html.is-typewriter #focusMode { display: none; }
+
+.writer-daily-goal { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 0 16px 10px; flex-shrink: 0; color: var(--muted); font-size: 11px; }
+.writer-daily-goal[hidden], .writer-daily-goal [hidden], html.is-typewriter .writer-daily-goal { display: none; }
+.writer-daily-goal progress { appearance: none; border: 0; border-radius: 99px; height: 6px; flex: 1; min-width: 24px; width: 100%; overflow: hidden; background: var(--border, #ffffff26); accent-color: var(--accent); }
+.writer-daily-goal progress::-webkit-progress-bar { border-radius: 99px; background: var(--border, #ffffff26); }
+.writer-daily-goal progress::-webkit-progress-value { border-radius: 99px; background: var(--accent); }
+.writer-daily-goal progress::-moz-progress-bar { border-radius: 99px; background: var(--accent); }
+.writer-daily-goal-count { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.writer-daily-goal a { margin-left: auto; color: var(--accent); }

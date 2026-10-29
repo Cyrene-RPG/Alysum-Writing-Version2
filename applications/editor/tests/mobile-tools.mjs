@@ -7,6 +7,10 @@ const setup=`
 import {mountWriterChrome} from '/applications/editor/page-ui/page/chrome.js';
 import {mountTypewriter} from '/applications/editor/page-ui/page/typewriter.js';
 import {mountPendingRecovery} from '/applications/editor/page-ui/pending-recovery.js';
+import {mountEditorDailyGoal} from '/applications/editor/page-ui/daily-goal.js';
+import {getWritingStats,recordTypedWords} from '/core/account/writing-stats.js';
+import {countWordsInHtml} from '/core/writing-engine/word-count.js';
+import {countedWordDelta} from '/core/statistics/typed-input.js';
 const $=id=>document.getElementById(id);
 $('loadingPanel').classList.add('hidden');$('writerShell').classList.remove('hidden');
 $('bookTitle').value='Sample manuscript';$('chapterTitle').value='Chapter 4';
@@ -18,6 +22,12 @@ const args=Object.fromEntries(ids.map(id=>[id,$(id)]));
 mountWriterChrome({...args,shell:$('writerShell'),tree:$('chapterTree'),backdrop:$('writerShellBackdrop')});
 mountTypewriter({pageEl:$('pageEditor'),editor:{focus:()=>$('pageEditor').focus()},typewriterExit:$('typewriterExit')});
 if(new URL(location.href).searchParams.has('recovery'))mountPendingRecovery({api:{listRecoveryCopies:()=>[{key:'test:book:tab',book:{id:'test',updated:1,_localRevision:'one',sections:{}}}]},bookId:'test',anchor:$('saveFeedback')});
+window.goalProfile={wordGoalMode:'track',writingGoal:200};
+const userId='daily-goal-test';
+if(!localStorage.getItem('alysum:typed-words:'+userId))recordTypedWords({userId,added:20});
+window.dailyGoal=mountEditorDailyGoal({anchor:$('editorActionRow'),getStats:()=>getWritingStats(window.goalProfile,{userId})});
+let previousWords=countWordsInHtml($('pageEditor').innerHTML);
+$('pageEditor').addEventListener('input',event=>{const words=countWordsInHtml($('pageEditor').innerHTML),change=countedWordDelta(previousWords,words,event);previousWords=words;recordTypedWords({userId,added:Math.max(0,change),removed:Math.max(0,-change)});window.dailyGoal.refresh();});
 window.toolsReady=true;`;
 const server=createServer(async(req,res)=>{
  try {
@@ -55,7 +65,8 @@ try {
    assert.equal(await page.locator('#writerWritePane > .snippet-editor-action').count(),0,'no action row above formatting on phones');
    assert.equal(await page.locator('#writerMobileActions').evaluate(n=>n.inert),true,'closed drawer actions are inert');
    const title=await page.locator('#writerMobileTitlebar').boundingBox(),focus=await page.locator('#focusMode').boundingBox(),toolbar=await page.locator('#writerToolbar').boundingBox();
-   assert.ok(focus.y>=title.y+title.height && focus.y+focus.height<=toolbar.y,'Focus mode is between title and formatting');
+   const goal=await page.locator('.writer-daily-goal').boundingBox();
+   assert.ok(focus.y>=title.y+title.height && focus.y+focus.height<=goal.y && goal.y+goal.height<=toolbar.y,'daily goal sits beneath Focus and above formatting');
    await page.screenshot({path:out+'/'+name+'-'+width+'-editor.png',fullPage:true});
    for(const id of actionIds){
     await page.locator('#mobileRailOpen').tap();
@@ -90,6 +101,7 @@ try {
   assert.equal(await page.locator('#focusMode').isVisible(),true);
   await page.locator('#focusMode').click();
   assert.equal(await page.locator('#typewriterExit').isVisible(),true);
+  assert.equal(await page.locator('.writer-daily-goal').isVisible(),false,'Focus remains free of the goal bar');
   for(const id of actionIds)assert.equal(await page.locator('#'+id).isVisible(),false,'Focus hides '+id+' on phone and desktop');
   await page.screenshot({path:out+'/'+name+'-'+width+'-focus.png',fullPage:true});
   await page.locator('#typewriterExit').click();
@@ -98,6 +110,18 @@ try {
   assert.equal(await page.locator('#pageEditor').textContent(),'Keep this manuscript and its editing state unchanged.');
   assert.deepEqual(errors,[]);await page.close();
  }
+ const goalPage=await browser.newPage({viewport:{width:390,height:844}});
+ await goalPage.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
+ await goalPage.goto(base+'/fixture');await goalPage.waitForFunction(()=>window.toolsReady);
+ assert.equal(await goalPage.locator('.writer-daily-goal-count').textContent(),'20/200 words');
+ await goalPage.locator('#pageEditor').click();await goalPage.keyboard.press('ControlOrMeta+End');await goalPage.keyboard.type(' more');
+ assert.equal(await goalPage.locator('.writer-daily-goal-count').textContent(),'21/200 words','real typing updates the shared daily total');
+ assert.equal(await goalPage.locator('.writer-daily-goal progress').evaluate(n=>n.value/n.max),21/200);
+ await goalPage.keyboard.press('Backspace');await goalPage.keyboard.press('Backspace');await goalPage.keyboard.press('Backspace');await goalPage.keyboard.press('Backspace');
+ assert.equal(await goalPage.locator('.writer-daily-goal-count').textContent(),'20/200 words','deletions use the shared net count');
+ await goalPage.reload();await goalPage.waitForFunction(()=>window.toolsReady);
+ assert.equal(await goalPage.locator('.writer-daily-goal-count').textContent(),'20/200 words','reload keeps today’s total');
+ await goalPage.close();
  const recoveryPage=await browser.newPage({viewport:{width:320,height:844},isMobile:true,hasTouch:true});
  await recoveryPage.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
  await recoveryPage.goto(base+'/fixture?recovery=1');await recoveryPage.waitForFunction(()=>window.toolsReady);
