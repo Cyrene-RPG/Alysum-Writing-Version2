@@ -1,4 +1,4 @@
-export function mountTypewriter({ pageEl, editor, typewriterExit, focusMode }) {
+export function mountTypewriter({ pageEl, editor, typewriterExit, focusMode = document.getElementById("focusMode") }) {
     let findUi;
     let toolbarApi;
 

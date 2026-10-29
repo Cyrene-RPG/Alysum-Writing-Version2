@@ -34,9 +34,18 @@ test('a slow Studio request falls back quickly, then updates the cache for the n
 test('a server error falls back to the saved Studio document',async()=>{
  const {response}=await fixture({fetchResponse:async()=>new Response('server error',{status:503})}).navigate('/studio');assert.match(await response.text(),/Old Studio menu/);
 });
-test('the editor still opens its cached shell immediately and updates in the background',async()=>{
- let finish;const f=fixture({cached:false,fetchResponse:()=>new Promise(resolve=>finish=resolve)});f.entries.set('/editor',new Response('Saved editor'));
- const {response,pending}=await f.navigate('/editor');assert.equal(await response.text(),'Saved editor');finish(new Response('New editor'));await Promise.all(pending);
+test('online editor loads the current Focus mode HTML over a cached older shell',async()=>{
+ const html=await readFile(new URL('../../../applications/editor/pages/editor.html',import.meta.url),'utf8');
+ const f=fixture({fetchResponse:async()=>new Response(html)});f.entries.set('/editor',new Response('Old editor without focus'));
+ const {response}=await f.navigate('/editor');assert.match(await response.text(),/id="focusMode"/);
+});
+test('offline editor preserves its saved shell',async()=>{
+ const f=fixture({fetchResponse:async()=>{throw Error('offline');}});f.entries.set('/editor',new Response('Saved editor'));
+ const {response}=await f.navigate('/editor');assert.equal(await response.text(),'Saved editor');
+});
+test('slow editor uses its cached shell and saves the fresh shell for the next visit',async()=>{
+ let finish;const f=fixture({fetchResponse:()=>new Promise(resolve=>finish=resolve)});f.entries.set('/editor',new Response('Saved editor'));
+ const {response,pending}=await f.navigate('/editor');assert.equal(await response.text(),'Saved editor');finish(new Response('New editor'));await Promise.all(pending);assert.equal(await f.entries.get('/editor').clone().text(),'New editor');
 });
 test('legacy Studio HTML URLs still redirect to the canonical page',async()=>{
  const {response}=await fixture().navigate('/studio.html');assert.equal(response.status,302);assert.equal(response.headers.get('location'),'https://alysumwriting.com/studio');
