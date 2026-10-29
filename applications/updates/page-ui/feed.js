@@ -1,3 +1,4 @@
+import { createUpdateReactionFeed } from "./reactions.js";
 import { supabase } from "/core/authentication/client.js";
 import { listPublicAnnouncements, fetchAnnouncementAuthor, UPDATE_PAGE_SIZE } from "/core/publishing/announcements.js?v=2";
 import { renderAnnouncement } from "./render.js";
@@ -15,6 +16,7 @@ let offset = 0;
 let generation = 0;
 let isLoading = false;
 const names = new Map();
+const reactions = createUpdateReactionFeed(supabase);
 
 async function authorName(id) {
     if (!names.has(id)) names.set(id, fetchAnnouncementAuthor(supabase, id));
@@ -26,6 +28,7 @@ async function load(reset = false) {
     const request = ++generation;
     if (reset) {
         offset = 0;
+        reactions.clear();
         feed.replaceChildren();
     }
     isLoading = true;
@@ -43,6 +46,7 @@ async function load(reset = false) {
         })));
         if (request !== generation) return;
         feed.append(...articles);
+        reactions.add(articles.map((article,index)=>({article,post:rows[index]})));
         offset = start + rows.length;
         more.hidden = Boolean(postId) || rows.length < UPDATE_PAGE_SIZE;
         status.textContent = "";
