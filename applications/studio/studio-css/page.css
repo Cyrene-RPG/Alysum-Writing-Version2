@@ -606,3 +606,14 @@ body {
 .studio-reminder-dialog button:disabled { opacity: .6; cursor: wait; }
 .studio-reminder-dialog button:focus-visible { outline: 2px solid var(--accent, #b9a0ff); outline-offset: 3px; }
 .studio-reminder-dialog p { font-size: .9rem; line-height: 1.5; }
+
+.studio-shared { margin-top: 28px; min-width: 0; }
+.studio-shared[hidden] { display: none; }
+.studio-shared .studio-section-head h2 { margin: 0; font-size: 24px; }
+.studio-shared-help { margin: 6px 0 16px; color: var(--muted); font-size: 12px; }
+.studio-shared-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr)); gap: 20px; }
+.studio-shared-book { min-width: 0; max-width: 300px; }
+.studio-coeditor-badge { position: relative; z-index: 1; align-self: flex-start; padding: 5px 9px; border: 1px solid var(--border, #ffffff26); border-radius: 99px; background: var(--alysum-ui-panel, #111827); color: var(--text); font: 600 11px/1.4 var(--font-sans, sans-serif); }
+.studio-shared-copy { position: relative; z-index: 1; min-width: 0; }
+.studio-shared-book .studio-book-title, .studio-book-creator { overflow-wrap: anywhere; }
+.studio-book-creator { margin: 8px 0; }

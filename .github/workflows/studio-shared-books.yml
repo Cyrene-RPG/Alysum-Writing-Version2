@@ -1,0 +1,38 @@
+name: Studio shared books
+on:
+  pull_request:
+    paths:
+      - 'applications/studio/page-ui/page.js'
+      - 'applications/studio/page-ui/shared-books.js'
+      - 'applications/studio/pages/studio.html'
+      - 'applications/studio/studio-css/page.css'
+      - 'applications/studio/tests/shared-books-browser.mjs'
+      - 'core/collaboration/studio-books.js'
+      - 'core/tests/collaboration/studio-books.test.js'
+      - '.github/workflows/studio-shared-books.yml'
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test core/tests/collaboration/studio-books.test.js
+      - run: npm install --prefix "$RUNNER_TEMP/studio-shared" --no-audit --no-fund playwright@1.61.1
+      - run: '"$RUNNER_TEMP/studio-shared/node_modules/.bin/playwright" install --with-deps ${{ matrix.browser }}'
+      - run: node applications/studio/tests/shared-books-browser.mjs
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/studio-shared/node_modules/playwright/index.mjs
+          STUDIO_SHARED_BROWSER: ${{ matrix.browser }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: studio-shared-${{ matrix.browser }}
+          path: test-results/studio-shared/

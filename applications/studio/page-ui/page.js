@@ -1,3 +1,6 @@
+import { splitStudioBooks, loadSharedCreators } from "/core/collaboration/studio-books.js";
+import { createBookEditorsApi } from "/core/collaboration/book-editors-client.js";
+import { sharedBooksSection, renderSharedBooks } from "./shared-books.js";
 import { mountStudioBookReminders } from "./book-reminders.js";
 import { createNotificationService } from "/core/notifications/service.js";
 import { mountBookReminderPopup } from "/site-appearance/js-runtime/book-reminder-popup.js";
@@ -324,6 +327,29 @@ async function boot() {
     let audioBooks = [];
     let scripts = [];
     let audioLoadError = "";
+    const sharedSection = sharedBooksSection(stats);
+    const creators = new Map();
+    const editorsApi = createBookEditorsApi(supabase);
+    let creatorLookupKey = '';
+    let creatorLookupTurn = 0;
+    const splitBooks = () => splitStudioBooks(books, session.mode === 'cloud' ? session.user?.id : null);
+    function paintBookSections() {
+        const { owned, shared } = splitBooks();
+        renderBooks(list, owned, audioBooks, scripts);
+        renderSharedBooks(sharedSection, sortBooksByLastWorked(shared), { creators, coverHtml: bookCoverHtml, words: bookWordCount });
+    }
+    async function hydrateCreators() {
+        if (session.mode !== 'cloud') return;
+        const key = splitBooks().shared.map(book => `${book.id}:${book.user_id}`).sort().join('|');
+        if (key === creatorLookupKey) return;
+        creatorLookupKey = key;
+        const turn = ++creatorLookupTurn;
+        const names = await loadSharedCreators(books, session.user?.id, editorsApi);
+        if (turn !== creatorLookupTurn) return;
+        for (const [id, name] of names) creators.set(id, name);
+        paintBookSections();
+        window.__alysumTextInk?.scheduleChromeInk?.();
+    }
 
     function paintStudioStatus() {
         if (!status || session.mode !== "cloud") return;
@@ -345,24 +371,25 @@ async function boot() {
             if (src) draftCoverSrc.set(id, src);
         }));
         if (!books.some((book) => bookCoverSrc(book))) return;
-        renderBooks(list, books, audioBooks, scripts);
+        paintBookSections();
         window.__alysumTextInk?.scheduleChromeInk?.();
     }
 
     function paintShelf() {
-        renderBooks(list, books, audioBooks, scripts);
-        const total = books.length + audioBooks.length + scripts.length;
+        paintBookSections();
+        const total = splitBooks().owned.length + audioBooks.length + scripts.length;
         document.getElementById("shelfCount").textContent = `${total} book${total === 1 ? "" : "s"}`;
         paintTotals();
         paintStudioStatus();
         window.__alysumTextInk?.scheduleChromeInk?.();
         void hydrateCovers();
+        void hydrateCreators();
     }
 
     loading?.classList.add("hidden");
     shell?.classList.remove("hidden");
     const paintTotals = () => {
-        renderStats(stats, books, profile, session.user?.id);
+        renderStats(stats, splitBooks().owned, profile, session.user?.id);
         renderGoal(goal, goalLabel, goalFill, profile, session.user?.id);
     };
     paintShelf();
@@ -430,6 +457,7 @@ async function boot() {
     onReconnect(async () => {
         if (session.mode !== "cloud") return;
         if (api.hasPending?.() && status) status.textContent = "Uploading…";
+        creatorLookupKey = "";
         await api.syncPending();
         try {
             books = await markBooksWithLiveListings(supabase, await api.listBooks());
