@@ -82,8 +82,8 @@ begin
  and (cardinality(ids)=0 or i.book_id=any(ids))
  and (coalesce(p_filters->>'shelf','')='' or
   (auth.uid() is not null and (
-   (p_filters->>'shelf' in ('want','reading','finished') and exists(select 1 from public.library_hub_reader_state st where st.user_id=auth.uid() and st.kind='shelves' and st.book_id=i.book_id and st.value#>>'{}'=p_filters->>'shelf'))
-   or (p_filters->>'shelf'='reading' and exists(select 1 from public.library_hub_reader_state st where st.user_id=auth.uid() and st.kind='read-position' and st.book_id=i.book_id and st.value is not null and public.library_hub_number(st.value->>'progress')<100) and not exists(select 1 from public.library_hub_reader_state st where st.user_id=auth.uid() and st.kind='shelves' and st.book_id=i.book_id and st.value#>>'{}' in ('want','finished')))
+   (p_filters->>'shelf' in ('want','reading','finished','dnf') and exists(select 1 from public.library_hub_reader_state st where st.user_id=auth.uid() and st.kind='shelves' and st.book_id=i.book_id and st.value#>>'{}'=p_filters->>'shelf'))
+   or (p_filters->>'shelf'='reading' and exists(select 1 from public.library_hub_reader_state st where st.user_id=auth.uid() and st.kind='read-position' and st.book_id=i.book_id and st.value is not null and public.library_hub_number(st.value->>'progress')<100) and not exists(select 1 from public.library_hub_reader_state st where st.user_id=auth.uid() and st.kind='shelves' and st.book_id=i.book_id and st.value#>>'{}' in ('want','finished','dnf','removed')))
    or (p_filters->>'shelf'='subscriptions' and exists(select 1 from public.book_subscriptions sub where sub.subscriber_id=auth.uid() and sub.book_id=i.book_id))
   )))
  and (q='' or i.search_document@@websearch_to_tsquery('simple',q) or strpos(lower(i.meta->>'title'),lower(q))>0 or strpos(lower(i.meta->>'author'),lower(q))>0 or strpos(lower(array_to_string(i.genres||i.tags,' ')),lower(q))>0)
@@ -116,7 +116,7 @@ begin
  if auth.uid() is null or auth.uid() is distinct from p_user then raise exception 'Sign in to your own Library account.';end if;
  if p_write then
   if p_kind not in ('read-position','shelves','finished-chapters','bookmarks','preferences') or p_kind is null or p_book is null or length(p_book) not between 1 and 200 or octet_length(coalesce(p_value,'null')::text)>16384 then raise exception 'Invalid reading state.';end if;
-  if p_kind='shelves' and p_value is not null and p_value<>'null'::jsonb and p_value not in ('"reading"'::jsonb,'"want"'::jsonb,'"finished"'::jsonb) then raise exception 'Choose a shelf.';end if;
+  if p_kind='shelves' and p_value is not null and p_value<>'null'::jsonb and p_value not in ('"reading"'::jsonb,'"want"'::jsonb,'"finished"'::jsonb,'"dnf"'::jsonb,'"removed"'::jsonb) then raise exception 'Choose a shelf.';end if;
   if p_kind='preferences' and (p_book<>'discovery' or jsonb_typeof(p_value)<>'object' or cardinality(public.library_hub_strings(p_value->'genres'))>12) then raise exception 'Choose up to twelve genres.';end if;
   if not exists(select 1 from public.library_hub_reader_state where user_id=p_user and kind=p_kind and book_id=p_book) and (select count(*) from public.library_hub_reader_state where user_id=p_user)>=4000 then raise exception 'Your Library has reached its storage limit.';end if;
   insert into public.library_hub_reader_state(user_id,kind,book_id,value) values(p_user,p_kind,p_book,nullif(p_value,'null'::jsonb))

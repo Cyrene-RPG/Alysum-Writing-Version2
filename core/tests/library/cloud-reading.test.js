@@ -8,3 +8,14 @@ test('account changes invalidate pending writes and never assign unowned keys',a
 test('a failed save stays pending on the same account and is retried on reopen',async()=>{const store=storage(),state=createReadingState({scope:'user:one',storage:store});let fail=false;const client={rpc:async(_name,args)=>args.p_write&&fail?{error:{message:'offline'}}:{data:args.p_write?{saved:true}:{records:[]}}};const sync=cloudReadingSync(client,{userId:'one',state,storage:store,kinds:READING_KINDS});try{await sync.start();fail=true;sync.enqueue('shelves',{book:'want'});await assert.rejects(sync.flush());assert.match(store.getItem('alysum:library:cloud-pending:one'),/book/);}finally{sync.stop();}const next=fixture('one',[],store);try{await next.sync.start();await next.sync.flush();assert.equal(next.state.read('shelves').book,'want');}finally{next.sync.stop();}});
 test('a hung startup returns to local reading and a later flush initializes and sends queued changes',async()=>{const store=storage(),state=createReadingState({scope:'user:one',storage:store});let hanging=true,reads=0,writes=0;const sync=cloudReadingSync({rpc:(_name,args)=>{if(args.p_write){writes++;return Promise.resolve({data:{saved:true}});}reads++;return hanging?new Promise(()=>{}):Promise.resolve({data:{records:[]}});}},{userId:'one',state,storage:store,kinds:READING_KINDS,readTimeoutMs:10});try{const starts=await Promise.all([sync.start(),sync.start()]);assert.deepEqual(starts,[null,null]);assert.equal(reads,1);sync.enqueue('shelves',{book:'want'});hanging=false;assert.equal(await sync.flush(),true);assert.equal(reads,2);assert.equal(writes,1);assert.equal(state.read('shelves').book,'want');}finally{sync.stop();}});
 test('a failed initial snapshot is retried in the same session without losing pending shelf changes',async()=>{let fail=true,writes=0;const state=createReadingState({scope:'user:one',storage:null});const sync=cloudReadingSync({rpc:async(_name,args)=>{if(fail)throw Error('offline');if(args.p_write)writes++;return{data:args.p_write?{saved:true}:{records:[]}};}},{userId:'one',state,storage:null,kinds:READING_KINDS});try{assert.equal(await sync.start(),null);sync.enqueue('shelves',{book:'finished'});fail=false;assert.equal(await sync.flush(),true);assert.equal(sync.ready,true);assert.equal(writes,1);}finally{sync.stop();}});
+
+test('DNF and removed shelves sync to another device while reading progress remains intact',async()=>{
+ const records=[],one=fixture('one',records);
+ try{
+  await one.sync.start();one.state.update('read-position','book',{chapterId:'one',progress:37});
+  for(const status of ['dnf','removed']){
+   one.state.update('shelves','book',status);await one.sync.flush();const next=fixture('one',records);
+   try{await next.sync.start();assert.equal(next.state.read('shelves').book,status);assert.equal(next.state.read('read-position').book.progress,37);}finally{next.sync.stop();}
+  }
+ }finally{one.sync.stop();}
+});

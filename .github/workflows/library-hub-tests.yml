@@ -9,6 +9,7 @@ on:
       - 'core/tests/library/library-hub*'
       - 'core/tests/library/cloud-reading.test.js'
       - 'supabase/live-site/supabase-library-hub.sql'
+      - 'supabase/live-site/supabase-library-reader-shelves.sql'
       - 'supabase/live-site/supabase-library-weekly-feature.sql'
       - '.github/workflows/library-hub-tests.yml'
 permissions:
