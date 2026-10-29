@@ -88,6 +88,8 @@ html.is-typewriter .writer-book-title,
 html.is-typewriter .writer-chapter-bar,
 html.is-typewriter .writer-mobile-titlebar,
 html.is-typewriter .writer-toolbar,
+html.is-typewriter .writer-editor-actions,
+html.is-typewriter .snippet-editor-action,
 html.is-typewriter .writer-tool-dropdown,
 html.is-typewriter .writer-find,
 html.is-typewriter .writer-folder-view,
@@ -161,12 +163,4 @@ html.is-typewriter .draft-reference-text {
     min-height: 0;
     margin: 0;
     align-self: stretch;
-}
-
-/* The fixed exit control has its own space beside the excerpt actions. */
-html.is-typewriter .snippet-editor-action {
-    flex-shrink: 0;
-    min-height: calc(60px + env(safe-area-inset-top, 0px));
-    padding-top: calc(8px + env(safe-area-inset-top, 0px));
-    padding-inline-end: calc(72px + env(safe-area-inset-right, 0px));
 }

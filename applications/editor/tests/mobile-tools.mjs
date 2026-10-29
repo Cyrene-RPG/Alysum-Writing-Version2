@@ -73,7 +73,7 @@ try {
    await page.locator('#focusMode').tap();
    assert.equal(await page.locator('html').evaluate(n=>n.classList.contains('is-typewriter')),true,'Focus mode enters the existing distraction-free view');
    await page.waitForFunction(()=>document.getElementById('editorActions').parentElement.id==='editorActionRow');
-   assert.equal(await page.locator('#share-snippet').isVisible(),true,'Typewriter retains its existing controls');
+   for(const id of actionIds)assert.equal(await page.locator('#'+id).isVisible(),false,'Focus hides '+id);
    await page.locator('#typewriterExit').tap();
    await page.waitForFunction(()=>document.getElementById('editorActions').parentElement.id==='writerMobileActions');
    await page.locator('#mobileRailOpen').tap();await page.setViewportSize({width:1280,height:844});
@@ -90,6 +90,8 @@ try {
   assert.equal(await page.locator('#focusMode').isVisible(),true);
   await page.locator('#focusMode').click();
   assert.equal(await page.locator('#typewriterExit').isVisible(),true);
+  for(const id of actionIds)assert.equal(await page.locator('#'+id).isVisible(),false,'Focus hides '+id+' on phone and desktop');
+  await page.screenshot({path:out+'/'+name+'-'+width+'-focus.png',fullPage:true});
   await page.locator('#typewriterExit').click();
   assert.equal(await page.locator('#typewriterExit').isVisible(),false);
   assert.ok(await page.evaluate(()=>document.getElementById('pageEditor')===window.originalEditor));
