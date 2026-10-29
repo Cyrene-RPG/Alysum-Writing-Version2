@@ -1,7 +1,6 @@
 /* Alysum service worker
  * Strategy:
- *   - Studio HTML: network-first with a short timeout and offline cache fallback
- *   - Editor HTML: cache-first, then refresh in the background
+ *   - Studio/Editor HTML: network-first with a short timeout and offline cache fallback
  *   - Other HTML documents: network-first (fall back to cache, then offline page)
  *   - Same-origin static assets (css/js/fonts/images): network-first, 4s timeout -> cache
  *   - Cross-origin (Firebase, gstatic, googleapis, etc.): bypass entirely
@@ -127,11 +126,8 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(Response.redirect(dest.href, 302));
         return;
       }
-      // Studio menus need the current document on the first online reload.
-      // Keep the editor's instant offline-writing startup behavior.
-      event.respondWith(/\/editor(?:\.html)?$/i.test(url.pathname)
-        ? staleWhileRevalidateHtml(event)
-        : networkFirstStudioHtml(event));
+      // Fetch the current shell so new scripts never start against stale controls.
+      event.respondWith(networkFirstWorkspaceHtml(event));
       return;
     }
     event.respondWith(networkFirstHtml(event));
@@ -144,7 +140,7 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
-async function networkFirstStudioHtml(event) {
+async function networkFirstWorkspaceHtml(event) {
   const cache = await caches.open(SHELL_CACHE);
   const network = (async () => {
     try {
@@ -167,43 +163,13 @@ async function networkFirstStudioHtml(event) {
   event.waitUntil(network);
   const cached = await cache.match(event.request)
     || await cache.match(new URL(event.request.url).pathname)
-    || await cache.match('/studio.html');
+    || await cache.match(new URL(event.request.url).pathname + '.html');
   if (cached) return cached;
   const late = await network;
   if (late) return late;
   return new Response(
     '<!doctype html><meta charset="utf-8"><title>Offline</title>' +
-    '<h1>Offline</h1><p>Reconnect to open Studio for the first time on this device.</p>',
-    { headers: { 'Content-Type': 'text/html; charset=utf-8' }, status: 200 }
-  );
-}
-
-async function staleWhileRevalidateHtml(event) {
-  const cache = await caches.open(SHELL_CACHE);
-  const cached = await cache.match(event.request) || await cache.match(new URL(event.request.url).pathname);
-  const network = (async () => {
-    try {
-      const preload = event.preloadResponse ? await event.preloadResponse : null;
-      const fresh = preload || await fetch(event.request, { cache: 'no-store' });
-      if (fresh && fresh.ok) cache.put(event.request, fresh.clone());
-      return fresh;
-    } catch (_) {
-      return null;
-    }
-  })();
-  if (cached) {
-    event.waitUntil(network);
-    return cached;
-  }
-  const fresh = await network;
-  if (fresh) return fresh;
-  const fallback = await cache.match('studio.html') || await cache.match('index.html');
-  if (fallback) return fallback;
-  return new Response(
-    '<!doctype html><meta charset="utf-8"><title>Offline</title>' +
-    '<body style="background:#020b18;color:#f8fafc;font-family:system-ui;padding:32px">' +
-    '<h1>Offline</h1><p>Alysum couldn\u2019t reach the network. ' +
-    'Reconnect and reload to continue.</p></body>',
+    '<h1>Offline</h1><p>Reconnect to open this workspace for the first time on this device.</p>',
     { headers: { 'Content-Type': 'text/html; charset=utf-8' }, status: 200 }
   );
 }

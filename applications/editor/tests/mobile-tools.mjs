@@ -15,10 +15,11 @@ for(const id of ['open-story-bible','compare-drafts','share-snippet'])$(id).addE
 const ids=['treeToggle','settingsCollapse','railToggle','tabChapters','tabBook','chaptersPane','bookPane','bookTree','settingsPane','settingsTopbar','writerTabs','bookFootSettings','tabSettings','settingsBackTop','mobileTreeOpen','mobileRailOpen'];
 const args=Object.fromEntries(ids.map(id=>[id,$(id)]));
 mountWriterChrome({...args,shell:$('writerShell'),tree:$('chapterTree'),backdrop:$('writerShellBackdrop')});
-mountTypewriter({pageEl:$('pageEditor'),editor:{focus:()=>$('pageEditor').focus()},typewriterExit:$('typewriterExit'),focusMode:$('focusMode')});
+mountTypewriter({pageEl:$('pageEditor'),editor:{focus:()=>$('pageEditor').focus()},typewriterExit:$('typewriterExit')});
 window.toolsReady=true;`;
 const server=createServer(async(req,res)=>{
  try {
+  const legacy=new URL(req.url,'http://localhost').searchParams.has('legacy');
   let path=new URL(req.url,'http://localhost').pathname;
   if(path==='/fixture')path='/applications/editor/pages/editor.html';
   else if(path==='/manifest.webmanifest')path='/applications/main-site/public/manifest.webmanifest';
@@ -28,6 +29,7 @@ const server=createServer(async(req,res)=>{
   const file=resolve(root,'.'+path);if(!file.startsWith(root+'/'))throw Error('Invalid file');
   let bytes=await readFile(file);
   if(path==='/applications/editor/pages/editor.html')bytes=Buffer.from(bytes.toString().replace(/<script src="\/js\/pwa-register[^>]*><\/script>/,'').replace(/<script src="https:\/\/cdn.jsdelivr.net[^>]*><\/script>/,'').replace(/<script type="module" src="\/js\/editor\/page.js[^>]*><\/script>/,'<script type="module">'+setup+'</script>'));
+  if(legacy && path==='/applications/editor/pages/editor.html')bytes=Buffer.from(bytes.toString().replace(/<div class="writer-editor-actions" id="editorActionRow">\s*([\s\S]*?)\s*<button type="button" id="focusMode"[^>]*>Focus mode<\/button>\s*<\/div>/,'$1'));
   res.setHeader('Content-Type',({'.html':'text/html','.css':'text/css','.js':'text/javascript','.webmanifest':'application/manifest+json'}[extname(file)]||'application/octet-stream'));res.end(bytes);
  }catch{res.statusCode=404;res.end();}
 });
@@ -37,11 +39,11 @@ const pw=await import(process.env.PLAYWRIGHT_MODULE_PATH||'playwright');
 const name=process.env.EDITOR_TOOLS_BROWSER||'chromium',browser=await pw[name].launch();
 const out='test-results/editor-mobile-tools';await mkdir(out,{recursive:true});
 try {
- for(const width of [320,390,720,721,1280]){
+ for(const legacy of [false,true])for(const width of [320,390,720,721,1280]){
   const page=await browser.newPage({viewport:{width,height:844},isMobile:width<=720,hasTouch:width<=720}),errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   await page.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
-  await page.goto(base+'/fixture');await page.waitForFunction(()=>window.toolsReady);
+  await page.goto(base+'/fixture'+(legacy?'?legacy=1':''));await page.waitForFunction(()=>window.toolsReady);
   const inDrawer=()=>page.locator('#editorActions').evaluate(node=>node.parentElement.id);
   assert.equal(await inDrawer(),width<=720?'writerMobileActions':'editorActionRow');
   assert.ok(await page.evaluate(()=>document.getElementById('editorActions')===window.originalActions));

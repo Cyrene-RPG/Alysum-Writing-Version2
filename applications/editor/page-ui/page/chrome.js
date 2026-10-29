@@ -38,6 +38,26 @@ export function mountWriterChrome({
     let railDrawerOpen = false;
     let drawerOpener = null;
 
+    // Older cached documents predate the Focus button. Upgrade that shell in place.
+    let actionRow = document.getElementById("editorActionRow");
+    const toolbar = document.getElementById("writerToolbar");
+    if (!actionRow && toolbar) {
+        actionRow = document.createElement("div");
+        actionRow.id = "editorActionRow";
+        actionRow.className = "writer-editor-actions";
+        toolbar.before(actionRow);
+        const existingActions = document.getElementById("editorActions");
+        if (existingActions) actionRow.append(existingActions);
+    }
+    if (actionRow && !document.getElementById("focusMode")) {
+        const focus = document.createElement("button");
+        focus.type = "button";
+        focus.id = "focusMode";
+        focus.className = "quote-button";
+        focus.textContent = "Focus mode";
+        focus.title = "Focus mode";
+        actionRow.append(focus);
+    }
     const editorActions = document.getElementById("editorActions");
     const mobileActions = document.getElementById("writerMobileActions");
     const railTitle = document.querySelector("#writerRail .writer-rail-title");
