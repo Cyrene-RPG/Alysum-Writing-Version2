@@ -163,7 +163,10 @@
                     <p class="writer-folder-meta" id="folderMeta"></p>
                     <ul class="writer-folder-list" id="folderList"></ul>
                 </div>
+                <div class="writer-editor-actions" id="editorActionRow">
                 <div class="snippet-editor-action" id="editorActions"><button type="button" id="open-story-bible" class="quote-button" aria-expanded="false">Story Bible</button><button type="button" id="compare-drafts" class="quote-button" aria-haspopup="dialog" aria-expanded="false">Drafts / Reference</button><button type="button" id="share-snippet" class="quote-button" aria-haspopup="dialog">Share excerpt</button></div>
+                    <button type="button" id="focusMode" class="quote-button" title="Focus mode" aria-label="Focus mode">Focus mode</button>
+                </div>
                 <div class="writer-toolbar" id="writerToolbar" role="toolbar" aria-label="Formatting">
                     <span class="writer-wordcount" aria-live="polite">
                         <span id="chapterWords">0</span> / <span id="totalWords">0</span>
@@ -183,7 +186,7 @@
             <div class="writer-shell-backdrop" id="writerShellBackdrop" hidden aria-hidden="true"></div>
         </div>
     </div>
-    <button type="button" class="writer-typewriter-exit" id="typewriterExit" hidden aria-label="Leave typewriter mode">×</button>
+    <button type="button" class="writer-typewriter-exit" id="typewriterExit" hidden aria-label="Leave focus mode">×</button>
     <div class="confirm-overlay" id="confirmOverlay" hidden>
         <div class="confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
             <div class="confirm-icon" aria-hidden="true">?</div>
