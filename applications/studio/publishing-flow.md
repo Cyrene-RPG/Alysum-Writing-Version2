@@ -18,7 +18,7 @@ No database migration is needed.
 
 Tag fields show at most eight suggestions plus an optional custom choice. Use
 arrows and Enter, tap a suggestion, or enter custom text and press Enter/comma.
-Uncommitted custom text is included on blur/save. Genres retain the existing
+Uncommitted custom text is included on save. Genres retain the existing
 three-genre limit and require a catalog choice. Selected tags can be removed.
 
 The 504 fandom suggestions and small per-fandom character/relationship starters

@@ -71,7 +71,11 @@ try {
         await page.locator('#themeSearch').fill('');await page.locator('#themeSearch').press('Escape');
         await page.locator('#storySection > summary').click();await page.locator('#workSummary').fill('The original story summary stays intact.');
         await page.locator('#themeSearch').fill('Custom story tag');
-        await page.locator('#saveDraftBtn').click();await page.waitForURL('**/studio');
+        await page.locator('#saveDraftBtn').click();
+        try { await page.waitForURL('**/studio'); } catch (error) {
+            console.log('Save diagnostics:',await page.evaluate(()=>({url:location.href,error:document.getElementById('postError')?.textContent,status:document.getElementById('pubStatus')?.textContent,saved:!!localStorage.getItem('fixture:book')})),errors);
+            await page.screenshot({path:`${out}/${name}-${width}-save-failure.png`,fullPage:true});throw error;
+        }
         const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('fixture:book')));
         assert.deepEqual(saved.publish_meta.fandoms,['Harry Potter']);assert.deepEqual(saved.publish_meta.characters,['Hermione Granger']);
         assert.deepEqual(saved.publish_meta.relationships,['Arthur/Merlin']);assert.equal(saved.publish_meta.workType,'fanfiction');

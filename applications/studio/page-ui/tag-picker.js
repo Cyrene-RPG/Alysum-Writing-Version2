@@ -50,7 +50,9 @@ export function bindTagPicker(root, { id, label, initial = [], suggestions = [],
     }
     function commit() { if (allowCustom && input.value.trim()) add(input.value, false); }
     input.addEventListener('input', paintResults); input.addEventListener('focus', paintResults);
-    input.addEventListener('blur', () => { commit(); close(); });
+    // Do not insert chips during pointer-down blur: moving the Save button
+    // before pointer-up can cancel the click in Safari. Save commits pending text.
+    input.addEventListener('blur', close);
     input.addEventListener('keydown', event => {
         if (event.key === 'Escape') { event.preventDefault(); close(); return; }
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
