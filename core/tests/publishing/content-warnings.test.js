@@ -10,7 +10,7 @@ const none=()=>({version:1,reviewed:true,noneApply:true,coreIds:[],entries:[],no
 test('The large catalog has stable unique IDs, categorized adult descriptors and no opt-out tag',()=>{
     assert.ok(WARNING_CATALOG.length>=1000);assert.equal(new Set(WARNING_CATALOG.map(item=>item.id)).size,WARNING_CATALOG.length);
     assert.equal(new Set(WARNING_CATALOG.map(item=>item.label.toLowerCase())).size,WARNING_CATALOG.length);
-    assert.equal(CORE_WARNINGS.length,4);assert.ok(!WARNING_CATALOG.some(item=>/chose not|choose not/i.test(item.label)));
+    assert.equal(CORE_WARNINGS.length,3);assert.ok(!WARNING_CATALOG.some(item=>/chose not|choose not/i.test(item.label)));
     assert.ok(WARNING_CATALOG.filter(item=>item.kind==='adult').length>150);
     assert.ok(!WARNING_CATALOG.some(item=>item.kind==='adult'&&/\b(child|children|minor|underage|infant)\b/i.test(item.label)));
 });
@@ -86,4 +86,19 @@ test('Requested aliases resolve without merging unrelated harm or consent labels
     assert.equal(warningDefinition('Pedophilia').kind,'warning');
     assert.equal(warningDefinition('Incest').kind,'warning');
     assert.equal(warningDefinition('SH'),null,'Ambiguous initials must not silently mean harassment or self-harm');
+});
+
+
+test('removed warning is never offered, restored from saved metadata, or added as a custom label',()=>{
+    const label='Sexual content involving minors',id='sexual-content-involving-minors';
+    for(const value of [label,id,'Underage sexual activity','Underage sex']){
+        assert.equal(warningDefinition(value),null);
+        assert.ok(!searchWarnings(value).items.some(item=>item.id===id));
+        assert.throws(()=>addCustomWarning(none(),value),/not available/);
+    }
+    const restored=normalizeWarningState({...none(),coreIds:[id]},[label]);
+    assert.deepEqual(warningLabels(restored),[]);assert.equal(restored.reviewed,false);
+    assert.match(validateWarningState(restored),/core/);
+    const entry=normalizeWarningState({...none(),entries:[{id,label}]});
+    assert.deepEqual(entry.entries,[]);
 });

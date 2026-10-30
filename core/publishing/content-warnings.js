@@ -6,10 +6,12 @@ export const WARNING_OPTIONS=Object.freeze({
     detail:['','brief','detailed','graphic'],
     frequency:['','isolated','recurring'],
 });
+const retiredWarning=value=>['sexual-content-involving-minors','sexual content involving minors','underage sexual activity','underage sex'].includes(String(value||'').trim().toLowerCase());
 const coreIds=new Set(CORE_WARNINGS.map(item=>item.id));
 export function isWarningOptOut(value){return /(?:chose|choose|chooses|chosen).{0,30}not.{0,30}(?:warn|apply)|(?:decline|withhold).{0,20}warnings/i.test(String(value));}
 const strings=value=>Array.isArray(value)?[...new Set(value.filter(v=>typeof v==='string').map(v=>v.trim()).filter(Boolean))]:[];
 function entry(raw) {
+    if(retiredWarning(raw?.id)||retiredWarning(raw?.label))return null;
     const def=warningDefinition(raw?.id)||warningDefinition(raw?.label);
     if(def?.kind==='core')return null;
     const label=String(def?.label||raw?.label||'').trim().slice(0,250);
@@ -28,11 +30,15 @@ export function normalizeWarningState(raw,legacy=[]) {
     // Published strings remain backward compatible; broad legacy labels never
     // imply a more specific core warning, and unknown labels are retained.
     for(const label of strings(legacy)) {
+        if(retiredWarning(label))continue;
         const def=warningDefinition(label);
         if(def?.kind==='core'){if(!supplied&&!state.coreIds.includes(def.id))state.coreIds.push(def.id);}
         else if(!supplied||!state.entries.some(item=>item.id===(def?.id||'custom:'+warningKey(label))))add({id:def?.id,label});
     }
     if(state.coreIds.length||state.noneApply)state.reviewed=true;
+    if((Array.isArray(raw?.coreIds)&&raw.coreIds.some(retiredWarning))||strings(legacy).some(retiredWarning)){
+        state.reviewed=false;state.noneApply=false;
+    }
     return state;
 }
 export function warningLabels(state) {
@@ -59,6 +65,7 @@ export function addWarning(raw,id) {
 export function addCustomWarning(raw,label) {
     const value=String(label||'').trim();if(!value||value.length>250)throw Error('Use 1–250 characters for a custom warning.');
     if(/^(?:none of (?:these |the )?core warnings apply|no (?:archive|core|content) warnings(?: apply)?)$/i.test(value))throw Error('Use the core warning checkboxes to confirm that none apply.');
+    if(retiredWarning(value))throw Error('This warning is not available on Alysum.');
     if(isWarningOptOut(value))throw Error('Choosing not to specify warnings is not available.');
     if(/^(?:gay|lesbian|bisexual|transgender|trans|lgbtq?\+?|queer|autism|autistic|disabled|disability|neurodivergent)$/i.test(value))throw Error('Identity labels belong in Additional tags. Use a warning for harmful content such as discrimination or abuse.');
     const def=warningDefinition(value);if(def)return addWarning(raw,def.id);
