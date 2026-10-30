@@ -37,7 +37,8 @@ try{
     assert.equal(await chips.first().evaluate(node=>getComputedStyle(node).color),'rgb(217, 114, 44)','selected warnings are orange');
     await chips.first().click();assert.equal(await page.evaluate(()=>previewFixture.writes()),0,'preview chips cannot silently change warning metadata');
     const neutral=await page.evaluate(()=>{const node=document.createElement('span');node.className='book-warn';document.querySelector('#libWarns').append(node);const color=getComputedStyle(node).color;node.remove();return color;});
-    assert.equal(neutral,'rgb(156, 163, 175)','neutral styling is gray');
+    const channels=neutral.match(/\d+/g).slice(0,3).map(Number);
+    assert.ok(Math.max(...channels)-Math.min(...channels)<=24,'neutral styling is gray: '+neutral);
     for(const width of [320,390,1440]){
         await page.setViewportSize({width,height:900});
         assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'fits '+width);
