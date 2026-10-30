@@ -3,6 +3,9 @@ on:
   pull_request:
     paths:
       - 'applications/editor/page-ui/autosave.js'
+      - 'applications/editor/page-ui/force-sync.js'
+      - 'applications/editor/tests/force-sync*'
+      - 'applications/editor/tests/fixtures/force-sync.html'
       - 'applications/editor/page-ui/page.js'
       - 'applications/editor/page-ui/page/persist-hooks.js'
       - 'applications/editor/pages/editor.html'
@@ -38,7 +41,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test applications/editor/tests/autosave.test.js core/tests/collaboration/*.test.js core/tests/writing-engine/*.test.js
+      - run: node --test applications/editor/tests/autosave.test.js applications/editor/tests/force-sync.test.js core/tests/collaboration/*.test.js core/tests/writing-engine/*.test.js
       - run: npm install --prefix "$RUNNER_TEMP/editor-save" jsdom@26
       - run: node --experimental-vm-modules --test applications/editor/tests/save-exit.mjs applications/editor/tests/pending-recovery.mjs applications/editor/tests/daily-goal.mjs applications/editor/tests/save-conflict.mjs applications/studio/tests/backup-import.mjs core/tests/authentication/transport.mjs
         env:
@@ -58,6 +61,10 @@ jobs:
       - run: npm install --prefix "$RUNNER_TEMP/save-conflict" playwright@1.61.1
       - run: '"$RUNNER_TEMP/save-conflict/node_modules/.bin/playwright" install --with-deps ${{ matrix.browser }}'
       - run: node applications/editor/tests/save-conflict-browser.mjs
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/save-conflict/node_modules/playwright/index.mjs
+          EDITOR_BROWSER: ${{ matrix.browser }}
+      - run: node applications/editor/tests/force-sync-browser.mjs
         env:
           PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/save-conflict/node_modules/playwright/index.mjs
           EDITOR_BROWSER: ${{ matrix.browser }}
