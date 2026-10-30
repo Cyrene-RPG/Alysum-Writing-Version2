@@ -573,3 +573,7 @@ h1 {
     .pub-footer .pub-actions { display: flex; flex-direction: column; }
     .pub-footer .pub-actions button { width: 100%; min-height: 44px; }
 }
+
+.warning-picker-compact .warning-selected:has([data-warning-selected] > p:only-child) { display: none; }
+.warning-picker-compact [data-warning-status]:empty { display: none; }
+.warning-picker-compact button { min-height: 44px; }

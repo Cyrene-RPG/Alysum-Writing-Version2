@@ -43,7 +43,7 @@ try {
         await fandom.press('ArrowDown');await fandom.press('Enter');
         assert.equal(await page.getByRole('button',{name:'Remove Harry Potter',exact:true}).count(),1);
         await fandom.fill('Merlin');await page.locator('#fandomSearchResults [role=option]').filter({hasText:'Merlin'}).first().click();
-        await page.locator('#characterSearch').fill('Hermione Granger');await page.locator('#characterSearch').press('Enter');
+        await page.locator('#characterSearch').fill('Hermione');await page.getByRole('option',{name:'Hermione Granger',exact:true}).click();
         await page.locator('#relationshipSearch').fill('Arthur/Merlin');await page.locator('#relationshipSearch').press('Enter');
         await page.locator('#themeSearch').fill('Slow');
         assert.equal(await page.locator('#themeSearch').inputValue(),'Slow','typing does not prematurely commit tags');
@@ -61,7 +61,7 @@ try {
         await page.locator('.warning-picker-compact > details').first().locator('summary').click();
         await page.locator('[data-core-none]').check();
         await page.locator('.warning-picker-compact > details').first().locator('summary').click();
-        await page.locator('#themeSearch').fill('slow');await page.locator('#themeSearch').press('ArrowDown');
+        await page.locator('#themeSearch').fill('Canon');await page.locator('#themeSearch').press('ArrowDown');
         assert.equal(await page.locator('#themeSearch').getAttribute('aria-expanded'),'true');
         assert.ok(await page.locator('#themeSearchResults [role=option]').count()<=9);
         assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'page does not overflow '+width);
