@@ -46,7 +46,7 @@ export function mountSaveConflict({ api, bookId, container, prepare, onReviewing
         online = next; ids = { local: crypto.randomUUID(), online: crypto.randomUUID() };
         status.textContent = 'Choose which text to keep in the original. Both recovery books will remain available in Studio.';
     }
-    trigger.addEventListener('click', async () => {
+    async function open() {
         if (busy || dialog.open) return;
         busy = true; trigger.disabled = true;
         try {
@@ -58,7 +58,8 @@ export function mountSaveConflict({ api, bookId, container, prepare, onReviewing
             if (!dialog.open) { onReviewing?.(true); dialog.showModal(); }
             showError(failure);
         } finally { busy = false; trigger.disabled = false; controls(false); }
-    });
+    }
+    trigger.addEventListener('click', () => { void open(); });
     $('[data-close]').addEventListener('click', () => { if (!busy) dialog.close(); });
     dialog.addEventListener('cancel', event => { if (busy) event.preventDefault(); });
     dialog.addEventListener('close', () => onReviewing?.(false));
@@ -79,4 +80,5 @@ export function mountSaveConflict({ api, bookId, container, prepare, onReviewing
     }
     $('[data-local-choice]').addEventListener('click', () => void choose('local'));
     $('[data-online-choice]').addEventListener('click', () => void choose('online'));
+    return { open };
 }

@@ -389,6 +389,19 @@ export function createBooksApi(session, supabase, { writeTimeoutMs = 15000 } = {
             if (!book) throw new Error("This book is unavailable online, or your editing access changed. Your device copy is still available for backup.");
             return normalizeBook(book);
         },
+        /** Authoritative manual refresh: no cache fallback or upload on failure. */
+        async refreshBook(id) {
+            return serializeWrite(id, async () => {
+                const remote = await cloudGet(id);
+                if (!remote) throw new Error('This book is unavailable online, or your editing access changed. Your device copy has been kept.');
+                const cached = readCache(userId).find(row => String(row.id) === String(id));
+                if (cacheIsPending(cached)) {
+                    throw Object.assign(new Error('There is unsaved writing on this device. Finish saving or reviewing it before downloading the online version.'), { code: 'BOOK_LOCAL_PENDING' });
+                }
+                upsertCache(userId, withoutPending(remote));
+                return remember(remote);
+            });
+        },
         async resolveSaveConflict(id, local, { onlineUpdated, choice, recoveryIds } = {}) {
             if (!local || local.id !== id || !local.sections) throw new Error("The manuscript being reviewed does not match this book.");
             if (!["local", "online"].includes(choice)) throw new Error("Choose which manuscript to keep in the original book.");

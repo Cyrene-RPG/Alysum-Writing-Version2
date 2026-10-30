@@ -11,6 +11,22 @@ function fixture(local=base(),remote=base()){
  return{api:api(),another:api,store,loseAck(){loseAck=true;},failNextRead(){loseRead=true;},cache:()=>JSON.parse(store.get(key))[0],server:()=>server,readGate(p){readGate=p;},writeGate(p){writeGate=p;},reading:reading.promise,writing:writing.promise,failRead(v=true){failRead=v;},failWrite(v=true){failWrite=v;},counts:()=>({inserts,updates}),remote(row){server=clone(row);}};
 }
 test('pending writing survives a newer cloud timestamp in get and list',async()=>{const f=fixture({...base(),title:'Unsynced',updated:100,_cloudUpdated:1,_baseUpdated:1,_pending:true}, {...base(),title:'Cloud',updated:200});assert.equal((await f.api.getBook('book')).title,'Unsynced');assert.equal((await f.api.listBooks())[0].title,'Unsynced');assert.equal(f.cache()._baseUpdated,1);assert.deepEqual(await f.api.syncPending(),{synced:0,failed:1});assert.equal(f.server().title,'Cloud');assert.equal(f.cache().title,'Unsynced');});
+test('manual refresh uses the server even when a clean local clock is newer, and advances the next save version',async()=>{
+ const f=fixture({...base(),title:'Old tab',updated:999},{...base(),title:'From phone',updated:5});
+ assert.equal((await f.api.refreshBook('book')).title,'From phone');assert.equal(f.cache().title,'From phone');
+ assert.equal((await f.api.updateBook('book',{title:'Edited after sync'}))._synced,true);assert.equal(f.server().title,'Edited after sync');
+});
+test('manual refresh cannot replace pending edits or writing stashed during its read',async()=>{
+ const pending=fixture({...base(),title:'Local changes',_pending:true,_baseUpdated:1});
+ await assert.rejects(pending.api.refreshBook('book'),error=>error.code==='BOOK_LOCAL_PENDING');assert.equal(pending.cache().title,'Local changes');
+ const f=fixture(),g=gate();f.readGate(g.promise);const read=f.api.refreshBook('book');await f.reading;
+ f.api.stashBook('book',{title:'Typing during sync'});g.resolve();
+ await assert.rejects(read,error=>error.code==='BOOK_LOCAL_PENDING');assert.equal(f.cache().title,'Typing during sync');assert.deepEqual(f.counts(),{inserts:0,updates:0});
+});
+test('failed or revoked manual refresh never returns a cached success or deletes device writing',async()=>{
+ const f=fixture();f.failRead();await assert.rejects(f.api.refreshBook('book'),/Network read failed/);assert.equal(f.cache().title,'Original');
+ f.failRead(false);f.remote(null);await assert.rejects(f.api.refreshBook('book'),/unavailable online/);assert.equal(f.cache().title,'Original');
+});
 test('sync read cannot consume a newer stashed edit',async()=>{const f=fixture({...base(),_pending:true,_cloudUpdated:1,_baseUpdated:1}),g=gate();f.readGate(g.promise);const sync=f.api.syncPending();await f.reading;f.api.stashBook('book',{title:'Latest'});g.resolve();assert.equal((await sync).failed,1);assert.equal(f.cache().title,'Latest');assert.equal(f.cache()._pending,true);assert.equal(f.counts().updates,0);});
 test('old write completion keeps newer queued typing and advances only its own confirmed base',async()=>{const f=fixture(),g=gate();await f.api.getBook('book');f.writeGate(g.promise);const save=f.api.updateBook('book',{title:'Earlier'});await f.writing;f.api.stashBook('book',{title:'Latest'});g.resolve();assert.equal((await save)._synced,true);assert.equal(f.cache().title,'Latest');assert.equal(f.cache()._pending,true);assert.deepEqual(await f.api.syncPending(),{synced:1,failed:0});assert.equal(f.server().title,'Latest');});
 test('stale second writer cannot erase a chapter from the first writer',async()=>{const f=fixture(),other=f.another();const a=await f.api.getBook('book'),b=await other.getBook('book');a.sections.body[0].content='Writer A';b.sections.body[1].content='Writer B';assert.equal((await f.api.updateBook('book',{sections:a.sections},{expectedUpdated:a._cloudUpdated}))._synced,true);const result=await other.updateBook('book',{sections:b.sections},{expectedUpdated:b._cloudUpdated});assert.equal(result._synced,false);assert.match(result._syncError,/another tab/);assert.equal(f.server().sections.body[0].content,'Writer A');assert.equal(f.cache().sections.body[1].content,'Writer B');assert.equal(f.cache()._pending,true);});

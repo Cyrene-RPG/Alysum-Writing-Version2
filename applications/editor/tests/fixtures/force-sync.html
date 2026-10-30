@@ -1,0 +1,27 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Force sync test</title>
+<link rel="stylesheet" href="/site-appearance/css-styles/theme.css"><link rel="stylesheet" href="/applications/editor/editor-css/page/shell.css">
+<style>body{margin:0;background:#0b1220;color:#fff;font:16px system-ui;--text:#fff;--muted:#aaa;--border:#ffffff30}.writer-editor-actions{border-bottom:1px solid #ffffff30}.quote-button{color:inherit;background:#282828;border:1px solid #ffffff30;border-radius:12px;padding:10px 16px;font:inherit;cursor:pointer}main{padding:20px}input,textarea{box-sizing:border-box;display:block;width:100%;margin:12px 0;background:#111827;color:inherit;border:1px solid #ffffff30;padding:12px;font:inherit}textarea{min-height:220px}#recovery{padding:16px}</style></head><body>
+<div class="writer-editor-actions" id="editorActionRow"><button class="quote-button" id="focusMode">Focus mode</button><button class="quote-button" id="forceEditorSync" hidden>Force sync</button></div>
+<main><h1>Invented manuscript</h1><label>Book title<input id="title"></label><label>Chapter writing<textarea id="writing"></textarea></label><p role="status" id="status"></p><div id="recovery"></div></main>
+<script type="module">
+import {createBooksApi} from '/core/synchronization-engine/books.js';
+import {createAutosave} from '/applications/editor/page-ui/autosave.js';
+import {mountForceSyncButton} from '/applications/editor/page-ui/force-sync.js';
+import {mountSaveConflict} from '/applications/editor/page-ui/save-conflict.js';
+const client={from(){let filters={},patch=null,insert=null;const q={select(){return q;},eq(key,value){filters[key]=value;return q;},update(value){patch=value;return q;},insert(value){insert=value;return q;},
+async request(single=false){const response=await fetch('/sync-data',{method:insert?'POST':patch?'PATCH':'GET',headers:{'Content-Type':'application/json'},...(patch||insert?{body:JSON.stringify({filters,patch,insert})}:{})});if(!response.ok)throw Error('Test network unavailable');const result=await response.json();return{data:single?(Array.isArray(result)?result[0]:result):result,error:null};},
+maybeSingle(){return q.request(true);},single(){return q.request(true);},then(done,fail){return q.request().then(done,fail);}};return q;}};
+const api=createBooksApi({mode:'cloud',user:{id:'writer'}},client);
+let book=await api.getBook('book'),revision=0,reviewing=false;
+const title=document.getElementById('title'),writing=document.getElementById('writing'),status=document.getElementById('status');
+const render=()=>{title.value=book.title;writing.value=book.sections.body[0].content;};render();
+const snapshot=()=>({...book,title:title.value,sections:{...book.sections,body:[{...book.sections.body[0],content:writing.value}]}});
+const autosave=createAutosave({delay:60000,async save(next){const saved=await api.updateBook('book',{title:next.title,sections:next.sections},{expectedUpdated:next._cloudUpdated});book={...next,...saved};if(!saved._synced)throw Error(saved._syncError);}});
+const persist=()=>{book=snapshot();revision++;api.stashBook('book',{title:book.title,sections:book.sections},{expectedUpdated:book._cloudUpdated});autosave.schedule(book);};
+title.addEventListener('input',persist);writing.addEventListener('input',persist);
+const conflict=mountSaveConflict({api,bookId:'book',container:document.getElementById('recovery'),prepare:async()=>snapshot(),onReviewing:value=>reviewing=value,onResolved:saved=>{autosave.acceptConfirmedSave();book=saved;revision++;render();}});
+const sync=mountForceSyncButton({anchor:document.getElementById('editorActionRow'),isCloud:!location.search.includes('local=1'),api,bookId:'book',isOnline:()=>navigator.onLine!==false,
+isReviewing:()=>reviewing,hasLocalChanges:()=>book._pending||autosave.getStatus()!=='saved',saveLocal:()=>autosave.flush(),getRevision:()=>revision,snapshotKey:()=>writing.value,
+applyOnline:saved=>{autosave.acceptConfirmedSave();book=saved;revision++;render();},onConflict:()=>conflict.open(),isConflict:()=>book._syncCode==='BOOK_CONFLICT',setStatus:text=>status.textContent=text});
+window.forceSyncFixture={sync,getBook:()=>book,api};
+</script></body></html>

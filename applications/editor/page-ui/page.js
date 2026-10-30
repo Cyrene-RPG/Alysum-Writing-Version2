@@ -1,4 +1,5 @@
 import { mountEditorDailyGoal } from "./daily-goal.js";
+import { mountForceSyncButton } from "./force-sync.js";
 import { mountSaveConflict } from "./save-conflict.js";
 import { mountPendingRecovery } from "./pending-recovery.js";
 import { mountStoryBible } from "./story-bible.js";
@@ -582,7 +583,7 @@ async function boot() {
         drawTree,
     });
 
-    mountSaveConflict({
+    const saveConflict = mountSaveConflict({
         api, bookId, container: saveRecovery,
         async prepare() { await persist(currentBackupSnapshot(), true); return currentBackupSnapshot(); },
         onReviewing: value => { reviewingSaveConflict = value; },
@@ -595,6 +596,30 @@ async function boot() {
             showChapter(selectedId, { rebuildTree: true });
             setWelcomeCopy({ lead: "Working On ", accent: book.title || "Untitled Book" });
             pendingRecovery.refresh(); setSaveStatus("Saved. Both recovery books are available in Studio.", 6000);
+        },
+    });
+
+    mountForceSyncButton({
+        anchor: document.getElementById('editorActionRow'), isCloud: session.mode === 'cloud',
+        api, bookId, isOnline: isProbablyOnline, isReviewing: () => reviewingSaveConflict,
+        hasLocalChanges: () => Boolean(book._pending) || autosave.getStatus() !== 'saved'
+            || String(bookTitle?.value || book.title) !== String(book.title)
+            || (selectedKind() !== 'folder' && chapterContentChanged(currentChapter(book, selectedId), editor.getHtml())),
+        saveLocal: () => persist(currentBackupSnapshot(), true),
+        getRevision: () => bookRev,
+        snapshotKey: () => JSON.stringify(currentBackupSnapshot().sections),
+        isConflict: () => book._syncCode === 'BOOK_CONFLICT',
+        onConflict: () => saveConflict?.open(),
+        setStatus: setSaveStatus,
+        applyOnline(saved) {
+            autosave.acceptConfirmedSave();
+            book = withUpdatedWords({ ...saved, sections: cleanSections(saved.sections), _rev: ++bookRev, _pending: false });
+            if (bookTitle) bookTitle.value = book.title || '';
+            const keep = currentChapter(book, selectedId);
+            setSelectedId(keep?.id || fallbackChapterId(book.sections, listBodyChapters(book.sections)[0]?.id || ''));
+            showChapter(selectedId, { rebuildTree: true });
+            setWelcomeCopy({ lead: 'Working On ', accent: book.title || 'Untitled Book' });
+            pendingRecovery.refresh(); dailyGoal.refresh();
         },
     });
 
