@@ -29,6 +29,9 @@ export function bindPublishingFields(doc, draft, onChange = () => {}) {
         suggestions: query => matchingGenreKeys(query).map(genreLabel), onChange });
     function updateType() {
         doc.querySelectorAll('[data-fanfiction]').forEach(node => { node.hidden = workType !== 'fanfiction'; });
+        doc.querySelectorAll('[data-original-only]').forEach(node => { node.hidden = workType === 'fanfiction'; });
+        const freeNotice = doc.getElementById('fanfictionFreeNotice');
+        if (freeNotice) freeNotice.hidden = workType !== 'fanfiction';
         doc.querySelectorAll('[name=workType]').forEach(input => { input.checked = input.value === workType; });
     }
     doc.querySelectorAll('[name=workType]').forEach(input => input.addEventListener('change', () => {

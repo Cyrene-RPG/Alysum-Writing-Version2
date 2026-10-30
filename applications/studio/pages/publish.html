@@ -55,13 +55,14 @@
 <div class="pub-field"><label for="themeSearch">Themes &amp; other tags</label><div id="themePicker"></div></div><input id="extraTags" type="hidden">
 <div class="pub-field pub-warning-field"><label>Content warnings *</label><div id="warningPicker"></div></div>
 <div class="pub-field"><label>Rating *</label><div class="pub-pills" id="ratingPicker"><label><input type="radio" name="rating" value="general"> General Audiences</label><label><input type="radio" name="rating" value="mature" checked> Mature</label><label><input type="radio" name="rating" value="explicit"> Explicit</label></div></div></div></div></details><details class="pub-card pub-section" id="accessSection"><summary><span class="pub-section-heading">Chapters &amp; reader access</span><span class="pub-section-summary" data-section-summary="accessSection">Choose chapters, free access or paid products</span></summary><div class="pub-section-body">        <section class="pub-subsection">
-            <h2>Manuscript</h2>
-            <p class="pub-hint">Select the chapters to post. They are free unless you check them under Locked chapters. Unchecked chapters stay private.</p>
+            <p class="pub-hint" id="fanfictionFreeNotice" role="note" hidden>Fan fiction is free on Alysum. Paid chapters, pricing and purchase links are available only for original works. Publishing fan fiction removes any previous chapter locks and purchase link from this listing.</p>
+<h2>Manuscript</h2>
+            <p class="pub-hint">Select the chapters to post. Unchecked chapters stay private. Original works can optionally use paid chapter access below.</p>
             <details class="pub-chapters" id="chapterDetails">
                 <summary id="chapterSummary">Chapters to post (0)</summary>
                 <div id="chapterList"></div>
             </details>
-        </section>        <section class="pub-subsection" id="pricingGuide" aria-labelledby="pricingTitle">
+        </section>        <section class="pub-subsection" id="pricingGuide" data-original-only aria-labelledby="pricingTitle">
             <h2 id="pricingTitle">Price calculator</h2>
             <p class="pub-hint">Calculate chapter prices, a bundle discount and estimated sales revenue from your selected manuscript chapters. Enter your own chapter estimates in the table below. Alysum takes 0% commission. These are recommendations only: your connected Ko-fi or Payhip shop controls the real checkout price.</p>
             <p class="pub-hint"><strong id="pricingFormat">Published chapters / ongoing story</strong> · <span id="pricingChapterCount">0</span> chapters · <span id="pricingWordCount">0</span> words</p>
@@ -76,7 +77,7 @@
             <p id="pricingNotice" role="status" class="pub-hint"></p>
             <details><summary>See chapter prices and word counts</summary><div style="overflow-x:auto"><table style="width:100%;text-align:left"><thead><tr><th>Chapter</th><th>Words</th><th>Suggested (USD)</th><th>Your price (USD)</th></tr></thead><tbody id="pricingChapterRows"></tbody></table></div></details>
             <p class="pub-hint">For serialized work, suggestions cover the selected published chapters, not unpublished future chapters. Chapter estimates default to word-count suggestions. Individual USD chapter prices also fill these estimates; other currencies must be estimated in USD here. Calculator edits do not change shop checkout prices or create products.</p>
-        </section>        <section class="pub-subsection" id="chapterAccessCard">
+        </section>        <section class="pub-subsection" id="chapterAccessCard" data-original-only>
             <h2>Paid chapters</h2>
             <p class="pub-hint">Readers pay you through your own Ko-fi or Payhip shop. Alysum confirms the purchase and unlocks their chapters.</p>
             <p id="chapterAccessUnavailable" role="status">Checking chapter access…</p>
@@ -111,7 +112,7 @@
                     <p class="pub-hint">Prices here must match your shop. Discounts below these amounts will not unlock access. Payment is handled by your shop.</p>
                 </details>
             </fieldset>
-        </section>        <section class="pub-subsection" id="purchaseLinkCard">
+        </section>        <section class="pub-subsection" id="purchaseLinkCard" data-original-only>
             <h2>Sell through your own page</h2>
             <p class="pub-hint">Have a paid book, chapters or membership elsewhere? Add your own shop or membership link, such as Ko-fi, Patreon, Payhip or your website.</p>
             <label for="purchaseUrl">Purchase link (optional)</label>

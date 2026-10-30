@@ -578,3 +578,5 @@ h1 {
 .warning-picker-compact .warning-selected:has([data-warning-selected] > p:only-child) { display: none; }
 .warning-picker-compact [data-warning-status]:empty { display: none; }
 .warning-picker-compact button { min-height: 44px; }
+
+.pub-card [data-original-only][hidden], #fanfictionFreeNotice[hidden] { display: none; }

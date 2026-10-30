@@ -1,5 +1,6 @@
 import { bindPublishingFields } from "./publishing-fields.js";
 import { bindPublishingLayout } from "./publishing-layout.js";
+import { freeFanfictionForm } from "/core/publishing/work-tags.js";
 import { bindPricingGuide } from "./pricing-guide.js";
 import { bindChapterAccess } from "./publish-access.js";
 import { supabase } from "@alysum/authentication/client.js";
@@ -251,7 +252,7 @@ async function boot() {
             .filter(Boolean);
         const selected = [...document.querySelectorAll("[data-chapter-id]:checked")].map((el) => el.dataset.chapterId);
         const access = chapterAccess?.read() || {lockedChapterIds: []};
-        return {
+        return freeFanfictionForm({
             title: document.getElementById("workTitle")?.value || book.title,
             author: book._author || "",
             summary: document.getElementById("workSummary")?.value || "",
@@ -275,7 +276,7 @@ async function boot() {
             chapterIds: selected,
             ...(publishingFields?.read(commitPending) || {}),
             ...readPageLook(),
-        };
+        });
     }
 
     let isSaving = false;

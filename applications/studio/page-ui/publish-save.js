@@ -1,4 +1,4 @@
-import { readWorkTags } from "@alysum/publishing/work-tags.js";
+import { readWorkTags, freeFanfictionForm } from "@alysum/publishing/work-tags.js";
 import { normalizeWarningState,validateWarningState } from "@alysum/publishing/content-warnings.js";
 import { normalizePurchaseUrl } from "@alysum/publishing/publish-meta.js";
 import { needsPromotedChapterSelection } from "/core/writing-engine/promote-draft.js";
@@ -84,6 +84,7 @@ export function bookSaveError(saved, context) {
 }
 
 export function publishMetaFromForm(form) {
+    form = freeFanfictionForm(form);
     return {
         ...readWorkTags(form),
         author: form.author,
@@ -91,7 +92,7 @@ export function publishMetaFromForm(form) {
         purchaseUrl: normalizePurchaseUrl(form.purchaseUrl),
         lockedChapterIds: form.lockedChapterIds || [],
         chapterAccessPending: !form.isPublished,
-        chapterAccess: form.chapterAccess ? {
+        chapterAccess: form.workType !== 'fanfiction' && form.chapterAccess ? {
             connectionId: String(form.chapterAccess.connectionId || ''),
             pricingMode: ['individual','mixed'].includes(form.chapterAccess.pricingMode) ? form.chapterAccess.pricingMode : 'bundle',
             mixedProducts: (form.chapterAccess.mixedProducts || []).map(p=>({productUrl:normalizePurchaseUrl(p.productUrl),minimum:String(p.minimum || ''),chapterIds:(p.chapterIds || []).map(String)})),
@@ -146,7 +147,7 @@ export async function runPublishSave({
     setCoverUrl,
 }) {
     paintPostError(postError, "");
-    const form = { ...readForm(), isPublished };
+    const form = { ...freeFanfictionForm(readForm()), isPublished };
     const title = String(form.title || "").trim();
     if (String(form.purchaseUrl || "").trim() && !normalizePurchaseUrl(form.purchaseUrl)) {
         paintPostError(postError, "Enter a complete https:// purchase link without a username or password, or leave it blank.");

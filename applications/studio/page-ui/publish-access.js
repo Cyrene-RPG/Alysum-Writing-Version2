@@ -167,7 +167,7 @@ export async function bindChapterAccess({supabase,book,chapters}) {
             const price=access.minimum;
             if(!['individual','mixed'].includes(access.pricingMode) && access.lockedChapterIds.length && !/^\d{1,4}(\.\d{1,2})?$/.test(price)) throw Error('Enter the shop product’s price, such as 3.00.');
             await authorAccessRequest(supabase,'configure',{method:'POST',body:{book:book.id,complete:form.complete,selectedIds:form.chapterIds,chapterIds:access.lockedChapterIds,connectionId:access.connectionId,
-                pricingMode:access.pricingMode,chapterProducts:access.chapterProducts.map(p=>({chapterId:p.chapterId,purchaseUrl:p.productUrl,minimumAmount:p.minimum === '' ? null : Math.round(Number(p.minimum)*100)})),
+                workType:form.workType,pricingMode:access.pricingMode,chapterProducts:access.chapterProducts.map(p=>({chapterId:p.chapterId,purchaseUrl:p.productUrl,minimumAmount:p.minimum === '' ? null : Math.round(Number(p.minimum)*100)})),
                 productKey:normalizeProductKey('kofi',access.productUrl)||normalizeProductKey('payhip',access.productUrl),purchaseUrl:access.productUrl,minimumAmount:Math.round(Number(price)*100),currency:access.currency}});
             config={chapter_ids:access.lockedChapterIds};
         }

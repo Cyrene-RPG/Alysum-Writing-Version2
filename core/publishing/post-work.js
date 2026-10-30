@@ -1,4 +1,4 @@
-import { publicWorkTags } from "./work-tags.js";
+import { publicWorkTags, readWorkTags, freeFanfictionForm } from "./work-tags.js";
 import { stripStoryBibleMetadata } from "../encyclopedia/model.js";
 import { normalizeWarningState } from "./content-warnings.js";
 /**
@@ -97,6 +97,10 @@ export async function markBooksWithLiveListings(supabase, books) {
 }
 
 export function buildLibraryPayload(book, form) {
+    const stored = readWorkTags(book?.publish_meta);
+    const selected = readWorkTags(form);
+    const hasType = ['original', 'fanfiction'].includes(form.workType) || selected.workType === 'fanfiction';
+    form = freeFanfictionForm({ ...stored, ...form, workType: hasType ? selected.workType : stored.workType });
     const chapters = listBodyChapters(book?.sections);
     const byId = new Map(chapters.map((ch) => [String(ch.id), ch]));
     const posted = [];

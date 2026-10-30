@@ -18,6 +18,14 @@ export function publicWorkTags(value) {
         : { workType: 'original', fandoms: [], characters: [], relationships: [] };
 }
 
+/** Fan fiction is always free on Alysum, including restored/legacy form data. */
+export function freeFanfictionForm(form) {
+    if (readWorkTags(form).workType !== 'fanfiction') return form;
+    return { ...form, workType: 'fanfiction', purchaseUrl: '', lockedChapterIds: [],
+        chapterAccess: { lockedChapterIds: [], chapterProducts: [], mixedProducts: [],
+            pricingMode: 'bundle', connectionId: '', productUrl: '', minimum: '', currency: 'USD' } };
+}
+
 export const THEME_TAGS = ['Slow Burn', 'Found Family', 'Enemies to Lovers', 'Friends to Lovers',
     'Hurt/Comfort', 'Angst', 'Fluff', 'Alternate Universe', 'Canon Divergence', 'Canon Compliant',
     'Second Chances', 'Fake Dating', 'Mutual Pining', 'Unrequited Love', 'Happy Ending',
