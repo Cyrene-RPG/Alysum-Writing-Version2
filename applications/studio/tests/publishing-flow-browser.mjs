@@ -79,7 +79,7 @@ try {
         await page.goto(base+'/publish?book=test');await page.getByRole('button',{name:'Remove Harry Potter',exact:true}).waitFor();
         assert.equal(await page.locator('#workSummary').inputValue(),'The original story summary stays intact.');
         await page.locator('#accessSection > summary').click();assert.equal(await page.locator('#pricingChapterTotal').textContent(),'$1.98');
-        await page.locator('#chapterPricingMode').selectOption('mixed');await page.locator('#chapterAddProduct').click();assert.equal(await page.locator('.chapter-mixed-product').count(),1);
+        await page.locator('#chapterPricingMode').selectOption('mixed');await page.locator('#chapterAddProduct').click();assert.equal(await page.locator('.chapter-mixed-product').count(),2);
         await page.locator('#accessSection > summary').click();
         await page.locator('#postBtn').click();await page.waitForURL('**/book?id=test');
         const listing=await page.evaluate(()=>JSON.parse(localStorage.getItem('fixture:listing')));

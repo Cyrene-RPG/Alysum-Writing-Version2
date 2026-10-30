@@ -1,15 +1,23 @@
 import { bindTagPicker } from './tag-picker.js';
 import { genreLabel, matchingGenreKeys } from '/core/publishing/genres.js';
 import { FANDOM_NAMES } from '/core/publishing/fandoms.js';
+import { FICTION_SUGGESTIONS } from '/core/publishing/fiction-suggestions.js';
 import { readWorkTags, THEME_TAGS } from '/core/publishing/work-tags.js';
 
 export function bindPublishingFields(doc, draft, onChange = () => {}) {
     let workType = readWorkTags(draft).workType;
     const pickers = {};
+    function fictionSuggestions(key) {
+        const fandoms = pickers.fandoms?.read() || [];
+        return [...(draft[key] || []), ...fandoms.flatMap(fandom => {
+            const match = Object.keys(FICTION_SUGGESTIONS).find(name => name.toLocaleLowerCase() === fandom.toLocaleLowerCase());
+            return FICTION_SUGGESTIONS[match]?.[key] || [];
+        })];
+    }
     for (const [key, id, label, suggestions] of [
         ['fandoms', 'fandom', 'Fandoms', FANDOM_NAMES],
-        ['characters', 'character', 'Characters', draft.characters || []],
-        ['relationships', 'relationship', 'Relationships', draft.relationships || []],
+        ['characters', 'character', 'Characters', () => fictionSuggestions('characters')],
+        ['relationships', 'relationship', 'Relationships', () => fictionSuggestions('relationships')],
         ['tags', 'theme', 'Tags', THEME_TAGS],
     ]) {
         pickers[key] = bindTagPicker(doc.getElementById(`${id}Picker`), { id: `${id}Search`, label,
@@ -27,8 +35,7 @@ export function bindPublishingFields(doc, draft, onChange = () => {}) {
         workType = input.value; Object.values(pickers).forEach(picker => picker.close()); updateType(); onChange();
     }));
     updateType();
-    // Characters and relationships accept the author's exact names instead of
-    // inventing a supposedly exhaustive catalogue of every fandom's cast.
+    // Suggestions follow selected fandoms; authors can always supply their own.
     for (const key of ['characters', 'relationships']) pickers[key].input.placeholder += ' or type your own';
     return { read(commitPending = false) {
         const selectedGenres = genres.read().map(label => genreKeys.get(label)).filter(Boolean);
