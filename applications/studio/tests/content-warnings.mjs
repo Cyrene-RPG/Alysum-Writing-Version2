@@ -18,7 +18,7 @@ try{
     page.on('pageerror',error=>errors.push(error.message));
     await page.route('**/*',route=>{const url=new URL(route.request().url());if(/supabase|auth\/v1|rest\/v1/.test(url.href))dataRequests.push(url.href);return url.origin===base?route.continue():route.abort();});
     await page.goto(base+'/content-warning-preview');await page.waitForFunction(()=>window.warningPreview);
-    assert.equal(await page.locator('[data-core-warning]').count(),4);
+    assert.equal(await page.locator('[data-core-warning]').count(),3);
     assert.equal(await page.locator('[data-core-none]').isChecked(),false,'Legacy broad warnings do not imply no core warnings');
     assert.match(await page.evaluate(()=>warningPreview.validate()),/core/);
     await page.locator('#postBtn').click();assert.match(await page.locator('#postError').textContent(),/core/);

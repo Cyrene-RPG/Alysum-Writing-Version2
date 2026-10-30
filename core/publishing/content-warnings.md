@@ -1,6 +1,6 @@
 # Publishing content warnings
 
-Publishing requires an explicit core warning decision: Graphic Violence, Major Character Death, Sexual assault / non-consensual sexual activity, Sexual content involving minors, or the mutually exclusive None of these core warnings apply checkbox. There is no author opt-out. Incomplete drafts can be saved; publishing validation runs before cover uploads, access updates, and public writes.
+Publishing requires an explicit core warning decision: Graphic Violence, Major Character Death, Sexual assault / non-consensual sexual activity, or the mutually exclusive None of these core warnings apply checkbox. There is no author opt-out. Incomplete drafts can be saved; publishing validation runs before cover uploads, access updates, and public writes.
 
 The catalog includes 1,214 canonical labels across 42 groups, including retained legacy labels. Search supports aliases. Consensual adult descriptors are separate from abuse and consent warnings. Identity alone is not a warning. Tags do not change the site's content rules.
 

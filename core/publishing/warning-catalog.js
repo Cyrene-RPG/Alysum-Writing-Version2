@@ -33,16 +33,7 @@ export const CORE_WARNINGS = Object.freeze([
       "Noncon",
       "Non-consensual sex"
     ]
-  },
-  {
-    "id": "sexual-content-involving-minors",
-    "label": "Sexual content involving minors",
-    "category": "Core warnings",
-    "kind": "core",
-    "aliases": [
-      "Underage sexual activity",
-      "Underage sex"
-    ]
+
   }
 ]);
 const GROUPS = [
@@ -280,7 +271,7 @@ const DESCRIPTIONS = {
   "bestiality": "Sexual abuse of animals. Separate from consensual adult sexual-content descriptors.",
   "sexual-violence": "Sexual violence or its aftermath. Review whether the core non-consent warning also applies.",
   "incest": "Sexual content or abuse involving relatives. Apply relevant consent and minor-related core warnings as appropriate.",
-  "pedophilia": "Themes involving sexual interest in prepubescent children. Review the core warning for sexual content involving minors where applicable.",
+  "pedophilia": "Themes involving sexual interest in prepubescent children. This warning does not override Alysum’s content rules.",
   "other-phobia-related-content": "Phobia-related depictions not covered by a more specific label. Use the warning note to identify the subject.",
   "vore-themes": "Sexualized fantasy themes involving swallowing or being swallowed, with adult characters. Add graphic violence warnings if graphic bodily harm is depicted.",
   "post-traumatic-stress-disorder": "Depictions or discussion of PTSD.",
@@ -290,7 +281,6 @@ const DESCRIPTIONS = {
   "graphic-violence": "Detailed or graphic depictions of physical violence.",
   "major-character-death": "A major character dies in the work.",
   "sexual-assault-non-consensual-sex": "Sexual activity imposed without consent. Consensual adult roleplay alone is not this warning.",
-  "sexual-content-involving-minors": "Sexual content involving characters who are minors. The label does not override site content rules.",
   "ambiguous-consent": "Consent is uncertain or unclear. Review whether the core non-consent warning also applies.",
   "consensual-non-consent-roleplay": "Negotiated roleplay between consenting adults. Actual violations of consent require the relevant warning.",
   "consensual-restraint": "Restraint agreed to by the adult participants.",
