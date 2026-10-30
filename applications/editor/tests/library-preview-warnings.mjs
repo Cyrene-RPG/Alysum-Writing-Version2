@@ -3,7 +3,7 @@ import {createServer} from 'node:http';
 import {readFile,mkdir} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
 const root=resolve(new URL('../../../',import.meta.url).pathname);
-const html=`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+const html=`<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <script type="importmap">{"imports":{"@alysum/publishing/":"/core/publishing/","@alysum/writing-engine/":"/core/writing-engine/","@alysum/site-appearance/":"/site-appearance/"}}</script>
 <link rel="stylesheet" href="/site-appearance/css-styles/theme.css"><link rel="stylesheet" href="/applications/library/library-css/book.css"><link rel="stylesheet" href="/applications/editor/editor-css/page/preview-book.css">
 <style>body{margin:0;background:#0b1220;color:#fff;--text:#fff;--muted:#9ca3af;--border:#ffffff24;font-family:system-ui}.lib-preview{padding:16px}.book-warn{max-width:100%;overflow-wrap:anywhere}</style></head><body><div class="lib-preview" id="pane"></div><script type="module">
