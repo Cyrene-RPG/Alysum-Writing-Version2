@@ -1,4 +1,5 @@
 import { normalizeWarningState } from "../publishing/content-warnings.js";
+import { publicWorkTags } from "../publishing/work-tags.js";
 import { authorProfileUrl } from "./author-links.js";
 /**
  * Public author profiles: biography pages and reader/library author links.
@@ -220,6 +221,7 @@ export function normalizePublishedBookPreview(row) {
         genres: split.genres,
         rating: String(data.rating || "").trim(),
         tags: split.tags,
+        ...publicWorkTags(data),
         warnings: Array.isArray(data.warnings) ? data.warnings.map(String) : [],
         warningMeta: normalizeWarningState(data.warningMeta,data.warnings),
         followers: Number(data.followers) || 0,

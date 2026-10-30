@@ -8,6 +8,7 @@ import {bindPricingGuide} from '/applications/studio/page-ui/pricing-guide.js';
 import {bindChapterAccess} from '/applications/studio/page-ui/publish-access.js';
 const chapters=[{id:'one',title:'Chapter 1 — A new beginning',content:'word '.repeat(1000)},{id:'two',title:'Chapter 2 — The long road home',content:'word '.repeat(3000)},{id:'three',title:'Chapter 3 — The discovery',content:'word '.repeat(6000)}];
 const $=id=>document.getElementById(id);
+document.querySelectorAll('.pub-section').forEach(node=>node.open=true);
 $('workTitle').value='The Lantern Keeper';$('workSummary').value='A sample manuscript for testing the publishing controls.';
 $('chapterList').innerHTML=chapters.map(ch=>'<label class="pub-chapter"><input type="checkbox" data-chapter-id="'+ch.id+'" checked>'+ch.title+'</label>').join('');
 $('chapterSelect').innerHTML=chapters.map(ch=>'<option>'+ch.title+'</option>').join('');

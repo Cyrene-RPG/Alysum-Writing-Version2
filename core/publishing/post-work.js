@@ -1,3 +1,4 @@
+import { publicWorkTags } from "./work-tags.js";
 import { stripStoryBibleMetadata } from "../encyclopedia/model.js";
 import { normalizeWarningState } from "./content-warnings.js";
 /**
@@ -126,6 +127,7 @@ export function buildLibraryPayload(book, form) {
     return {
         id: book.id,
         bookId: book.id,
+        ...publicWorkTags(form),
         title: String(form.title || book.title || "Untitled").trim() || "Untitled",
         author: String(form.author || "").trim() || "Unknown",
         summary: String(form.summary || "").trim(),

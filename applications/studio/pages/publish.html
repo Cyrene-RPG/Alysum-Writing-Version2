@@ -39,38 +39,85 @@
 <link rel="stylesheet" href="/site-appearance/css-styles/content-warnings.css">
 </head>
 <body>
-    <div class="pub-page">
-        <h1>Post work</h1>
-        <p class="pub-sub">Required fields are marked *. You can save without posting and come back later.</p>
-        <p class="pub-note">This listing uses chapters already in your book. Pick a genre — extra labels go in additional tags.</p>
-
-        <section class="pub-card">
-            <h2>Discovery details</h2>
-            <p class="pub-hint">Help the right readers find your work: choose accurate genres, add a few specific tropes or themes as tags, and keep your rating and content warnings up to date. Your description and released chapter details also appear in the Library.</p>
-            <label>Genre *</label>
-            <p class="pub-hint">First pick is the main genre; you can add two more as secondary and tertiary.</p>
-            <div class="pub-genre-picker" id="genrePicker">
-                <div class="pub-genre-chips" id="genreChips"></div>
-                <input id="genreSearch" type="search" placeholder="Search genres…" autocomplete="off" />
-                <div class="pub-genre-menu" id="genreMenu" hidden></div>
-            </div>
-            <label>Rating *</label>
-            <div class="pub-pills" id="ratingPicker">
-                <label><input type="radio" name="rating" value="general" /> General Audiences</label>
-                <label><input type="radio" name="rating" value="mature" checked /> Mature</label>
-                <label><input type="radio" name="rating" value="explicit" /> Explicit</label>
-            </div>
-            <label>Content warnings *</label>
-            <div class="pub-checks" id="warningPicker"></div>
-            <label for="extraTags">Additional tags</label>
-            <input id="extraTags" type="text" placeholder="Gay, slow burn, found family…" />
-        </section>
-
-        <section class="pub-card">
-            <h2>Work details</h2>
-            <label for="workTitle">Title *</label>
+    <main class="pub-page">
+<header class="pub-header"><div><a class="pub-back" href="/studio">← Back to Studio</a><h1>Post work</h1><p class="pub-sub">Required fields are marked *. Save without posting and come back later.</p></div><fieldset class="pub-work-type"><legend>Work type</legend><div><label><input type="radio" name="workType" value="original" checked><span>Original work</span></label><label><input type="radio" name="workType" value="fanfiction"><span>Fan fiction</span></label></div><p class="pub-hint">Switching keeps your details.</p></fieldset></header><details class="pub-card pub-section" id="storySection"><summary><span class="pub-section-heading">Story details</span><span class="pub-section-summary" data-section-summary="storySection">Title, summary, notes &amp; status</span></summary><div class="pub-section-body">            <label for="workTitle">Title *</label>
             <input id="workTitle" type="text" />
-            <div class="pub-look" id="pubLook">
+            <label for="workSummary">Summary</label>
+            <textarea id="workSummary" placeholder="A few sentences for the library card."></textarea>
+            <label for="workNotesAfter">Notes</label>
+            <textarea id="workNotesAfter" placeholder="Optional notes shown under the synopsis."></textarea>
+            <div class="pub-checks">
+                <label><input type="checkbox" id="workWip" checked /> This is a work in progress</label>
+                <label><input type="checkbox" id="workComplete" /> This work is complete — post all chapters now</label>
+            </div>
+</div></details><details class="pub-card pub-section" id="tagsSection" open><summary><span class="pub-section-heading">Tags &amp; reader information</span><span class="pub-section-summary" data-section-summary="tagsSection"></span></summary><div class="pub-section-body"><div class="pub-metadata"><div class="pub-field" data-fanfiction hidden><label for="fandomSearch">Fandoms *</label><div id="fandomPicker"></div></div><div class="pub-field" data-fanfiction hidden><label for="characterSearch">Characters</label><div id="characterPicker"></div></div><div class="pub-field" data-fanfiction hidden><label for="relationshipSearch">Relationships</label><div id="relationshipPicker"></div></div>
+<div class="pub-field"><label for="genreSearch">Genres *</label><div><p class="pub-hint">First pick is the main genre; add up to two more.</p><div id="genrePicker"></div></div></div>
+<div class="pub-field"><label for="themeSearch">Themes &amp; other tags</label><div id="themePicker"></div></div><input id="extraTags" type="hidden">
+<div class="pub-field pub-warning-field"><label>Content warnings *</label><div id="warningPicker"></div></div>
+<div class="pub-field"><label>Rating *</label><div class="pub-pills" id="ratingPicker"><label><input type="radio" name="rating" value="general"> General Audiences</label><label><input type="radio" name="rating" value="mature" checked> Mature</label><label><input type="radio" name="rating" value="explicit"> Explicit</label></div></div></div></div></details><details class="pub-card pub-section" id="accessSection"><summary><span class="pub-section-heading">Chapters &amp; reader access</span><span class="pub-section-summary" data-section-summary="accessSection">Choose chapters, free access or paid products</span></summary><div class="pub-section-body">        <section class="pub-subsection">
+            <h2>Manuscript</h2>
+            <p class="pub-hint">Select the chapters to post. They are free unless you check them under Locked chapters. Unchecked chapters stay private.</p>
+            <details class="pub-chapters" id="chapterDetails">
+                <summary id="chapterSummary">Chapters to post (0)</summary>
+                <div id="chapterList"></div>
+            </details>
+        </section>        <section class="pub-subsection" id="pricingGuide" aria-labelledby="pricingTitle">
+            <h2 id="pricingTitle">Price calculator</h2>
+            <p class="pub-hint">Calculate chapter prices, a bundle discount and estimated sales revenue from your selected manuscript chapters. Enter your own chapter estimates in the table below. Alysum takes 0% commission. These are recommendations only: your connected Ko-fi or Payhip shop controls the real checkout price.</p>
+            <p class="pub-hint"><strong id="pricingFormat">Published chapters / ongoing story</strong> · <span id="pricingChapterCount">0</span> chapters · <span id="pricingWordCount">0</span> words</p>
+            <div class="access-grid pricing-inputs"><div><label for="pricingDiscount">Whole-book discount target (%)</label><input id="pricingDiscount" type="number" min="0" max="80" value="20"></div><div><label for="pricingCustomPrice">Your planned whole-book price (USD, optional)</label><input id="pricingCustomPrice" type="number" min="0" step="0.01" placeholder="Use suggested price"></div><div><label for="pricingSales">Example number of book sales</label><input id="pricingSales" type="number" min="0" step="1" value="100"></div></div>
+            <p><button type="button" id="pricingRecalculate">Update chapter counts &amp; recalculate</button></p>
+            <p class="pub-hint">Prices update automatically when you change selections or inputs. After saving manuscript edits, tap Update to recalculate here without reloading the page.</p><p id="pricingUpdateStatus" role="status" class="pub-hint"></p>
+            <div class="pricing-results" aria-live="polite" aria-atomic="true">
+                <div><span>Selected chapters separately</span><output id="pricingChapterTotal">$0.00</output></div>
+                <div><span>Suggested bundle price</span><output id="pricingBookSuggestion">$0.00</output></div>
+                <div class="pricing-revenue"><span>Estimated revenue before fees, refunds and taxes</span><output id="pricingEarnings">$0.00</output></div>
+            </div>
+            <p id="pricingNotice" role="status" class="pub-hint"></p>
+            <details><summary>See chapter prices and word counts</summary><div style="overflow-x:auto"><table style="width:100%;text-align:left"><thead><tr><th>Chapter</th><th>Words</th><th>Suggested (USD)</th><th>Your price (USD)</th></tr></thead><tbody id="pricingChapterRows"></tbody></table></div></details>
+            <p class="pub-hint">For serialized work, suggestions cover the selected published chapters, not unpublished future chapters. Chapter estimates default to word-count suggestions. Individual USD chapter prices also fill these estimates; other currencies must be estimated in USD here. Calculator edits do not change shop checkout prices or create products.</p>
+        </section>        <section class="pub-subsection" id="chapterAccessCard">
+            <h2>Paid chapters</h2>
+            <p class="pub-hint">Readers pay you through your own Ko-fi or Payhip shop. Alysum confirms the purchase and unlocks their chapters.</p>
+            <p id="chapterAccessUnavailable" role="status">Checking chapter access…</p>
+            <a id="chapterAccessSetup" class="payment-back" href="/applications/studio/pages/payment-setup" hidden>Site owner: prepare chapter access</a>
+            <fieldset id="chapterAccessFields" class="payment-fields" hidden>
+                <label for="chapterConnection">1. Choose your shop</label><select id="chapterConnection"><option value="">Choose your connected shop</option></select>
+                <p><a class="payment-back" id="chapterShopSettings" href="/applications/studio/pages/connected-payments">Connect or manage your shop →</a></p>
+                <label for="chapterPricingMode">2. Sell together or separately</label>
+                <select id="chapterPricingMode"><option value="bundle">Together (one product)</option><option value="individual">Separately (per chapter)</option><option value="mixed">Bundles + single chapters</option></select>
+                <p id="chapterSaleInstructions" class="pub-hint">Create one shop product for the checked chapters, then paste its link and price below.</p>
+                <p id="chapterPricingSetup" class="pub-hint" hidden>Individual prices need the updated <a href="/applications/studio/pages/payment-setup">chapter access setup</a>. Existing bundle prices still work.</p>
+                <label for="chapterCurrency">Currency</label><select id="chapterCurrency"><option>USD</option><option>GBP</option><option>EUR</option><option>CAD</option><option>AUD</option></select>
+                <h3 class="chapter-payment-step">3. Choose paid chapters</h3>
+                <p class="pub-hint">Check the chapters a purchase should unlock. Other chapters selected under Manuscript stay free.</p>
+                <div id="chapterLocks" class="payment-chapters"></div>
+                <p id="chapterMixedSetup" class="pub-hint" hidden>To mix bundles and single chapters, run the updated <a href="/applications/studio/pages/payment-setup">chapter access setup</a>. Your current products still work.</p>
+                <div id="chapterMixedFields" hidden>
+                    <div id="chapterMixedProducts"></div>
+                    <button type="button" id="chapterAddProduct">Add another shop product</button>
+                    <p class="pub-hint">New chapters stay outside existing products until you select them. Earlier purchases keep the chapters they originally unlocked.</p>
+                </div>
+                <p><button type="button" id="chapterUseCalculator">Fill prices from calculator</button></p>
+                <p id="chapterCalculatorHint" class="pub-hint">Fills prices for checked chapters only. Set the same amounts in your shop; this button does not change shop prices.</p>
+                <p id="chapterCalculatorStatus" class="pub-hint" role="status"></p>
+                <div id="chapterBundleFields">
+                    <label for="chapterProduct">Shop product link for these chapters</label><input id="chapterProduct" type="url" placeholder="https://ko-fi.com/s/your-product" maxlength="2000">
+                    <label for="chapterMinimum">Price charged by your shop</label><input id="chapterMinimum" type="number" min="0.50" max="1000" step="0.01" inputmode="decimal" placeholder="3.00">
+                </div>
+                <details class="chapter-payment-help"><summary>How purchases unlock chapters</summary>
+                    <p class="pub-hint">Use one-time shop products. A shop product can contain one chapter or a bundle. In mixed mode, choose its chapters on its product card. Tips, gifts and memberships do not unlock chapters.</p>
+                    <p class="pub-hint">Readers use the same email as their verified Alysum account at checkout. A confirmed purchase unlocks only its included chapters at that time.</p>
+                    <p class="pub-hint">Prices here must match your shop. Discounts below these amounts will not unlock access. Payment is handled by your shop.</p>
+                </details>
+            </fieldset>
+        </section>        <section class="pub-subsection" id="purchaseLinkCard">
+            <h2>Sell through your own page</h2>
+            <p class="pub-hint">Have a paid book, chapters or membership elsewhere? Add your own shop or membership link, such as Ko-fi, Patreon, Payhip or your website.</p>
+            <label for="purchaseUrl">Purchase link (optional)</label>
+            <input id="purchaseUrl" type="url" inputmode="url" maxlength="2000" placeholder="https://your-shop.com/your-book" aria-describedby="purchaseLinkHint">
+            <p class="pub-hint" id="purchaseLinkHint">Readers will see “Buy from author” on your book page. Payment and paid content are handled on your linked service. Buying there does not unlock chapters on Alysum.</p>
+        </section></div></details><details class="pub-card pub-section" id="appearanceSection"><summary><span class="pub-section-heading">Listing appearance</span><span class="pub-section-summary" data-section-summary="appearanceSection">Cover, colors &amp; background</span></summary><div class="pub-section-body">            <div class="pub-look" id="pubLook">
                 <div class="pub-look-head">
                     <button type="button" class="pub-look-reset" data-book-look-all-reset>Reset</button>
                     <p class="pub-look-title">Listing look</p>
@@ -103,14 +150,6 @@
                 </div>
             </div>
             <p class="pub-hint">Optional. Visitors keep their Appearance unless you set these. Library page only — not chapters.</p>
-            <label for="workSummary">Summary</label>
-            <textarea id="workSummary" placeholder="A few sentences for the library card."></textarea>
-            <label for="workNotesAfter">Notes</label>
-            <textarea id="workNotesAfter" placeholder="Optional notes shown under the synopsis."></textarea>
-            <div class="pub-checks">
-                <label><input type="checkbox" id="workWip" checked /> This is a work in progress</label>
-                <label><input type="checkbox" id="workComplete" /> This work is complete — post all chapters now</label>
-            </div>
             <label for="workCoverFile">Cover</label>
             <input id="workCoverFile" type="file" accept="image/*" />
             <p class="pub-hint">Whole image for a normal cover. Wide banner also needs a 2:3 Library crop for the shelf — this page will switch you to that frame.</p>
@@ -147,16 +186,7 @@
                     </figure>
                 </div>
             </div>
-        </section>
-
-        <section class="pub-card">
-            <h2>Manuscript</h2>
-            <p class="pub-hint">Select the chapters to post. They are free unless you check them under Locked chapters. Unchecked chapters stay private.</p>
-            <details class="pub-chapters" id="chapterDetails">
-                <summary id="chapterSummary">Chapters to post (0)</summary>
-                <div id="chapterList"></div>
-            </details>
-            <details class="pub-chapters" id="manuscriptPreview">
+</div></details><details class="pub-card pub-section" id="previewSection"><summary><span class="pub-section-heading">Preview</span><span class="pub-section-summary" data-section-summary="previewSection">Your listing and chapter preview</span></summary><div class="pub-section-body">            <details class="pub-chapters" id="manuscriptPreview">
                 <summary>Chapter preview</summary>
                 <label for="chapterSelect">Choose a chapter</label>
                 <select id="chapterSelect"></select>
@@ -168,77 +198,8 @@
                 <div class="pub-preview-body writer-page" id="previewBody">Select a chapter.</div>
             </div>
             </details>
-        </section>
-
-        <section class="pub-card" id="pricingGuide" aria-labelledby="pricingTitle">
-            <h2 id="pricingTitle">Price calculator</h2>
-            <p class="pub-hint">Calculate chapter prices, a bundle discount and estimated sales revenue from your selected manuscript chapters. Enter your own chapter estimates in the table below. Alysum takes 0% commission. These are recommendations only: your connected Ko-fi or Payhip shop controls the real checkout price.</p>
-            <p class="pub-hint"><strong id="pricingFormat">Published chapters / ongoing story</strong> · <span id="pricingChapterCount">0</span> chapters · <span id="pricingWordCount">0</span> words</p>
-            <div class="access-grid pricing-inputs"><div><label for="pricingDiscount">Whole-book discount target (%)</label><input id="pricingDiscount" type="number" min="0" max="80" value="20"></div><div><label for="pricingCustomPrice">Your planned whole-book price (USD, optional)</label><input id="pricingCustomPrice" type="number" min="0" step="0.01" placeholder="Use suggested price"></div><div><label for="pricingSales">Example number of book sales</label><input id="pricingSales" type="number" min="0" step="1" value="100"></div></div>
-            <p><button type="button" id="pricingRecalculate">Update chapter counts &amp; recalculate</button></p>
-            <p class="pub-hint">Prices update automatically when you change selections or inputs. After saving manuscript edits, tap Update to recalculate here without reloading the page.</p><p id="pricingUpdateStatus" role="status" class="pub-hint"></p>
-            <div class="pricing-results" aria-live="polite" aria-atomic="true">
-                <div><span>Selected chapters separately</span><output id="pricingChapterTotal">$0.00</output></div>
-                <div><span>Suggested bundle price</span><output id="pricingBookSuggestion">$0.00</output></div>
-                <div class="pricing-revenue"><span>Estimated revenue before fees, refunds and taxes</span><output id="pricingEarnings">$0.00</output></div>
-            </div>
-            <p id="pricingNotice" role="status" class="pub-hint"></p>
-            <details><summary>See chapter prices and word counts</summary><div style="overflow-x:auto"><table style="width:100%;text-align:left"><thead><tr><th>Chapter</th><th>Words</th><th>Suggested (USD)</th><th>Your price (USD)</th></tr></thead><tbody id="pricingChapterRows"></tbody></table></div></details>
-            <p class="pub-hint">For serialized work, suggestions cover the selected published chapters, not unpublished future chapters. Chapter estimates default to word-count suggestions. Individual USD chapter prices also fill these estimates; other currencies must be estimated in USD here. Calculator edits do not change shop checkout prices or create products.</p>
-        </section>
-
-        <section class="pub-card" id="chapterAccessCard">
-            <h2>Paid chapters</h2>
-            <p class="pub-hint">Readers pay you through your own Ko-fi or Payhip shop. Alysum confirms the purchase and unlocks their chapters.</p>
-            <p id="chapterAccessUnavailable" role="status">Checking chapter access…</p>
-            <a id="chapterAccessSetup" class="payment-back" href="/applications/studio/pages/payment-setup" hidden>Site owner: prepare chapter access</a>
-            <fieldset id="chapterAccessFields" class="payment-fields" hidden>
-                <label for="chapterConnection">1. Choose your shop</label><select id="chapterConnection"><option value="">Choose your connected shop</option></select>
-                <p><a class="payment-back" id="chapterShopSettings" href="/applications/studio/pages/connected-payments">Connect or manage your shop →</a></p>
-                <label for="chapterPricingMode">2. Sell together or separately</label>
-                <select id="chapterPricingMode"><option value="bundle">Together (one product)</option><option value="individual">Separately (per chapter)</option><option value="mixed">Bundles + single chapters</option></select>
-                <p id="chapterSaleInstructions" class="pub-hint">Create one shop product for the checked chapters, then paste its link and price below.</p>
-                <p id="chapterPricingSetup" class="pub-hint" hidden>Individual prices need the updated <a href="/applications/studio/pages/payment-setup">chapter access setup</a>. Existing bundle prices still work.</p>
-                <label for="chapterCurrency">Currency</label><select id="chapterCurrency"><option>USD</option><option>GBP</option><option>EUR</option><option>CAD</option><option>AUD</option></select>
-                <h3 class="chapter-payment-step">3. Choose paid chapters</h3>
-                <p class="pub-hint">Check the chapters a purchase should unlock. Other chapters selected under Manuscript stay free.</p>
-                <div id="chapterLocks" class="payment-chapters"></div>
-                <p id="chapterMixedSetup" class="pub-hint" hidden>To mix bundles and single chapters, run the updated <a href="/applications/studio/pages/payment-setup">chapter access setup</a>. Your current products still work.</p>
-                <div id="chapterMixedFields" hidden>
-                    <div id="chapterMixedProducts"></div>
-                    <button type="button" id="chapterAddProduct">Add another shop product</button>
-                    <p class="pub-hint">New chapters stay outside existing products until you select them. Earlier purchases keep the chapters they originally unlocked.</p>
-                </div>
-                <p><button type="button" id="chapterUseCalculator">Fill prices from calculator</button></p>
-                <p id="chapterCalculatorHint" class="pub-hint">Fills prices for checked chapters only. Set the same amounts in your shop; this button does not change shop prices.</p>
-                <p id="chapterCalculatorStatus" class="pub-hint" role="status"></p>
-                <div id="chapterBundleFields">
-                    <label for="chapterProduct">Shop product link for these chapters</label><input id="chapterProduct" type="url" placeholder="https://ko-fi.com/s/your-product" maxlength="2000">
-                    <label for="chapterMinimum">Price charged by your shop</label><input id="chapterMinimum" type="number" min="0.50" max="1000" step="0.01" inputmode="decimal" placeholder="3.00">
-                </div>
-                <details class="chapter-payment-help"><summary>How purchases unlock chapters</summary>
-                    <p class="pub-hint">Use one-time shop products. A shop product can contain one chapter or a bundle. In mixed mode, choose its chapters on its product card. Tips, gifts and memberships do not unlock chapters.</p>
-                    <p class="pub-hint">Readers use the same email as their verified Alysum account at checkout. A confirmed purchase unlocks only its included chapters at that time.</p>
-                    <p class="pub-hint">Prices here must match your shop. Discounts below these amounts will not unlock access. Payment is handled by your shop.</p>
-                </details>
-            </fieldset>
-        </section>
-
-        <section class="pub-card" id="purchaseLinkCard">
-            <h2>Sell through your own page</h2>
-            <p class="pub-hint">Have a paid book, chapters or membership elsewhere? Add your own shop or membership link, such as Ko-fi, Patreon, Payhip or your website.</p>
-            <label for="purchaseUrl">Purchase link (optional)</label>
-            <input id="purchaseUrl" type="url" inputmode="url" maxlength="2000" placeholder="https://your-shop.com/your-book" aria-describedby="purchaseLinkHint">
-            <p class="pub-hint" id="purchaseLinkHint">Readers will see “Buy from author” on your book page. Payment and paid content are handled on your linked service. Buying there does not unlock chapters on Alysum.</p>
-        </section>
-        <div class="pub-strip" id="previewStrip"></div>
-        <div class="pub-actions">
-            <button type="button" class="pub-ghost" id="saveDraftBtn">Save without posting</button>
-            <button type="button" class="pub-primary" id="postBtn">Post work</button>
-        </div>
-        <p class="pub-status" id="pubStatus" role="status"></p>
-        <p class="pub-error" id="postError" hidden></p>
-    </div>
+<div class="pub-strip" id="previewStrip"></div></div></details><div class="pub-footer"><p class="pub-status" id="pubStatus" role="status"></p><div class="pub-actions"><button type="button" class="pub-ghost" id="saveDraftBtn">Save without posting</button><button type="button" class="pub-primary" id="postBtn">Post work</button></div></div><p class="pub-error" id="postError" role="alert" tabindex="-1" hidden></p>
+    </main>
     <script type="module" src="/js/studio/publish.js?v=61"></script>
 </body>
 </html>

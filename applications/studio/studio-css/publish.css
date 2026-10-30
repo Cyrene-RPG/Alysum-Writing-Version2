@@ -9,7 +9,7 @@ body {
     color: var(--text);
 }
 .pub-page {
-    width: min(760px, 100%);
+    width: 100%;
     margin: 0 auto;
     padding: 28px 20px 64px;
     color: var(--text);
@@ -509,3 +509,72 @@ h1 {
 .mixed-chapter-choices input { flex: 0 0 auto; }
 #chapterMixedFields button { min-height: 44px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border, #ffffff30); color: var(--text); background: var(--alysum-ui-raised, #243047); font: inherit; cursor: pointer; }
 #chapterMixedFields button:focus-visible { outline: 2px solid var(--accent, #8cbcff); outline-offset: 3px; }
+
+/* Publishing flow: use the desktop viewport, retaining the active Alysum theme. */
+.pub-page { padding: 28px 32px 64px; }
+.pub-header { display: flex; justify-content: space-between; gap: 24px; align-items: center; }
+.pub-back { display: inline-block; color: var(--muted); margin-bottom: 16px; font-size: 14px; }
+.pub-work-type { border: 0; padding: 0; margin: 0; min-width: 280px; flex-shrink: 0; }
+.pub-work-type legend { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+.pub-work-type > div { display: flex; gap: 6px; }
+.pub-work-type label { flex: 1; position: relative; cursor: pointer; }
+.pub-work-type input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; z-index: 1; cursor: pointer; }
+.pub-work-type span { display: grid; place-items: center; min-height: 44px; padding: 10px 16px; white-space: nowrap; border: 1px solid var(--border, #ffffff30); border-radius: 8px; background: var(--alysum-ui-chrome, #0b1220); color: var(--text); }
+.pub-work-type input:checked + span { background: var(--accent, #6d28d9); color: var(--accent-text, #fff); }
+.pub-work-type input:focus-visible + span { outline: 2px solid var(--text); outline-offset: 3px; }
+.pub-section { padding: 0; }
+.pub-section > summary { position: relative; padding: 16px 22px 16px 48px; cursor: pointer; list-style: none; min-height: 64px; }
+.pub-section > summary::-webkit-details-marker { display: none; }
+.pub-section > summary::before { content: '›'; position: absolute; left: 20px; top: 17px; font-size: 24px; }
+.pub-section[open] > summary::before { transform: rotate(90deg); }
+.pub-section-heading { display: block; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.pub-section-summary { display: block; margin-top: 6px; color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.pub-section-summary:empty { display: none; }
+.pub-section-body { padding: 0 22px 22px; min-width: 0; }
+.pub-subsection { padding: 20px 0; border-top: 1px solid var(--border, #ffffff20); min-width: 0; }
+.pub-metadata { display: grid; gap: 20px; }
+.pub-field { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 20px; align-items: start; min-width: 0; }
+.pub-field[hidden] { display: none; }
+.pub-field > label { margin: 12px 0 0; }
+.pub-field > div { min-width: 0; }
+.pub-field .pub-hint { margin: 0 0 8px; }
+.pub-tag-picker { position: relative; min-width: 0; }
+.pub-tag-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.pub-tag-chips:empty { display: none; }
+.pub-tag-chips button { display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; overflow-wrap: anywhere; padding: 7px 12px; border: 1px solid var(--border, #ffffff30); border-radius: 999px; background: var(--alysum-ui-raised, #2a2a2a); color: var(--text); font: inherit; font-size: 14px; cursor: pointer; text-align: left; }
+.pub-tag-picker input[type=search] { display: block; width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--border, #ffffff30); border-radius: 8px; background: var(--alysum-ui-chrome, #0b1220); color: var(--text); font: inherit; }
+.pub-tag-results { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; right: 0; max-height: 300px; overflow-y: auto; border: 1px solid var(--border, #ffffff30); border-radius: 8px; background: var(--alysum-ui-panel, #111827); box-shadow: 0 12px 24px #0006; }
+.pub-tag-results[hidden] { display: none; }
+.pub-tag-results [role=option] { min-height: 44px; padding: 12px; cursor: pointer; overflow-wrap: anywhere; }
+.pub-tag-results [role=option]:is(:hover,[aria-selected=true]) { background: color-mix(in srgb, var(--accent, #6d28d9) 35%, var(--alysum-ui-panel, #111827)); }
+.pub-tag-results p { margin: 12px; color: var(--muted); }
+.pub-tag-status { display: block; font-size: 13px; color: var(--muted); }
+.pub-tag-status:empty { display: none; }
+.pub-card :is(button,input,select,summary):focus-visible { outline: 2px solid var(--accent, #7c3aed); outline-offset: 3px; }
+.pub-card :is(input[type=text],input[type=url],input[type=search],select) { min-height: 44px; }
+.pub-pills label { min-height: 44px; }
+.pub-footer { display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+.pub-footer .pub-actions { margin: 0; }
+.pub-footer .pub-actions button { min-height: 44px; }
+.pub-card input[type=file] { max-width: 100%; }
+.warning-picker-compact > details { margin: 10px 0; }
+.warning-picker-compact summary { min-height: 44px; padding: 12px 0; cursor: pointer; }
+.warning-picker-compact .warning-results { max-height: 320px; overflow-y: auto; }
+.warning-picker-compact .warning-selected:has([data-warning-selected] > p:only-child) { margin-top: 8px; }
+@media (max-width: 700px) {
+    .pub-page { padding: 20px 16px 48px; }
+    .pub-header { flex-direction: column; align-items: stretch; gap: 12px; }
+    .pub-work-type { min-width: 0; }
+    .pub-field { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    .pub-field > label { margin: 0; }
+    .pub-section-body { padding: 0 16px 16px; }
+    .pub-section > summary { padding-right: 16px; }
+    .pub-card :is(input[type=text],input[type=url],input[type=search],textarea,select) { font-size: 16px; }
+    .pub-footer { flex-direction: column; align-items: stretch; }
+    .pub-footer .pub-actions { display: flex; flex-direction: column; }
+    .pub-footer .pub-actions button { width: 100%; min-height: 44px; }
+}
+
+.warning-picker-compact .warning-selected:has([data-warning-selected] > p:only-child) { display: none; }
+.warning-picker-compact [data-warning-status]:empty { display: none; }
+.warning-picker-compact button { min-height: 44px; }

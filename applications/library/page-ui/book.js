@@ -88,7 +88,15 @@ function paintGenres(work, owner) {
 }
 
 function paintTags(work, owner) {
-    const tags = work.tags || [];
+    const tags = [
+        ...(work.workType === 'fanfiction' ? [
+            'Fan fiction',
+            ...(work.fandoms || []).map(value => `Fandom: ${value}`),
+            ...(work.characters || []).map(value => `Character: ${value}`),
+            ...(work.relationships || []).map(value => `Relationship: ${value}`),
+        ] : []),
+        ...(work.tags || []),
+    ];
     const el = document.getElementById("bookTags");
     const label = document.getElementById("tagsLabel");
     const chips = tags.map((tag) => `<span class="book-tag">${escapeHtml(tag)}</span>`);
