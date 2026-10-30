@@ -1,6 +1,7 @@
 import { listBodyChaptersWithDepth } from "@alysum/writing-engine/manuscript.js?v=6";
 import { genreLabel, matchingGenreKeys, toggleGenreSelection } from "@alysum/publishing/genres.js?v=4";
-import { CONTENT_WARNINGS, RATINGS, toggleContentWarning } from "@alysum/publishing/publish-meta.js?v=7";
+import { RATINGS } from "@alysum/publishing/publish-meta.js?v=7";
+import { normalizeWarningState, warningLabels } from "@alysum/publishing/content-warnings.js";
 import { isLibraryListed, readLocalLibraryListings } from "@alysum/publishing/post-work.js?v=8";
 import { applyVisitListingLook, applyVisitSiteAccent, applyVisitTitleColor } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=10";
 import { isFullCoverCrop, libraryCardCrop, coverCropForImage } from "@alysum/publishing/cover-upload.js?v=10";
@@ -46,7 +47,7 @@ export function previewBookHtml() {
                     <div class="book-tags" id="libTags"></div>
                     <p class="book-label">Rating</p>
                     <div class="book-tags" id="libRating"></div>
-                    <p class="book-label">Content warnings</p>
+                    <p class="book-label" id="libWarnsLabel">Content warnings</p>
                     <div class="book-warns" id="libWarns"></div>
                     <div class="book-row-head">
                         <p class="book-label">Synopsis</p>
@@ -202,9 +203,12 @@ export function paintPreviewBook(pane, { book, meta, expanded, editingSynopsis, 
         ).join("");
     }
     if (warnsEl) {
-        const on = new Set(meta.warnings || []);
-        warnsEl.innerHTML = CONTENT_WARNINGS.map((item) =>
-            `<button type="button" class="book-warn${on.has(item) ? " is-on" : ""}" data-preset="${escapeHtml(item)}"><span class="lbl">${escapeHtml(item)}</span></button>`
+        const selected = warningLabels(normalizeWarningState(meta.warningMeta, meta.warnings));
+        warnsEl.hidden = !selected.length;
+        const label = pane.querySelector('#libWarnsLabel');
+        if (label) label.hidden = !selected.length;
+        warnsEl.innerHTML = selected.map((item) =>
+            `<span class="book-warn is-on"><span class="lbl">${escapeHtml(item)}</span></span>`
         ).join("");
     }
     if (synopsisEl) {
@@ -331,13 +335,6 @@ export function bindPreviewBook(pane, { saveMeta, paint, metaFromBook, openManag
         const btn = event.target.closest("[data-rating]");
         if (!btn) return;
         saveMeta({ rating: btn.dataset.rating });
-        paint();
-    });
-    pane.querySelector("#libWarns")?.addEventListener("click", (event) => {
-        const btn = event.target.closest("[data-preset]");
-        if (!btn) return;
-        const { meta } = metaFromBook();
-        saveMeta({ warnings: toggleContentWarning(meta.warnings, btn.dataset.preset) });
         paint();
     });
 }
