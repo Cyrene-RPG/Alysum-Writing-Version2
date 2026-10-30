@@ -222,6 +222,10 @@ export async function handlePaidAccess(request, env, injected = {}) {
             const reader = await user(request);
             const input = await readInput();
             const offer = await findOffer(input.edition);
+            if (offer.source_book_id) {
+                const [source] = await db('books', { query: { id: `eq.${offer.source_book_id}`, user_id: `eq.${offer.owner_id}`, select: 'publish_meta', limit: 1 } });
+                if (readWorkTags(source?.publish_meta || {}).workType === 'fanfiction') fail(400, 'Fan fiction is not accepting paid purchases.');
+            }
             if (reader.id === offer.owner_id) fail(400, 'The author already has access. Use a separate reader account to checkout.');
             const stripeAccount = await accountFor(offer.owner_id);
             if (stripeAccount !== offer.stripe_account) fail(409, 'The author changed payment accounts. This edition is not accepting new purchases.');
