@@ -54,7 +54,7 @@ try {
         await page.locator('[name=workType][value=original]').check();assert.equal(await fandom.isVisible(),false);
         await page.locator('[name=workType][value=fanfiction]').check();
         assert.equal(await page.getByRole('button',{name:'Remove Harry Potter',exact:true}).count(),1,'switch preserves fandoms');
-        await page.getByRole('button',{name:'Remove Merlin',exact:true}).click();
+        await page.getByRole('button',{name:'Remove Merlin (TV)',exact:true}).click();
         await page.locator('#warningSearch').fill('violence');
         assert.ok(await page.locator('#warningResults button').count()<=8,'warning matches stay compact');
         await page.locator('#warningSearch').fill('');
