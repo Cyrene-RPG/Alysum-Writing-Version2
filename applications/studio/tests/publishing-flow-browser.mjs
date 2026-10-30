@@ -60,6 +60,7 @@ try {
         await page.locator('#warningSearch').fill('');
         await page.locator('.warning-picker-compact > details').first().locator('summary').click();
         await page.locator('[data-core-none]').check();
+        assert.match(await page.locator('.warning-picker-compact > details').first().locator('summary').textContent(),/confirmed/);
         await page.locator('.warning-picker-compact > details').first().locator('summary').click();
         await page.locator('#themeSearch').fill('Canon');await page.locator('#themeSearch').press('ArrowDown');
         assert.equal(await page.locator('#themeSearch').getAttribute('aria-expanded'),'true');
@@ -69,6 +70,7 @@ try {
         await page.screenshot({path:`${out}/${name}-${width}-publishing.png`,fullPage:true});
         // Dismiss query before saving; pending custom input is tested below.
         await page.locator('#themeSearch').fill('');await page.locator('#themeSearch').press('Escape');
+        await page.screenshot({path:`${out}/${name}-${width}-closed-search.png`,fullPage:true});
         await page.locator('#storySection > summary').click();await page.locator('#workSummary').fill('The original story summary stays intact.');
         await page.locator('#themeSearch').fill('Custom story tag');
         await page.locator('#saveDraftBtn').click();
