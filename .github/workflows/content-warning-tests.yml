@@ -7,6 +7,9 @@ on:
       - 'core/**'
       - 'applications/studio/**'
       - 'applications/library/**'
+      - 'applications/editor/page-ui/preview-book.js'
+      - 'applications/editor/editor-css/page/preview-book.css'
+      - 'applications/editor/tests/library-preview-warnings.mjs'
       - 'site-appearance/**'
       - '.github/workflows/content-warning-tests.yml'
 permissions:
@@ -34,6 +37,10 @@ jobs:
       - run: npm install --prefix "$RUNNER_TEMP/warning-browser" playwright@1.61.1
       - run: '"$RUNNER_TEMP/warning-browser/node_modules/.bin/playwright" install --with-deps ${{ matrix.browser }}'
       - run: node applications/studio/tests/content-warnings.mjs
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/warning-browser/node_modules/playwright/index.mjs
+          WARNING_BROWSER: ${{ matrix.browser }}
+      - run: node applications/editor/tests/library-preview-warnings.mjs
         env:
           PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/warning-browser/node_modules/playwright/index.mjs
           WARNING_BROWSER: ${{ matrix.browser }}

@@ -150,12 +150,22 @@
 .lib-preview.is-listed .book-add-ch {
     display: none !important;
 }
-.lib-preview .book-tag.is-on,
-.lib-preview .book-warn.is-on {
+.lib-preview .book-tag.is-on {
     border-color: var(--accent, #7c3aed);
     background: color-mix(in srgb, var(--accent, #7c3aed) 22%, transparent);
     color: var(--text);
 }
+.lib-preview .book-warn {
+    background: color-mix(in srgb, var(--alysum-ui-chrome, #141414) 45%, transparent);
+    border: 1px solid var(--border, #ffffff24);
+    color: var(--muted, #9ca3af);
+}
+.lib-preview .book-warn.is-on {
+    background: color-mix(in srgb, #d9722c 14%, transparent);
+    border-color: color-mix(in srgb, #d9722c 35%, transparent);
+    color: #d9722c;
+}
+.lib-preview #libWarns[hidden], .lib-preview #libWarnsLabel[hidden] { display: none; }
 .lib-preview .book-tag.add input {
     width: 88px;
     border: 0;
