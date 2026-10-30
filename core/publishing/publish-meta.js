@@ -1,3 +1,4 @@
+import { readWorkTags } from "./work-tags.js";
 /**
  * Shared publish draft on books.publish_meta. Preview and Publish read/write this.
  */
@@ -89,6 +90,7 @@ export function readPublishDraft(book) {
     const draft = asIdList(raw.draftChapterIds);
     const split = partitionGenresAndTags(normalizeGenreList(raw), asStringList(raw.tags));
     return {
+        ...readWorkTags(raw),
         author: String(raw.author || ""),
         synopsis: String(raw.synopsis || ""),
         purchaseUrl: normalizePurchaseUrl(raw.purchaseUrl),

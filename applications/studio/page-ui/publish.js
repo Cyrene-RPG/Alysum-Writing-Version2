@@ -1,3 +1,5 @@
+import { bindPublishingFields } from "./publishing-fields.js";
+import { bindPublishingLayout } from "./publishing-layout.js";
 import { bindPricingGuide } from "./pricing-guide.js";
 import { bindChapterAccess } from "./publish-access.js";
 import { supabase } from "@alysum/authentication/client.js";
@@ -7,7 +9,7 @@ import { loadPublicationBook } from "@alysum/publishing/publication-save.js";
 import { listBodyChapters, listBodyChaptersWithDepth } from "@alysum/writing-engine/manuscript.js?v=6";
 import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
 import { peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
-import { genreLabel, matchingGenreKeys, toggleGenreSelection } from "@alysum/publishing/genres.js?v=4";
+import { genreLabel } from "@alysum/publishing/genres.js?v=4";
 import {
     clearDraftCover,
     defaultCrops,
@@ -115,6 +117,8 @@ async function boot() {
     }
     let chapterAccess = null;
     let warningPicker = null;
+    let publishingFields = null;
+    let publishingLayout = null;
     const profile = peekWorkspaceProfile(session);
     const draft = readPublishDraft(book);
     const listed = Boolean(await fetchLibraryListingId(supabase, book.id)) || isLibraryListed(book);
@@ -240,7 +244,7 @@ async function boot() {
         paintCrops();
     }
 
-    function readForm() {
+    function readForm(commitPending = false) {
         const tags = String(document.getElementById("extraTags")?.value || "")
             .split(",")
             .map((part) => part.trim())
@@ -269,6 +273,7 @@ async function boot() {
             coverWideEnabled: wideOn,
             complete: Boolean(document.getElementById("workComplete")?.checked),
             chapterIds: selected,
+            ...(publishingFields?.read(commitPending) || {}),
             ...readPageLook(),
         };
     }
@@ -293,7 +298,7 @@ async function boot() {
                 book,
                 publicationBaseline,
                 chapters,
-                readForm,
+                readForm: () => readForm(true),
                 postError,
                 status,
                 loadDraftCoverFile,
@@ -323,32 +328,9 @@ async function boot() {
         ].join(" · ");
     }
 
-    let genreQuery = "";
-
-    function paintGenrePicker() {
-        const chips = document.getElementById("genreChips");
-        const menu = document.getElementById("genreMenu");
-        if (chips) {
-            chips.innerHTML = selectedGenres.map((key, ix) =>
-                `<button type="button" class="is-on" data-genre="${key}" data-role="${ix + 1}">${genreLabel(key)}</button>`
-            ).join("");
-        }
-        if (menu) {
-            const keys = matchingGenreKeys(genreQuery).filter((key) => !selectedGenres.includes(key));
-            menu.innerHTML = keys.length
-                ? keys.map((key) => `<button type="button" data-genre="${key}">${genreLabel(key)}</button>`).join("")
-                : `<p class="pub-hint">No matching genres.</p>`;
-        }
-    }
-
-    function applyGenre(key) {
-        selectedGenres = toggleGenreSelection(selectedGenres, key);
-        paintGenrePicker();
-        paintStrip();
-    }
-
     warningPicker = bindWarningPicker(document, {
         initialState: draft.warningMeta,
+        compact: true,
         chapters,
         getSelected: () => selectedWarnings,
         setSelected(next) { selectedWarnings = next; },
@@ -363,8 +345,6 @@ async function boot() {
     if (workSummary) workSummary.value = draft.synopsis || "";
     const workNotesAfter = document.getElementById("workNotesAfter");
     if (workNotesAfter) workNotesAfter.value = draft.notesAfter || "";
-    const extraTags = document.getElementById("extraTags");
-    if (extraTags) extraTags.value = draft.tags.join(", ");
     void loadDraftCover(book.id).then(async (localSrc) => {
         const src = localSrc || peekCoverSrc(coverUrl) || (coverUrl ? await rememberCover(coverUrl) : "");
         if (src) showEditor(src);
@@ -378,28 +358,7 @@ async function boot() {
         if (radio) radio.checked = true;
     }
 
-    const picker = document.getElementById("genrePicker");
-    const search = document.getElementById("genreSearch");
-    const menu = document.getElementById("genreMenu");
-    picker?.addEventListener("click", (event) => {
-        const btn = event.target.closest("[data-genre]");
-        if (!btn) return;
-        applyGenre(btn.dataset.genre);
-        if (menu && !document.getElementById("genreChips")?.contains(btn)) menu.hidden = true;
-    });
-    search?.addEventListener("input", (event) => {
-        genreQuery = event.target.value;
-        paintGenrePicker();
-        if (menu) menu.hidden = false;
-    });
-    search?.addEventListener("focus", () => {
-        if (menu) menu.hidden = false;
-    });
-    document.addEventListener("click", (event) => {
-        if (!picker || picker.contains(event.target)) return;
-        if (menu) menu.hidden = true;
-    });
-    paintGenrePicker();
+    publishingFields = bindPublishingFields(document, draft, () => { paintStrip(); publishingLayout?.paint(); });
 
     wideCheck?.addEventListener("change", () => {
         wideOn = Boolean(wideCheck.checked);
@@ -528,6 +487,7 @@ async function boot() {
         paintChapterSummary();
         paintStrip();
     });
+    publishingLayout = bindPublishingLayout(document, readForm);
     paintStrip();
 
 }

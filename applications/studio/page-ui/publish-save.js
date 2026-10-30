@@ -1,3 +1,4 @@
+import { readWorkTags } from "@alysum/publishing/work-tags.js";
 import { normalizeWarningState,validateWarningState } from "@alysum/publishing/content-warnings.js";
 import { normalizePurchaseUrl } from "@alysum/publishing/publish-meta.js";
 import { needsPromotedChapterSelection } from "/core/writing-engine/promote-draft.js";
@@ -84,6 +85,7 @@ export function bookSaveError(saved, context) {
 
 export function publishMetaFromForm(form) {
     return {
+        ...readWorkTags(form),
         author: form.author,
         synopsis: form.summary,
         purchaseUrl: normalizePurchaseUrl(form.purchaseUrl),
@@ -160,6 +162,9 @@ export async function runPublishSave({
                 ? "Pick a genre from the list first. Identity labels now go under Additional tags."
                 : "Choose a rating and title first.");
             return;
+        }
+        if (form.workType === "fanfiction" && !form.fandoms?.length) {
+            paintPostError(postError, "Add at least one fandom for your fan fiction."); return;
         }
         const warningError=validateWarningState(form.warningMeta,{chapterIds:chapters.map(ch=>String(ch.id))});
         if (warningError) { paintPostError(postError,warningError); return; }

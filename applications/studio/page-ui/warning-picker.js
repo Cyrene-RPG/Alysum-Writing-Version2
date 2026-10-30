@@ -2,7 +2,7 @@ import {CORE_WARNINGS,WARNING_CATALOG,WARNING_CATEGORIES,searchWarnings,warningD
 import {normalizeWarningState,addWarning,addCustomWarning,removeWarning,warningLabels,WARNING_OPTIONS} from '/core/publishing/content-warnings.js';
 import {renderContentWarnings} from '/site-appearance/components/content-warnings.js';
 const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export function bindWarningPicker(root,{getSelected=()=>[],setSelected=()=>{},initialState=null,chapters=[]}={}) {
+export function bindWarningPicker(root,{getSelected=()=>[],setSelected=()=>{},initialState=null,chapters=[],compact=false}={}) {
     const picker=root.querySelector('#warningPicker');if(!picker)return {read:()=>normalizeWarningState(initialState,getSelected())};
     let state=normalizeWarningState(initialState,getSelected()),offset=0,openEntry='';
     picker.className='warning-picker';
@@ -19,7 +19,7 @@ export function bindWarningPicker(root,{getSelected=()=>[],setSelected=()=>{},in
     function paintResults(reset=true){
         if(reset){offset=0;results.replaceChildren();}
         if(!search.value.trim()&&!category.value){status.textContent='Search for a warning, or choose a category to browse.';$('[data-warning-more]').hidden=true;$('[data-warning-custom]').hidden=true;return;}
-        const found=searchWarnings(search.value,{category:category.value,offset,limit:30});
+        const found=searchWarnings(search.value,{category:category.value,offset,limit:compact?8:30});
         status.textContent=found.total?found.total.toLocaleString()+' matching labels.':'No matching labels.';
         for(const item of found.items){const selected=item.kind==='core'?state.coreIds.includes(item.id):state.entries.some(value=>value.id===item.id);const button=document.createElement('button');button.type='button';button.dataset.addWarning=item.id;button.disabled=selected;button.setAttribute('aria-label',(selected?'Selected: ':'Add ')+item.label);const title=document.createElement('strong'),detail=document.createElement('span');title.textContent=item.label;detail.textContent=(item.kind==='core'?'Core warning':item.kind==='adult'?'Adult content':item.kind==='content'?'Content detail':item.kind==='media'?'Media content':'Content warning')+' · '+item.category+(selected?' · Selected':'');button.append(title,detail);if(item.description){const definition=document.createElement('span');definition.textContent=item.description;button.append(definition);}results.append(button);}
         offset+=found.items.length;$('[data-warning-more]').hidden=offset>=found.total;
@@ -55,6 +55,19 @@ export function bindWarningPicker(root,{getSelected=()=>[],setSelected=()=>{},in
     });
     search.addEventListener('input',()=>paintResults());category.addEventListener('change',()=>paintResults());
     $('#warningNote').addEventListener('input',event=>{state.note=event.target.value;sync();});
+    if (compact) {
+        picker.classList.add('warning-picker-compact');
+        const wrap = (nodes, text, open = false) => {
+            const details = document.createElement('details'), summary = document.createElement('summary');
+            details.open = open; summary.textContent = text; details.append(summary);
+            nodes[0].before(details); nodes.forEach(node => details.append(node)); return details;
+        };
+        wrap([$('.warning-core')], 'Core warnings · review required');
+        const controls = $('.warning-search-controls');
+        wrap([controls.querySelector('label[for="warningCategory"]'),category], 'Browse warning categories');
+        const note = $('#warningNote');
+        wrap([picker.querySelector('label[for="warningNote"]'),note,$('.warning-reader-preview')], 'Warning note & reader preview');
+    }
     sync();paintSelected();paintResults();
     return {read:()=>normalizeWarningState(state),focusCore(){picker.querySelector('[data-core-warning]')?.focus();}};
 }
