@@ -1,7 +1,7 @@
 import {validateEpubFile} from '/core/ebooks/model.js';
 const ZIP_URL='https://esm.sh/fflate@0.8.2';
 const escape=text=>String(text||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const xml=text=>{if(/<!DOCTYPE|<!ENTITY/i.test(text))throw Error('EPUB XML must not include document entities.');const doc=new DOMParser().parseFromString(text,'application/xml');if(doc.querySelector('parsererror'))throw Error('The EPUB contains invalid XML.');return doc;};
+const xml=text=>{if(/<!ENTITY|<!DOCTYPE[^>]*\[/i.test(text))throw Error('EPUB XML must not include document entities.');text=text.replace(/<!DOCTYPE[^>]*>/gi,'');const doc=new DOMParser().parseFromString(text,'application/xml');if(doc.querySelector('parsererror'))throw Error('The EPUB contains invalid XML.');return doc;};
 const elements=(doc,name)=>[...doc.getElementsByTagNameNS('*',name)];
 export function epubPath(base,href){
  if(!href||/^[a-z][a-z0-9+.-]*:|^\/|[\\\u0000]/i.test(href))throw Error('The EPUB refers to an unsupported resource.');
