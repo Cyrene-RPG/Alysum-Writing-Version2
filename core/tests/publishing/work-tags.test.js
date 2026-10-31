@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readWorkTags, normalizeWorkTags, publicWorkTags } from '../../publishing/work-tags.js';
+import { readWorkTags, normalizeWorkTags, publicWorkTags, freeFanfictionForm } from '../../publishing/work-tags.js';
 import { readPublishDraft } from '../../publishing/publish-meta.js';
 import { buildLibraryPayload } from '../../publishing/post-work.js';
 import { normalizePublishedWork } from '../../library/work.js';
@@ -40,4 +40,19 @@ test('case-insensitive duplicates, blanks and unbounded metadata cannot inflate 
     assert.deepEqual(normalizeWorkTags([' Merlin ','merlin','','Harry Potter']),['Merlin','Harry Potter']);
     assert.equal(normalizeWorkTags(Array.from({length:150},(_,i)=>'tag'+i)).length,100);
     assert.equal(normalizeWorkTags(['x'.repeat(400)])[0].length,250);
+});
+
+test('fan-fiction drafts and public listings cannot retain payment links or locked chapters',()=>{
+    const paid={workType:'fanfiction',chapterIds:['one'],lockedChapterIds:['one'],purchaseUrl:'https://shop.example/buy',
+        chapterAccess:{productUrl:'https://ko-fi.com/s/product',chapterProducts:[{chapterId:'one',productUrl:'https://ko-fi.com/s/product',minimum:'1.00'}]}};
+    const free=freeFanfictionForm(paid);
+    assert.equal(free.purchaseUrl,'');assert.deepEqual(free.lockedChapterIds,[]);assert.deepEqual(free.chapterAccess.chapterProducts,[]);
+    const payload=buildLibraryPayload({id:'book',sections:{body:[{id:'one',content:'word '.repeat(600)}]}},paid);
+    assert.equal(payload.purchaseUrl,'');assert.ok(!payload.chapters[0].locked);assert.ok(payload.chapters[0].content.length>0);
+    const original={...paid,workType:'original'};assert.equal(freeFanfictionForm(original),original,'original pricing remains intact');
+    assert.equal(freeFanfictionForm({...paid,workType:undefined,genres:['fanfic']}).purchaseUrl,'','legacy fanfic classification is also free');
+    const inherited=buildLibraryPayload({id:'saved-fanfic',publish_meta:{workType:'fanfiction',fandoms:['Merlin']},sections:{body:[]}}, {purchaseUrl:paid.purchaseUrl});
+    assert.equal(inherited.workType,'fanfiction');assert.equal(inherited.purchaseUrl,'');assert.deepEqual(inherited.fandoms,['Merlin']);
+    const oldListing=normalizePublishedWork({id:'old',data:{workType:'fanfiction',purchaseUrl:paid.purchaseUrl}});
+    assert.equal(oldListing.purchaseUrl,'','existing fanfic listings do not show Buy from author');
 });

@@ -105,6 +105,21 @@ test('mismatched product links and locks on unselected chapters cannot be publis
 test('a completed book can lock all chapters with one product',async()=>{
     const f=await fixture();assert.equal((await f.run(request('configure',{method:'POST',body:{...config(),complete:true,chapterIds:['free','locked']}}))).status,200);assert.equal(f.writes.at(-1).body.p_chapters.length,2);
 });
+
+test('fan fiction cannot configure paid chapters even when the request claims to be original',async()=>{
+    for(const meta of [{workType:'fanfiction'},{genres:['fanfic']}]){
+        const f=await fixture('kofi',{source:{...source,publish_meta:meta}});
+        const response=await f.run(request('configure',{method:'POST',body:{...config(),workType:'original'}}));
+        assert.equal(response.status,400);assert.match(await response.text(),/Fan fiction cannot/);assert.equal(f.writes.length,0);
+    }
+    const f=await fixture();assert.equal((await f.run(request('configure',{method:'POST',body:{...config(),workType:'fanfiction'}}))).status,400);assert.equal(f.writes.length,0);
+});
+
+test('fan fiction can clear existing paid products without a new purchase or shop connection',async()=>{
+    const f=await fixture('kofi',{source:{...source,publish_meta:{workType:'fanfiction'}}});
+    const response=await f.run(request('configure',{method:'POST',body:{...config(),workType:'fanfiction',chapterIds:[],connectionId:'',purchaseUrl:''}}));
+    assert.equal(response.status,200);assert.deepEqual(f.writes.at(-1).body.p_chapters,[]);assert.equal(f.writes.at(-1).body.p_url,'');assert.equal(f.writes.at(-1).body.p_connection,null);
+});
 test('connecting a shop stores only a verifier and never returns raw credentials',async()=>{
     const f=await fixture();const response=await f.run(request('connect',{method:'POST',body:{provider:'kofi',secret}}));assert.equal(response.status,200);
     const serialized=JSON.stringify(f.writes);assert.equal(serialized.includes(secret),false);assert.match(serialized,/verifier_hash/);assert.equal((await response.text()).includes(secret),false);

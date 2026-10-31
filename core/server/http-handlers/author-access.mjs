@@ -1,6 +1,7 @@
 import { createPaymentServices, sha256 } from './paid-access.mjs';
 import { ACCESS_PROVIDERS, normalizeProductKey, saleFromNotification, validateSale } from '../../publishing/author-access.js';
 import { normalizePurchaseUrl } from '../../publishing/publish-meta.js';
+import { readWorkTags } from '../../publishing/work-tags.js';
 import { listBodyChapters } from '../../writing-engine/manuscript.js';
 import { manuscriptPlainText, UUID_PATTERN } from '../../publishing/paid-access.js';
 import { countWordsInHtml } from '../../writing-engine/word-count.js';
@@ -90,6 +91,9 @@ export async function handleAuthorAccess(request, env, injected = {}) {
             if (source.media_format && !['novel','fiction','prose'].includes(source.media_format)) fail(400,'Chapter locks currently support prose books.');
             const chapterIds = [...new Set((Array.isArray(body.chapterIds) ? body.chapterIds : []).map(String))];
             const selectedIds = [...new Set((Array.isArray(body.selectedIds) ? body.selectedIds : []).map(String))];
+            if (chapterIds.length && (readWorkTags(source.publish_meta || {}).workType === 'fanfiction' || body.workType === 'fanfiction')) {
+                fail(400,'Fan fiction cannot have paid chapters. Only saved original works can use monetization.');
+            }
             if (chapterIds.length > 500) fail(400,'Select up to 500 locked chapters.');
             const missingSelection = chapterIds.filter(ch=>!selectedIds.includes(ch));
             if (missingSelection.length) {

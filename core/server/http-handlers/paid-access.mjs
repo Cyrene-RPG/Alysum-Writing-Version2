@@ -1,4 +1,5 @@
 import { listBodyChapters } from '../../writing-engine/manuscript.js';
+import { readWorkTags } from '../../publishing/work-tags.js';
 import { UUID_PATTERN, validatePrivateOffer, publicEdition, offerChapterIds, canReadPrivateChapter, matchesPaidSession, manuscriptPlainText } from '../../publishing/paid-access.js';
 
 const DEFAULT_SUPABASE_URL = 'https://jrfxgpkpbacajhcwimgz.supabase.co';
@@ -184,6 +185,7 @@ export async function handlePaidAccess(request, env, injected = {}) {
             if (!id || id.length > 200) fail(400, 'Choose a saved book.');
             const book = (await db('books', { authorization: request.headers.get('Authorization'), query: { id: `eq.${id}`, user_id: `eq.${owner.id}`, limit: 1 } }))[0];
             if (!book) fail(404, 'Book not found in your account.');
+            if (readWorkTags(book.publish_meta || {}).workType === 'fanfiction') fail(400, 'Fan fiction cannot be sold through paid editions.');
             return json({ id: book.id, complete: Boolean(book.publish_meta?.complete), chapters: listBodyChapters(book.sections).map(ch => ({ id: ch.id, title: ch.title })) });
         }
         if (action === 'create-edition' && request.method === 'POST') {
@@ -193,6 +195,7 @@ export async function handlePaidAccess(request, env, injected = {}) {
             const book = (await db('books', { authorization: request.headers.get('Authorization'), query: { id: `eq.${input.bookId}`, user_id: `eq.${owner.id}`, limit: 1 } }))[0];
             if (!book) fail(404, 'Book not found in your account.');
             if (book.media_format && book.media_format !== 'novel') fail(400, 'Paid editions currently support prose novels.');
+            if (readWorkTags(book.publish_meta || {}).workType === 'fanfiction') fail(400, 'Fan fiction cannot be sold through paid editions.');
             const listed = await db('library', { authorization: request.headers.get('Authorization'), query: { id: `eq.${book.id}`, select: 'id', limit: 1 } });
             if (book.is_published || listed.length) fail(409, 'Use an unpublished draft for this private paid. Already-public chapters cannot be protected retroactively.');
             let validated;
@@ -219,6 +222,10 @@ export async function handlePaidAccess(request, env, injected = {}) {
             const reader = await user(request);
             const input = await readInput();
             const offer = await findOffer(input.edition);
+            if (offer.source_book_id) {
+                const [source] = await db('books', { query: { id: `eq.${offer.source_book_id}`, user_id: `eq.${offer.owner_id}`, select: 'publish_meta', limit: 1 } });
+                if (readWorkTags(source?.publish_meta || {}).workType === 'fanfiction') fail(400, 'Fan fiction is not accepting paid purchases.');
+            }
             if (reader.id === offer.owner_id) fail(400, 'The author already has access. Use a separate reader account to checkout.');
             const stripeAccount = await accountFor(offer.owner_id);
             if (stripeAccount !== offer.stripe_account) fail(409, 'The author changed payment accounts. This edition is not accepting new purchases.');

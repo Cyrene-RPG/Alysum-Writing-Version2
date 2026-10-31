@@ -11,6 +11,19 @@ async function publishing() {
     return import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
 }
 
+test('saving a restored fan-fiction draft removes legacy purchase links and paid chapter settings',async()=>{
+    const {runPublishSave}=await publishing();let patch;
+    const before=globalThis.window;globalThis.window={location:{replace(){}}};
+    try{
+        await runPublishSave({isPublished:false,session:{mode:'local'},book:{id:'fanfic'},postError:{},
+            readForm:()=>({title:'Fanfic',workType:'fanfiction',fandoms:['Merlin'],genres:['fantasy'],chapterIds:['one'],
+                purchaseUrl:'https://shop.example/paid',lockedChapterIds:['one'],chapterAccess:{productUrl:'https://ko-fi.com/s/old',minimum:'3.00',chapterProducts:[{chapterId:'one',minimum:'3.00'}]}}),
+            api:{async updateBook(_id,value){patch=value;return value;}}});
+        assert.equal(patch.publish_meta.purchaseUrl,'');assert.deepEqual(patch.publish_meta.lockedChapterIds,[]);assert.equal(patch.publish_meta.chapterAccess,null);
+        assert.deepEqual(patch.publish_meta.fandoms,['Merlin']);assert.deepEqual(patch.published_chapter_ids,['one']);
+    }finally{globalThis.window=before;}
+});
+
 test('only complete HTTPS purchase URLs without embedded credentials are accepted', () => {
     for (const unsafe of ['javascript:alert(1)', 'data:text/html,hello', '//shop.example/book', 'http://shop.example/book', 'https://user:password@shop.example/book', 'not a link', 'https://shop.example/' + 'x'.repeat(2000)]) assert.equal(normalizePurchaseUrl(unsafe), '');
     assert.equal(normalizePurchaseUrl(' https://ko-fi.com/s/abc?ref=book '), 'https://ko-fi.com/s/abc?ref=book');

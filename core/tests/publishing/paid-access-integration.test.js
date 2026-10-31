@@ -110,6 +110,19 @@ test('private edition creation reads fresh owned source, keeps all text out of L
  assert.equal((await f.run(request('create-edition',{method:'POST',as:otherId,body}))).status,404);
  f.tables.books[0].is_published=true;assert.equal((await f.run(request('create-edition',{method:'POST',as:ownerId,body}))).status,409);
 });
+test('private paid editions reject saved fan fiction before creating offers or contacting Stripe',async()=>{
+ for(const metadata of [{workType:'fanfiction'},{genres:['fanfic']}]){
+  const f=fixture();f.tables.books[0].publish_meta=metadata;
+  const response=await f.run(request('create-edition',{method:'POST',as:ownerId,body:{bookId:'source',workType:'original',mode:'bundle',price:'4.25',currency:'usd',chapterIds:['free','paid','last'],paidIds:['paid','last']}}));
+  assert.equal(response.status,400);assert.match(await response.text(),/Fan fiction cannot/);assert.equal(f.tables.paid_access_offers.length,1);assert.equal(f.stripeCalls.length,0);
+ }
+});
+test('old paid offers cannot start new checkouts after the source is classified as fan fiction',async()=>{
+ const f=fixture();f.tables.books[0].publish_meta={workType:'fanfiction'};
+ const response=await f.run(request('checkout',{method:'POST',body:{edition:offerId,chapter:'paid',requestId:anotherOrderId}}));
+ assert.equal(response.status,400);assert.match(await response.text(),/Fan fiction/);assert.equal(f.stripeCalls.length,0);
+ assert.equal(f.tables.paid_access_orders.length,1);
+});
 test('complete-book validation requires all chapters and cannot lock the entire sample',()=>{
  const base={mode:'book',price:'3.00',currency:'usd',chapterIds:['free','paid','last']};
  assert.throws(()=>validatePrivateOffer(base,chapters,false),/complete/);
