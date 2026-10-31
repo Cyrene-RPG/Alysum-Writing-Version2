@@ -107,7 +107,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   // File attachments are real network responses, never offline documents.
-  if (url.pathname === '/api/snippet-download' || url.pathname === '/api/paid-access' || url.pathname === '/api/author-access') return;
+  if (url.pathname === '/api/snippet-download' || url.pathname === '/api/paid-access' || url.pathname === '/api/author-access' || url.pathname === '/api/pass-test') return;
 
   // Never intercept Firebase / Google APIs / auth flows / analytics
   if (url.origin !== self.location.origin) return;
