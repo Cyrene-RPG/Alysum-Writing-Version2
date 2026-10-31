@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {buildEpubListing,wholeBookAccess,validateEpubFile} from '../../ebooks/model.js';
 import {publishEpub} from '../../ebooks/publication.js';
+import {normalizePublishedWork} from '../../library/work.js';
+import {shortLiveChapters} from '../../publishing/short-listing.js';
 import {handleAuthorAccess} from '../../server/http-handlers/author-access.mjs';
 const owner='10000000-0000-4000-8000-000000000001',buyer='20000000-0000-4000-8000-000000000002',connection='30000000-0000-4000-8000-000000000003';
 const book={id:'epub-book',user_id:owner,publish_meta:{epubEdition:true,workType:'original'},sections:{body:[{id:'one',title:'Dedication',content:'<p>A short dedication.</p>'},{id:'two',title:'Chapter 1',content:'<p>PRIVATE prose.</p>'}]}};
@@ -46,4 +48,8 @@ test('EPUB server configuration allows short sections only for the entire regist
  const body=wholeBookAccess(book,edition,form),f=fixture();const response=await f.run('configure',body);assert.equal(response.status,200,JSON.stringify(await response.json()));assert.equal(f.writes[0].p_chapters.length,2);
  for(const patch of [{chapterIds:['two']},{chapterIds:[]},{pricingMode:'individual'}]){const bad=fixture();assert.equal((await bad.run('configure',{...body,...patch})).status,400);assert.deepEqual(bad.writes,[]);}
  const missing=fixture({exists:false});assert.equal((await missing.run('configure',body)).status,400);
+});
+
+test('reader normalization, catalog counts and short-chapter maintenance retain every paid EPUB section',()=>{
+ const data=buildEpubListing(book,edition,form),work=normalizePublishedWork({id:book.id,user_id:owner,data});assert.equal(work.chapters.length,2);assert.equal(work.publishedChapterCount,2);assert.equal(work.editionFormat,'epub');assert.deepEqual(shortLiveChapters({...book,published_chapter_ids:['one','two']}),{kept:['one','two'],dropped:[]});
 });

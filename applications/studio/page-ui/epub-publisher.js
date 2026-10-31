@@ -4,7 +4,7 @@ import {bindTagPicker} from './tag-picker.js';
 import {bindWarningPicker} from './warning-picker.js';
 import {publishEpub} from '/core/ebooks/publication.js';
 
-export async function mountEpubPublisher({root=document,book=null,edition=null,readFile,upload,saveDetails,configure,saveListing,connections=[],uploadCover,setBookUrl=()=>{}}){
+export async function mountEpubPublisher({root=document,book=null,edition=null,readFile,upload,saveDetails,configure,saveListing,connections=[],uploadCover,loadConnections=null,setBookUrl=()=>{}}){
  const $=id=>root.querySelector('#'+id),status=$('epubStatus');let selectedFile,parsed,coverFile,busy=false;
  const say=text=>status.textContent=text;
  const setBusy=value=>{busy=value;for(const control of root.querySelectorAll('button,input,select,textarea'))control.disabled=value;};
@@ -48,6 +48,10 @@ export async function mountEpubPublisher({root=document,book=null,edition=null,r
   event.preventDefault();if(busy)return;setBusy(true);say('Saving and publishing your complete EPUB…');
   try{const value=await save();await publishEpub({book,edition,form:value,configure,saveListing:data=>saveListing(book,data)});book.is_published=true;$('epubListing').hidden=false;$('epubListing').href=`/book?id=${encodeURIComponent(book.id)}`;$('publishEpub').textContent='Update EPUB';say('Published. The whole book and EPUB download unlock together after purchase.');}
   catch(error){say(error.message);}finally{setBusy(false);}
+ });
+ if(loadConnections)root.defaultView?.addEventListener('focus',async()=>{
+  if(busy||!book)return;
+  try{const selected=$('epubConnection').value;connections=await loadConnections();$('epubConnection').replaceChildren(new Option('Choose your shop',''),...connections.map(c=>new Option(c.provider==='kofi'?'Ko-fi':'Payhip',c.id)));$('epubConnection').value=selected;if(!$('epubConnection').value&&connections.length===1)$('epubConnection').selectedIndex=1;}catch(error){say(error.message);}
  });
  $('epubForm').hidden=false;
  if(book&&edition){details();say('Edit your EPUB listing. One purchase unlocks the complete book and download.');}

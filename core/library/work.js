@@ -40,7 +40,7 @@ export function chaptersFromListingData(data) {
     }
     const list = ordered.length ? ordered : raw;
     return list
-        .filter(chapterMeetsPublishLength)
+        .filter(ch=>src.editionFormat==='epub'&&ch.locked ? (publishWordCount(ch)||0)>0 : chapterMeetsPublishLength(ch))
         .map((chapter, index) => normalizeChapter(chapter, index));
 }
 

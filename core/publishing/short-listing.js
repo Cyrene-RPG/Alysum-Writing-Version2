@@ -12,6 +12,7 @@ function liveChapterIds(book) {
 }
 
 export function shortLiveChapters(book) {
+    if(book?.publish_meta?.epubEdition)return {kept:liveChapterIds(book),dropped:[]};
     const byId = new Map(listBodyChapters(book?.sections).map((ch) => [String(ch.id), ch]));
     const dropped = [];
     const kept = [];

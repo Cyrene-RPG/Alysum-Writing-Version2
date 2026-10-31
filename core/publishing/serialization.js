@@ -1,7 +1,7 @@
 /**
  * Story serialization status and chapter progress labels (e.g. 3/18, 3/?, 5 chapters).
  */
-import { chapterMeetsPublishLength } from "./chapter-length.js";
+import { chapterMeetsPublishLength, publishWordCount } from "./chapter-length.js";
 
 export const SERIALIZATION_COMPLETE = "complete";
 export const SERIALIZATION_IN_PROGRESS = "in_progress";
@@ -51,6 +51,7 @@ function publishedIdsFromData(data) {
 }
 
 function countPublishedChapters(source, chapters, chapterCount) {
+    const qualifies=ch=>source.editionFormat==='epub'&&ch?.locked ? (publishWordCount(ch)||0)>0 : chapterMeetsPublishLength(ch);
     const publishedIds = publishedIdsFromData(source);
     const byId = new Map(chapters.map((ch) => [String(ch?.id), ch]));
     if (publishedIds !== undefined) {
@@ -58,11 +59,11 @@ function countPublishedChapters(source, chapters, chapterCount) {
         return publishedIds.filter((id) => {
             const ch = byId.get(id);
             if (!ch) return true;
-            return chapterMeetsPublishLength(ch);
+            return qualifies(ch);
         }).length;
     }
     if (chapters.length) {
-        return chapters.filter(chapterMeetsPublishLength).length;
+        return chapters.filter(qualifies).length;
     }
     return Math.max(0, chapterCount);
 }

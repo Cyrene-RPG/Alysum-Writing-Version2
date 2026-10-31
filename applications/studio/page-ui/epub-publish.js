@@ -21,6 +21,7 @@ async function boot(){
  const connected=await authorAccessRequest(supabase,'connections');
  const confirmed=saved=>{if(!saved||saved._pending||saved._synced===false)throw Error(saved?._syncError||'The EPUB details could not be confirmed online. Keep this page open and retry.');return saved;};
  await mountEpubPublisher({book,edition,connections:connected.connections.filter(c=>c.enabled),readFile:readEpub,
+  loadConnections:async()=>(await authorAccessRequest(supabase,'connections')).connections.filter(c=>c.enabled),
   setBookUrl:bookId=>history.replaceState(null,'',`?book=${encodeURIComponent(bookId)}`),
   async upload({parsed,file}){
    // A retry keeps the already-created private manuscript and chapter IDs.
