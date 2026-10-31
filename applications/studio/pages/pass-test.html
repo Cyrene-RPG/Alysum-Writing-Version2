@@ -78,6 +78,7 @@
 <section class="pass-card"><h2>2. Generate delivery codes</h2><label>Your test passes<select id="passSelect"><option value="">Choose a test pass</option></select></label><p id="passSelectedSummary"></p><button id="refreshWholePass" type="button" hidden>Publish latest chapters to this test pass</button><p class="pass-hint">A whole-book pass can receive later chapters when you publish an update here. Bundles keep their selected chapter set.</p>
 <div class="pass-grid"><label>Number of codes<input id="passCodeCount" type="number" min="1" max="100" value="1"></label><div class="pass-button-field"><button type="button" id="generatePassCodes" disabled>Generate test codes</button></div></div>
 <div id="passCodeOutput" hidden><label>Save these codes now · shown once<textarea id="passCodes" rows="5" readonly spellcheck="false"></textarea></label><div class="pass-actions"><button type="button" id="downloadPassCodes">Download codes CSV</button><button type="button" id="previewPassEmail">Preview buyer email</button></div><p class="pass-hint">Raw codes are not saved in your browser or the database. Keep the downloaded file private. The test email preview does not send anything.</p></div>
+<section hidden id="passEmailDialog" class="pass-email" aria-labelledby="passEmailTitle"><h2 id="passEmailTitle">Buyer email preview</h2><p>This is a preview. No email has been sent.</p><label>Email text<textarea id="passEmailText" readonly rows="12"></textarea></label><button type="button" id="closePassEmail">Close</button></section>
 <h3>Code batches</h3><div id="passBatches"></div></section>
 <section class="pass-card"><h2>3. Review test access</h2><p>After redeeming a code, access is attached to that signed-in account.</p><div id="passGrants"></div></section>
 </section>
@@ -86,7 +87,7 @@
 <section class="pass-card"><h2>Your redeemed test passes</h2><button type="button" id="reloadMyPasses">Refresh passes</button><div id="myTestPasses"></div></section>
 <section class="pass-card" id="passReading" hidden><h2 id="passReadingTitle"></h2><p class="pass-hint">Private test reading copy</p><div id="passReadingChapters"></div><article id="passReadingBody"></article></section>
 </section>
-<dialog id="passEmailDialog" class="pass-dialog" aria-labelledby="passEmailTitle"><h2 id="passEmailTitle">Buyer email preview</h2><p>This is a preview. No email has been sent.</p><label>Email text<textarea id="passEmailText" readonly rows="12"></textarea></label><button type="button" id="closePassEmail">Close</button></dialog>
+
 </main>
     <script type="module" src="/applications/studio/page-ui/pass-lab.js"></script>
 </body>
