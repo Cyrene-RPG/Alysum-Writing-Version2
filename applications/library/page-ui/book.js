@@ -258,7 +258,7 @@ async function boot() {
 
     if(work.editionFormat==='epub') {
         const button=document.createElement('button'),note=document.createElement('p');
-        button.type='button';button.className='book-read-btn';button.textContent='Download EPUB';note.setAttribute('role','status');
+        button.type='button';button.className='book-cta';button.textContent='Download EPUB';note.setAttribute('role','status');
         document.getElementById('bookPurchaseBlock').after(button,note);
         button.addEventListener('click',async()=>{
             button.disabled=true;note.textContent='Checking whole-book access…';

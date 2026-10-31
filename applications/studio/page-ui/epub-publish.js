@@ -1,5 +1,6 @@
 import {supabase} from '@alysum/authentication/client.js';
 import {requireStudioSession} from '@alysum/desktop/studio-session.js';
+import {loadWorkspaceProfile} from '@alysum/account/workspace-profile.js';
 import {createBooksApi} from '@alysum/synchronization-engine/books.js';
 import {loadPublicationBook,savePublicationSettings} from '/core/publishing/publication-save.js';
 import {uploadBookCover} from '/core/publishing/cover-upload.js';
@@ -11,7 +12,8 @@ import {initWorkspaceShell} from './shell.js';
 async function boot(){
  const session=await requireStudioSession(supabase,location.pathname+location.search);if(!session)return;
  if(session.mode!=='cloud')throw Error('Sign in online to upload and publish an EPUB.');
- initWorkspaceShell({lead:'Writing ',accent:'Studio',subtitle:'Publish a complete EPUB.'});
+ const welcome={lead:'Writing ',accent:'Studio',subtitle:'Publish a complete EPUB.'};initWorkspaceShell(welcome);
+ void loadWorkspaceProfile(supabase,session).then(profile=>initWorkspaceShell({...welcome,name:profile.name,imageUrl:profile.imageUrl})).catch(()=>{});
  const api=createBooksApi(session,supabase),ebooks=createEbooksApi(supabase,session.user.id),id=new URLSearchParams(location.search).get('book');
  let baseline,book=null,edition=null;
  if(id){const loaded=await loadPublicationBook(api,id,session.user.id);book=loaded.book;baseline=loaded.baseline;if(!book.publish_meta?.epubEdition)throw Error('Open this written book in the regular publishing flow.');edition=await ebooks.get(id,{allowMissing:true});}
