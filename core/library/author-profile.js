@@ -198,6 +198,7 @@ export function normalizePublishedBookPreview(row) {
     );
     return {
         id,
+        editionFormat: data.editionFormat === "epub" ? "epub" : "",
         ownerUserId: String(row?.user_id || row?.userId || data.userId || "").trim(),
         title: String(data.title || "Untitled").trim() || "Untitled",
         author: String(data.author || "Unknown").trim() || "Unknown",

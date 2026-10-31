@@ -256,6 +256,19 @@ async function boot() {
         fade.hidden = !open;
     });
 
+    if(work.editionFormat==='epub') {
+        const button=document.createElement('button'),note=document.createElement('p');
+        button.type='button';button.className='book-cta';button.textContent='Download EPUB';note.setAttribute('role','status');
+        document.getElementById('bookPurchaseBlock').after(button,note);
+        button.addEventListener('click',async()=>{
+            button.disabled=true;note.textContent='Checking whole-book access…';
+            try{const {authorAccessRequest}=await import('/core/publishing/author-access-client.js');const result=await authorAccessRequest(supabase,'epub-download',{query:{book:work.id}});const link=document.createElement('a');link.href=result.url;link.download=result.fileName;link.rel='noopener noreferrer';link.referrerPolicy='no-referrer';document.body.append(link);link.click();link.remove();note.textContent='Your EPUB download is ready.';}
+            catch(error){note.textContent=error.message;}
+            finally{button.disabled=false;}
+        });
+        if(owner)for(const id of ['editTitle','editSynopsis','addChapter']){const link=document.getElementById(id);if(link)link.href=`/applications/studio/pages/epub-publish.html?book=${encodeURIComponent(work.id)}`;}
+    }
+
     const purchaseUrl = normalizePurchaseUrl(work.purchaseUrl);
     const purchaseBlock = document.getElementById("bookPurchaseBlock");
     const purchaseLink = document.getElementById("buyFromAuthor");

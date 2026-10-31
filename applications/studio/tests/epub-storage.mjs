@@ -1,0 +1,26 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';
+const {PGlite}=await import(process.env.PGLITE_MODULE||'@electric-sql/pglite');
+test('EPUB migration is repeatable; files and edition records stay private to their owner',async()=>{
+ const db=new PGlite();
+ await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;
+ create schema auth;create schema storage;grant usage on schema auth,storage,public to anon,authenticated,service_role;
+ create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+ create table public.books(id text primary key,user_id uuid not null references auth.users(id));alter table public.books enable row level security;grant select on public.books to authenticated;create policy owned_books on public.books for select to authenticated using(user_id=auth.uid());
+ create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
+ create table storage.objects(bucket_id text,name text);alter table storage.objects enable row level security;grant select,insert,delete on storage.objects to authenticated;
+ create function storage.foldername(text) returns text[] language sql immutable as $$select (string_to_array($1,'/'))[1:array_length(string_to_array($1,'/'),1)-1]$$;
+ insert into auth.users values('10000000-0000-4000-8000-000000000001'),('20000000-0000-4000-8000-000000000002');
+ insert into books values('book','10000000-0000-4000-8000-000000000001'),('other','20000000-0000-4000-8000-000000000002');`);
+ const sql=await readFile(new URL('../../../supabase/live-site/supabase-epub-editions.sql',import.meta.url),'utf8');await db.exec(sql);await db.exec(sql);
+ await db.exec(`set role authenticated;select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',false);
+ insert into storage.objects values('book-epubs','10000000-0000-4000-8000-000000000001/book/file.epub');
+ insert into epub_editions(book_id,owner_id,storage_path,file_name,chapter_ids) values('book',auth.uid(),'10000000-0000-4000-8000-000000000001/book/file.epub','Book.epub','["one","two"]');`);
+ assert.equal((await db.query('select * from epub_editions')).rows.length,1);
+ await assert.rejects(db.exec(`insert into storage.objects values('book-epubs','10000000-0000-4000-8000-000000000001/other/stolen.epub')`));
+ await assert.rejects(db.exec(`update epub_editions set chapter_ids='["one"]'`));
+ await db.exec(`select set_config('request.jwt.claim.sub','20000000-0000-4000-8000-000000000002',false)`);
+ assert.equal((await db.query('select * from epub_editions')).rows.length,0);assert.equal((await db.query("select * from storage.objects where bucket_id='book-epubs'")).rows.length,0);
+ await assert.rejects(db.exec(`insert into epub_editions(book_id,owner_id,storage_path,file_name,chapter_ids) values('other',auth.uid(),'20000000-0000-4000-8000-000000000002/other/missing.epub','Book.epub','["one"]')`));
+ await db.exec('set role anon');await assert.rejects(db.exec('select * from epub_editions'));
+ await db.exec('reset role');assert.equal((await db.query("select public from storage.buckets where id='book-epubs'")).rows[0].public,false);await db.close();
+});
