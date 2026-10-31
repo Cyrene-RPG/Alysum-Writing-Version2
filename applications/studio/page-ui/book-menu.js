@@ -220,7 +220,7 @@ export function bindBookMenu({ getBooks, setBooks, paintShelf, api, supabase, se
         if (!book) return;
         const title = bookDisplayTitle(book);
         if (!await confirmAtGear(`Publish ${title}?`, "Publish", gear)) return;
-        window.location.href = `/publish?book=${encodeURIComponent(book.id)}`;
+        window.location.href = `${book.publish_meta?.epubEdition ? "/applications/studio/pages/epub-publish.html" : "/publish"}?book=${encodeURIComponent(book.id)}`;
     });
     document.getElementById("bookMenuTakedown")?.addEventListener("click", async () => {
         const book = menuBook;

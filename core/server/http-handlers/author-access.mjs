@@ -30,7 +30,8 @@ export async function handleAuthorAccess(request, env, injected = {}) {
             if (action === 'status') return reply({ready:false});
             fail(503,'Chapter access needs its database setup before authors can use it.');
         }
-        const { db, user } = injected.services || createPaymentServices(env,injected.fetcher);
+        const services = injected.services || createPaymentServices(env,injected.fetcher);
+        const {db,user}=services;
         if (action === 'status' && request.method === 'GET') {
             try { await db('author_access_connections',{query:{select:'id',limit:0}}); let version = 0;
                 try { version = await db('rpc/author_access_pricing_version',{method:'POST',body:{}}); } catch { /* Bundle setup remains usable. */ }
@@ -51,6 +52,17 @@ export async function handleAuthorAccess(request, env, injected = {}) {
             const emailHash = await sha256(sale.email);
             await db('rpc/apply_author_access_sale',{method:'POST',body:{p_connection:connectionId,p_transaction:sale.transaction,p_email_hash:emailHash,p_products:sale.products,p_amount:sale.amount,p_currency:sale.currency,p_reversed:sale.reversed}});
             return reply({received:true});
+        }
+        if (action === 'epub-download' && request.method === 'GET') {
+            const reader=await user(request),sourceId=bookId(url.searchParams.get('book'));
+            const [edition]=await db('epub_editions',{query:{book_id:`eq.${sourceId}`,limit:1}});
+            if(!edition)fail(404,'This EPUB is not available.');
+            const [source]=await db('books',{query:{id:`eq.${sourceId}`,user_id:`eq.${edition.owner_id}`,select:'publish_meta',limit:1}});
+            if(!source || readWorkTags(source.publish_meta).workType==='fanfiction')fail(403,'This EPUB is not available for purchase.');
+            const chapters=await db('rpc/read_author_access',{method:'POST',body:{p_book:sourceId,p_reader:reader.id,p_email_hash:await sha256(reader.email.trim().toLowerCase())}});
+            const unlocked=new Set((chapters||[]).map(ch=>String(ch.id)));
+            if(!Array.isArray(edition.chapter_ids)||!edition.chapter_ids.length||edition.chapter_ids.some(id=>!unlocked.has(String(id))))fail(403,'Buy the whole book, then choose Check my access after checkout. Use your verified Alysum email at checkout.');
+            return reply({url:await services.signEpub(edition.storage_path),fileName:edition.file_name});
         }
         if (action === 'read' && request.method === 'GET') {
             const reader = await user(request,false);
@@ -101,9 +113,16 @@ export async function handleAuthorAccess(request, env, injected = {}) {
                 fail(400,`Select these locked chapters under Manuscript, or turn off their locks: ${missingNames || missingSelection.join(', ')}.`);
             }
             const manuscript = listBodyChapters(source.sections);
+            let epub=false;
+            if(source.publish_meta?.epubEdition){
+                const [edition]=await db('epub_editions',{query:{book_id:`eq.${sourceId}`,owner_id:`eq.${owner.id}`,limit:1}});
+                const all=manuscript.map(ch=>String(ch.id));
+                if(!edition||!Array.isArray(edition.chapter_ids)||!all.length||all.length!==edition.chapter_ids.length||all.some(id=>!edition.chapter_ids.includes(id))||all.length!==chapterIds.length||all.some(id=>!chapterIds.includes(id))||body.pricingMode!=='bundle')fail(400,'EPUBs require one paid product for the entire uploaded book.');
+                epub=true;
+            }
             // Completion describes the story, independently of which current chapters are paid.
             const chapters = manuscript.filter(ch=>chapterIds.includes(String(ch.id))).map(ch=>({id:String(ch.id),title:String(ch.title || 'Untitled').slice(0,300),text:manuscriptPlainText(ch.content || ''),wordCount:countWordsInHtml(ch.content || '')}));
-            if (chapters.length !== chapterIds.length || chapters.some(ch=>ch.wordCount < 500) || JSON.stringify(chapters).length > 2000000) fail(400,'Locked chapters must contain at least 500 words each, up to two million characters per book.');
+            if (chapters.length !== chapterIds.length || chapters.some(ch=>ch.wordCount < (epub ? 1 : 500)) || JSON.stringify(chapters).length > 2000000) fail(400,epub?'The EPUB must contain readable text, up to two million characters per book.':'Locked chapters must contain at least 500 words each, up to two million characters per book.');
             let connectionId = null, productKey = '', purchaseUrl = '', minimum = 0, currency = '';
             if (chapterIds.length) {
                 connectionId = id(body.connectionId);

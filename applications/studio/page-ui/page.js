@@ -220,11 +220,11 @@ function renderBooks(mount, books, audioBooks = [], scripts = []) {
             const chapters = chapterCount(book);
             const cover = bookCoverHtml(book);
             return `
-                <a class="studio-book${cover ? " has-cover" : ""} studio-book-${index % 5}" href="/editor?book=${encodeURIComponent(book.id)}">
+                <a class="studio-book${cover ? " has-cover" : ""} studio-book-${index % 5}" href="${book.publish_meta?.epubEdition ? "/applications/studio/pages/epub-publish.html" : "/editor"}?book=${encodeURIComponent(book.id)}">
                     ${cover}
                     <button type="button" class="studio-book-gear" data-book-gear="${escapeHtml(book.id)}" aria-label="Book options">⚙</button>
                     <h2 class="studio-book-title">${escapeHtml(bookDisplayTitle(book))}</h2>
-                    <p class="studio-book-meta">${chapters} chapter${chapters === 1 ? "" : "s"} · ${words.toLocaleString()} words</p>
+                    <p class="studio-book-meta">${book.publish_meta?.epubEdition ? "EPUB · Complete book · " : ""}${chapters} chapter${chapters === 1 ? "" : "s"} · ${words.toLocaleString()} words</p>
                     ${drafts.length > 1 ? `<p class="studio-book-meta">${drafts.length} drafts · Choose a draft in the editor</p>` : ""}
                 </a>`;
         })

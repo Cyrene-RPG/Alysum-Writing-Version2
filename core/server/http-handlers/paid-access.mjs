@@ -81,6 +81,16 @@ export function createPaymentServices(env, fetcher = fetch) {
             const key = authorization ? anonKey : env.SUPABASE_SERVICE_ROLE_KEY;
             return remote(url, { method, headers: { apikey: key, Authorization: authorization || `Bearer ${key}`, 'Content-Type': 'application/json', Prefer: preference || 'return=representation' }, body: body === undefined ? undefined : JSON.stringify(body) }, 'Payment storage is unavailable. Check the payment migration and server configuration.');
         },
+        async signEpub(path) {
+            if (!/^[a-zA-Z0-9_/-]+\.epub$/.test(path)) fail(503, 'Invalid EPUB storage path.');
+            const result = await remote(`${supabaseUrl}/storage/v1/object/sign/book-epubs/${path}`, {
+                method:'POST', headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:`Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,'Content-Type':'application/json'},
+                body:JSON.stringify({expiresIn:60})
+            }, 'The EPUB download is unavailable. Try again.');
+            const signed = result.signedURL || result.signedUrl;
+            if (!signed || !signed.startsWith('/object/sign/book-epubs/')) fail(503, 'Could not create the EPUB download.');
+            return `${supabaseUrl}/storage/v1${signed}`;
+        },
         async stripe(path, { method = 'GET', body, account, idempotency, oauth = false } = {}) {
             if (!['test','live'].includes(env.PAID_ACCESS_MODE) || !new RegExp(`^sk_${env.PAID_ACCESS_MODE}_`).test(env.STRIPE_SECRET_KEY || '')) fail(503, 'The Stripe key does not match the configured payment mode.');
             const headers = { Authorization: oauth ? `Basic ${btoa(env.STRIPE_SECRET_KEY + ':')}` : `Bearer ${env.STRIPE_SECRET_KEY}` };

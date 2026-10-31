@@ -1,0 +1,43 @@
+name: EPUB publishing checks
+on:
+  pull_request:
+    paths:
+      - 'core/ebooks/**'
+      - 'core/server/http-handlers/author-access.mjs'
+      - 'core/server/http-handlers/paid-access.mjs'
+      - 'core/tests/publishing/epub-editions.test.js'
+      - 'applications/studio/**'
+      - 'applications/library/page-ui/book.js'
+      - 'supabase/live-site/supabase-epub-editions.sql'
+      - '.github/workflows/epub-tests.yml'
+permissions:
+  contents: read
+jobs:
+  epub:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix "$RUNNER_TEMP/epub-tests" --no-audit --no-fund playwright@1.61.1 jsdom@26 @electric-sql/pglite@0.3.14 fflate@0.8.2
+      - run: '"$RUNNER_TEMP/epub-tests/node_modules/.bin/playwright" install --with-deps ${{ matrix.browser }}'
+      - run: node --test core/tests/publishing/*.test.js
+      - run: node --experimental-vm-modules --test applications/studio/tests/epub-reader.mjs applications/studio/tests/epub-storage.mjs
+        env:
+          JSDOM_MODULE: ${{ runner.temp }}/epub-tests/node_modules/jsdom/lib/api.js
+          PGLITE_MODULE: ${{ runner.temp }}/epub-tests/node_modules/@electric-sql/pglite/dist/index.js
+      - run: node applications/studio/tests/epub-browser.mjs
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/epub-tests/node_modules/playwright/index.mjs
+          EPUB_DEPS: ${{ runner.temp }}/epub-tests/node_modules
+          PUBLISH_BROWSER: ${{ matrix.browser }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: epub-${{ matrix.browser }}
+          path: test-results/epub/

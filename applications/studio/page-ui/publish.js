@@ -116,6 +116,7 @@ async function boot() {
         if (status) status.textContent = "Book not found.";
         return;
     }
+    if(book.publish_meta?.epubEdition){window.location.replace(`/applications/studio/pages/epub-publish.html?book=${encodeURIComponent(book.id)}`);return;}
     let chapterAccess = null;
     let warningPicker = null;
     let publishingFields = null;

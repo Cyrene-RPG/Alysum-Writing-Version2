@@ -18,6 +18,7 @@ export function mountBookFormatChoice({session,getBooks,createWritten,importWrit
           <p class="audio-muted">Choose a format to get started.</p><div class="audio-format-options">
           <button type="button" data-format="written"><strong>Written book</strong><span>${entry==='upload'?'Upload a manuscript':'Start with a blank book'}</span></button>
           <button type="button" data-format="script"><strong>Script</strong><span>${entry==='upload'?'Import an FDX, Fountain or Alysum screenplay':'Write a film or television screenplay'}</span></button>
+          <button type="button" data-format="epub"><strong>EPUB book</strong><span>Upload a complete EPUB · One whole-book price</span></button>
           <button type="button" data-format="audio"><strong>Audiobook</strong><span>${entry==='upload'?'Set up an audiobook and upload recordings':'Create an audiobook and add recordings when ready'}</span></button></div>
           <p class="audio-error" data-error role="alert" hidden></p>`;
     }
@@ -38,6 +39,7 @@ export function mountBookFormatChoice({session,getBooks,createWritten,importWrit
         if(event.target.closest('[data-back]')){choose();return;}
         const format=event.target.closest('[data-format]')?.dataset.format;
         if(!format)return;
+        if(format==='epub'){if(session.mode!=='cloud'){message('Sign in online to upload and publish EPUB books.');return;}dialog.close();navigate('/applications/studio/pages/epub-publish.html');return;}
         if(format==='script'){
             busy=true;for(const button of dialog.querySelectorAll('button'))button.disabled=true;
             try{const created=await createScript({title:'Untitled screenplay'});dialog.close();navigate(`/screenplay-studio?id=${encodeURIComponent(created.id)}${entry==='upload'?'&import=1':''}`);}
