@@ -2,7 +2,6 @@ import { UUID_PATTERN, publicEdition, canReadPrivateChapter, matchesPaidSession 
 
 const DEFAULT_SUPABASE_URL = 'https://jrfxgpkpbacajhcwimgz.supabase.co';
 const DEFAULT_ANON_KEY = 'sb_publishable_FnVMe0O37DKb87PCYdg6-g_DbI28pcE';
-const PAGE = '/applications/studio/pages/connected-payments';
 const json = (data, status = 200, headers = {}) => Response.json(data, { status, headers: { 'Cache-Control': 'private, no-store', 'Vary': 'Authorization', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', ...headers } });
 class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
 const fail = (status, message) => { throw new HttpError(status, message); };
