@@ -7,11 +7,36 @@ export async function mountPurchasePasses({root=document,request:transport,loadE
  const say=text=>$('passStatus').textContent=text;
  function clearReading(){readGeneration++;readingPass=null;$('downloadPurchasedEpub').hidden=true;$('passReadingBody').replaceChildren();$('passReadingChapters').replaceChildren();$('passReading').hidden=true;}
  function toggle(tab){const author=tab==='author';$('passAuthorPanel').hidden=!author;$('passReaderPanel').hidden=author;$('passAuthorTab').setAttribute('aria-selected',String(author));$('passReaderTab').setAttribute('aria-selected',String(!author));$('passAuthorTab').tabIndex=author?0:-1;$('passReaderTab').tabIndex=author?-1:0;}
- function controls(value){if(cleared)value=true;busy=value;for(const node of root.querySelectorAll('#passLab button,#passLab input,#passLab select'))node.disabled=value;if(!value){$('createPass').disabled=!$('passBook').value||!chapters.length;$('generatePassCodes').disabled=!selected;$('savePassOffer').disabled=!selected;$('pausePassOffer').disabled=!selected;if(!ready)for(const node of root.querySelectorAll('#passAuthorPanel button,#passReaderPanel button'))node.disabled=true;}}
+ function controls(value){if(cleared)value=true;busy=value;for(const node of root.querySelectorAll('#passLab button,#passLab input,#passLab select'))node.disabled=value;if(!value){updateCreateAvailability();$('generatePassCodes').disabled=!selected;$('savePassOffer').disabled=!selected;$('pausePassOffer').disabled=!selected;if(!ready)for(const node of root.querySelectorAll('#passAuthorPanel button,#passReaderPanel button'))node.disabled=true;}}
  const post=(action,body)=>request(action,{method:'POST',body});
  function row(container,text,buttonLabel,handler){const line=root.createElement('div'),span=root.createElement('span');line.className='pass-row';span.textContent=text;line.append(span);if(buttonLabel){const button=root.createElement('button');button.type='button';button.textContent=buttonLabel;button.addEventListener('click',handler);line.append(button);}container.append(line);}
  async function operation(fn){if(busy)return;controls(true);try{await fn();}catch(error){say(error.message);}finally{controls(false);}}
- function paintChapters(){const epub=epubBooks.has($('passBook').value);$('passMode').querySelector('[value=bundle]').disabled=epub;if(epub)$('passMode').value='book';const bundle=$('passMode').value==='bundle';$('passChapterChoices').hidden=!bundle;$('passChapterChoices').querySelectorAll('label').forEach(el=>el.remove());for(const chapter of chapters){const label=root.createElement('label'),input=root.createElement('input');input.type='checkbox';input.value=chapter.id;label.append(input,root.createTextNode(chapter.title));$('passChapterChoices').append(label);}$('passScope').textContent=bundle?'This pass includes only the chapters you select.':'Includes the whole published edition. Publish later chapters into this same pass when ready.';}
+ function paintChapters(){
+  const bookId=$('passBook').value,epub=epubBooks.has(bookId);
+  $('passMode').querySelector('[value=bundle]').disabled=epub;
+  if(epub)$('passMode').value='book';
+  const bundle=$('passMode').value==='bundle',field=$('passChapterChoices');
+  field.hidden=!bundle;field.replaceChildren(field.querySelector('legend'));
+  if(bundle){
+   if(!bookId||!chapters.length){
+    const hint=root.createElement('p');hint.setAttribute('role','status');
+    hint.textContent=!bookId?'Choose an original story above to load its chapters.':'No eligible published chapters were returned for this story. Publish chapters first, then refresh and try again.';
+    field.append(hint);
+   }else{
+    const hint=root.createElement('p');hint.textContent='Select the chapters to include in this pass:';field.append(hint);
+    for(const chapter of chapters){
+     const label=root.createElement('label'),input=root.createElement('input');input.type='checkbox';input.value=chapter.id;
+     label.append(input,root.createTextNode(chapter.title||'Untitled chapter'));field.append(label);
+    }
+   }
+  }
+  $('passScope').textContent=bundle?'Choose the chapters below. A pass name does not automatically select chapters.':'Includes the whole published edition. Publish later chapters into this same pass when ready.';
+  updateCreateAvailability();
+ }
+ function updateCreateAvailability(){
+  const bundle=$('passMode').value==='bundle';
+  $('createPass').disabled=busy||!ready||!$('passBook').value||!chapters.length||(bundle&&!$('passChapterChoices').querySelector('input:checked'));
+ }
  async function authorDetails(){
   selected=passes.find(pass=>pass.id===$('passSelect').value);$('generatePassCodes').disabled=!selected;$('refreshWholePass').hidden=selected?.mode!=='book';$('savePassOffer').disabled=!selected;$('pausePassOffer').disabled=!selected;$('passCheckoutUrl').value=selected?.checkoutUrl||'';$('passOfferStatus').textContent=selected?(selected.saleEnabled?'Purchase link is visible. Existing codes and access remain valid when hidden.':'Purchase link is hidden. Existing codes and access remain valid.'):'';$('passSelectedSummary').textContent=selected?`${selected.bookTitle} · ${selected.chapterCount} chapters · ${money(selected)}`:'';$('passBatches').replaceChildren();$('passGrants').replaceChildren();if(!selected)return;
   const passId=selected.id,[batchData,grantData]=await Promise.all([request('batches',{query:{pass:passId}}),request('grants',{query:{pass:passId}})]);
@@ -32,9 +57,9 @@ export async function mountPurchasePasses({root=document,request:transport,loadE
  $('downloadPurchasedEpub').addEventListener('click',()=>operation(async()=>{if(!readingPass)return;const data=await request('epub-download',{query:{pass:readingPass}});const url=new URL(data.url);if(url.protocol!=='https:')throw Error('Invalid download address.');const link=root.createElement('a');link.href=url.href;link.download=data.fileName;link.rel='noopener noreferrer';link.referrerPolicy='no-referrer';root.body.append(link);link.click();link.remove();say('Your EPUB download is ready.');}));
  $('passAuthorTab').addEventListener('click',()=>{toggle('author');void operation(authorDetails);});$('passReaderTab').addEventListener('click',()=>{toggle('reader');void operation(myPasses);});
  for(const [id,next]of [['passAuthorTab','passReaderTab'],['passReaderTab','passAuthorTab']])$(id).addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();$(next).click();$(next).focus();}});
- $('passBook').addEventListener('change',()=>operation(async()=>{chapters=[];$('createPass').disabled=true;if($('passBook').value)chapters=(await request('chapters',{query:{book:$('passBook').value}})).chapters;paintChapters();}));$('passMode').addEventListener('change',paintChapters);
+ $('passBook').addEventListener('change',()=>operation(async()=>{chapters=[];$('createPass').disabled=true;if($('passBook').value)chapters=(await request('chapters',{query:{book:$('passBook').value}})).chapters;paintChapters();}));$('passMode').addEventListener('change',paintChapters);$('passChapterChoices').addEventListener('change',updateCreateAvailability);
  $('passCreateForm').addEventListener('input',()=>createAttempt=crypto.randomUUID());
- $('passCreateForm').addEventListener('submit',event=>{event.preventDefault();void operation(async()=>{const body={requestId:createAttempt,bookId:$('passBook').value,mode:$('passMode').value,title:$('passTitle').value.trim(),price:$('passPrice').value,currency:$('passCurrency').value,chapterIds:[...$('passChapterChoices').querySelectorAll('input:checked')].map(input=>input.value)};const result=await post('create',body);createAttempt=crypto.randomUUID();await loadPasses(result.pass.id);say('Pass created. Generate delivery codes next.');});});
+ $('passCreateForm').addEventListener('submit',event=>{event.preventDefault();void operation(async()=>{if($('passMode').value==='bundle'&&!$('passChapterChoices').querySelector('input:checked'))throw Error('Select at least one chapter for this bundle.');const body={requestId:createAttempt,bookId:$('passBook').value,mode:$('passMode').value,title:$('passTitle').value.trim(),price:$('passPrice').value,currency:$('passCurrency').value,chapterIds:[...$('passChapterChoices').querySelectorAll('input:checked')].map(input=>input.value)};const result=await post('create',body);createAttempt=crypto.randomUUID();await loadPasses(result.pass.id);say('Pass created. Generate delivery codes next.');});});
  $('passSelect').addEventListener('change',()=>operation(async()=>{delivery=null;$('passCodes').value='';$('passEmailCode').replaceChildren();$('passCodeOutput').hidden=true;$('passEmailText').value='';$('passEmailDialog').hidden=true;await authorDetails();}));
  $('generatePassCodes').addEventListener('click',()=>operation(async()=>{if(!selected)return;delivery=null;$('passCodes').value='';$('passEmailCode').replaceChildren();$('passCodeOutput').hidden=true;$('passEmailText').value='';$('passEmailDialog').hidden=true;delivery=await post('generate',{passId:selected.id,requestId:batchAttempt,count:Number($('passCodeCount').value)});batchAttempt=crypto.randomUUID();$('passCodes').value=delivery.codes.join('\n');$('passEmailCode').replaceChildren(...delivery.codes.map((code,index)=>new Option('Code '+(index+1),code)));$('passCodeOutput').hidden=false;await authorDetails();say('Codes generated. Download them now; raw codes are shown only in this response.');}));
  $('downloadPassCodes').addEventListener('click',()=>{if(delivery)download(passCodeCsv(delivery.codes,delivery.pass),'alysum-purchase-codes.csv');});
