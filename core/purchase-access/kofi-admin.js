@@ -24,11 +24,23 @@ export async function handleKofiAdmin(request,env,{fetcher=fetch}={}){
   if(request.method==='GET'){
    const rows=await db('purchase_passes?owner_id=eq.'+encodeURIComponent(member.id)+'&select=id,title,mode,amount,currency&limit=100');
    const mappings=await db('kofi_pass_products?select=product_id,pass_id,enabled&limit=100');
-   return response({passes:rows,mappings:mappings.filter(m=>rows.some(p=>p.id===m.pass_id))});
+   const accounts=await db('kofi_author_accounts?owner_id=eq.'+encodeURIComponent(member.id)+'&select=owner_id&limit=1');
+   return response({passes:rows,mappings:mappings.filter(m=>rows.some(p=>p.id===m.pass_id)),accountConnected:accounts.length===1});
   }
   const body=await request.json();
+  if(body.action==='connectAccount'){
+   const secret=String(body.verificationToken||'').trim();
+   if(!/^[a-z0-9-]{20,128}$/i.test(secret))return response({error:'Invalid Ko-fi verification token'},400);
+   const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(secret))),b=>b.toString(16).padStart(2,'0')).join('');
+   const other=await db('kofi_author_accounts?token_sha256=eq.'+digest+'&select=owner_id&limit=1');
+   if(other.length&&other[0].owner_id!==member.id)return response({error:'This Ko-fi account is connected to another author'},409);
+   await db('kofi_author_accounts?on_conflict=owner_id',{method:'POST',headers:{...headers,Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify({owner_id:member.id,token_sha256:digest})});
+   return response({saved:true,accountConnected:true});
+  }
   const productId=productCode(body.productUrl||body.productId);
   if(!productId||! /^[0-9a-f-]{36}$/i.test(body.passId||'')||typeof body.enabled!=='boolean')return response({error:'Invalid mapping'},400);
+  const account=await db('kofi_author_accounts?owner_id=eq.'+encodeURIComponent(member.id)+'&select=owner_id&limit=1');
+  if(account.length!==1)return response({error:'Connect your Ko-fi account first'},409);
   const rows=await db('purchase_passes?id=eq.'+encodeURIComponent(body.passId)+'&owner_id=eq.'+encodeURIComponent(member.id)+'&select=id&limit=1');
   if(rows.length!==1)return response({error:'Pass not found'},404);
   const existing=await db('kofi_pass_products?product_id=eq.'+encodeURIComponent(productId)+'&select=pass_id&limit=1');
