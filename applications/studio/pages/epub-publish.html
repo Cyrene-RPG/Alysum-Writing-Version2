@@ -91,8 +91,8 @@
  <details><summary>Content warnings · review before publishing</summary><div id="warningPicker"></div></details>
  <label>Cover image (optional)<input type="file" id="epubCover" accept="image/jpeg,image/png,image/webp"></label><img id="epubCoverPreview" alt="Book cover preview" hidden>
  </section>
- <section class="epub-panel" aria-labelledby="epubPriceTitle"><h2 id="epubPriceTitle">3. Whole-book Purchase Pass</h2>
- <p>One purchase unlocks every section and the EPUB download. There are no separate chapter products.</p>
+ <section class="epub-panel" aria-labelledby="epubChapterTitle"><h2 id="epubChapterTitle">3. Chapter access</h2><p>Choose which chapters everyone can read for free. Paid chapters can be sold individually or in bundles using Purchase Passes. The complete EPUB download requires a whole-book pass.</p><div class="epub-actions"><button type="button" id="epubAllFree">All free</button><button type="button" id="epubAllPaid">All paid</button></div><div id="epubChapterAccess"></div><p><a href="/purchase-passes" target="_blank" rel="noopener">Manage individual chapter and bundle Purchase Passes</a></p></section><section class="epub-panel" aria-labelledby="epubPriceTitle"><h2 id="epubPriceTitle">4. Whole-book Purchase Pass</h2>
+ <p>A whole-book pass unlocks all chapters and the complete EPUB download. Individual chapter and bundle passes are managed separately.</p>
 
 
 
@@ -100,10 +100,10 @@
  <p class="pub-hint">Publish a whole-book pass, then set your author checkout link and generate delivery codes in Purchase Passes. Readers redeem their code to read and download.</p>
  <label><input id="epubRights" type="checkbox" required> I own the rights to sell this original book. It is not fan fiction.</label>
  </section>
- <section class="epub-panel"><h2>Ready for readers</h2><p id="epubReview"></p><p>Your listing shows the description and chapter titles. All book text and the download stay locked until a reader redeems their Purchase Pass code.</p>
+ <section class="epub-panel"><h2>Ready for readers</h2><p id="epubReview"></p><p>Your listing shows the description and chapter titles. Free chapters are readable by everyone. Paid chapters require a Purchase Pass; the complete EPUB download requires a whole-book pass.</p>
  <div class="epub-actions"><button type="button" id="saveEpubDraft">Save draft</button><button type="submit" id="publishEpub">Publish EPUB</button><a id="epubListing" hidden>View book →</a></div></section>
  </div></form></main>
-    <script type="module" src="/applications/studio/page-ui/epub-publish.js?v=passes-1"></script>
+    <script type="module" src="/applications/studio/page-ui/epub-publish.js?v=chapter-access-1"></script>
 </body>
 </html>
 
