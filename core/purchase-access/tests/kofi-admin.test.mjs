@@ -8,7 +8,7 @@ function fake({connected=true,other=false}={}){
  async function fetcher(url,opts={}){
   const u=String(url);
   if(u.includes('/auth/v1/user'))return Response.json({id:user,email_confirmed_at:'2026-01-01'});
-  if(u.includes('/purchase_passes?'))return Response.json([{id:pass,title:'Chapter 3',owner_id:user,amount:150,currency:'USD'}]);
+  if(u.includes('/purchase_passes?'))return Response.json(other&&u.includes('33333333')?[]:[{id:pass,title:'Chapter 3',owner_id:user,amount:150,currency:'USD'}]);
   if(u.includes('/kofi_author_accounts?'))return Response.json(connected?[{owner_id:user}]:[]);
   if(u.includes('/kofi_pass_products?')&&opts.method==='POST'){writes.push(JSON.parse(opts.body));return Response.json(writes);}
   if(u.includes('/kofi_pass_products?'))return Response.json(other?[{pass_id:'33333333-3333-4333-8333-333333333333'}]:[]);
