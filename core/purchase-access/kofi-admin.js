@@ -31,6 +31,11 @@ export async function handleKofiAdmin(request,env,{fetcher=fetch}={}){
   if(!productId||! /^[0-9a-f-]{36}$/i.test(body.passId||'')||typeof body.enabled!=='boolean')return response({error:'Invalid mapping'},400);
   const rows=await db('purchase_passes?id=eq.'+encodeURIComponent(body.passId)+'&owner_id=eq.'+encodeURIComponent(member.id)+'&select=id&limit=1');
   if(rows.length!==1)return response({error:'Pass not found'},404);
+  const existing=await db('kofi_pass_products?product_id=eq.'+encodeURIComponent(productId)+'&select=pass_id&limit=1');
+  if(existing.length){
+   const owned=await db('purchase_passes?id=eq.'+encodeURIComponent(existing[0].pass_id)+'&owner_id=eq.'+encodeURIComponent(member.id)+'&select=id&limit=1');
+   if(owned.length!==1)return response({error:'This Ko-fi product is already connected to another author'},409);
+  }
   await db('kofi_pass_products?on_conflict=product_id',{method:'POST',headers:{...headers,Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify({product_id:productId,pass_id:body.passId,enabled:body.enabled})});
   return response({saved:true});
  }catch{return response({error:'Could not save Ko-fi mapping'},503);}
