@@ -87,6 +87,14 @@ begin
  update public.purchase_pass_codes set canceled=true where batch_id=p_batch and pass_id=p_pass and buyer_id is null;
  return true;
 end;$$;
+-- Lists need chapter names, never the full private reading text.
+create or replace view public.purchase_pass_catalog with(security_invoker=true) as
+ select p.id,p.owner_id,p.source_book_id,p.book_title,p.title,p.mode,p.amount,p.currency,p.checkout_url,p.sale_enabled,p.created_at,
+ (select jsonb_agg(jsonb_build_object('id',chapter->>'id','title',chapter->>'title') order by position)
+  from jsonb_array_elements(p.chapters) with ordinality as items(chapter,position)) as chapters
+ from public.purchase_passes p;
+revoke all on public.purchase_pass_catalog from public,anon,authenticated;
+grant select on public.purchase_pass_catalog to service_role;
 create or replace function public.purchase_pass_version() returns integer language sql immutable as $$select 1$$;
 revoke all on function public.limit_purchase_passes(),public.create_purchase_pass_batch(uuid,uuid,uuid,jsonb),public.redeem_purchase_pass(text,uuid),public.cancel_purchase_pass_batch(uuid,uuid,uuid),public.purchase_pass_version() from public,anon,authenticated;
 grant execute on function public.create_purchase_pass_batch(uuid,uuid,uuid,jsonb),public.redeem_purchase_pass(text,uuid),public.cancel_purchase_pass_batch(uuid,uuid,uuid),public.purchase_pass_version() to service_role;
