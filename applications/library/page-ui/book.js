@@ -4,7 +4,6 @@ import { renderContentWarnings } from "/site-appearance/components/content-warni
 import { authorProfileUrl } from "/core/library/author-links.js";
 import { authorNameHtml } from "/site-appearance/js-runtime/author-link.js";
 import { openReadingState } from "/core/library/reading-state.js";
-import { normalizePurchaseUrl } from "@alysum/publishing/publish-meta.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
@@ -269,12 +268,6 @@ async function boot() {
         });
         if(owner)for(const id of ['editTitle','editSynopsis','addChapter']){const link=document.getElementById(id);if(link)link.href=`/applications/studio/pages/epub-publish.html?book=${encodeURIComponent(work.id)}`;}
     }
-
-    const purchaseUrl = normalizePurchaseUrl(work.purchaseUrl);
-    const purchaseBlock = document.getElementById("bookPurchaseBlock");
-    const purchaseLink = document.getElementById("buyFromAuthor");
-    purchaseBlock.hidden = true; // Retired product links must not accept new purchases.
-    purchaseLink.removeAttribute("href");
 
     const notesText = String(work.notesAfter || "").trim();
     const notesBlock = document.getElementById("bookNotesBlock");
