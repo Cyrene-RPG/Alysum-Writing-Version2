@@ -3,6 +3,9 @@ on:
   pull_request:
     paths:
       - 'core/purchase-access/**'
+      - 'functions/kofi-connect.js'
+      - 'functions/api/kofi-products.js'
+      - 'supabase/live-site/supabase-kofi-multi-author.sql'
       - 'core/tests/purchase-access/**'
       - 'core/server/http-handlers/purchase-passes.mjs'
       - 'core/server/http-handlers/author-access.mjs'
@@ -41,6 +44,7 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --prefix "$RUNNER_TEMP/pass-lab" --no-audit --no-fund playwright@1.61.1 @electric-sql/pglite@0.3.14
+      - run: node --test core/purchase-access/tests/*.test.mjs
       - run: node --test core/tests/purchase-access/*.test.mjs
         env:
           PGLITE_MODULE: ${{ runner.temp }}/pass-lab/node_modules/@electric-sql/pglite/dist/index.js
