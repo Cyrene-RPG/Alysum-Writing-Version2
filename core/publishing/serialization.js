@@ -51,7 +51,7 @@ function publishedIdsFromData(data) {
 }
 
 function countPublishedChapters(source, chapters, chapterCount) {
-    const qualifies=ch=>source.editionFormat==='epub'&&ch?.locked ? (publishWordCount(ch)||0)>0 : chapterMeetsPublishLength(ch);
+    const qualifies=ch=>source.editionFormat==='epub' ? (publishWordCount(ch)||0)>0 : chapterMeetsPublishLength(ch);
     const publishedIds = publishedIdsFromData(source);
     const byId = new Map(chapters.map((ch) => [String(ch?.id), ch]));
     if (publishedIds !== undefined) {

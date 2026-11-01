@@ -19,12 +19,20 @@ export async function mountEpubPublisher({root=document,book=null,edition=null,r
   genres=bindTagPicker($('epubGenrePicker'),{id:'epubGenres',label:'Genres',initial:(meta.genres||[]).map(key=>GENRES[key]?.label).filter(Boolean),suggestions:labels.map(([,g])=>g.label),allowCustom:false,limit:3});
   tags=bindTagPicker($('epubTagPicker'),{id:'epubTags',label:'Tags',initial:meta.tags||[],suggestions:[]});
   warnings=bindWarningPicker(root,{initialState:meta.warningMeta,compact:true,chapters:book.sections.body});
+  const free=new Set(Array.isArray(meta.epubDetails?.freeChapterIds)?meta.epubDetails.freeChapterIds.map(String):[]);
+  const choices=$('epubChapterAccess');choices.replaceChildren();
+  for(const ch of book.sections.body){
+   const label=root.createElement('label'),checkbox=root.createElement('input');
+   checkbox.type='checkbox';checkbox.value=String(ch.id);checkbox.checked=free.has(String(ch.id));
+   label.append(checkbox,root.createTextNode(' Free · '+(ch.title||'Untitled chapter')));
+   choices.append(label);
+  }
   $('epubReview').textContent=`${edition.fileName} · ${book.sections.body.length} sections · Complete book · Read and download`;
   if(meta.cover_url){$('epubCoverPreview').src=meta.cover_url;$('epubCoverPreview').hidden=false;}
   $('publishEpub').textContent=book.is_published?'Update EPUB':'Publish EPUB';
   $('epubListing').hidden=!book.is_published;$('epubListing').href=`/book?id=${encodeURIComponent(book.id)}`;
  }
- function form(){return {workType:'original',title:$('epubBookTitle').value.trim(),author:$('epubAuthor').value.trim(),summary:$('epubSummary').value.trim(),genres:genres.read(true).map(label=>Object.keys(GENRES).find(key=>GENRES[key].label===label)).filter(Boolean),tags:tags.read(true),rating:$('epubRating').value,warningMeta:warnings.read(),warnings:warningLabels(warnings.read()),coverUrl:book.publish_meta?.cover_url||'',connectionId:'',productUrl:'',price:$('epubPrice').value.trim(),currency:$('epubCurrency').value,rightsConfirmed:$('epubRights').checked};}
+ function form(){return {workType:'original',title:$('epubBookTitle').value.trim(),author:$('epubAuthor').value.trim(),summary:$('epubSummary').value.trim(),genres:genres.read(true).map(label=>Object.keys(GENRES).find(key=>GENRES[key].label===label)).filter(Boolean),tags:tags.read(true),rating:$('epubRating').value,warningMeta:warnings.read(),warnings:warningLabels(warnings.read()),coverUrl:book.publish_meta?.cover_url||'',connectionId:'',productUrl:'',price:$('epubPrice').value.trim(),currency:$('epubCurrency').value,rightsConfirmed:$('epubRights').checked,freeChapterIds:[...$('epubChapterAccess').querySelectorAll('input:checked')].map(el=>el.value)};}
  async function save(){
   const value=form();if(coverFile){value.coverUrl=await uploadCover(book,coverFile);coverFile=null;}
   book=await saveDetails(book,{...value});return form();
@@ -38,14 +46,17 @@ export async function mountEpubPublisher({root=document,book=null,edition=null,r
  $('saveEpubFile').addEventListener('click',async()=>{
   if(busy||!parsed)return;if(!$('uploadRights').checked){say('Confirm that you own the rights to upload and sell this original book.');return;}
   setBusy(true);say('Uploading your private EPUB…');
-  try{const result=await upload({book,parsed,file:selectedFile});book=result.book;edition=result.edition;setBookUrl(book.id);details();say('EPUB uploaded privately. Add your listing details and whole-book pass price.');}
+  try{const result=await upload({book,parsed,file:selectedFile});book=result.book;edition=result.edition;setBookUrl(book.id);details();say('EPUB uploaded privately. Add your listing details and select free chapters.');}
   catch(error){say(error.message);}finally{setBusy(false);$('saveEpubFile').disabled=!parsed;}
  });
+ for(const [id,checked] of [['epubAllFree',true],['epubAllPaid',false]])$(''+id).addEventListener('click',()=>{$('epubChapterAccess').querySelectorAll('input').forEach(el=>el.checked=checked);});
  $('epubCover').addEventListener('change',event=>{coverFile=event.target.files[0]||null;});
  $('saveEpubDraft').addEventListener('click',async()=>{if(busy)return;setBusy(true);say('Saving EPUB draft…');try{await save();say('Draft saved. Your live listing has not changed.');}catch(error){say(error.message);}finally{setBusy(false);}});
+ $('epubForm').addEventListener('invalid',event=>{say('Complete the required field: '+(event.target.closest('label')?.textContent||event.target.id||'book details').trim()+'.');},{capture:true});
+ $('publishEpub').addEventListener('click',()=>{if(!busy&&!$('epubForm').checkValidity())say('Complete the highlighted required fields before publishing.');});
  $('epubForm').addEventListener('submit',async event=>{
   event.preventDefault();if(busy)return;setBusy(true);say('Saving and publishing your complete EPUB…');
-  try{const value=await save();await publishEpub({book,edition,form:value,configure,saveListing:data=>saveListing(book,data)});book.is_published=true;$('epubListing').hidden=false;$('epubListing').href=`/book?id=${encodeURIComponent(book.id)}`;$('publishEpub').textContent='Update EPUB';say('Published. The whole book and EPUB download unlock together with a Purchase Pass.');}
+  try{const value=await save();await publishEpub({book,edition,form:value,configure,saveListing:data=>saveListing(book,data)});book.is_published=true;$('epubListing').hidden=false;$('epubListing').href=`/book?id=${encodeURIComponent(book.id)}`;$('publishEpub').textContent='Update EPUB';say('Published. Free chapters are public; paid chapters and the complete EPUB download require Purchase Passes.');}
   catch(error){say(error.message);}finally{setBusy(false);}
  });
  $('epubForm').hidden=false;

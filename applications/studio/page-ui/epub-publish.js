@@ -34,7 +34,7 @@ async function boot(){
    const edition=await ebooks.upload(book,file);return {book,edition};
   },
   async saveDetails(current,form){
-   const publish_meta={...current.publish_meta,epubEdition:true,workType:'original',author:form.author,synopsis:form.summary,genres:form.genres,genre:form.genres[0]||'',tags:form.tags,rating:form.rating,warningMeta:form.warningMeta,warnings:form.warnings,cover_url:form.coverUrl,complete:true,epubDetails:{price:form.price,currency:form.currency,rightsConfirmed:form.rightsConfirmed}};
+   const publish_meta={...current.publish_meta,epubEdition:true,workType:'original',author:form.author,synopsis:form.summary,genres:form.genres,genre:form.genres[0]||'',tags:form.tags,rating:form.rating,warningMeta:form.warningMeta,warnings:form.warnings,cover_url:form.coverUrl,complete:true,epubDetails:{price:form.price,currency:form.currency,rightsConfirmed:form.rightsConfirmed,freeChapterIds:form.freeChapterIds}};
    const saved=confirmed(await savePublicationSettings(api,baseline,{title:form.title,publish_meta},session.user.id));baseline=(await loadPublicationBook(api,saved.id,session.user.id)).baseline;book=saved;return saved;
   },
   async configure(body){
