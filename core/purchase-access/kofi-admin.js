@@ -1,3 +1,9 @@
+const productCode=value=>{
+ const input=String(value||'').trim();
+ const match=input.match(/^https:\/\/(?:www\.)?ko-fi\.com\/s\/([a-z0-9]{6,32})\/?(?:[?#].*)?$/i);
+ if(match)return match[1].toLowerCase();
+ return /^[a-z0-9]{6,32}$/i.test(input)?input.toLowerCase():null;
+};
 const response=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
 export async function handleKofiAdmin(request,env,{fetcher=fetch}={}){
  if(!['GET','POST'].includes(request.method))return response({error:'Method not allowed'},405);
@@ -17,13 +23,15 @@ export async function handleKofiAdmin(request,env,{fetcher=fetch}={}){
  try{
   if(request.method==='GET'){
    const rows=await db('purchase_passes?owner_id=eq.'+encodeURIComponent(member.id)+'&select=id,title,mode,amount,currency&limit=100');
-   return response({passes:rows});
+   const mappings=await db('kofi_pass_products?select=product_id,pass_id,enabled&limit=100');
+   return response({passes:rows,mappings:mappings.filter(m=>rows.some(p=>p.id===m.pass_id))});
   }
   const body=await request.json();
-  if(!/^[a-zA-Z0-9_-]{3,120}$/.test(body.productId||'')||! /^[0-9a-f-]{36}$/i.test(body.passId||'')||typeof body.enabled!=='boolean')return response({error:'Invalid mapping'},400);
+  const productId=productCode(body.productUrl||body.productId);
+  if(!productId||! /^[0-9a-f-]{36}$/i.test(body.passId||'')||typeof body.enabled!=='boolean')return response({error:'Invalid mapping'},400);
   const rows=await db('purchase_passes?id=eq.'+encodeURIComponent(body.passId)+'&owner_id=eq.'+encodeURIComponent(member.id)+'&select=id&limit=1');
   if(rows.length!==1)return response({error:'Pass not found'},404);
-  await db('kofi_pass_products?on_conflict=product_id',{method:'POST',headers:{...headers,Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify({product_id:body.productId,pass_id:body.passId,enabled:body.enabled})});
+  await db('kofi_pass_products?on_conflict=product_id',{method:'POST',headers:{...headers,Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify({product_id:productId,pass_id:body.passId,enabled:body.enabled})});
   return response({saved:true});
  }catch{return response({error:'Could not save Ko-fi mapping'},503);}
 }
