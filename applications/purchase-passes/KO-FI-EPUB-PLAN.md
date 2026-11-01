@@ -1,25 +1,35 @@
-# Ko-fi and EPUB integration — staged implementation
+# Ko-fi integration deployment checklist
 
-This branch is a safe **foundation**, not a complete payment-to-email pipeline. Never enable live sales until the remaining items are implemented and tested.
+**Status: development only. Do not enable live payments until all checks pass.**
 
-## Existing Alysum features
-- Purchase Passes already provide book/bundle snapshots, code hashing, redemption, grants and protected chapter reading.
-- The existing EPUB download route only supports whole-book passes with matching chapter IDs.
-- A single chapter is already representable as a bundle with one chapter ID.
+## Code present
+- Cloudflare Pages Ko-fi webhook: /api/kofi-webhook
+- Product mapping: /api/kofi-products (Supabase authenticated)
+- Refund revocation: /api/kofi-refund (server-secret authenticated; call from trusted administrative tooling after a confirmed refund)
+- License delivery: /api/kofi-delivery (server-secret authenticated)
+- Purchase Pass grants and chapter reading: existing /api/purchase-passes
+- EPUB chapter selection: core/purchase-access/epub-chapters.js
 
-## Implemented in this branch
-- Cloudflare Pages webhook adapter at /api/kofi-webhook.
-- Verification-token checking and strict product mapping through a new additive live-schema migration.
-- Idempotent registration of Ko-fi transactions, with a pending order record.
-- No code is issued and no book is unlocked from an unverified browser request.
+## Required configuration
+- Apply supabase/live-site/supabase-purchase-passes.sql first, then supabase/live-site/supabase-kofi-orders.sql to a backed-up LIVE Supabase database.
+- Set SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, KOFI_VERIFICATION_TOKEN.
+- Set RESEND_API_KEY and KOFI_FROM_EMAIL (verified sender), SITE_URL.
+- Set KOFI_CODE_ENCRYPTION_KEY (64 hex digits generated securely, held server-side only), KOFI_DELIVERY_SECRET and KOFI_REFUND_SECRET.
+- Configure Ko-fi webhook to https://alysumwriting.com/api/kofi-webhook.
+- Create an enabled Ko-fi product mapping to each pass; verify pass.sale_enabled is true and prices match exactly.
+- Configure an external scheduled POST to /api/kofi-delivery with Authorization: Bearer <KOFI_DELIVERY_SECRET>. The Cloudflare Pages scheduled module is not automatically a deployed cron trigger.
 
-## Still required before production
-1. Confirm Ko-fi Shop payload product identifier and payment completion fields against real sandbox/test deliveries. Verify total/currency and quantity against configured product prices.
-2. Add a durable delivery worker with an atomic order-claim/outbox mechanism, one unique ALYPASS code per purchased copy, Resend email sending, retry/backoff, and manual recovery.
-3. Extend EPUB ingestion to parse navigation/spine into safe chapter text and stable IDs, and create matching chapter/bundle snapshots without leaking source EPUB files.
-4. Add an author UI to map Ko-fi product IDs to pass IDs, and a buyer redemption flow linked from the email.
-5. Add tests for duplicate webhook deliveries, invalid token, refund/reversal, partial email failure, chapter-only access, full-book access and unauthorized EPUB download.
-6. Confirm the production database uses the live schema, back up the database, then apply the SQL manually. Never commit service-role keys, webhook tokens or Resend API keys.
+## Blocking production verification
+- Run node --test core/purchase-access/tests/*.test.mjs in an environment that supports ES modules.
+- Run database migration in a disposable clone and verify RPC signatures and permissions.
+- Verify the exact live Ko-fi payload fields and transaction semantics; the verification token is a shared secret, not cryptographic signing.
+- Test a real small-value payment with a verified Resend sender and observe the delivered key.
+- Test duplicate webhook deliveries, multi-quantity purchases, worker crashes, refunds, revoked grants, chapter-only access and full-book access.
+- Implement raw EPUB ZIP parsing and stable chapter import into the existing book manuscript schema; epub-chapters.js only validates already-extracted XHTML.
+- Add a visible author configuration UI (the authenticated endpoint exists, but there is no form yet).
+- Set up automatic refund event reconciliation; currently refunds must be submitted by trusted administrative tooling.
+- Verify buyer redemption page route. Do not expose full EPUB downloads to chapter-only purchasers.
+- Validate scheduled delivery retries and Resend idempotency after network failures.
 
-## Environment
-KOFI_VERIFICATION_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
+## Security notes
+Never commit secrets, plaintext license codes, raw EPUB files, or service role keys. Keep the PR in draft until the above tests pass.
