@@ -52,6 +52,8 @@ export async function mountEpubPublisher({root=document,book=null,edition=null,r
  for(const [id,checked] of [['epubAllFree',true],['epubAllPaid',false]])$(''+id).addEventListener('click',()=>{$('epubChapterAccess').querySelectorAll('input').forEach(el=>el.checked=checked);});
  $('epubCover').addEventListener('change',event=>{coverFile=event.target.files[0]||null;});
  $('saveEpubDraft').addEventListener('click',async()=>{if(busy)return;setBusy(true);say('Saving EPUB draft…');try{await save();say('Draft saved. Your live listing has not changed.');}catch(error){say(error.message);}finally{setBusy(false);}});
+ $('epubForm').addEventListener('invalid',event=>{say('Complete the required field: '+(event.target.closest('label')?.textContent||event.target.id||'book details').trim()+'.');},{capture:true});
+ $('publishEpub').addEventListener('click',()=>{if(!busy&&!$('epubForm').checkValidity())say('Complete the highlighted required fields before publishing.');});
  $('epubForm').addEventListener('submit',async event=>{
   event.preventDefault();if(busy)return;setBusy(true);say('Saving and publishing your complete EPUB…');
   try{const value=await save();await publishEpub({book,edition,form:value,configure,saveListing:data=>saveListing(book,data)});book.is_published=true;$('epubListing').hidden=false;$('epubListing').href=`/book?id=${encodeURIComponent(book.id)}`;$('publishEpub').textContent='Update EPUB';say('Published. Free chapters are public; paid chapters and the complete EPUB download require Purchase Passes.');}
