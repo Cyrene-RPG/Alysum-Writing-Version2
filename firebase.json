@@ -46,6 +46,10 @@
     ],
     "rewrites": [
       {
+        "source": "/purchase-passes",
+        "destination": "/applications/studio/pages/purchase-passes.html"
+      },
+      {
         "source": "/story-bible-selection-preview",
         "destination": "/applications/editor/pages/story-bible-preview.html"
       },

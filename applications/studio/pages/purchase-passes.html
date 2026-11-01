@@ -1,0 +1,94 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/",
+        "@alysum/statistics/": "/core/statistics/"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=8" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes-dim/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=10" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=12" />
+    <script src="/site-appearance/js-runtime/body-background-presets-data.js?v=3"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/boot.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow">
+    <title>Purchase Passes — Alysum</title>
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=30" />
+    <link rel="stylesheet" href="/css/studio/page.css?v=18" />
+    <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
+
+<link rel="stylesheet" href="/applications/studio/studio-css/purchase-passes.css">
+
+</head>
+<body class="pass-lab-page">
+    <header class="wd-welcome-bar ui-bar" aria-label="Welcome">
+        <div class="wd-welcome-inner">
+            <div class="wd-pfp-menu" id="welcomePfpMenu">
+                <button type="button" class="wd-pfp-btn" id="welcomePfpBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="welcomePfpDropdown" aria-label="Account menu">
+                    <span class="wd-pfp" id="welcomePfp">
+                        <img id="welcomePfpImg" alt="" hidden />
+                        <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true">A</span>
+                    </span>
+                </button>
+                <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
+                    <a role="menuitem" href="/library" data-close-pfp-menu>Home</a>
+                    <a role="menuitem" href="overview.html" data-close-pfp-menu>Profile</a>
+                    <a role="menuitem" href="settings.html" data-close-pfp-menu>Settings</a>
+                    <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
+                </div>
+            </div>
+            <div class="wd-welcome-copy">
+                <h1 class="wd-welcome-title" id="welcomeTitle">Writing <span class="wd-name">Studio</span></h1>
+                <p class="wd-welcome-sub" id="welcomeSubtitle"></p>
+            </div>
+        </div>
+    </header>
+<main class="pass-lab" id="passLab">
+<nav class="pass-actions" aria-label="Return links"><a href="/studio">← Studio</a><a href="/library">Library</a></nav><header><p class="pass-eyebrow">Purchase Passes</p><h1>Purchase Passes</h1><p>Publish whole-book passes or chapter bundles. Redeem your code to read your purchased books.</p></header>
+<p class="pass-banner">Buy directly from the author, then redeem your code here. Alysum does not collect payments. Authors deliver codes after confirming payment.</p>
+<p id="passStatus" role="status" aria-live="polite">Loading…</p>
+<section class="pass-card" id="passSetup" hidden><h2>Purchase Passes are being prepared</h2><p>This feature is temporarily unavailable. Your existing purchases are kept.</p><button type="button" id="checkPassSetup">Try again</button></section>
+<div class="pass-tabs" role="tablist" aria-label="Purchase Passes"><button type="button" id="passAuthorTab" role="tab" aria-controls="passAuthorPanel" aria-selected="true">Author tools</button><button type="button" id="passReaderTab" role="tab" aria-controls="passReaderPanel" aria-selected="false">Redeem &amp; read</button></div>
+<section id="passAuthorPanel" role="tabpanel" aria-labelledby="passAuthorTab">
+<form id="passCreateForm" class="pass-card"><h2>1. Create a pass</h2>
+<div class="pass-grid"><label>Original story<select id="passBook" required><option value="">Choose a saved book</option></select></label><label>Pass type<select id="passMode"><option value="book">Whole book</option><option value="bundle">Chapter bundle</option></select></label></div>
+<label>Pass name<input id="passTitle" required maxlength="200" placeholder="Whole book or Opening Arc"></label>
+<p id="passScope">Includes the whole published edition. You can publish later chapters into this same pass.</p><fieldset id="passChapterChoices" hidden><legend>Included chapters</legend></fieldset>
+<div class="pass-grid"><label>Display price<input id="passPrice" required type="number" min="0.01" max="1000" step="0.01" inputmode="decimal" placeholder="2.99"></label><label>Currency<select id="passCurrency"><option>USD</option><option>GBP</option><option>EUR</option><option>CAD</option><option>AUD</option></select></label></div>
+<p class="pass-hint">Match this price to your external product. Creating a pass publishes a separate reading edition; it does not change the free Library listing or collect a payment.</p><label><input type="checkbox" id="passPublishConsent" required> I am ready to publish these chapters to pass holders.</label><button type="submit" id="createPass" disabled>Create pass</button></form>
+<section class="pass-card"><h2>2. Generate delivery codes</h2><label>Your passes<select id="passSelect"><option value="">Choose a pass</option></select></label><p id="passSelectedSummary"></p><label>Product checkout link<input id="passCheckoutUrl" type="url" maxlength="2000" placeholder="https://your-shop.example/product"></label><p class="pass-hint">Use a service that permits your work. Deliver one unused code to each buyer yourself, or configure unique-code delivery in your shop. Keep the offer hidden until delivery is ready.</p><div class="pass-actions"><button id="savePassOffer" type="button">Show purchase link</button><button id="pausePassOffer" type="button">Hide purchase link</button></div><p id="passOfferStatus" role="status"></p><button id="refreshWholePass" type="button" hidden>Publish latest chapters to this pass</button><p class="pass-hint">A whole-book pass can receive later chapters when you publish an update here. Bundles keep their selected chapter set.</p>
+<div class="pass-grid"><label>Number of codes<input id="passCodeCount" type="number" min="1" max="100" value="1"></label><div class="pass-button-field"><button type="button" id="generatePassCodes" disabled>Generate purchase codes</button></div></div>
+<div id="passCodeOutput" hidden><label>Save these codes now · shown once<textarea id="passCodes" rows="5" readonly spellcheck="false"></textarea></label><div class="pass-actions"><button type="button" id="downloadPassCodes">Download codes CSV</button><button type="button" id="previewPassEmail">Buyer email template</button></div><p class="pass-hint">Raw codes are not saved in your browser or the database. Keep the downloaded file private. The email template does not send anything.</p></div>
+<section hidden id="passEmailDialog" class="pass-email" aria-labelledby="passEmailTitle"><h2 id="passEmailTitle">Buyer email template</h2><p>Copy this template and send each buyer only their own code. Alysum does not send it.</p><label>Code for this buyer<select id="passEmailCode"></select></label><label>Email text<textarea id="passEmailText" readonly rows="12"></textarea></label><button type="button" id="closePassEmail">Close</button></section>
+<h3>Code batches</h3><div id="passBatches"></div></section>
+<section class="pass-card"><h2>3. Review access</h2><p>After redeeming a code, access is attached to that signed-in account.</p><div id="passGrants"></div></section>
+</section>
+<section id="passReaderPanel" role="tabpanel" aria-labelledby="passReaderTab" hidden>
+<section class="pass-card" id="passOffers" hidden><h2>Available passes for this story</h2><div id="passOfferList"></div><p class="pass-hint">Checkout opens the author’s external shop. Confirm the included chapters and code delivery before buying. Alysum does not verify external payments or issue refunds.</p></section><form class="pass-card" id="passRedeemForm"><h2>Redeem a purchase code</h2><label>Code<input id="passRedeemCode" required maxlength="80" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ALYPASS-…"></label><p class="pass-hint">Use the code the author delivered after purchase. One code can be claimed by one verified Alysum account. Keep it private until redeemed.</p><button type="submit" id="redeemPassCode" disabled>Redeem &amp; unlock</button></form>
+<section class="pass-card"><h2>Your purchased books</h2><button type="button" id="reloadMyPasses">Refresh passes</button><div id="myPurchasedPasses"></div></section>
+<section class="pass-card" id="passReading" hidden><h2 id="passReadingTitle"></h2><p class="pass-hint">Your purchased reading edition</p><div id="passReadingChapters"></div><article id="passReadingBody"></article></section>
+</section>
+
+</main>
+    <script type="module" src="/applications/studio/page-ui/purchase-passes.js"></script>
+</body>
+</html>

@@ -36,6 +36,7 @@ TYPES = {
 }
 
 EXACT = {
+    "/purchase-passes": "applications/studio/pages/purchase-passes.html",
     "/sw.js": "applications/main-site/public/sw.js",
     "/manifest.webmanifest": "applications/main-site/public/manifest.webmanifest",
     "/robots.txt": "applications/main-site/public/robots.txt",

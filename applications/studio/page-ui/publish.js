@@ -117,6 +117,7 @@ async function boot() {
         return;
     }
     if(book.publish_meta?.epubEdition){window.location.replace(`/applications/studio/pages/epub-publish.html?book=${encodeURIComponent(book.id)}`);return;}
+    const passLink=document.getElementById("purchasePassManage");if(passLink)passLink.href="/purchase-passes?book="+encodeURIComponent(book.id);
     let chapterAccess = null;
     let warningPicker = null;
     let publishingFields = null;
