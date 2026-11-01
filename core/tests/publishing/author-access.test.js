@@ -182,3 +182,9 @@ test('retired shop setup and configuration cannot create or alter any legacy rec
   assert.equal(response.status,410);assert.equal((await response.json()).url,'/purchase-passes');assert.equal(f.writes.length,0);
  }
 });
+test('retained purchase protection runs before the empty-selection takedown path',async()=>{
+ const {runPublishSave}=await loadPublishSave();let checked=false;
+ await assert.rejects(runPublishSave({isPublished:true,listed:true,session:{mode:'cloud',user:{id:owner}},book:{...source,published_chapter_ids:['free','locked']},chapters:source.sections.body,
+  readForm:()=>({title:'Book',genres:['fantasy'],rating:'general',workType:'fanfiction',fandoms:['Harry Potter'],warningMeta:{version:1,reviewed:true,noneApply:true,coreIds:[],entries:[],note:''},chapterIds:[],lockedChapterIds:[]}),
+  saveChapterAccess:async()=>{checked=true;throw Error('Keep earlier purchase protection.');},api:{readOnlineBook(){assert.fail('No source or listing mutation should start.');}},supabase:{from(){assert.fail('Must not take down purchased chapters.');}},postError:{}}),/Keep earlier purchase protection/);assert.equal(checked,true);
+});

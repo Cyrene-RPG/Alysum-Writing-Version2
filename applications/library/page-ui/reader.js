@@ -278,7 +278,7 @@ async function boot() {
                     const next=await fetchPublishedWork(supabase,work.id);
                     const updated=next?.chapters?.find(ch=>ch.id===chapter.id);
                     if(updated && !updated.locked) {work.chapters=next.chapters;render();}
-                    else status.textContent='No purchase found for this account yet. Check your checkout email, wait a moment, then try again.';
+                    else status.textContent='No earlier purchase or redeemed pass was found for this account. Check your account or redeem your code in Purchase Passes.';
                 } catch {status.textContent='Could not check access. Try again.';}
                 finally {refresh.disabled=false;}
             });body.append(document.createElement('br'),refresh);

@@ -26,7 +26,7 @@ export async function handleAuthorAccess(request, env, injected = {}) {
         if (!allowed && !injected.services) fail(503,'Author access is unavailable on this host.');
         if (!env.SUPABASE_SERVICE_ROLE_KEY && !injected.services) {
             if (action === 'status') return reply({ready:false});
-            fail(503,'Chapter access needs its database setup before authors can use it.');
+            fail(503,'Earlier purchase access is temporarily unavailable.');
         }
         const services = injected.services || createPaymentServices(env,injected.fetcher);
         const {db,user}=services;
@@ -106,6 +106,6 @@ export async function handleAuthorAccess(request, env, injected = {}) {
         return reply({error:'Unknown action.'},404);
     } catch (error) {
         const status = error instanceof AccessError ? error.status : /Sign in|session|verified Alysum/.test(error.message || '') ? 401 : 503;
-        return reply({error:status === 503 ? 'Chapter access is unavailable. The site owner may need to run the chapter-access SQL setup.' : error.message},status);
+        return reply({error:status === 503 ? 'Earlier purchase access is temporarily unavailable. Please try again.' : error.message},status);
     }
 }

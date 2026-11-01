@@ -110,6 +110,8 @@ export async function handlePaidAccess(request, env, injected = {}) {
         if (action !== 'stripe-webhook' && request.headers.get('Origin') && request.headers.get('Origin') !== url.origin) fail(403, 'The request came from another site.');
         if (['stripe-connect','stripe-callback','create-edition','checkout','author-books','author-book'].includes(action)) return json({error:'This purchasing system is retired. Use Purchase Passes for new sales.',retired:true,url:'/purchase-passes'},410);
         const readOnly = ['edition','chapter','account-editions'].includes(action);
+        const readHost=url.protocol==='https:'&&(['alysumwriting.com','www.alysumwriting.com'].includes(url.hostname)||/^[a-z0-9-]+\.alysum-writing-version2\.pages\.dev$/.test(url.hostname))||!config.livemode&&['localhost','127.0.0.1'].includes(url.hostname);
+        if(readOnly&&!readHost)fail(503,'Earlier purchase access is unavailable on this host.');
         const services = injected.services || (config.configured || readOnly && env.SUPABASE_SERVICE_ROLE_KEY ? createPaymentServices(env, injected.fetcher) : null);
         const { db, stripe, user } = services || {};
         if (action === 'status' && request.method === 'GET') {

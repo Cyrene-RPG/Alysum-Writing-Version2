@@ -200,3 +200,7 @@ test('earlier paid reading and listing work after checkout is disabled and inact
  assert.equal((await f.run(request('chapter',{as:otherId,query:{edition:offerId,chapter:'paid'}}),settings)).status,404);
  const list=await(await f.run(request('account-editions'),settings)).json();assert.equal(list.purchased[0].id,offerId);assert.equal(f.stripeCalls.length,0);
 });
+test('retained read-only purchase endpoints reject untrusted hosts even when checkout is disabled',async()=>{
+ const f=fixture({livemode:true});const req=new Request('https://untrusted.example/api/paid-access?action=edition&edition='+offerId,{headers:{Authorization:'Bearer '+buyerId}});
+ assert.equal((await f.run(req,{SUPABASE_SERVICE_ROLE_KEY:'fixture'})).status,503);assert.equal(f.calls.length,0);
+});

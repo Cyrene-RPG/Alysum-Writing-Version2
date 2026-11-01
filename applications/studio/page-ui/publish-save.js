@@ -204,6 +204,7 @@ export async function runPublishSave({
         form.chapterIds = resolved.chapterIds;
         if (resolved.note) paintPostError(postError, resolved.note);
         if (resolved.unlist) {
+            await saveChapterAccess?.(form); // Check earlier paid protection before any takedown.
             await readPublicationVersion(api, publicationBaseline, session.user.id);
             if (status) status.textContent = "Updating…";
             await unlistLibraryListing(supabase, session.user.id, book.id);
