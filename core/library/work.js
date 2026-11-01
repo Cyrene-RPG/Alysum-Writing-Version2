@@ -41,7 +41,7 @@ export function chaptersFromListingData(data) {
     }
     const list = ordered.length ? ordered : raw;
     return list
-        .filter(ch=>src.editionFormat==='epub'&&ch.locked ? (publishWordCount(ch)||0)>0 : chapterMeetsPublishLength(ch))
+        .filter(ch=>src.editionFormat==='epub' ? (publishWordCount(ch)||countWordsInHtml(ch.content||''))>0 : chapterMeetsPublishLength(ch))
         .map((chapter, index) => normalizeChapter(chapter, index));
 }
 
