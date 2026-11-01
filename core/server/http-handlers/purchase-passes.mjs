@@ -1,4 +1,5 @@
-import {passSnapshot,passId,passPrice,makePassCode,passCodeHash,publicPass,samePass,checkoutUrl} from '../../purchase-access/model.js';
+import {listBodyChapters} from '../../writing-engine/manuscript.js';
+import {passSnapshot,passText,passId,passPrice,makePassCode,passCodeHash,publicPass,samePass,checkoutUrl} from '../../purchase-access/model.js';
 import {readWorkTags} from '../../publishing/work-tags.js';
 const PUBLIC_URL='https://jrfxgpkpbacajhcwimgz.supabase.co',PUBLIC_KEY='sb_publishable_FnVMe0O37DKb87PCYdg6-g_DbI28pcE';
 const reply=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'private, no-store',Vary:'Authorization','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'}});
@@ -47,7 +48,7 @@ export async function handlePurchasePasses(request,env,injected={}){
    await db('purchase_passes',{method:'PATCH',query:{id:`eq.${pass.id}`,owner_id:`eq.${member.id}`},body:{checkout_url:link,sale_enabled:body.enabled}});return reply({saved:true});
   }
   if(action==='books' &&request.method==='GET'){const rows=await db('books',{query:{user_id:`eq.${member.id}`,select:'id,title,media_format,publish_meta',limit:200,order:'updated.desc'}});return reply({books:rows.filter(book=>(!book.media_format||book.media_format==='novel')&&readWorkTags(book.publish_meta).workType==='original').map(book=>({id:book.id,title:book.title,epub:book.publish_meta?.epubEdition===true}))});}
-  if(action==='chapters'&&request.method==='GET'){const book=await source(url.searchParams.get('book'));return reply({chapters:passSnapshot(book,'book').map(ch=>({id:ch.id,title:ch.title}))});}
+  if(action==='chapters'&&request.method==='GET'){const book=await source(url.searchParams.get('book'));return reply({chapters:listBodyChapters(book.sections).filter(ch=>passText(ch.content)).map(ch=>({id:String(ch.id),title:String(ch.title||'Untitled').slice(0,300)}))});}
   if(action==='create'&&request.method==='POST'){
    const book=await source(body.bookId);let chapters,amount,id;try{chapters=passSnapshot(book,body.mode,body.chapterIds);amount=passPrice(body.price);id=passId(body.requestId);}catch(error){fail(400,error.message);}
    const title=String(body.title||'').trim().slice(0,200),currency=String(body.currency||'').toUpperCase();if(!title||!['USD','GBP','EUR','CAD','AUD'].includes(currency))fail(400,'Name the pass and choose a supported currency.');
