@@ -236,6 +236,7 @@ async function boot() {
         el.href = pub;
     });
 
+    const passLink=document.createElement('a');passLink.className='book-subscribe';passLink.textContent='Purchase passes / redeem code';passLink.href='/purchase-passes?view=reader&book='+encodeURIComponent(work.id);if(work.workType!=='fanfiction'&&!work.epubEdition)document.getElementById('bookTitle').after(passLink);
     paintGenres(work, owner);
     paintTags(work, owner);
     paintWarns(work, owner);

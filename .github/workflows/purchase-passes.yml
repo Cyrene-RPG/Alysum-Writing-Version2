@@ -1,0 +1,53 @@
+name: Purchase Passes
+on:
+  pull_request:
+    paths:
+      - 'core/purchase-access/**'
+      - 'core/tests/purchase-access/**'
+      - 'core/server/http-handlers/purchase-passes.mjs'
+      - 'functions/api/purchase-passes.js'
+      - 'api/purchase-passes.js'
+      - 'applications/studio/page-ui/purchase-passes*'
+      - 'applications/studio/pages/purchase-passes.html'
+      - 'applications/studio/studio-css/purchase-passes.css'
+      - 'applications/studio/tests/purchase-passes-browser.mjs'
+      - 'supabase/live-site/supabase-purchase-passes.sql'
+      - 'applications/main-site/public/sw.js'
+      - '.github/workflows/purchase-passes.yml'
+      - 'applications/library/page-ui/book.js'
+      - 'applications/library/pages/**'
+      - 'applications/studio/page-ui/publish.js'
+      - 'applications/studio/pages/studio.html'
+      - 'applications/studio/pages/publish.html'
+      - '_redirects'
+      - 'vercel.json'
+      - 'firebase.json'
+permissions:
+  contents: read
+jobs:
+  passes:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix "$RUNNER_TEMP/pass-lab" --no-audit --no-fund playwright@1.61.1 @electric-sql/pglite@0.3.14
+      - run: node --test core/tests/purchase-access/passes.test.mjs
+        env:
+          PGLITE_MODULE: ${{ runner.temp }}/pass-lab/node_modules/@electric-sql/pglite/dist/index.js
+      - run: '"$RUNNER_TEMP/pass-lab/node_modules/.bin/playwright" install --with-deps ${{ matrix.browser }}'
+      - run: node applications/studio/tests/purchase-passes-browser.mjs
+        env:
+          PGLITE_MODULE: ${{ runner.temp }}/pass-lab/node_modules/@electric-sql/pglite/dist/index.js
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/pass-lab/node_modules/playwright/index.mjs
+          PASS_BROWSER: ${{ matrix.browser }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: purchase-pass-${{ matrix.browser }}
+          path: test-results/pass-lab/
