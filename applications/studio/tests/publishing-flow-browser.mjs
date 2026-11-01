@@ -13,7 +13,7 @@ const stubs = {
     '/core/desktop/studio-session.js': `export async function requireStudioSession(){return {mode:'cloud',user:{id:'me'}};}`,
     '/core/synchronization-engine/books.js': `const initial=${JSON.stringify(book)};const get=()=>JSON.parse(localStorage.getItem('fixture:book')||JSON.stringify(initial));export function createBooksApi(){return {getBook:async()=>get(),readOnlineBook:async()=>get(),async updateBook(id,patch){const saved={...get(),...patch,_cloudUpdated:get()._cloudUpdated+1,_synced:true};localStorage.setItem('fixture:book',JSON.stringify(saved));return saved;}};}`,
     '/core/account/workspace-profile.js': `export const peekWorkspaceProfile=()=>({name:'Sample Writer'});`,
-    '/core/publishing/author-access-client.js': `export async function authorAccessRequest(s,action){return action==='status'?{ready:true,individualPricing:true,mixedPricing:true}:action==='connections'?{connections:[{id:'shop',provider:'kofi',enabled:true}]}:action==='book'?{config:null}:{saved:true};}`,
+    '/core/publishing/author-access-client.js': `export async function authorAccessRequest(s,action){window.legacyRequests=(window.legacyRequests||[]).concat(action);if(action!=='book')throw Error('Retired authoring action requested: '+action);if(localStorage.getItem('fixture:legacy-offline'))throw Error('Earlier protection is offline.');return {config:JSON.parse(localStorage.getItem('fixture:legacy')||'null')};}`,
 };
 const missing=[];
 const server=createServer(async(req,res)=>{try{
@@ -40,8 +40,8 @@ try {
         if(width===1440)assert.ok(await page.locator('#tagsSection').evaluate(node=>node.getBoundingClientRect().width>innerWidth*.93),'desktop uses full width');
         await page.locator('[name=workType][value=fanfiction]').check();
         assert.equal(await page.locator('#pricingGuide').getAttribute('hidden'),'');
-        assert.equal(await page.locator('#chapterAccessCard').getAttribute('hidden'),'');
-        assert.equal(await page.locator('#purchaseLinkCard').getAttribute('hidden'),'');
+        assert.equal(await page.locator('#chapterAccessCard').count(),0);
+        assert.equal(await page.locator('#purchaseLinkCard').count(),0);
         const fandom=page.locator('#fandomSearch');await fandom.fill('Harry');
         await fandom.press('ArrowDown');await fandom.press('Enter');
         assert.equal(await page.getByRole('button',{name:'Remove Harry Potter',exact:true}).count(),1);
@@ -90,11 +90,10 @@ try {
         await page.locator('#accessSection > summary').click();assert.equal(await page.locator('#fanfictionFreeNotice').isVisible(),true);
         await page.locator('[name=workType][value=original]').check();assert.equal(await page.locator('#pricingGuide').isVisible(),true);
         assert.equal(await page.locator('#pricingChapterTotal').textContent(),'$1.98');
-        await page.locator('#chapterPricingMode').selectOption('mixed');await page.locator('#chapterAddProduct').click();assert.equal(await page.locator('.chapter-mixed-product').count(),2);
-        await page.locator('#purchaseUrl').fill('https://shop.example/old-paid-link');
-        await page.locator('.chapter-mixed-product').first().locator('[data-offer-chapter-id=one]').check();
+        assert.equal(await page.locator('#chapterPricingMode,#purchaseUrl,#chapterAddProduct').count(),0);
+        assert.equal(await page.locator('#purchasePassManage').getAttribute('href'),'/purchase-passes?book=test');
         await page.locator('[name=workType][value=fanfiction]').check();
-        assert.equal(await page.locator('#pricingGuide').isVisible(),false);assert.equal(await page.locator('#chapterAccessCard').isVisible(),false);assert.equal(await page.locator('#purchaseLinkCard').isVisible(),false);
+        assert.equal(await page.locator('#pricingGuide').isVisible(),false);assert.equal(await page.locator('#chapterAccessCard').count(),0);assert.equal(await page.locator('#purchaseLinkCard').count(),0);
         await page.locator('#accessSection > summary').click();
         await page.locator('#postBtn').click();await page.waitForURL('**/book?id=test');
         const listing=await page.evaluate(()=>JSON.parse(localStorage.getItem('fixture:listing')));
@@ -108,6 +107,19 @@ try {
         await page.locator('#postError').filter({hasText:'Add at least one fandom'}).waitFor();
         assert.equal(await page.locator('#tagsSection').getAttribute('open'),'','validation reveals hidden controls');
         assert.deepEqual(errors,[]);await page.close();
+    }
+    for(const offline of [false,true]){
+        const page=await browser.newPage({viewport:{width:390,height:1000}});await page.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
+        const legacyBook={...book,is_published:true,published_chapter_ids:['one','two'],publish_meta:{...book.publish_meta,workType:'original',warningMeta:{version:1,reviewed:true,noneApply:true,coreIds:[],entries:[],note:''},lockedChapterIds:['one']}};
+        const legacyListing={id:'test',user_id:'me',data:{isPublished:true,title:book.title,publishedChapterIds:['one','two'],chapters:[{id:'one',title:'Chapter 1',locked:true,content:'',wordCount:3000},{id:'two',title:'Chapter 2',content:'word '.repeat(3000),wordCount:3000}]}};
+        await page.addInitScript(({legacyBook,legacyListing,offline})=>{if(localStorage.getItem('fixture:legacy-seeded'))return;localStorage.setItem('fixture:legacy-seeded','1');localStorage.setItem('fixture:book',JSON.stringify(legacyBook));localStorage.setItem('fixture:listing',JSON.stringify(legacyListing));localStorage.setItem('fixture:legacy',JSON.stringify({chapter_ids:['one'],chapterProducts:[],pricingMode:'bundle'}));if(offline)localStorage.setItem('fixture:legacy-offline','1');},{legacyBook,legacyListing,offline});
+        await page.goto(base+'/publish?book=test');await page.locator('#postBtn').filter({hasText:'Update'}).waitFor();await page.locator('[data-section-summary=accessSection]').filter({hasText:'2 chapters'}).waitFor();
+        assert.equal(await page.locator('#chapterAccessCard,#chapterPricingMode,#purchaseUrl').count(),0);await page.locator('#accessSection > summary').click();
+        if(!offline){await page.getByText('Earlier purchased chapters remain protected. New sales use Purchase Passes.',{exact:true}).waitFor();await page.screenshot({path:out+'/'+name+'-390-earlier-purchases-protected.png',fullPage:true});}
+        await page.locator('#postBtn').click();
+        if(offline){await page.locator('#postError').filter({hasText:'Your listing has not changed'}).waitFor();assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('fixture:listing'))),legacyListing);}
+        else{await page.waitForURL('**/book?id=test');const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('fixture:listing')));assert.equal(saved.data.chapters[0].locked,true);assert.equal(saved.data.chapters[0].content,'');}
+        assert.ok((await page.evaluate(()=>window.legacyRequests||[])).every(action=>action==='book'));await page.close();
     }
     assert.deepEqual(missing.filter(path=>!path.startsWith('/favicon.ico')),[]);
     console.log(`${name}: 320/390/1440 layout, autocomplete, switching, saved/reopened metadata, publish/update and validation passed.`);

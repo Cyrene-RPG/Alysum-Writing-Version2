@@ -256,14 +256,6 @@
         "destination": "/applications/studio/page-ui/warning-picker.js"
       },
       {
-        "source": "/js/studio/payment-setup.js",
-        "destination": "/applications/studio/page-ui/payment-setup.js"
-      },
-      {
-        "source": "/js/studio/connected-payments.js",
-        "destination": "/applications/studio/page-ui/connected-payments.js"
-      },
-      {
         "source": "/js/library/paid-reader.js",
         "destination": "/applications/library/page-ui/paid-reader.js"
       },
@@ -278,10 +270,6 @@
       {
         "source": "/js/studio/publish.js",
         "destination": "/applications/studio/page-ui/publish.js"
-      },
-      {
-        "source": "/js/studio/publish-access.js",
-        "destination": "/applications/studio/page-ui/publish-access.js"
       },
       {
         "source": "/js/studio/publish-save.js",

@@ -30,7 +30,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow">
-    <title>Audiobook Studio — Alysum</title>
+    <title>Publish EPUB — Alysum</title>
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="/css/workspace-nav.css?v=30" />
     <link rel="stylesheet" href="/css/studio/page.css?v=18" />
@@ -91,19 +91,19 @@
  <details><summary>Content warnings · review before publishing</summary><div id="warningPicker"></div></details>
  <label>Cover image (optional)<input type="file" id="epubCover" accept="image/jpeg,image/png,image/webp"></label><img id="epubCoverPreview" alt="Book cover preview" hidden>
  </section>
- <section class="epub-panel" aria-labelledby="epubPriceTitle"><h2 id="epubPriceTitle">3. One price for the whole book</h2>
+ <section class="epub-panel" aria-labelledby="epubPriceTitle"><h2 id="epubPriceTitle">3. Whole-book Purchase Pass</h2>
  <p>One purchase unlocks every section and the EPUB download. There are no separate chapter products.</p>
- <a id="epubManageShop" href="/applications/studio/pages/connected-payments" target="_blank" rel="noopener noreferrer">Connect or manage your shop →</a>
- <label>Your connected shop<select id="epubConnection" required><option value="">Choose a shop</option></select></label>
- <label>Shop product link<input id="epubProduct" type="url" required maxlength="2000" placeholder="https://payhip.com/b/your-book"></label>
+
+
+
  <div class="epub-grid"><label>Whole-book price<input id="epubPrice" type="number" min="0.50" max="1000" step="0.01" inputmode="decimal" required placeholder="4.99"></label><label>Currency<select id="epubCurrency"><option>USD</option><option>GBP</option><option>EUR</option><option>CAD</option><option>AUD</option></select></label></div>
- <p class="pub-hint">Create one one-time book product in your connected shop with this exact price. Readers must use their verified Alysum email at checkout, then check their access when they return.</p>
+ <p class="pub-hint">Publish a whole-book pass, then set your author checkout link and generate delivery codes in Purchase Passes. Readers redeem their code to read and download.</p>
  <label><input id="epubRights" type="checkbox" required> I own the rights to sell this original book. It is not fan fiction.</label>
  </section>
- <section class="epub-panel"><h2>Ready for readers</h2><p id="epubReview"></p><p>Your listing shows the description and chapter titles. All book text and the download stay locked until purchase.</p>
+ <section class="epub-panel"><h2>Ready for readers</h2><p id="epubReview"></p><p>Your listing shows the description and chapter titles. All book text and the download stay locked until a reader redeems their Purchase Pass code.</p>
  <div class="epub-actions"><button type="button" id="saveEpubDraft">Save draft</button><button type="submit" id="publishEpub">Publish EPUB</button><a id="epubListing" hidden>View book →</a></div></section>
  </div></form></main>
-    <script type="module" src="/applications/studio/page-ui/epub-publish.js"></script>
+    <script type="module" src="/applications/studio/page-ui/epub-publish.js?v=passes-1"></script>
 </body>
 </html>
 

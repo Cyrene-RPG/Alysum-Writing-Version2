@@ -1,10 +1,7 @@
 import { createPaymentServices, sha256 } from './paid-access.mjs';
-import { ACCESS_PROVIDERS, normalizeProductKey, saleFromNotification, validateSale } from '../../publishing/author-access.js';
-import { normalizePurchaseUrl } from '../../publishing/publish-meta.js';
+import { saleFromNotification, validateSale } from '../../publishing/author-access.js';
 import { readWorkTags } from '../../publishing/work-tags.js';
-import { listBodyChapters } from '../../writing-engine/manuscript.js';
-import { manuscriptPlainText, UUID_PATTERN } from '../../publishing/paid-access.js';
-import { countWordsInHtml } from '../../writing-engine/word-count.js';
+import { UUID_PATTERN } from '../../publishing/paid-access.js';
 
 const reply = (data, status = 200) => Response.json(data, { status, headers: { 'Cache-Control':'private, no-store', 'Vary':'Authorization', 'X-Content-Type-Options':'nosniff', 'Referrer-Policy':'no-referrer' } });
 class AccessError extends Error { constructor(status, message) { super(message); this.status = status; } }
@@ -24,6 +21,7 @@ export async function handleAuthorAccess(request, env, injected = {}) {
     try {
         if (!['GET','POST'].includes(request.method)) return reply({error:'Method not allowed.'},405);
         if (action !== 'webhook' && request.headers.get('Origin') && request.headers.get('Origin') !== url.origin) fail(403,'Request came from another site.');
+        if (['connect','configure'].includes(action)) return reply({error:'This purchasing system is retired. Use Purchase Passes for new sales.',retired:true,url:'/purchase-passes'},410);
         const allowed = url.protocol === 'https:' && (['alysumwriting.com','www.alysumwriting.com'].includes(url.hostname) || /^[a-z0-9-]+\.alysum-writing-version2\.pages\.dev$/.test(url.hostname));
         if (!allowed && !injected.services) fail(503,'Author access is unavailable on this host.');
         if (!env.SUPABASE_SERVICE_ROLE_KEY && !injected.services) {
@@ -61,7 +59,7 @@ export async function handleAuthorAccess(request, env, injected = {}) {
             if(!source || readWorkTags(source.publish_meta).workType==='fanfiction')fail(403,'This EPUB is not available for purchase.');
             const chapters=await db('rpc/read_author_access',{method:'POST',body:{p_book:sourceId,p_reader:reader.id,p_email_hash:await sha256(reader.email.trim().toLowerCase())}});
             const unlocked=new Set((chapters||[]).map(ch=>String(ch.id)));
-            if(!Array.isArray(edition.chapter_ids)||!edition.chapter_ids.length||edition.chapter_ids.some(id=>!unlocked.has(String(id))))fail(403,'Buy the whole book, then choose Check my access after checkout. Use your verified Alysum email at checkout.');
+            if(!Array.isArray(edition.chapter_ids)||!edition.chapter_ids.length||edition.chapter_ids.some(id=>!unlocked.has(String(id))))fail(403,'This download is reserved for earlier whole-book buyers. Sign in with the verified Alysum account used for that purchase.');
             return reply({url:await services.signEpub(edition.storage_path),fileName:edition.file_name});
         }
         if (action === 'read' && request.method === 'GET') {
@@ -70,19 +68,19 @@ export async function handleAuthorAccess(request, env, injected = {}) {
             return reply({chapters:chapters || []});
         }
         const owner = await user(request);
-        if (action === 'connections' && request.method === 'GET') {
+        if (action === 'purchases' && request.method === 'GET') {
+            const select='book_id';
+            const [claimed,unclaimed]=await Promise.all([
+                db('author_access_sales',{query:{buyer_id:`eq.${owner.id}`,status:'eq.paid',select,limit:500}}),
+                db('author_access_sales',{query:{buyer_id:'is.null',email_hash:`eq.${await sha256(owner.email.trim().toLowerCase())}`,status:'eq.paid',select,limit:500}})
+            ]);
+            const ids=[...new Set([...claimed,...unclaimed].map(s=>s.book_id).filter(id=>/^[a-zA-Z0-9_-]{1,160}$/.test(id)))];
+            const books=ids.length?await db('books',{query:{id:`in.(${ids.join(',')})`,select:'id,title',limit:1000}}):[];
+            return reply({purchases:ids.map(id=>({id,title:books.find(b=>b.id===id)?.title||'Earlier purchase',url:'/book?id='+encodeURIComponent(id)}))});
+        }
+        if (action === 'connections'  && request.method === 'GET') {
             const connections = await db('author_access_connections',{query:{owner_id:`eq.${owner.id}`,select:'id,provider,enabled,verified_at',order:'created_at.asc'}});
             return reply({connections:connections.map(c=>({...c,webhookUrl:`${url.origin}/api/author-access?action=webhook&connection=${c.id}`}))});
-        }
-        if (action === 'connect' && request.method === 'POST') {
-            const body = await input(request);
-            if (!ACCESS_PROVIDERS.includes(body.provider)) fail(400,'Choose Ko-fi or Payhip.');
-            const secret = String(body.secret || '').trim();
-            if (secret.length < 16 || secret.length > 1024) fail(400,'Paste the verification token or API key from your own service.');
-            const [existing] = await db('author_access_connections',{query:{owner_id:`eq.${owner.id}`,provider:`eq.${body.provider}`,limit:1}});
-            const connectionId = existing?.id || crypto.randomUUID();
-            await db('author_access_connections',{method:'POST',query:{on_conflict:'owner_id,provider'},preference:'resolution=merge-duplicates,return=representation',body:{id:connectionId,owner_id:owner.id,provider:body.provider,verifier_hash:await sha256(secret),enabled:true,verified_at:null}});
-            return reply({id:connectionId,webhookUrl:`${url.origin}/api/author-access?action=webhook&connection=${connectionId}`});
         }
         if (action === 'book' && request.method === 'GET') {
             const sourceId = bookId(url.searchParams.get('book'));
@@ -95,74 +93,6 @@ export async function handleAuthorAccess(request, env, injected = {}) {
                 delete config.chapters;
             }
             return reply({config:config || null});
-        }
-        if (action === 'configure' && request.method === 'POST') {
-            const body = await input(request); const sourceId = bookId(body.book);
-            const [source] = await db('books',{query:{id:`eq.${sourceId}`,user_id:`eq.${owner.id}`,limit:1}});
-            if (!source) fail(404,'Only the book’s owner can set chapter access.');
-            if (source.media_format && !['novel','fiction','prose'].includes(source.media_format)) fail(400,'Chapter locks currently support prose books.');
-            const chapterIds = [...new Set((Array.isArray(body.chapterIds) ? body.chapterIds : []).map(String))];
-            const selectedIds = [...new Set((Array.isArray(body.selectedIds) ? body.selectedIds : []).map(String))];
-            if (chapterIds.length && (readWorkTags(source.publish_meta || {}).workType === 'fanfiction' || body.workType === 'fanfiction')) {
-                fail(400,'Fan fiction cannot have paid chapters. Only saved original works can use monetization.');
-            }
-            if (chapterIds.length > 500) fail(400,'Select up to 500 locked chapters.');
-            const missingSelection = chapterIds.filter(ch=>!selectedIds.includes(ch));
-            if (missingSelection.length) {
-                const missingNames = listBodyChapters(source.sections).filter(ch=>missingSelection.includes(String(ch.id))).map(ch=>String(ch.title || 'Untitled')).join(', ');
-                fail(400,`Select these locked chapters under Manuscript, or turn off their locks: ${missingNames || missingSelection.join(', ')}.`);
-            }
-            const manuscript = listBodyChapters(source.sections);
-            let epub=false;
-            if(source.publish_meta?.epubEdition){
-                const [edition]=await db('epub_editions',{query:{book_id:`eq.${sourceId}`,owner_id:`eq.${owner.id}`,limit:1}});
-                const all=manuscript.map(ch=>String(ch.id));
-                if(!edition||!Array.isArray(edition.chapter_ids)||!all.length||all.length!==edition.chapter_ids.length||all.some(id=>!edition.chapter_ids.includes(id))||all.length!==chapterIds.length||all.some(id=>!chapterIds.includes(id))||body.pricingMode!=='bundle')fail(400,'EPUBs require one paid product for the entire uploaded book.');
-                epub=true;
-            }
-            // Completion describes the story, independently of which current chapters are paid.
-            const chapters = manuscript.filter(ch=>chapterIds.includes(String(ch.id))).map(ch=>({id:String(ch.id),title:String(ch.title || 'Untitled').slice(0,300),text:manuscriptPlainText(ch.content || ''),wordCount:countWordsInHtml(ch.content || '')}));
-            if (chapters.length !== chapterIds.length || chapters.some(ch=>ch.wordCount < (epub ? 1 : 500)) || JSON.stringify(chapters).length > 2000000) fail(400,epub?'The EPUB must contain readable text, up to two million characters per book.':'Locked chapters must contain at least 500 words each, up to two million characters per book.');
-            let connectionId = null, productKey = '', purchaseUrl = '', minimum = 0, currency = '';
-            if (chapterIds.length) {
-                connectionId = id(body.connectionId);
-                const [connection] = await db('author_access_connections',{query:{id:`eq.${connectionId}`,owner_id:`eq.${owner.id}`,enabled:'eq.true',limit:1}});
-                if (!connection) fail(409,'Connect your shop first.');
-                currency = String(body.currency || '').toUpperCase();
-                if (!['USD','GBP','EUR','CAD','AUD'].includes(currency)) fail(400,'Choose a supported currency.');
-                const validateProduct = (rawUrl, rawAmount, suppliedKey) => {
-                    const purchaseUrl = normalizePurchaseUrl(rawUrl);
-                    const productKey = normalizeProductKey(connection.provider,purchaseUrl);
-                    if (!productKey || (suppliedKey && normalizeProductKey(connection.provider,suppliedKey) !== productKey)) fail(400,'Use the exact shop product link for your connected shop.');
-                    const minimumAmount = Number(rawAmount);
-                    if (!Number.isSafeInteger(minimumAmount) || minimumAmount < 50 || minimumAmount > 100000) fail(400,'Set each product price from 0.50 to 1,000.');
-                    return {productKey,purchaseUrl,minimumAmount,currency};
-                };
-                if (['individual','mixed'].includes(body.pricingMode)) {
-                    let version = 0;
-                    try { version = await db('rpc/author_access_pricing_version',{method:'POST',body:{}}); } catch { /* Fail before saving on the old setup. */ }
-                    if (version < (body.pricingMode === 'mixed' ? 2 : 1)) fail(503,'Chapter products need the latest chapter-access SQL update.');
-                    const products = Array.isArray(body.chapterProducts) ? body.chapterProducts : [];
-                    if (products.length !== chapterIds.length || new Set(products.map(p=>String(p.chapterId))).size !== products.length) fail(400,'Set a product and price for each locked chapter.');
-                    const keys = new Map();
-                    for (const chapter of chapters) {
-                        const product = products.find(p=>String(p.chapterId) === chapter.id);
-                        if (!product) fail(400,'Set a product and price for each locked chapter.');
-                        const validated = validateProduct(product.purchaseUrl,product.minimumAmount);
-                        if (keys.has(validated.productKey)) {
-                            if (body.pricingMode !== 'mixed') fail(400,'Use a different shop product for each individually priced chapter.');
-                            if (keys.get(validated.productKey)!==validated.minimumAmount) fail(400,'Every chapter in the same product must use that product’s full price.');
-                        }
-                        keys.set(validated.productKey,validated.minimumAmount);
-                        Object.assign(chapter,validated,{offerMode:body.pricingMode});
-                    }
-                } else {
-                    const product = validateProduct(body.purchaseUrl,body.minimumAmount,body.productKey);
-                    productKey = product.productKey; purchaseUrl = product.purchaseUrl; minimum = product.minimumAmount;
-                }
-            }
-            await db('rpc/save_author_access_book',{method:'POST',body:{p_book:sourceId,p_owner:owner.id,p_connection:connectionId,p_product:productKey,p_url:purchaseUrl,p_minimum:minimum,p_currency:currency,p_chapters:chapters}});
-            return reply({saved:true});
         }
         if (action === 'sales' && request.method === 'GET') {
             const sales = await db('author_access_sales',{query:{owner_id:`eq.${owner.id}`,select:'id,book_id,transaction_id,status,created_at',order:'created_at.desc',limit:100}});

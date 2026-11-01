@@ -17,7 +17,7 @@ export function buildEpubListing(book,edition,form){
  const access=wholeBookAccess(book,edition,form);
  const data=buildLibraryPayload(book,{...form,chapterIds:[],workType:'original',complete:true,isPublished:true,purchaseUrl:''});
  data.editionFormat='epub';
- data.chapters=listBodyChapters(book.sections).map(ch=>({id:ch.id,title:ch.title||'Untitled',content:'',wordCount:countWordsInHtml(ch.content||''),locked:true,purchaseUrl:form.productUrl}));
+ data.chapters=listBodyChapters(book.sections).map(ch=>({id:ch.id,title:ch.title||'Untitled',content:'',wordCount:countWordsInHtml(ch.content||''),locked:true,purchaseUrl:''}));
  data.publishedChapterIds=access.chapterIds;data.chapterCount=data.chapters.length;
  data.wordCount=data.chapters.reduce((sum,ch)=>sum+ch.wordCount,0);
  return data;

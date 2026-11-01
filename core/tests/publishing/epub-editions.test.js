@@ -44,11 +44,7 @@ test('private download is allowed only with all purchased sections; partial/refu
 test('anonymous, missing edition and fanfiction downloads cannot create links',async()=>{
  for(const [options,status] of [[{authenticated:false},401],[{exists:false},404],[{source:{...book,publish_meta:{workType:'fanfiction'}}},403]]){const f=fixture(options);assert.equal((await f.run('epub-download')).status,status);assert.deepEqual(f.writes,[]);}
 });
-test('EPUB server configuration allows short sections only for the entire registered original book',async()=>{
- const body=wholeBookAccess(book,edition,form),f=fixture();const response=await f.run('configure',body);assert.equal(response.status,200,JSON.stringify(await response.json()));assert.equal(f.writes[0].p_chapters.length,2);
- for(const patch of [{chapterIds:['two']},{chapterIds:[]},{pricingMode:'individual'}]){const bad=fixture();assert.equal((await bad.run('configure',{...body,...patch})).status,400);assert.deepEqual(bad.writes,[]);}
- const missing=fixture({exists:false});assert.equal((await missing.run('configure',body)).status,400);
-});
+
 
 test('reader normalization, catalog counts and short-chapter maintenance retain every paid EPUB section',()=>{
  const data=buildEpubListing(book,edition,form),work=normalizePublishedWork({id:book.id,user_id:owner,data});assert.equal(work.chapters.length,2);assert.equal(work.publishedChapterCount,2);assert.equal(work.editionFormat,'epub');assert.deepEqual(shortLiveChapters({...book,published_chapter_ids:['one','two']}),{kept:['one','two'],dropped:[]});

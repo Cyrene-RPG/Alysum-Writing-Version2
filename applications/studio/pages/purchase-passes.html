@@ -85,7 +85,7 @@
 <section id="passReaderPanel" role="tabpanel" aria-labelledby="passReaderTab" hidden>
 <section class="pass-card" id="passOffers" hidden><h2>Available passes for this story</h2><div id="passOfferList"></div><p class="pass-hint">Checkout opens the author’s external shop. Confirm the included chapters and code delivery before buying. Alysum does not verify external payments or issue refunds.</p></section><form class="pass-card" id="passRedeemForm"><h2>Redeem a purchase code</h2><label>Code<input id="passRedeemCode" required maxlength="80" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ALYPASS-…"></label><p class="pass-hint">Use the code the author delivered after purchase. One code can be claimed by one verified Alysum account. Keep it private until redeemed.</p><button type="submit" id="redeemPassCode" disabled>Redeem &amp; unlock</button></form>
 <section class="pass-card"><h2>Your purchased books</h2><button type="button" id="reloadMyPasses">Refresh passes</button><div id="myPurchasedPasses"></div></section>
-<section class="pass-card" id="passReading" hidden><h2 id="passReadingTitle"></h2><p class="pass-hint">Your purchased reading edition</p><div id="passReadingChapters"></div><article id="passReadingBody"></article></section>
+<section class="pass-card"><h2>Earlier purchases</h2><p id="earlierPurchaseStatus" role="status"></p><div id="earlierPurchases"></div></section><section class="pass-card" id="passReading" hidden><h2 id="passReadingTitle"></h2><p class="pass-hint">Your purchased reading edition</p><button type="button" id="downloadPurchasedEpub" hidden>Download EPUB</button><div id="passReadingChapters"></div><article id="passReadingBody"></article></section>
 </section>
 
 </main>

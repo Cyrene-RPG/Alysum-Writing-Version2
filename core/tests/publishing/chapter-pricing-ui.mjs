@@ -6,88 +6,11 @@ const root=new URL('../../../',import.meta.url);
 let fixtureVersion=0;
 async function loadModule(path,stubAccess=false) {
     let code=await readFile(new URL(path,root),'utf8');
-    if(stubAccess) code=code.replace(/import \{ authorAccessRequest \} from [^;]+;/,"const authorAccessRequest = globalThis.accessRequest;");
+    if(stubAccess) code=code.replace(/import\s*\{\s*authorAccessRequest\s*\}\s*from[^;]+;/,"const authorAccessRequest = (...args)=>globalThis.accessRequest(...args);");
     code=code.replace(/(['"])(?:@alysum\/|\/core\/)([^'"]+)\1/g,(_,q,path)=>JSON.stringify(new URL('core/'+path,root).href));
     if(stubAccess)code+='\n// fixture '+(++fixtureVersion);
     return import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
 }
-test('publish calculator, per-chapter controls, draft restore, save and collapsed preview work together',async()=>{
-    const html=await readFile(new URL('applications/studio/pages/publish.html',root),'utf8');
-    const dom=new JSDOM(html,{url:'https://alysumwriting.com/publish?book=book'});
-    const savedGlobals={};
-    for(const key of ['document','MutationObserver','Event','Option']) {savedGlobals[key]=globalThis[key];globalThis[key]=dom.window[key];}
-    try {
-        const $=id=>document.getElementById(id);
-        assert.equal($('manuscriptPreview').open,false);
-        assert.equal($('previewBody').closest('details').id,'manuscriptPreview');
-        assert.equal($('chapterLocks').closest('fieldset').id,'chapterAccessFields');
-        const chapters=[{id:'one',title:'Chapter 1',content:'word '.repeat(1000)},{id:'two',title:'Chapter 2',content:'word '.repeat(3000)}];
-        $('chapterList').innerHTML='<input type="checkbox" data-chapter-id="one" checked><input type="checkbox" data-chapter-id="two" checked>';
-        const writes=[];
-        globalThis.accessRequest=async(s,action,options)=>{
-            if(action==='status')return {ready:true,individualPricing:true,mixedPricing:true};
-            if(action==='connections')return {connections:[{id:'shop',provider:'kofi',enabled:true}]};
-            if(action==='book')return {config:null};
-            if(action==='configure'){writes.push(options.body);return {saved:true};}
-            throw Error(action);
-        };
-        const {bindPricingGuide}=await loadModule('applications/studio/page-ui/pricing-guide.js');
-        let failRefresh=false;
-        const dispose=bindPricingGuide(chapters,async()=>{if(failRefresh)throw Error('offline');return [{...chapters[0],content:'updated '.repeat(7000)},chapters[1]];});
-        assert.equal($('pricingChapterTotal').textContent,'$1.48');
-        assert.equal($('pricingWordCount').textContent,'4,000');
-        const {bindChapterAccess}=await loadModule('applications/studio/page-ui/publish-access.js',true);
-        const access=await bindChapterAccess({supabase:{},book:{id:'book',publish_meta:{chapterAccessPending:true,lockedChapterIds:['one','two'],chapterAccess:{pricingMode:'individual',connectionId:'shop',currency:'USD',chapterProducts:[{chapterId:'one',productUrl:'https://ko-fi.com/s/one',minimum:'0.75'},{chapterId:'two',productUrl:'https://ko-fi.com/s/two',minimum:'1.25'}]}}},chapters});
-        assert.equal($('chapterBundleFields').hidden,true);
-        assert.equal(document.querySelector('.chapter-product-fields').hidden,false);
-        assert.equal($('pricingChapterTotal').textContent,'$2.00');
-        assert.equal($('pricingBookSuggestion').textContent,'$1.60');
-        $('pricingSales').value='10';$('pricingSales').dispatchEvent(new Event('input'));
-        assert.equal($('pricingEarnings').textContent,'$16.00');
-        const input=document.querySelector('[data-estimate-id="one"]');input.value='2.00';input.dispatchEvent(new Event('input',{bubbles:true}));
-        assert.equal(document.querySelector('[data-estimate-id="one"]'),input);
-        assert.equal($('pricingChapterTotal').textContent,'$3.25');
-        input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));
-        $('chapterCurrency').value='EUR';$('chapterCurrency').dispatchEvent(new Event('change'));
-        assert.equal($('pricingChapterTotal').textContent,'$1.48');
-        $('chapterCurrency').value='USD';$('chapterCurrency').dispatchEvent(new Event('change'));
-        await access.save({chapterAccess:access.read(),chapterIds:['one','two'],complete:true});
-        assert.deepEqual(writes[0].chapterProducts.map(p=>p.minimumAmount),[75,125]);
-        // Explicit application replaces old prices, keeps product links, and makes no API write.
-        const previousWrites=writes.length;
-        $('chapterUseCalculator').click();
-        assert.deepEqual(access.read().chapterProducts.map(p=>p.minimum),['0.50','0.99']);
-        assert.equal(access.read().chapterProducts[0].productUrl,'https://ko-fi.com/s/one');
-        assert.equal(writes.length,previousWrites);
-        assert.equal($('pricingChapterTotal').textContent,'$1.49');
-        $('chapterPricingMode').value='bundle';$('chapterPricingMode').dispatchEvent(new Event('change'));
-        $('chapterUseCalculator').click();assert.equal($('chapterMinimum').value,'1.18');
-        $('pricingCustomPrice').value='2.75';$('chapterUseCalculator').click();assert.equal($('chapterMinimum').value,'2.75');
-        $('pricingCustomPrice').value='';$('pricingCustomPrice').dispatchEvent(new Event('input'));
-        $('chapterCurrency').value='EUR';$('chapterCurrency').dispatchEvent(new Event('change'));
-        assert.equal($('chapterUseCalculator').disabled,true);
-        assert.match($('chapterCalculatorHint').textContent,/USD/);
-        assert.equal($('chapterCalculatorStatus').textContent,'');
-        $('chapterCurrency').value='USD';$('chapterCurrency').dispatchEvent(new Event('change'));
-        $('chapterPricingMode').value='individual';$('chapterPricingMode').dispatchEvent(new Event('change'));
-        // Only checked paid chapters get prices; an unchecked chapter is untouched.
-        const firstLock=document.querySelector('[data-lock-chapter-id="one"]');
-        firstLock.checked=false;firstLock.dispatchEvent(new Event('change',{bubbles:true}));
-        const firstPrice=document.querySelector('.chapter-product-fields input[type=number]');firstPrice.value='7.00';
-        $('chapterUseCalculator').click();assert.equal(firstPrice.value,'7.00');
-        $('pricingRecalculate').click();await new Promise(resolve=>setTimeout(resolve,0));
-        assert.equal($('pricingWordCount').textContent,'10,000');assert.equal($('pricingRecalculate').disabled,false);
-        failRefresh=true;$('pricingRecalculate').click();await new Promise(resolve=>setTimeout(resolve,0));
-        assert.match($('pricingUpdateStatus').textContent,/offline/);assert.equal($('pricingRecalculate').disabled,false);
-        $('chapterList').querySelectorAll('input').forEach(el=>{el.checked=false;el.dispatchEvent(new Event('change',{bubbles:true}));});
-        assert.equal($('pricingChapterTotal').textContent,'$0.00');assert.equal($('pricingEarnings').textContent,'$0.00');
-        assert.equal(document.querySelector('[data-lock-chapter-id]').checked,false);
-        assert.equal(document.querySelector('.chapter-product-fields').hidden,true);
-        assert.equal($('chapterUseCalculator').disabled,true);
-        dispose();
-    } finally {delete globalThis.accessRequest;for(const [key,value] of Object.entries(savedGlobals))globalThis[key]=value;dom.window.close();}
-});
-
 test('standalone calculator retains custom prices on input changes and resets to shared suggestions',async()=>{
     const html=await readFile(new URL('pricing-calculator/index.html',root),'utf8');
     const dom=new JSDOM(html);const previous=globalThis.document;globalThis.document=dom.window.document;
@@ -105,41 +28,24 @@ test('standalone calculator retains custom prices on input changes and resets to
     }finally{globalThis.document=previous;dom.window.close();}
 });
 
-test('mixed product cards preserve a 1–2 bundle, Chapter 3 alone, draft settings and future chapter assignments',async()=>{
-    const html=await readFile(new URL('applications/studio/pages/publish.html',root),'utf8');
-    const dom=new JSDOM(html,{url:'https://alysumwriting.com/publish?book=book'}),savedGlobals={};
-    for(const key of ['document','MutationObserver','Event','Option']){savedGlobals[key]=globalThis[key];globalThis[key]=dom.window[key];}
-    try {
-        const $=id=>document.getElementById(id),writes=[];
-        const chapters=['sample','one','two','three','four'].map((id,i)=>({id,title:id,content:'word '.repeat((i+1)*1000)}));
-        $('chapterList').innerHTML=chapters.map(ch=>'<input type="checkbox" data-chapter-id="'+ch.id+'" checked>').join('');
-        globalThis.accessRequest=async(s,action,options)=>action==='status'?{ready:true,individualPricing:true,mixedPricing:true}:action==='connections'?{connections:[{id:'shop',provider:'kofi',enabled:true}]}:action==='book'?{config:null}:(writes.push(options.body),{saved:true});
-        const {bindPricingGuide}=await loadModule('applications/studio/page-ui/pricing-guide.js');const dispose=bindPricingGuide(chapters);
-        const {bindChapterAccess}=await loadModule('applications/studio/page-ui/publish-access.js',true);
-        const groups=[{productUrl:'https://ko-fi.com/s/pack12',minimum:'2.00',chapterIds:['one','two']},{productUrl:'https://ko-fi.com/s/chapter3',minimum:'1.25',chapterIds:['three']}];
-        const access=await bindChapterAccess({supabase:{},book:{id:'book',publish_meta:{chapterAccessPending:true,lockedChapterIds:['one','two','three'],chapterAccess:{pricingMode:'mixed',connectionId:'shop',currency:'USD',mixedProducts:groups}}},chapters});
-        assert.equal($('chapterPricingMode').value,'mixed');assert.equal($('chapterLocks').hidden,true);
-        assert.equal($('chapterMixedFields').hidden,false);assert.equal(document.querySelectorAll('.chapter-mixed-product').length,2);
-        assert.deepEqual(access.read().lockedChapterIds,['one','two','three']);
-        assert.deepEqual(access.read().chapterProducts.map(p=>[p.chapterId,p.minimum]),[['one','2.00'],['two','2.00'],['three','1.25']]);
-        const cards=document.querySelectorAll('.chapter-mixed-product');
-        assert.equal(cards[1].querySelector('[data-offer-chapter-id=one]').disabled,true);
-        const {publishMetaFromForm}=await loadModule('applications/studio/page-ui/publish-save.js');
-        const meta=publishMetaFromForm({chapterAccess:access.read(),isPublished:false,lockedChapterIds:access.read().lockedChapterIds});
-        assert.equal(meta.chapterAccess.pricingMode,'mixed');assert.deepEqual(meta.chapterAccess.mixedProducts,groups);
-        await access.save({chapterAccess:access.read(),chapterIds:chapters.map(ch=>ch.id)});
-        assert.equal(writes[0].pricingMode,'mixed');assert.deepEqual(writes[0].chapterProducts.map(p=>p.minimumAmount),[200,200,125]);
-        $('chapterUseCalculator').click();
-        const groupPrices=[...document.querySelectorAll('[data-mixed-price]')].map(input=>input.value);
-        assert.equal(groupPrices[0],'1.58'); // 2k/3k recommendations .99 + .99, less 20%.
-        assert.equal(groupPrices[1],'1.49');
-        // A new Chapter 4 does not join earlier products automatically.
-        $('chapterAddProduct').click();const latest=[...document.querySelectorAll('.chapter-mixed-product')].at(-1);
-        latest.querySelector('[data-mixed-url]').value='https://ko-fi.com/s/chapter4';latest.querySelector('[data-mixed-price]').value='1.00';
-        const fourth=latest.querySelector('[data-offer-chapter-id=four]');fourth.checked=true;fourth.dispatchEvent(new Event('change',{bubbles:true}));
-        assert.deepEqual(access.read().mixedProducts[0].chapterIds,['one','two']);assert.deepEqual(access.read().mixedProducts[2].chapterIds,['four']);
-        const publishFourth=document.querySelector('#chapterList [data-chapter-id=four]');publishFourth.checked=false;publishFourth.dispatchEvent(new Event('change',{bubbles:true}));
-        assert.equal(fourth.checked,false);assert.ok(!access.read().lockedChapterIds.includes('four'));
-        dispose();
-    }finally{delete globalThis.accessRequest;for(const [key,value] of Object.entries(savedGlobals))globalThis[key]=value;dom.window.close();}
+
+test('publishing keeps calculator and collapsed preview but exposes only the new purchase flow',async()=>{
+ const dom=new JSDOM(await readFile(new URL('applications/studio/pages/publish.html',root),'utf8'),{url:'https://alysumwriting.com/publish?book=book'}),saved={};
+ for(const key of ['document','MutationObserver','Event','Option']){saved[key]=globalThis[key];globalThis[key]=dom.window[key];}
+ try{
+  const $=id=>document.getElementById(id);assert.equal($('manuscriptPreview').open,false);assert.ok($('purchasePassManage'));
+  assert.equal(document.querySelectorAll('#chapterAccessCard,#purchaseLinkCard,#chapterPricingMode,#purchaseUrl').length,0);
+  $('chapterList').innerHTML='<input data-chapter-id="one" type="checkbox" checked>';
+  const {bindPricingGuide}=await loadModule('applications/studio/page-ui/pricing-guide.js');bindPricingGuide([{id:'one',title:'One',content:'word '.repeat(1000)}]);assert.equal($('pricingChapterCount').textContent,'1');assert.match($('pricingChapterTotal').textContent,/\$/);
+ }finally{for(const key of Object.keys(saved))globalThis[key]=saved[key];dom.window.close();}
+});
+test('read-only legacy protection keeps purchased chapters locked and fails closed on an unavailable server',async()=>{
+ const dom=new JSDOM('<a id="purchasePassManage"></a>'),previous=globalThis.document;globalThis.document=dom.window.document;
+ try{
+  const calls=[];globalThis.accessRequest=async(s,action)=>{calls.push(action);return{config:{chapter_ids:['one','two'],chapterProducts:[],pricingMode:'bundle'}};};
+  const {bindLegacyProtection}=await loadModule('applications/studio/page-ui/legacy-protection.js',true);
+  const protection=await bindLegacyProtection({supabase:{},book:{id:'book'},chapters:[]});assert.deepEqual(protection.read().lockedChapterIds,['one','two']);
+  await protection.save({workType:'original',chapterIds:['one','two']});await assert.rejects(protection.save({workType:'original',chapterIds:['one']}),/Keep earlier purchased/);await assert.rejects(protection.save({workType:'fanfiction',chapterIds:['one','two']}),/protection cannot/);assert.deepEqual(calls,['book']);
+  globalThis.accessRequest=async()=>{throw Error('offline');};const failed=await bindLegacyProtection({supabase:{},book:{id:'book'},chapters:[]});await assert.rejects(failed.save({workType:'original',chapterIds:['one','two']}),/listing has not changed/);
+ }finally{globalThis.document=previous;dom.window.close();delete globalThis.accessRequest;}
 });
