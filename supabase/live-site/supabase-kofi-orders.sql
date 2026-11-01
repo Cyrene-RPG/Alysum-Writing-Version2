@@ -41,9 +41,9 @@ returns boolean language plpgsql security definer set search_path=public as $$
 declare item jsonb; product record; expected bigint:=0; paid bigint; n integer; line_no integer:=0;
 begin
  if length(p_transaction) not between 1 and 200 or length(p_email) not between 3 and 320
-    or p_email !~ '^[^ @]+@[^ @]+\\.[^ @]+$'
+    or p_email !~ '^[^ @]+@[^ @]+[.][^ @]+$'
     or jsonb_typeof(p_items)<>'array' or jsonb_array_length(p_items) not between 1 and 20
-    or p_total !~ '^[0-9]{1,7}(\\.[0-9]{1,2})?$' then raise exception 'Invalid order'; end if;
+    or p_total !~ '^[0-9]{1,7}([.][0-9]{1,2})?$' then raise exception 'Invalid order'; end if;
  paid:=round(p_total::numeric*100)::bigint;
  perform pg_advisory_xact_lock(hashtextextended(p_transaction,0));
  if exists(select 1 from public.kofi_orders where transaction_id=p_transaction) then
