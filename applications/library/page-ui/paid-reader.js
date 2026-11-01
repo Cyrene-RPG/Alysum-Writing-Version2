@@ -8,40 +8,11 @@ let index = 0;
 let generation = 0;
 function money(amount, currency) { return new Intl.NumberFormat('en', { style: 'currency', currency: currency.toUpperCase() }).format(amount / 100); }
 function showMessage(message) { $('chapterBody').textContent = message; }
-function login() { const link = document.createElement('a'); link.href = `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`; link.textContent = 'Sign in to buy or restore access'; return link; }
-function requestId(chapter) {
-    const key = `alysum:paid-access:checkout:${edition.id}:${chapter}`;
-    let id;
-    try { id = sessionStorage.getItem(key); } catch { /* A new server-side deduplicated attempt is safe. */ }
-    if (!id) { id = crypto.randomUUID(); try { sessionStorage.setItem(key, id); } catch { /* Retry remains idempotent server-side. */ } }
-    return { id, clear() { try { sessionStorage.removeItem(key); } catch { /* ignore */ } } };
-}
+function login() { const link = document.createElement('a'); link.href = `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`; link.textContent = 'Sign in to restore your purchase'; return link; }
 function gate(chapter, requiresSignIn) {
-    const root = $('chapterBody'); root.replaceChildren();
-    const panel = document.createElement('section'); panel.className = 'access-gate';
-    const title = document.createElement('h2'); title.textContent = 'Continue reading';
-    const detail = document.createElement('p'); detail.textContent = `${money(edition.amount, edition.currency)} ${edition.mode === 'chapter' ? 'for this chapter' : edition.mode === 'book' ? 'for the complete book' : 'for the chapter bundle'}`;
-    const warning = document.createElement('p'); warning.className = 'access-checkout-note'; warning.textContent = edition.livemode ? 'Pay the author directly through Stripe. This is a one-time purchase. Reading access unlocks after payment is verified.' : 'Stripe sandbox. Use test card details only. No real money is charged.';
-    const status = document.createElement('p'); status.setAttribute('role','status');
-    panel.append(title, detail, warning);
-    if (requiresSignIn) panel.append(login());
-    else {
-        const buy = document.createElement('button'); buy.type = 'button'; buy.className = 'access-buy'; buy.textContent = 'Continue to secure checkout';
-        buy.addEventListener('click', async () => {
-            buy.disabled = true; status.textContent = 'Preparing checkout…';
-            const attempt = requestId(chapter.id);
-            try {
-                const response = await paymentRequest('checkout', { method:'POST', requireAuth:true, body:{ edition: edition.id, chapter: chapter.id, requestId: attempt.id } });
-                if (response.alreadyPurchased) { await render(); return; }
-                if (!response.url) { status.textContent = response.status === 'reversed' ? 'This purchase was refunded or disputed.' : 'Payment verification is pending. Refresh after completing checkout.'; buy.disabled = false; return; }
-                const target = new URL(response.url);
-                if (target.origin !== 'https://checkout.stripe.com') throw Error('Invalid Stripe checkout address.');
-                window.location.assign(target.href);
-            } catch (error) { status.textContent = error.message; if (error.status === 409) attempt.clear(); buy.disabled = false; if (error.status === 401) panel.append(login()); }
-        });
-        panel.append(buy);
-    }
-    panel.append(status); root.append(panel);
+ const root=$('chapterBody');root.replaceChildren();const heading=document.createElement('h2');heading.textContent='Earlier purchase access';
+ const note=document.createElement('p');note.textContent='New purchases use Purchase Passes. If you already bought this chapter, sign in to the account that owns it.';root.append(heading,note);
+ if(requiresSignIn)root.append(login());const link=document.createElement('a');link.href='/purchase-passes?view=reader';link.textContent='Open Purchase Passes';root.append(link);
 }
 async function render() {
     const turn = ++generation;
@@ -98,12 +69,12 @@ async function boot() {
     $('readerEnd').hidden = true;
     $('bookmarkBtn').hidden = true; // Private editions do not enter the public Library's bookmark store.
     $('progressPct').hidden = true;
-    $('readerBack').href = '/applications/studio/pages/connected-payments';
+    $('readerBack').href = '/purchase-passes?view=reader';
     const banner = document.createElement('div'); banner.className = 'access-test-banner';
     const label = document.createElement('span'); label.textContent = params.get('payment') === 'canceled' ? 'Checkout canceled · No reading access granted' : 'Checking secure reading access…'; banner.append(label); $('readerRoot').querySelector('.reader-bar').after(banner);
     const result = await paymentRequest('edition', { query:{edition: params.get('edition') || ''} });
     edition = result.edition;
-    if (!params.get('payment')) label.textContent = edition.livemode ? 'Paid edition · Purchases paid directly to the author' : 'Stripe sandbox · No real charges';
+    if (!params.get('payment')) label.textContent = 'Earlier purchase · Your reading access is preserved';
     if (!edition.chapters.length) throw Error('This edition has no chapters.');
     $('bookTitle').textContent = edition.title; document.title = `${edition.title} — Alysum`;
     mountReaderThemes($('themeSwatches'), { id: edition.id });
@@ -119,4 +90,4 @@ async function boot() {
     });
     await confirmPurchase(); await render();
 }
-boot().catch(error => { $('readerRoot').hidden = true; $('readerEmpty').hidden = false; $('readerEmpty').querySelector('p').textContent = error.message; $('emptyBack').href = '/applications/studio/pages/connected-payments'; $('emptyBack').textContent = 'Payment setup'; });
+boot().catch(error => { $('readerRoot').hidden = true; $('readerEmpty').hidden = false; $('readerEmpty').querySelector('p').textContent = error.message; $('emptyBack').href = '/purchase-passes?view=reader'; $('emptyBack').textContent = 'Your purchased books'; });

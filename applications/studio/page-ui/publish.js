@@ -2,7 +2,7 @@ import { bindPublishingFields } from "./publishing-fields.js";
 import { bindPublishingLayout } from "./publishing-layout.js";
 import { freeFanfictionForm } from "/core/publishing/work-tags.js";
 import { bindPricingGuide } from "./pricing-guide.js";
-import { bindChapterAccess } from "./publish-access.js";
+import { bindLegacyProtection } from "./legacy-protection.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=11";
@@ -258,7 +258,7 @@ async function boot() {
             title: document.getElementById("workTitle")?.value || book.title,
             author: book._author || "",
             summary: document.getElementById("workSummary")?.value || "",
-            purchaseUrl: document.getElementById("purchaseUrl")?.value || "",
+            purchaseUrl: "",
             chapterAccess: access,
             lockedChapterIds: access.lockedChapterIds,
             notesBefore: draft.notesBefore || "",
@@ -343,7 +343,7 @@ async function boot() {
     bindPageLook(document);
     const workTitle = document.getElementById("workTitle");
     if (workTitle) workTitle.value = book.title || "";
-    document.getElementById("purchaseUrl").value = draft.purchaseUrl;
+
     const workSummary = document.getElementById("workSummary");
     if (workSummary) workSummary.value = draft.synopsis || "";
     const workNotesAfter = document.getElementById("workNotesAfter");
@@ -475,7 +475,7 @@ async function boot() {
         if (!latest) throw new Error("Book not found");
         return listBodyChapters(latest.sections);
     });
-    chapterAccess = await bindChapterAccess({supabase,book,chapters});
+    chapterAccess = await bindLegacyProtection({supabase,book,chapters});
     paintPreview(shown[0]);
     paintChapterSummary();
     document.getElementById("workComplete")?.addEventListener("change", (event) => {

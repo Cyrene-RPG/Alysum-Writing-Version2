@@ -58,7 +58,7 @@ function webhook(evt,secret=env.STRIPE_CONNECT_WEBHOOK_SECRET){const raw=JSON.st
 
 test('an explicit origin, enabled environment and mode-matched key are required for checkout',async()=>{
  for(const [settings,target] of [[env,'https://alysumwriting.com'],[{...env,STRIPE_SECRET_KEY:'sk_live_forbidden'},origin],[{...env,PAID_ACCESS_ENABLED:'false'},origin],[{...env,PAID_ACCESS_ORIGIN:'https://other.test'},origin]])assert.equal(paymentConfiguration(settings,target).configured,false);
- const f=fixture();const response=await f.run(request('checkout',{method:'POST',body:{}}),{...env,STRIPE_SECRET_KEY:'sk_live_forbidden'});assert.equal(response.status,503);assert.equal(f.calls.length,0);assert.equal(f.stripeCalls.length,0);
+ const f=fixture();const response=await f.run(request('checkout',{method:'POST',body:{}}),{...env,STRIPE_SECRET_KEY:'sk_live_forbidden'});assert.equal(response.status,410);assert.equal(f.calls.length,0);assert.equal(f.stripeCalls.length,0);
  const cross=await f.run(request('stripe-connect',{method:'POST',headers:{Origin:'https://attacker.test'},body:{}}));assert.equal(cross.status,403);
 });
 test('missing server setup gives actionable names without secret values or pretend connectivity',async()=>{
@@ -90,39 +90,11 @@ test('chapter and bundle grants are limited to the correct edition and buyer',()
  assert.equal(canReadPrivateChapter(o,'missing',ownerId,[]),false);
  assert.doesNotMatch(JSON.stringify(publicEdition(o)),/PRIVATE/);
 });
-test('OAuth binds the callback to a browser cookie and consumes the state once without storing provider tokens',async()=>{
- const f=fixture();const start=await f.run(request('stripe-connect',{method:'POST',body:{},as:ownerId}));assert.equal(start.status,200);const target=new URL((await start.json()).url);assert.equal(target.origin,'https://connect.stripe.com');const state=target.searchParams.get('state');assert.equal(f.tables.paid_access_oauth_states[0].state_hash,await sha256(state));assert.match(start.headers.get('Set-Cookie'),/HttpOnly; Secure; SameSite=Lax/);
- const callback=()=>request('stripe-callback',{as:null,query:{state,code:'authorization-code'},headers:{Cookie:`alysum_paid_state=${state}`}});
- assert.equal((await f.run(request('stripe-callback',{as:null,query:{state,code:'x'}}))).status,403);
- const connected=await f.run(callback());assert.equal(connected.status,303);assert.match(connected.headers.get('Location'),/connection=connected/);
- assert.doesNotMatch(JSON.stringify(f.tables),/DO_NOT_STORE/);assert.equal((await f.run(callback())).status,403);
-});
-test('OAuth rejection and expiry never connect an account',async()=>{
- const f=fixture();let response=await f.run(request('stripe-connect',{method:'POST',body:{},as:ownerId}));let state=new URL((await response.json()).url).searchParams.get('state');
- const denied=await f.run(request('stripe-callback',{as:null,query:{state,error:'access_denied'},headers:{Cookie:`alysum_paid_state=${state}`}}));assert.equal(denied.status,303);assert.match(denied.headers.get('Location'),/canceled/);assert.equal(f.stripeCalls.length,0);
- response=await f.run(request('stripe-connect',{method:'POST',body:{},as:ownerId}));state=new URL((await response.json()).url).searchParams.get('state');f.tables.paid_access_oauth_states[0].expires_at='2000-01-01';
- assert.equal((await f.run(request('stripe-callback',{as:null,query:{state,code:'x'},headers:{Cookie:`alysum_paid_state=${state}`}}))).status,403);
-});
-test('private edition creation reads fresh owned source, keeps all text out of Library and rejects published books',async()=>{
- const f=fixture();const body={bookId:'source',mode:'bundle',price:'4.25',currency:'usd',chapterIds:['free','paid','last'],paidIds:['paid','last']};
- const response=await f.run(request('create-edition',{method:'POST',as:ownerId,body}));assert.equal(response.status,201);assert.equal(f.tables.paid_access_offers.length,2);assert.equal(f.tables.paid_access_offers[1].amount,425);assert.match(f.tables.paid_access_offers[1].chapters[1].text,/PRIVATE BODY/);
- assert.equal(f.calls.some(c=>['library','books'].includes(c.table)&&c.method==='POST'),false);
- assert.equal((await f.run(request('create-edition',{method:'POST',as:otherId,body}))).status,404);
- f.tables.books[0].is_published=true;assert.equal((await f.run(request('create-edition',{method:'POST',as:ownerId,body}))).status,409);
-});
-test('private paid editions reject saved fan fiction before creating offers or contacting Stripe',async()=>{
- for(const metadata of [{workType:'fanfiction'},{genres:['fanfic']}]){
-  const f=fixture();f.tables.books[0].publish_meta=metadata;
-  const response=await f.run(request('create-edition',{method:'POST',as:ownerId,body:{bookId:'source',workType:'original',mode:'bundle',price:'4.25',currency:'usd',chapterIds:['free','paid','last'],paidIds:['paid','last']}}));
-  assert.equal(response.status,400);assert.match(await response.text(),/Fan fiction cannot/);assert.equal(f.tables.paid_access_offers.length,1);assert.equal(f.stripeCalls.length,0);
- }
-});
-test('old paid offers cannot start new checkouts after the source is classified as fan fiction',async()=>{
- const f=fixture();f.tables.books[0].publish_meta={workType:'fanfiction'};
- const response=await f.run(request('checkout',{method:'POST',body:{edition:offerId,chapter:'paid',requestId:anotherOrderId}}));
- assert.equal(response.status,400);assert.match(await response.text(),/Fan fiction/);assert.equal(f.stripeCalls.length,0);
- assert.equal(f.tables.paid_access_orders.length,1);
-});
+
+
+
+
+
 test('complete-book validation requires all chapters and cannot lock the entire sample',()=>{
  const base={mode:'book',price:'3.00',currency:'usd',chapterIds:['free','paid','last']};
  assert.throws(()=>validatePrivateOffer(base,chapters,false),/complete/);
@@ -130,21 +102,10 @@ test('complete-book validation requires all chapters and cannot lock the entire 
  const good=validatePrivateOffer(base,chapters,true);assert.deepEqual(good.paidIds,['paid','last']);
  assert.throws(()=>validatePrivateOffer({...base,mode:'bundle',paidIds:base.chapterIds},chapters,false),/free/);
 });
-test('checkout uses server price and connected account, never platform charges or browser-supplied amounts',async()=>{
- const f=fixture();f.tables.paid_access_orders=[];
- const response=await f.run(request('checkout',{method:'POST',body:{edition:offerId,chapter:'paid',requestId:orderId,amount:1,currency:'eur',stripe_account:'acct_attacker'}}));
- assert.equal(response.status,200);const call=f.stripeCalls.find(c=>c.path==='/v1/checkout/sessions');assert.equal(call.account,account);assert.equal(call.body['line_items[0][price_data][unit_amount]'],'300');assert.equal(call.body['line_items[0][price_data][currency]'],'usd');
- assert.equal(call.body.client_reference_id,buyerId);assert.equal(call.idempotency,`alysum-paid-access-${orderId}`);assert.equal(Object.keys(call.body).some(k=>/application_fee|transfer_data/.test(k)),false);
- assert.equal(f.tables.paid_access_orders[0].status,'pending');assert.equal(f.tables.paid_access_orders[0].stripe_session,'cs_test_checkout');
-});
-test('a repeated checkout attempt reuses its pending purchase instead of creating another order',async()=>{
- const f=fixture();f.tables.paid_access_orders[0].stripe_session=null;
- const body={edition:offerId,chapter:'paid',requestId:anotherOrderId};
- const response=await f.run(request('checkout',{method:'POST',body}));assert.equal(response.status,200);assert.equal(f.tables.paid_access_orders.length,1);
- assert.equal(f.stripeCalls.find(c=>c.path==='/v1/checkout/sessions').idempotency,`alysum-paid-access-${orderId}`);
-});
+
+
 test('author cannot purchase own edition and a different account cannot confirm someone else’s purchase',async()=>{
- const f=fixture();assert.equal((await f.run(request('checkout',{method:'POST',as:ownerId,body:{edition:offerId,chapter:'paid',requestId:orderId}}))).status,400);
+ const f=fixture();assert.equal((await f.run(request('checkout',{method:'POST',as:ownerId,body:{edition:offerId,chapter:'paid',requestId:orderId}}))).status,410);
  assert.equal((await f.run(request('confirm',{method:'POST',as:otherId,body:{order:orderId}}))).status,404);assert.equal(f.tables.paid_access_orders[0].status,'pending');
 });
 test('confirmation retrieves Stripe and grants only fully matched paid sessions',async()=>{
@@ -171,7 +132,7 @@ test('confirmation also detects a refund if its webhook has not arrived yet',asy
 });
 test('provider disconnect stops new purchases while existing verified reading access remains',async()=>{
  const f=fixture();f.tables.paid_access_orders[0].status='paid';await f.run(webhook(event('evt_disconnect','account.application.deauthorized')));assert.equal(f.tables.paid_access_connections[0].charges_enabled,false);
- assert.equal((await f.run(request('checkout',{method:'POST',body:{edition:offerId,chapter:'last',requestId:anotherOrderId}}))).status,409);
+ assert.equal((await f.run(request('checkout',{method:'POST',body:{edition:offerId,chapter:'last',requestId:anotherOrderId}}))).status,410);
  assert.equal((await f.run(request('chapter',{query:{edition:offerId,chapter:'paid'}}))).status,200);
 });
 test('payment matching refuses wrong connected accounts and incomplete session identities',()=>{
@@ -183,17 +144,14 @@ test('OAuth exchange authenticates with the documented secret-key Basic header a
  await services.stripe('/oauth/token',{method:'POST',oauth:true,body:{grant_type:'authorization_code',code:'fixture'}});
 });
 test('invalid request objects and oversized webhook bodies fail before any purchase write',async()=>{
- const f=fixture();for(const body of ['null','[]','"string"','{'])assert.equal((await f.run(request('checkout',{method:'POST',body}))).status,400);
+ const f=fixture();for(const body of ['null','[]','"string"','{'])assert.equal((await f.run(request('checkout',{method:'POST',body}))).status,410);
  const response=await f.run(request('stripe-webhook',{method:'POST',body:'x'.repeat(262145)}));assert.equal(response.status,413);assert.equal(f.calls.some(c=>c.method==='POST'),false);
 });
 test('complete-book purchase order uses manuscript order even when a client reorders chapter IDs',()=>{
  const result=validatePrivateOffer({mode:'book',price:'3.00',currency:'usd',chapterIds:['last','paid','free']},chapters,true);
  assert.deepEqual(result.chapters.map(ch=>ch.id),['free','paid','last']);assert.deepEqual(result.paidIds,['paid','last']);
 });
-test('an expired provider checkout is retired without starting another charge for the same order',async()=>{
- const f=fixture();f.setSession({...session(),status:'expired',payment_status:'unpaid'});
- const response=await f.run(request('checkout',{method:'POST',body:{edition:offerId,chapter:'paid',requestId:orderId}}));assert.equal(response.status,409);assert.equal(f.tables.paid_access_orders[0].status,'expired');assert.equal(f.stripeCalls.some(c=>c.path==='/v1/checkout/sessions'),false);
-});
+
 
 test('live purchases require explicit live mode and live keys, with a matching HTTPS origin',()=>{
  const live={...env,PAID_ACCESS_MODE:'live',STRIPE_SECRET_KEY:'sk_live_fixture',PAID_ACCESS_ORIGIN:'https://alysumwriting.com'};
@@ -202,13 +160,7 @@ test('live purchases require explicit live mode and live keys, with a matching H
  assert.equal(paymentConfiguration({...live,PAID_ACCESS_MODE:undefined},'https://alysumwriting.com').configured,false);
  assert.equal(paymentConfiguration({...live,PAID_ACCESS_ORIGIN:'http://localhost'},'http://localhost').configured,false);
 });
-test('live checkout is a real-mode direct charge on the author account, with no platform transfer',async()=>{
- const f=fixture({livemode:true});f.tables.paid_access_orders=[];
- const result=await f.run(request('checkout',{method:'POST',body:{edition:offerId,chapter:'paid',requestId:orderId}}));
- assert.equal(result.status,200);const data=await result.json();assert.match(data.url,/checkout.stripe.com/);
- assert.equal(f.tables.paid_access_orders[0].livemode,true);assert.equal(f.tables.paid_access_orders[0].stripe_session,'cs_live_checkout');
- const call=f.stripeCalls.find(c=>c.path==='/v1/checkout/sessions');assert.equal(call.account,account);assert.equal(Object.keys(call.body).some(k=>/transfer|application_fee/.test(k)),false);
-});
+
 test('a verified live purchase grants live reading access and a refund removes it',async()=>{
  const f=fixture({livemode:true});let evt=event('evt_livepaid');evt.livemode=true;evt.data.object.id='cs_live_checkout';
  assert.equal((await f.run(webhook(evt))).status,200);assert.equal(f.tables.paid_access_orders[0].status,'paid');
@@ -224,12 +176,7 @@ test('sandbox editions, purchases and events cannot unlock or impersonate live a
  assert.equal(canReadPrivateChapter({...offer(),livemode:true},'paid',buyerId,[{...order(),status:'paid'}]),false);
  assert.equal(canReadPrivateChapter(offer(),'paid',buyerId,[{...order(),livemode:true,status:'paid'}]),false);
 });
-test('live OAuth connection is mode-bound and does not consume a sandbox handshake',async()=>{
- const f=fixture({livemode:true});const response=await f.run(request('stripe-connect',{method:'POST',body:{},as:ownerId}));
- const state=new URL((await response.json()).url).searchParams.get('state');assert.equal(f.tables.paid_access_oauth_states[0].livemode,true);
- const callback=request('stripe-callback',{as:null,query:{state,code:'live-code'},headers:{Cookie:`alysum_paid_state=${state}`}});
- assert.equal((await f.run(callback)).status,303);assert.equal(f.tables.paid_access_connections[0].livemode,true);
-});
+
 
 test('account lists restore only the current reader’s verified purchases and the author’s own editions',async()=>{
  const f=fixture({livemode:true});f.tables.paid_access_orders[0].status='paid';
@@ -237,4 +184,23 @@ test('account lists restore only the current reader’s verified purchases and t
  const stranger=await (await f.run(request('account-editions',{as:otherId}))).json();assert.deepEqual(stranger,{created:[],purchased:[]});
  const author=await (await f.run(request('account-editions',{as:ownerId}))).json();assert.equal(author.created[0].id,offerId);
  f.tables.paid_access_orders[0].status='reversed';const refunded=await (await f.run(request('account-editions'))).json();assert.equal(refunded.purchased.length,0);
+});
+
+test('retired Stripe setup and checkout never alter earlier offers/orders or contact Stripe',async()=>{
+ for(const action of ['stripe-connect','stripe-callback','create-edition','checkout','author-books','author-book']){
+  const f=fixture();const before=JSON.stringify(f.tables);
+  const response=await f.run(request(action,{method:['stripe-callback','author-books','author-book'].includes(action)?'GET':'POST',body:['stripe-callback','author-books','author-book'].includes(action)?undefined:{edition:offerId,chapter:'paid'}}));
+  assert.equal(response.status,410);assert.equal(JSON.stringify(f.tables),before);assert.equal(f.stripeCalls.length,0);assert.equal(f.calls.length,0);
+ }
+});
+test('earlier paid reading and listing work after checkout is disabled and inactive offers remain private',async()=>{
+ const f=fixture({livemode:true});f.tables.paid_access_orders[0].status='paid';f.tables.paid_access_offers[0].active=false;
+ const settings={SUPABASE_SERVICE_ROLE_KEY:'test-service-key',PAID_ACCESS_MODE:'live'};
+ const chapter=await f.run(request('chapter',{query:{edition:offerId,chapter:'paid'}}),settings);assert.equal(chapter.status,200);assert.match(await chapter.text(),/PRIVATE BODY/);
+ assert.equal((await f.run(request('chapter',{as:otherId,query:{edition:offerId,chapter:'paid'}}),settings)).status,404);
+ const list=await(await f.run(request('account-editions'),settings)).json();assert.equal(list.purchased[0].id,offerId);assert.equal(f.stripeCalls.length,0);
+});
+test('retained read-only purchase endpoints reject untrusted hosts even when checkout is disabled',async()=>{
+ const f=fixture({livemode:true});const req=new Request('https://untrusted.example/api/paid-access?action=edition&edition='+offerId,{headers:{Authorization:'Bearer '+buyerId}});
+ assert.equal((await f.run(req,{SUPABASE_SERVICE_ROLE_KEY:'fixture'})).status,503);assert.equal(f.calls.length,0);
 });

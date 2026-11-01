@@ -4,7 +4,7 @@ import {loadWorkspaceProfile} from '@alysum/account/workspace-profile.js';
 import {createBooksApi} from '@alysum/synchronization-engine/books.js';
 import {loadPublicationBook,savePublicationSettings} from '/core/publishing/publication-save.js';
 import {uploadBookCover} from '/core/publishing/cover-upload.js';
-import {authorAccessRequest} from '/core/publishing/author-access-client.js';
+import {purchasePassRequest} from '/core/purchase-access/client.js';
 import {createEbooksApi} from '/core/ebooks/client.js';
 import {readEpub} from './epub-reader.js';
 import {mountEpubPublisher} from './epub-publisher.js';
@@ -19,11 +19,11 @@ async function boot(){
  if(id){const loaded=await loadPublicationBook(api,id,session.user.id);book=loaded.book;baseline=loaded.baseline;if(!book.publish_meta?.epubEdition)throw Error('Open this written book in the regular publishing flow.');edition=await ebooks.get(id,{allowMissing:true});}
  // Confirm the migration before creating a manuscript or uploading a file.
  const {error}=await supabase.from('epub_editions').select('book_id').limit(0);if(error)throw Error('EPUB publishing needs its database setup. Run supabase-epub-editions.sql after the chapter-access setup.');
- const status=await authorAccessRequest(supabase,'status');if(!status.ready)throw Error('Connect chapter-access payments before publishing EPUBs.');
- const connected=await authorAccessRequest(supabase,'connections');
+ const status=await purchasePassRequest('status');if(!status.ready)throw Error('Purchase Passes are temporarily unavailable.');
+ let passRequestId=crypto.randomUUID();
  const confirmed=saved=>{if(!saved||saved._pending||saved._synced===false)throw Error(saved?._syncError||'The EPUB details could not be confirmed online. Keep this page open and retry.');return saved;};
- await mountEpubPublisher({book,edition,connections:connected.connections.filter(c=>c.enabled),readFile:readEpub,
-  loadConnections:async()=>(await authorAccessRequest(supabase,'connections')).connections.filter(c=>c.enabled),
+ await mountEpubPublisher({book,edition,readFile:readEpub,
+
   setBookUrl:bookId=>history.replaceState(null,'',`?book=${encodeURIComponent(bookId)}`),
   async upload({parsed,file}){
    // A retry keeps the already-created private manuscript and chapter IDs.
@@ -34,10 +34,16 @@ async function boot(){
    const edition=await ebooks.upload(book,file);return {book,edition};
   },
   async saveDetails(current,form){
-   const publish_meta={...current.publish_meta,epubEdition:true,workType:'original',author:form.author,synopsis:form.summary,genres:form.genres,genre:form.genres[0]||'',tags:form.tags,rating:form.rating,warningMeta:form.warningMeta,warnings:form.warnings,cover_url:form.coverUrl,complete:true,epubDetails:{connectionId:form.connectionId,productUrl:form.productUrl,price:form.price,currency:form.currency,rightsConfirmed:form.rightsConfirmed}};
+   const publish_meta={...current.publish_meta,epubEdition:true,workType:'original',author:form.author,synopsis:form.summary,genres:form.genres,genre:form.genres[0]||'',tags:form.tags,rating:form.rating,warningMeta:form.warningMeta,warnings:form.warnings,cover_url:form.coverUrl,complete:true,epubDetails:{price:form.price,currency:form.currency,rightsConfirmed:form.rightsConfirmed}};
    const saved=confirmed(await savePublicationSettings(api,baseline,{title:form.title,publish_meta},session.user.id));baseline=(await loadPublicationBook(api,saved.id,session.user.id)).baseline;book=saved;return saved;
   },
-  configure:body=>authorAccessRequest(supabase,'configure',{method:'POST',body}),
+  async configure(body){
+   const passes=(await purchasePassRequest('author-passes')).passes;let pass=passes.find(p=>p.bookId===book.id&&p.mode==='book');
+   if(!pass)pass=(await purchasePassRequest('create',{method:'POST',body:{requestId:passRequestId,bookId:book.id,mode:'book',title:book.title,price:(body.minimumAmount/100).toFixed(2),currency:body.currency,chapterIds:body.chapterIds}})).pass;
+   passRequestId=pass.id;
+   if(pass.amount!==body.minimumAmount||pass.currency!==body.currency)throw Error('The existing whole-book pass has a different price. Manage that pass in Purchase Passes.');
+   const note=document.querySelector('#epubStatus');let link=document.getElementById('epubPassLink');if(!link){link=document.createElement('a');link.id='epubPassLink';note.after(link);}link.href='/purchase-passes?book='+encodeURIComponent(book.id);link.textContent='Manage Purchase Pass & delivery codes →';
+  },
   async saveListing(current,data){
    const {error}=await supabase.from('library').upsert({id:current.id,user_id:session.user.id,data,updated_at:new Date().toISOString()});if(error)throw error;
    try{book=confirmed(await savePublicationSettings(api,baseline,{is_published:true,published_chapter_ids:data.publishedChapterIds},session.user.id));baseline=(await loadPublicationBook(api,current.id,session.user.id)).baseline;}

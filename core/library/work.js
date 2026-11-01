@@ -1,3 +1,4 @@
+import {readPurchasePassBook} from '../purchase-access/reading.js';
 import { authorAccessRequest } from "../publishing/author-access-client.js";
 import { normalizePurchaseUrl } from "../publishing/publish-meta.js";
 /**
@@ -110,6 +111,9 @@ export async function fetchPublishedWork(supabase, id) {
             work.chapters = work.chapters.map(ch => ch.locked && privateText.has(ch.id)
                 ? {...ch,content:privateText.get(ch.id),locked:false,privateText:true} : ch);
         } catch { /* Fail closed: the locked placeholders remain readable. */ }
+    }
+    if(work?.chapters?.some(ch=>ch.locked)&&supabase){
+        try{const text=new Map((await readPurchasePassBook(supabase,want)).map(ch=>[String(ch.id),String(ch.text||'')]));work.chapters=work.chapters.map(ch=>ch.locked&&text.has(ch.id)?{...ch,content:text.get(ch.id),locked:false,privateText:true}:ch);}catch{/* Preserve locked placeholders when online access cannot be verified. */}
     }
     return work;
 }

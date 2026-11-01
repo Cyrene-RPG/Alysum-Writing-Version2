@@ -4,11 +4,10 @@ import { renderContentWarnings } from "/site-appearance/components/content-warni
 import { authorProfileUrl } from "/core/library/author-links.js";
 import { authorNameHtml } from "/site-appearance/js-runtime/author-link.js";
 import { openReadingState } from "/core/library/reading-state.js";
-import { normalizePurchaseUrl } from "@alysum/publishing/publish-meta.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
-import { fetchPublishedWork } from "@alysum/library/work.js?v=5";
+import { fetchPublishedWork } from "@alysum/library/work.js?v=6";
 import { cropFrameStyle, coverCropForImage, isFullCoverCrop, peekCoverSrc } from "@alysum/publishing/cover-upload.js?v=10";
 import { genreLabel } from "@alysum/publishing/genres.js?v=4";
 import { applyVisitListingLook, applyVisitSiteAccent, applyVisitTitleColor, applyVisitWelcomeChrome } from "@alysum/site-appearance/js-runtime/visit-page-look.js?v=11";
@@ -236,7 +235,7 @@ async function boot() {
         el.href = pub;
     });
 
-    const passLink=document.createElement('a');passLink.className='book-subscribe';passLink.textContent='Purchase passes / redeem code';passLink.href='/purchase-passes?view=reader&book='+encodeURIComponent(work.id);if(work.workType!=='fanfiction'&&work.editionFormat!=='epub'&&(!work.mediaFormat||work.mediaFormat==='novel'))document.getElementById('bookTitle').after(passLink);
+    const passLink=document.createElement('a');passLink.className='book-subscribe';passLink.textContent='Purchase passes / redeem code';passLink.href='/purchase-passes?view=reader&book='+encodeURIComponent(work.id);if(work.workType!=='fanfiction'&&(!work.mediaFormat||work.mediaFormat==='novel'))document.getElementById('bookTitle').after(passLink);
     paintGenres(work, owner);
     paintTags(work, owner);
     paintWarns(work, owner);
@@ -263,19 +262,12 @@ async function boot() {
         document.getElementById('bookPurchaseBlock').after(button,note);
         button.addEventListener('click',async()=>{
             button.disabled=true;note.textContent='Checking whole-book access…';
-            try{const {authorAccessRequest}=await import('/core/publishing/author-access-client.js');const result=await authorAccessRequest(supabase,'epub-download',{query:{book:work.id}});const link=document.createElement('a');link.href=result.url;link.download=result.fileName;link.rel='noopener noreferrer';link.referrerPolicy='no-referrer';document.body.append(link);link.click();link.remove();note.textContent='Your EPUB download is ready.';}
+            try{const {authorAccessRequest}=await import('/core/publishing/author-access-client.js');let result;try{result=await authorAccessRequest(supabase,'epub-download',{query:{book:work.id}});}catch(earlierError){const {purchasePassRequest}=await import('/core/purchase-access/client.js');const passes=(await purchasePassRequest(owner?'author-passes':'my-passes')).passes;const pass=passes.find(p=>p.bookId===work.id&&p.mode==='book');if(!pass)throw earlierError;result=await purchasePassRequest('epub-download',{query:{pass:pass.id}});}const link=document.createElement('a');link.href=result.url;link.download=result.fileName;link.rel='noopener noreferrer';link.referrerPolicy='no-referrer';document.body.append(link);link.click();link.remove();note.textContent='Your EPUB download is ready.';}
             catch(error){note.textContent=error.message;}
             finally{button.disabled=false;}
         });
         if(owner)for(const id of ['editTitle','editSynopsis','addChapter']){const link=document.getElementById(id);if(link)link.href=`/applications/studio/pages/epub-publish.html?book=${encodeURIComponent(work.id)}`;}
     }
-
-    const purchaseUrl = normalizePurchaseUrl(work.purchaseUrl);
-    const purchaseBlock = document.getElementById("bookPurchaseBlock");
-    const purchaseLink = document.getElementById("buyFromAuthor");
-    purchaseBlock.hidden = !purchaseUrl;
-    if (purchaseUrl) purchaseLink.href = purchaseUrl;
-    else purchaseLink.removeAttribute("href");
 
     const notesText = String(work.notesAfter || "").trim();
     const notesBlock = document.getElementById("bookNotesBlock");

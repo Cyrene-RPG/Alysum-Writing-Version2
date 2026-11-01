@@ -3,7 +3,7 @@ import { mountReporting } from "./report-book.js?v=2";
 import { openReadingState } from "/core/library/reading-state.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
-import { fetchPublishedWork } from "@alysum/library/work.js?v=5";
+import { fetchPublishedWork } from "@alysum/library/work.js?v=6";
 import { countWordsInHtml } from "@alysum/writing-engine/word-count.js";
 import { mountReaderThemes } from "./reader-theme.js?v=6";
 import { mountReaderEnd } from "./reader-end.js?v=8";
@@ -258,7 +258,7 @@ async function boot() {
         const words = chapter.wordCount || countWordsInHtml(chapter.content);
         document.getElementById("chapterTitle").textContent = chapter.title;
         document.getElementById("chapterMeta").textContent =
-            chapter.locked ? "Locked · purchase required" : `${minutesFor(words)} min · ${formatWords(words)}`;
+            chapter.locked ? "Protected chapter" : `${minutesFor(words)} min · ${formatWords(words)}`;
         const body = document.getElementById("chapterBody");
         let warningMount=document.getElementById("readerContentWarnings");
         if(!warningMount){warningMount=document.createElement("div");warningMount.id="readerContentWarnings";body.before(warningMount);}
@@ -266,12 +266,10 @@ async function boot() {
         body.replaceChildren();
         if (chapter.locked) {
             const heading=document.createElement('h2');heading.textContent='This chapter is locked';
-            const note=document.createElement('p');note.textContent='Buy the author’s shop product to unlock these chapters here. Use the same email as your verified Alysum account at checkout.';
+            const note=document.createElement('p');note.textContent='Earlier purchases still unlock this chapter. For new purchases, use the author’s Purchase Passes.';
             body.append(heading,note);
-            if (chapter.purchaseUrl) {
-                const buy=document.createElement('a');buy.href=chapter.purchaseUrl;buy.target='_blank';buy.rel='noopener noreferrer external';buy.textContent='Buy from author ↗';buy.className='reader-step';body.append(buy);
-            }
-            const status=document.createElement('p');status.textContent=session?.user ? 'Already bought it? Check access below. Sale confirmations may take a moment.' : 'Sign in to Alysum to receive access after buying.';body.append(status);
+            const passes=document.createElement('a');passes.href='/purchase-passes?view=reader&book='+encodeURIComponent(work.id);passes.textContent='Purchase Passes / redeem code';passes.className='reader-step';body.append(passes);
+            const status=document.createElement('p');status.textContent=session?.user ? 'Already bought it? Check access below. Sale confirmations may take a moment.' : 'Sign in to the Alysum account used for your earlier purchase.';body.append(status);
             if (!session?.user) { const login=document.createElement('a');login.href=`/login.html?next=${encodeURIComponent(window.location.pathname+window.location.search)}`;login.textContent='Sign in to Alysum';body.append(login); }
             const refresh=document.createElement('button');refresh.type='button';refresh.className='reader-step';refresh.textContent='Check my access';
             refresh.addEventListener('click',async()=>{
@@ -280,7 +278,7 @@ async function boot() {
                     const next=await fetchPublishedWork(supabase,work.id);
                     const updated=next?.chapters?.find(ch=>ch.id===chapter.id);
                     if(updated && !updated.locked) {work.chapters=next.chapters;render();}
-                    else status.textContent='No purchase found for this account yet. Check your checkout email, wait a moment, then try again.';
+                    else status.textContent='No earlier purchase or redeemed pass was found for this account. Check your account or redeem your code in Purchase Passes.';
                 } catch {status.textContent='Could not check access. Try again.';}
                 finally {refresh.disabled=false;}
             });body.append(document.createElement('br'),refresh);

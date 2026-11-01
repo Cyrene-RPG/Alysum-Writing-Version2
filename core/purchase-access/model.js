@@ -7,7 +7,7 @@ export function passPrice(value){const text=String(value??'').trim();if(!/^\d{1,
 export function passText(html){return String(html||'').replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi,'').replace(/<br\s*\/?\s*>/gi,'\n').replace(/<\/(p|div|h[1-6]|blockquote)>/gi,'\n\n').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,'&').trim();}
 export function passSnapshot(book,mode,ids=[]){
  if(readWorkTags(book.publish_meta).workType==='fanfiction')throw Error('Fan fiction is free and cannot have purchase passes.');
- if(book.media_format&&book.media_format!=='novel'||book.publish_meta?.epubEdition)throw Error('Choose an original written book for Purchase Passes.');
+ if(book.media_format&&book.media_format!=='novel')throw Error('Choose an original written book for Purchase Passes.');if(book.publish_meta?.epubEdition&&mode!=='book')throw Error('EPUB editions use whole-book passes only.');
  if(!['book','bundle'].includes(mode))throw Error('Choose a whole-book pass or a bundle.');
  const chapters=listBodyChapters(book.sections);
  const selected=mode==='book'?chapters:chapters.filter(ch=>Array.isArray(ids)&&ids.includes(String(ch.id)));

@@ -40,12 +40,12 @@ jobs:
           node-version: '22'
       - run: npm install --prefix "$RUNNER_TEMP/pricing-browser" --no-audit --no-fund playwright@1.61.1
       - run: '"$RUNNER_TEMP/pricing-browser/node_modules/.bin/playwright" install --with-deps ${{ matrix.browser }}'
-      - run: node applications/studio/tests/chapter-pricing-browser.mjs
+      - run: node applications/studio/tests/publishing-flow-browser.mjs
         env:
           PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/pricing-browser/node_modules/playwright/index.mjs
-          PRICING_BROWSER: ${{ matrix.browser }}
+          PUBLISH_BROWSER: ${{ matrix.browser }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: chapter-pricing-${{ matrix.browser }}
-          path: test-results/chapter-pricing/
+          path: test-results/publishing-flow/
