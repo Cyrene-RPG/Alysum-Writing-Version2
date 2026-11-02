@@ -73,7 +73,7 @@ export async function onRequest({ request, env }) {
     if (!body || typeof body !== "object") return fail("Invalid request.");
     const action = String(body.action || "");
     try {
-        if (["create", "list", "close", "threads", "moderate", "snapshot"].includes(action)) {
+        if (["create", "list", "close", "delete", "threads", "moderate", "snapshot"].includes(action)) {
             const user = await userFromRequest(request);
             if (!user) return fail("Sign in required.", 401);
             if (action === "create") {
@@ -104,6 +104,17 @@ export async function onRequest({ request, env }) {
             if (action === "close") {
                 await update(env, "snippet_beta_reads", { id: `eq.${read.id}` }, { status: "closed", closed_at: new Date().toISOString() });
                 return json({ closed: true });
+            }
+            if (action === "delete") {
+                if (body.confirmTitle !== read.title) return fail("Type the exact document title to confirm deletion.");
+                const response = await db(env, "snippet_beta_reads", {
+                    method: "DELETE",
+                    query: { id: `eq.${read.id}`, owner_id: `eq.${user.id}` },
+                    prefer: "return=representation",
+                });
+                if (!response.ok) return fail("Could not delete beta copy. Its feedback may still be linked to it.", 409);
+                const removed = await response.json();
+                return removed.length ? json({ deleted: true }) : fail("Beta copy not found.", 404);
             }
             if (action === "snapshot") {
                 const chapters = await rows(env, "snippet_beta_chapters", {
