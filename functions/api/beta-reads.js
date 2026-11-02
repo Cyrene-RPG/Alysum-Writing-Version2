@@ -73,7 +73,7 @@ export async function onRequest({ request, env }) {
     if (!body || typeof body !== "object") return fail("Invalid request.");
     const action = String(body.action || "");
     try {
-        if (["create", "list", "close", "threads", "moderate"].includes(action)) {
+        if (["create", "list", "close", "threads", "moderate", "snapshot"].includes(action)) {
             const user = await userFromRequest(request);
             if (!user) return fail("Sign in required.", 401);
             if (action === "create") {
