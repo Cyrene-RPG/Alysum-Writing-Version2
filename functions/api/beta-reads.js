@@ -1,0 +1,141 @@
+/** Dedicated Beta Read server API. No dependencies on other collaboration modules. */
+const URL = "https://jrfxgpkpbacajhcwimgz.supabase.co";
+const KEY = "sb_publishable_FnVMe0O37DKb87PCYdg6-g_DbI28pcE";
+const headers = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
+const json = (data, status = 200) => Response.json(data, { status, headers });
+const fail = (message, status = 400) => json({ error: message }, status);
+const sha = async value => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)))].map(b => b.toString(16).padStart(2, "0")).join("");
+const random = () => { const bytes = crypto.getRandomValues(new Uint8Array(32)); return Array.from(bytes, b => b.toString(16).padStart(2, "0")).join(""); };
+function db(env, table, { method = "GET", query = {}, body, prefer = "" } = {}) {
+    const url = new URL(`${URL}/rest/v1/${table}`);
+    for (const [k, v] of Object.entries(query)) url.searchParams.set(k, v);
+    return fetch(url, { method, headers: {
+        apikey: KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json", ...(prefer ? { Prefer: prefer } : {}),
+    }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+}
+async function rows(env, table, query) {
+    const response = await db(env, table, { query });
+    if (!response.ok) throw new Error("Database unavailable.");
+    return response.json();
+}
+async function insert(env, table, body) {
+    const response = await db(env, table, { method: "POST", body, prefer: "return=representation" });
+    if (!response.ok) throw new Error("Could not save beta read.");
+    return (await response.json())[0];
+}
+async function update(env, table, query, body) {
+    const response = await db(env, table, { method: "PATCH", query, body, prefer: "return=representation" });
+    if (!response.ok) throw new Error("Could not update beta read.");
+    return response.json();
+}
+async function userFromRequest(request) {
+    const auth = request.headers.get("Authorization") || "";
+    if (!/^Bearer \S+$/.test(auth)) return null;
+    const response = await fetch(`${URL}/auth/v1/user`, { headers: { apikey: KEY, Authorization: auth } });
+    if (!response.ok) return null;
+    const user = await response.json();
+    return user?.id ? user : null;
+}
+async function ownerRead(env, id, userId) {
+    if (!/^[a-f\d-]{36}$/i.test(String(id))) return null;
+    return (await rows(env, "snippet_beta_reads", { id: `eq.${id}`, owner_id: `eq.${userId}`, select: "*" }))[0] || null;
+}
+async function publicRead(env, token) {
+    if (!/^[a-f\d]{64}$/.test(String(token || ""))) return null;
+    const hash = await sha(token);
+    return (await rows(env, "snippet_beta_reads", { share_token_hash: `eq.${hash}`, select: "*" }))[0] || null;
+}
+async function verifyBook(request, bookId, userId) {
+    const response = await fetch(new URL(`${URL}/rest/v1/books?select=id&id=eq.${encodeURIComponent(bookId)}&user_id=eq.${encodeURIComponent(userId)}`), {
+        headers: { apikey: KEY, Authorization: request.headers.get("Authorization") },
+    });
+    return response.ok && (await response.json()).length === 1;
+}
+async function threadsForChapter(env, betaId, chapterId) {
+    const threads = await rows(env, "snippet_beta_threads", { beta_read_id: `eq.${betaId}`, chapter_id: `eq.${chapterId}`, select: "*", order: "created_at.asc" });
+    const guests = await rows(env, "snippet_beta_guests", { beta_read_id: `eq.${betaId}`, select: "id,guest_number" });
+    const labels = new Map(guests.map(g => [g.id, `Guest ${g.guest_number}`]));
+    const comments = await rows(env, "snippet_beta_comments", { beta_read_id: `eq.${betaId}`, select: "*", order: "created_at.asc" });
+    return threads.map(t => ({ id: t.id, quote: t.quote, startOffset: t.start_offset, endOffset: t.end_offset, resolvedAt: t.resolved_at, comments: comments.filter(c => c.thread_id === t.id).map(c => ({
+        id: c.id, parentCommentId: c.parent_comment_id, body: c.deleted_at ? "[Comment removed]" : c.body,
+        authorLabel: c.author_id ? "Author" : labels.get(c.guest_id) || "Guest", createdAt: c.created_at,
+    })) }));
+}
+export async function onRequest({ request, env }) {
+    if (request.method !== "POST") return fail("Method not allowed.", 405);
+    if (!env.SUPABASE_SERVICE_ROLE_KEY) return fail("Beta Read service is not configured.", 503);
+    if (Number(request.headers.get("content-length") || 0) > 1200000) return fail("Request too large.", 413);
+    let body;
+    try { body = await request.json(); } catch { return fail("Invalid request."); }
+    if (!body || typeof body !== "object") return fail("Invalid request.");
+    const action = String(body.action || "");
+    try {
+        if (["create", "list", "close", "threads", "moderate"].includes(action)) {
+            const user = await userFromRequest(request);
+            if (!user) return fail("Sign in required.", 401);
+            if (action === "create") {
+                const s = body.snapshot;
+                if (!s || typeof s !== "object" || !Array.isArray(s.chapters) || !s.chapters.length || s.chapters.length > 100) return fail("Choose 1–100 chapters.");
+                if (!/^[\w-]{1,200}$/.test(String(s.sourceBookId || ""))) return fail("Invalid book.");
+                if (!await verifyBook(request, s.sourceBookId, user.id)) return fail("Book ownership could not be verified.", 403);
+                if (!String(s.authorUsername || "").trim() || String(s.authorUsername).length > 100) return fail("Invalid author name.");
+                if (s.chapters.some(c => !c.sourceChapterId || !c.title || !c.content || String(c.content).length > 300000)) return fail("Invalid chapter.");
+                const token = random();
+                const saved = await insert(env, "snippet_beta_reads", { owner_id: user.id, source_book_id: s.sourceBookId, title: String(s.title || "Untitled").slice(0, 200), author_username: String(s.authorUsername), share_token_hash: await sha(token) });
+                try {
+                    for (const [ordinal, chapter] of s.chapters.entries()) {
+                        await insert(env, "snippet_beta_chapters", { beta_read_id: saved.id, source_chapter_id: String(chapter.sourceChapterId), ordinal, title: String(chapter.title).slice(0, 200), content: String(chapter.content) });
+                    }
+                } catch (error) {
+                    await db(env, "snippet_beta_reads", { method: "DELETE", query: { id: `eq.${saved.id}` } });
+                    throw error;
+                }
+                return json({ id: saved.id, url: new URL(`/applications/editor/pages/beta-read.html?token=${token}`, request.url).href });
+            }
+            if (action === "list") {
+                const reads = await rows(env, "snippet_beta_reads", { owner_id: `eq.${user.id}`, select: "id,title,author_username,status,created_at,closed_at", order: "created_at.desc" });
+                return json({ reads });
+            }
+            const read = await ownerRead(env, body.id, user.id);
+            if (!read) return fail("Beta read not found.", 404);
+            if (action === "close") {
+                await update(env, "snippet_beta_reads", { id: `eq.${read.id}` }, { status: "closed", closed_at: new Date().toISOString() });
+                return json({ closed: true });
+            }
+            if (action === "threads") {
+                const chapters = await rows(env, "snippet_beta_chapters", { beta_read_id: `eq.${read.id}`, select: "id,title,ordinal", order: "ordinal.asc" });
+                return json({ chapters: await Promise.all(chapters.map(async chapter => ({ ...chapter, threads: await threadsForChapter(env, read.id, chapter.id) }))) });
+            }
+            if (action === "moderate") {
+                const op = String(body.operation || "");
+                const thread = (await rows(env, "snippet_beta_threads", { id: `eq.${body.threadId}`, beta_read_id: `eq.${read.id}`, select: "id" }))[0];
+                if (!thread) return fail("Thread not found.", 404);
+                if (op === "resolve" || op === "reopen") {
+                    await update(env, "snippet_beta_threads", { id: `eq.${thread.id}` }, { resolved_at: op === "resolve" ? new Date().toISOString() : null });
+                    return json({ updated: true });
+                }
+                if (op === "delete-comment") {
+                    const changed = await update(env, "snippet_beta_comments", { id: `eq.${body.commentId}`, thread_id: `eq.${thread.id}` }, { deleted_at: new Date().toISOString(), body: "[Comment removed]" });
+                    return changed.length ? json({ updated: true }) : fail("Comment not found.", 404);
+                }
+                return fail("Unknown moderation operation.");
+            }
+        }
+        const read = await publicRead(env, body.token);
+        if (!read || read.status !== "active") return fail("This beta read is unavailable or closed.", 404);
+        if (action === "preview") return json({ id: read.id, authorUsername: read.author_username, status: read.status });
+        if (action === "read") {
+            const chapters = await rows(env, "snippet_beta_chapters", { beta_read_id: `eq.${read.id}`, select: "id,title,content,ordinal", order: "ordinal.asc" });
+            return json({ id: read.id, title: read.title, authorUsername: read.author_username, chapters });
+        }
+        if (action === "chapter-threads") {
+            const chapter = (await rows(env, "snippet_beta_chapters", { id: `eq.${body.chapterId}`, beta_read_id: `eq.${read.id}`, select: "id" }))[0];
+            if (!chapter) return fail("Chapter not found.", 404);
+            return json({ threads: await threadsForChapter(env, read.id, chapter.id) });
+        }
+        return fail("Unknown action.");
+    } catch (error) {
+        return fail(error?.message === "Database unavailable." ? "Beta Read database is not ready." : "Beta Read request failed.", 503);
+    }
+}
