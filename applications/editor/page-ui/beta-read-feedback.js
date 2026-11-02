@@ -1,23 +1,66 @@
-export function mountBetaFeedback({ host, chapter, threads, send, reload }) {
+import { chapterSelection, markBetaAnchors } from "./beta-read-selection.js";
+export function mountBetaFeedback({ host, prose, chapter, threads, send, reload }) {
     const heading = document.createElement("h2");
     heading.textContent = "Feedback";
     host.append(heading);
+    markBetaAnchors(prose, threads);
+    const toolbar = document.createElement("div");
+    toolbar.className = "beta-selection-toolbar";
+    toolbar.hidden = true;
+    const toolbarButton = document.createElement("button");
+    toolbarButton.type = "button";
+    toolbarButton.textContent = "✎ Comment";
+    toolbar.append(toolbarButton);
+    prose.parentElement.append(toolbar);
+    const composer = document.createElement("div");
+    composer.className = "beta-selection-composer";
+    composer.hidden = true;
+    const selectedQuote = document.createElement("blockquote");
     const input = document.createElement("textarea");
-    input.placeholder = "Comment on a selected passage";
+    input.placeholder = "Write feedback about this passage…";
+    input.setAttribute("aria-label", "Comment on highlighted text");
+    const actions = document.createElement("div");
+    actions.className = "beta-selection-actions";
     const button = document.createElement("button");
-    button.textContent = "Comment on selection";
+    button.type = "button";
+    button.textContent = "Post comment";
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.textContent = "Cancel";
+    actions.append(button, cancel);
     const status = document.createElement("p");
     status.setAttribute("role", "status");
-    host.append(input, button, status);
+    composer.append(selectedQuote, input, actions, status);
+    host.append(composer);
+    let captured = null;
+    const capture = () => {
+        if (!composer.isConnected) return;
+        const next = chapterSelection(prose);
+        if (next) captured = next;
+        toolbar.hidden = !next || !composer.hidden;
+    };
+    document.addEventListener("selectionchange", capture);
+    prose.addEventListener("pointerup", capture);
+    prose.addEventListener("keyup", capture);
+    toolbarButton.addEventListener("pointerdown", event => event.preventDefault());
+    toolbarButton.addEventListener("click", () => {
+        if (!captured) return;
+        selectedQuote.textContent = captured.quote;
+        composer.hidden = false;
+        toolbar.hidden = true;
+        composer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        input.focus();
+    });
+    cancel.addEventListener("click", () => { composer.hidden = true; captured = null; toolbar.hidden = true; });
     button.addEventListener("click", async () => {
-        const selection = window.getSelection();
-        const selected = selection?.toString() || "";
-        const text = String(chapter.content || "").replace(/<[^>]*>/g, "");
-        const startOffset = text.indexOf(selected);
-        if (!selected || startOffset < 0) { status.textContent = "Highlight a passage first."; return; }
+        if (!captured) { status.textContent = "Highlight a passage first."; return; }
         button.disabled = true;
         try {
-            await send("comment", { chapterId: chapter.id, startOffset, endOffset: startOffset + selected.length, message: input.value });
+            await send("comment", { chapterId: chapter.id, startOffset: captured.startOffset, endOffset: captured.endOffset, message: input.value });
+            composer.hidden = true;
+            captured = null;
+            toolbar.hidden = true;
+            document.removeEventListener("selectionchange", capture);
             await reload();
         } catch (error) { status.textContent = error.message; }
         finally { button.disabled = false; }
