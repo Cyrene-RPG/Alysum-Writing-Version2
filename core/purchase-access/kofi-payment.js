@@ -17,14 +17,23 @@ export async function handleKofiPayment(request,env,{fetcher=fetch}={}){
  const accounts=await auth.json();
  if(accounts.length!==1){diagnostic('account_not_connected');return reply({error:'Unauthorized'},401);}
  const ownerId=accounts[0].owner_id;
+ // Best-effort diagnostics; never include private payment data.
+ const record=async(stage,reason=null,http_status=null)=>{
+  try{
+   const response=await fetcher(env.SUPABASE_URL+'/rest/v1/kofi_webhook_events',{method:'POST',headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({stage,reason,http_status})});
+   if(!response.ok)diagnostic('diagnostic_write_failed',{http_status:response.status});
+  }catch{diagnostic('diagnostic_write_failed');}
+ };
  if(payment.type!=='Shop Order'){diagnostic('non_shop_order');return reply({ignored:true});}
- if(!payment.kofi_transaction_id||!payment.email||!Array.isArray(payment.shop_items)){diagnostic('incomplete_order');return reply({error:'Incomplete order'},400);}
+ if(!payment.kofi_transaction_id||!payment.email||!Array.isArray(payment.shop_items)){diagnostic('incomplete_order');await record('invalid_order','incomplete_order',400);return reply({error:'Incomplete order'},400);}
  const items=payment.shop_items.map(item=>({product_id:String(item.direct_link_code||''),quantity:Number(item.quantity||1)}));
- if(items.length<1||items.length>20||items.some(item=>!item.product_id||!Number.isSafeInteger(item.quantity)||item.quantity<1||item.quantity>20)){diagnostic('invalid_items');return reply({error:'Invalid items'},422);}
+ if(items.length<1||items.length>20||items.some(item=>!item.product_id||!Number.isSafeInteger(item.quantity)||item.quantity<1||item.quantity>20)){diagnostic('invalid_items');await record('invalid_order','invalid_items',422);return reply({error:'Invalid items'},422);}
  const amount=String(payment.amount||'');
  const currency=String(payment.currency||'').toUpperCase();
- if(!/^\d{1,7}(\.\d{1,2})?$/.test(amount)||!['USD','GBP','EUR','CAD','AUD'].includes(currency)){diagnostic('invalid_payment');return reply({error:'Invalid payment'},422);}
+ if(!/^\d{1,7}(\.\d{1,2})?$/.test(amount)||!['USD','GBP','EUR','CAD','AUD'].includes(currency)){diagnostic('invalid_payment');await record('invalid_order','invalid_payment',422);return reply({error:'Invalid payment'},422);}
+ await record('verified_shop_order');
  const res=await fetcher(env.SUPABASE_URL+'/rest/v1/rpc/register_kofi_order',{method:'POST',headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_transaction:String(payment.kofi_transaction_id),p_email:String(payment.email).toLowerCase(),p_items:items,p_currency:currency,p_total:amount,p_owner:ownerId})});
  diagnostic(res.ok?'order_registered':'registration_failed',res.ok?{}:{http_status:res.status});
+ await record(res.ok?'order_registered':'registration_failed',res.ok?null:'database_rejected_order',res.status);
  return res.ok?reply({accepted:true}):reply({error:'Could not register verified order'},503);
 }
