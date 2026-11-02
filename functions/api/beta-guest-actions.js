@@ -32,24 +32,36 @@ export async function handleBetaGuestAction({ action, body, read, rows, insert, 
     if (action === "comment") {
         const chapter = (await rows("snippet_beta_chapters", { beta_read_id: `eq.${betaId}`, id: `eq.${body.chapterId}`, select: "id,content" }))[0];
         if (!chapter) throw new Error("Chapter not found.");
-        // Decode common HTML entities and mirror the reader's text-node stream.
+        // Reconstruct the reader's text stream from the snapshot HTML.
         const plain = String(chapter.content)
-            .replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi, "")
-            .replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi, "")
+            .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+            .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
             .replace(/<[^>]*>/g, "")
-            .replace(/&(#x[0-9a-f]+|#\\d+|amp|lt|gt|quot|apos|nbsp);/gi, (entity, code) => {
-                const named = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: "\\u00a0" };
-                if (code[0] === "#") {
-                    const number = code[1]?.toLowerCase() === "x" ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10);
-                    return Number.isInteger(number) && number > 0 && number <= 0x10ffff ? String.fromCodePoint(number) : entity;
-                }
-                return named[code.toLowerCase()] || entity;
+            .replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos|nbsp);/gi, (entity, code) => {
+                const named = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: "\u00a0" };
+                if (code[0] !== "#") return named[code.toLowerCase()] || entity;
+                const number = code[1]?.toLowerCase() === "x" ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10);
+                return Number.isInteger(number) && number > 0 && number <= 0x10ffff && !(number >= 0xd800 && number <= 0xdfff) ? String.fromCodePoint(number) : entity;
             });
         const start = Number(body.startOffset), end = Number(body.endOffset);
         const selectedQuote = String(body.quote || "");
-        if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end <= start || end > plain.length || end - start > 2000) throw new Error("Select a passage to comment on.");
-        if (!selectedQuote || selectedQuote !== plain.slice(start, end)) throw new Error("Selection changed. Highlight the passage again.");
-        const thread = await insert("snippet_beta_threads", { beta_read_id: betaId, chapter_id: chapter.id, quote: selectedQuote, start_offset: start, end_offset: end });
+        if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end <= start || end - start > 2000 || !selectedQuote || selectedQuote.length !== end - start) {
+            throw new Error("Select a passage to comment on.");
+        }
+        // Reject missing quotes; tolerate source-HTML entity offset differences
+        // by choosing the occurrence nearest the original browser selection.
+        let anchorStart = plain.slice(start, end) === selectedQuote ? start : -1;
+        if (anchorStart < 0) {
+            let match = plain.indexOf(selectedQuote), nearest = Infinity;
+            while (match !== -1) {
+                const distance = Math.abs(match - start);
+                if (distance < nearest) { nearest = distance; anchorStart = match; }
+                match = plain.indexOf(selectedQuote, match + 1);
+            }
+        }
+        if (anchorStart < 0) throw new Error("Selected passage could not be matched. Please highlight it again.");
+        const anchorEnd = anchorStart + selectedQuote.length;
+        const thread = await insert("snippet_beta_threads", { beta_read_id: betaId, chapter_id: chapter.id, quote: selectedQuote, start_offset: anchorStart, end_offset: anchorEnd });
         threadId = thread.id;
     } else {
         const thread = (await rows("snippet_beta_threads", { beta_read_id: `eq.${betaId}`, id: `eq.${threadId}`, select: "id" }))[0];
