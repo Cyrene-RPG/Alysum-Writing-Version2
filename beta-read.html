@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>You're invited to beta read · Alysum Writing</title>
+<meta name="description" content="You've been invited to read a private manuscript and share feedback on Alysum Writing.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Alysum Writing">
+<meta property="og:title" content="You're invited to beta read">
+<meta property="og:description" content="Read a private writing preview and leave feedback, powered by Alysum Writing.">
+<meta property="og:image" content="https://alysumwriting.com/Alysum-3.png">
+<meta property="og:url" content="https://alysumwriting.com/beta-read.html">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#211b2b">
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:22px;background:radial-gradient(circle at 85% 0,#403052,transparent 45%),#17151f;color:#f7efff;font:16px/1.6 system-ui,sans-serif}
+main{max-width:490px;width:100%;background:#272232;border:1px solid #6b577d;border-radius:22px;padding:clamp(25px,6vw,45px);box-shadow:0 20px 60px #0005;text-align:center}
+.symbol{font-size:2.6rem;color:#d9bfff}h1{font:700 2rem/1.15 Georgia,serif;margin:12px 0}p{color:#d7c9e3}
+a{display:inline-block;margin-top:12px;padding:12px 20px;border-radius:11px;background:#d8c3fa;color:#281b37;font-weight:700;text-decoration:none}
+</style></head><body><main><div class="symbol" aria-hidden="true">✦</div>
+<h1>You're invited to beta read</h1>
+<p>A private reading copy is waiting for you on Alysum Writing.</p>
+<p id="status">Opening your invitation…</p>
+<a id="continue" href="/studio">Visit Alysum Writing</a></main>
+<script>
+(function(){
+ const token=new URL(location.href).searchParams.get("token");
+ if(!token||!/^[a-f0-9]{64}$/i.test(token)){
+  document.getElementById("status").textContent="This invitation link is invalid.";
+  return;
+ }
+ const target="/applications/editor/pages/beta-read.html?token="+encodeURIComponent(token);
+ const link=document.getElementById("continue");
+ link.href=target;link.textContent="Open beta reading invitation";
+ location.replace(target);
+})();
+</script></body></html>
