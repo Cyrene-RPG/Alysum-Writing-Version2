@@ -1,6 +1,7 @@
 import { splitStudioBooks, loadSharedCreators } from "/core/collaboration/studio-books.js";
 import { createBookEditorsApi } from "/core/collaboration/book-editors-client.js";
 import { sharedBooksSection, renderSharedBooks } from "./shared-books.js";
+import { mountStudioBetaReads } from "./beta-reads-section.js";
 import { mountStudioBookReminders } from "./book-reminders.js";
 import { createNotificationService } from "/core/notifications/service.js";
 import { mountBookReminderPopup } from "/site-appearance/js-runtime/book-reminder-popup.js";
@@ -328,6 +329,7 @@ async function boot() {
     let scripts = [];
     let audioLoadError = "";
     const sharedSection = sharedBooksSection(stats);
+    mountStudioBetaReads(stats, supabase, session);
     const creators = new Map();
     const editorsApi = createBookEditorsApi(supabase);
     let creatorLookupKey = '';
