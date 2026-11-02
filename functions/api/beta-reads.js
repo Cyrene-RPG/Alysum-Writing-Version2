@@ -1,3 +1,4 @@
+import { handleBetaGuestAction } from "./beta-guest-actions.js";
 /** Dedicated Beta Read server API. No dependencies on other collaboration modules. */
 const URL = "https://jrfxgpkpbacajhcwimgz.supabase.co";
 const KEY = "sb_publishable_FnVMe0O37DKb87PCYdg6-g_DbI28pcE";
@@ -124,6 +125,19 @@ export async function onRequest({ request, env }) {
         }
         const read = await publicRead(env, body.token);
         if (!read || read.status !== "active") return fail("This beta read is unavailable or closed.", 404);
+        if (["join", "comment", "reply"].includes(action)) {
+            try {
+                const result = await handleBetaGuestAction({
+                    action, body, read,
+                    rows: (table, query) => rows(env, table, query),
+                    insert: (table, data) => insert(env, table, data),
+                    sha, random,
+                });
+                return json(result);
+            } catch (error) {
+                return fail(error.message || "Could not save feedback.");
+            }
+        }
         if (action === "preview") return json({ id: read.id, authorUsername: read.author_username, status: read.status });
         if (action === "read") {
             const chapters = await rows(env, "snippet_beta_chapters", { beta_read_id: `eq.${read.id}`, select: "id,title,content,ordinal", order: "ordinal.asc" });
