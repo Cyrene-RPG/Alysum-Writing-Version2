@@ -85,6 +85,8 @@ async function refresh(){
     }catch(e){card.append(element("p",e.message));}finally{review.disabled=false;}
    });
    const view=element("button","Read full beta copy");
+   view.addEventListener("click",()=>{ location.href="/applications/studio/pages/beta-read-document.html?id="+encodeURIComponent(read.id); });
+   /* Previous inline viewer retained but disabled to preserve the original feedback management code.
    view.addEventListener("click",async()=>{
     const existing=card.querySelector(".snapshot-view");
     if(existing){existing.remove();view.textContent="Read full beta copy";return;}
@@ -103,6 +105,7 @@ async function refresh(){
     }catch(error){const message=element("p",error.message);message.setAttribute("role","alert");card.append(message);view.textContent="Read full beta copy";}
     finally{view.disabled=false;}
    });
+   */
    card.append(view,review);
    if(read.status==="active"){
     const close=element("button","Close and archive");
