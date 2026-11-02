@@ -51,6 +51,7 @@ async function renderReader(){
   comments.replaceChildren();
   const threads=await call("chapter-threads",{chapterId:chapter.id,guestToken});
   mountBetaFeedback({host:comments,chapter,threads:threads.threads||[],send:(action,payload)=>call(action,{...payload,guestToken}),reload:show});
+  /* Thread rendering is handled by mountBetaFeedback. */
   for(const thread of []){
    const item=document.createElement("div");item.className="comment";
    item.append(node("small",thread.quote||"Chapter feedback"));
