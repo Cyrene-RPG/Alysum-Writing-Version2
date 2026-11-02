@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Beta Read document · Studio</title>
+<script type="importmap">{"imports":{"@alysum/authentication/":"/core/authentication/"}}</script>
+<style>
+:root{color-scheme:light}*{box-sizing:border-box}
+body{margin:0;background:#f2f3f7;color:#24212b;font:15px/1.5 system-ui,sans-serif}
+button,select{font:inherit}button{cursor:pointer}
+header{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid #dddce5;display:flex;align-items:center;gap:14px;padding:12px clamp(12px,3vw,32px);flex-wrap:wrap}
+header a{color:#58417f;text-decoration:none;font-weight:650}
+header strong{font-size:1.12rem;min-width:0;overflow-wrap:anywhere}
+header .state{font-size:.78rem;color:#696375;background:#f0ebfa;border-radius:20px;padding:5px 10px}
+.workspace{display:grid;grid-template-columns:210px minmax(0,1fr) 315px;gap:20px;max-width:1600px;margin:0 auto;padding:20px;align-items:start}
+nav,.feedback{background:#fff;border:1px solid #e1dfe8;border-radius:14px;padding:18px;position:sticky;top:86px;max-height:calc(100vh - 105px);overflow:auto}
+nav h2,.feedback h2{font-size:.93rem;margin:0 0 14px;color:#655d70}
+nav button{display:block;width:100%;border:0;background:transparent;text-align:left;border-radius:9px;padding:12px;color:#4c4359}
+nav button[aria-current=true]{background:#eee8fa;color:#4b3275;font-weight:700}
+.page{width:min(100%,820px);min-height:85vh;margin:0 auto;background:white;border:1px solid #e2dfe8;box-shadow:0 5px 30px #25203510;padding:clamp(26px,6vw,80px);border-radius:4px}
+.page h1{font:700 clamp(1.7rem,4vw,2.5rem) Georgia,serif;margin:0 0 34px}
+.prose{font:clamp(1.08rem,2vw,1.2rem)/1.85 Georgia,serif;overflow-wrap:anywhere}
+.prose p{margin:0 0 1.2em}.prose .alysum-indent{text-indent:1.5em}
+.prose blockquote{border-left:3px solid #b9a3df;padding-left:15px;margin:20px 0}
+.prose mark{background:#e3d4ff;color:inherit;border-radius:2px;cursor:pointer}
+.thread{border:1px solid #e5dfed;border-radius:12px;padding:14px;margin-bottom:12px;background:#fff}
+.thread[aria-selected=true]{border-color:#9773d5;background:#f6f0ff}
+.thread blockquote{font:italic .9rem/1.5 Georgia,serif;color:#675477;margin:0 0 10px;border-left:3px solid #b29ada;padding-left:10px;overflow-wrap:anywhere}
+.thread p{margin:8px 0;overflow-wrap:anywhere}
+.thread button{border:1px solid #c5b1e2;border-radius:8px;background:#f0e8fb;padding:7px 12px;color:#4c3473}
+.muted{color:#716b7b}.empty{font-size:.9rem;color:#736d7a}
+.mobile-tabs{display:none}
+@media(max-width:1050px){.workspace{grid-template-columns:175px minmax(0,1fr)}.feedback{grid-column:2;position:static;max-height:none}}
+@media(max-width:650px){header{gap:9px}.workspace{display:block;padding:10px}nav{position:static;max-height:none;display:flex;gap:6px;overflow-x:auto;padding:8px;margin-bottom:12px}nav h2{display:none}nav button{width:auto;white-space:nowrap;flex:none}.page{padding:24px 22px;min-height:55vh}.feedback{position:static;max-height:none;margin-top:14px}.page h1{margin-bottom:22px}}
+</style></head><body>
+<header><a href="/applications/studio/pages/beta-reads.html">← Beta Reads</a><strong id="title">Opening document…</strong><span class="state" id="state">Read-only snapshot</span></header>
+<div class="workspace"><nav id="chapters"><h2>Document outline</h2></nav><main><div class="page"><h1 id="chapter-title"></h1><div class="prose" id="prose" aria-label="Chapter text"></div></div></main><aside class="feedback"><h2>Comments &amp; feedback</h2><div id="threads" aria-live="polite"></div></aside></div>
+<script type="module">
+import { supabase } from "@alysum/authentication/client.js";
+import { createBetaReadApi } from "/applications/editor/page-ui/beta-read-api.js";
+const api=createBetaReadApi(supabase);
+const params=new URL(location.href).searchParams;
+const id=params.get("id");
+const $=name=>document.getElementById(name);
+const el=(tag,text)=>{const node=document.createElement(tag);node.textContent=text||"";return node;};
+let snapshot,feedback,current=0;
+function cleanMarkup(html){
+ const wrapper=document.createDocumentFragment();
+ const parsed=new DOMParser().parseFromString(String(html||""),"text/html");
+ const allowed=new Set(["P","BR","I","EM","B","STRONG","U","S","DEL","BLOCKQUOTE","H1","H2","H3","UL","OL","LI","DIV","SPAN","HR","SUP","SUB"]);
+ const blocked=new Set(["SCRIPT","STYLE","IFRAME","OBJECT","EMBED","FORM","INPUT","BUTTON","SVG","MATH","VIDEO","AUDIO","IMG","LINK","META","TEMPLATE"]);
+ function walk(source,target){for(const child of source.childNodes){
+  if(child.nodeType===Node.TEXT_NODE){target.append(document.createTextNode(child.textContent));continue;}
+  if(child.nodeType!==Node.ELEMENT_NODE||blocked.has(child.tagName))continue;
+  if(!allowed.has(child.tagName)){walk(child,target);continue;}
+  const node=document.createElement(child.tagName.toLowerCase());
+  if(child.classList.contains("alysum-indent"))node.classList.add("alysum-indent");
+  walk(child,node);target.append(node);
+ }}
+ walk(parsed.body,wrapper);return wrapper;
+}
+function markQuote(prose,thread){
+ const quote=String(thread.quote||"");if(!quote)return;
+ const text=prose.textContent||"";
+ let start=text.indexOf(quote);if(start<0)return;
+ let best=start,distance=Infinity;
+ while(start>=0){const d=Math.abs(start-Number(thread.startOffset||0));if(d<distance){best=start;distance=d;}start=text.indexOf(quote,start+1);}
+ const walker=document.createTreeWalker(prose,NodeFilter.SHOW_TEXT);
+ let node,offset=0,first=null,last=null;
+ while((node=walker.nextNode())){
+  const next=offset+node.textContent.length;
+  if(!first&&best>=offset&&best<next)first={node,offset:best-offset};
+  if(best+quote.length>offset&&best+quote.length<=next){last={node,offset:best+quote.length-offset};break;}
+  offset=next;
+ }
+ if(!first||!last)return;
+ const range=document.createRange();range.setStart(first.node,first.offset);range.setEnd(last.node,last.offset);
+ const mark=document.createElement("mark");mark.dataset.thread=thread.id;
+ try{range.surroundContents(mark);}catch{
+  // A range crossing styled inline elements cannot be wrapped safely.
+  // Leave the document intact instead of altering its formatting.
+ }
+}
+function show(index){
+ current=index;const chapter=snapshot.chapters[index];if(!chapter)return;
+ $("chapter-title").textContent=chapter.title;
+ const prose=$("prose");prose.replaceChildren(cleanMarkup(chapter.content));
+ const threads=(feedback.chapters.find(c=>c.id===chapter.id)?.threads||[]);
+ $("chapters").querySelectorAll("button").forEach((button,i)=>button.setAttribute("aria-current",String(i===index)));
+ const panel=$("threads");panel.replaceChildren();
+ if(!threads.length)panel.append(el("p","No feedback on this chapter yet.")).className="empty";
+ for(const thread of threads){
+  markQuote(prose,thread);
+  const box=el("section");box.className="thread";box.dataset.thread=thread.id;
+  box.append(el("blockquote",thread.quote));
+  for(const comment of thread.comments)box.append(el("p",comment.authorLabel+": "+comment.body));
+  const toggle=el("button",thread.resolvedAt?"Reopen":"Resolve");
+  toggle.addEventListener("click",async()=>{
+   toggle.disabled=true;
+   try{await api.moderate(id,thread.id,thread.resolvedAt?"reopen":"resolve");feedback=await api.threads(id);show(current);}
+   catch(error){toggle.disabled=false;alert(error.message);}
+  });
+  box.append(toggle);panel.append(box);
+  box.addEventListener("click",event=>{if(event.target.closest("button"))return;const mark=Array.from(prose.querySelectorAll("mark")).find(m=>m.dataset.thread===thread.id);if(mark)mark.scrollIntoView({behavior:"smooth",block:"center"});});
+ }
+}
+async function init(){
+ if(!id){$("title").textContent="No beta copy selected";return;}
+ try{
+  [snapshot,feedback]=await Promise.all([api.snapshot(id),api.threads(id)]);
+  $("title").textContent=snapshot.title;
+  $("state").textContent=snapshot.status==="closed"?"Archived · Read only":"Active · Read only";
+  const nav=$("chapters");
+  for(const [index,chapter] of snapshot.chapters.entries()){
+   const button=el("button",chapter.title);button.addEventListener("click",()=>show(index));nav.append(button);
+  }
+  if(snapshot.chapters.length)show(0);
+  else $("chapter-title").textContent="No chapters in this copy";
+ }catch(error){$("title").textContent="Could not open beta copy";$("chapter-title").textContent=error.message;}
+}
+void init();
+</script></body></html>
