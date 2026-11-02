@@ -34,23 +34,31 @@ export async function handleKofiPayment(request,env,{fetcher=fetch}={}){
  if(!/^\d{1,7}(\.\d{1,2})?$/.test(amount)||!['USD','GBP','EUR','CAD','AUD'].includes(currency)){diagnostic('invalid_payment');await record('invalid_order','invalid_payment',422);return reply({error:'Invalid payment'},422);}
  await record('verified_shop_order');
  const res=await fetcher(env.SUPABASE_URL+'/rest/v1/rpc/register_kofi_order',{method:'POST',headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_transaction:String(payment.kofi_transaction_id),p_email:String(payment.email).toLowerCase(),p_items:items,p_currency:currency,p_total:amount,p_owner:ownerId})});
- // PostgREST returns database errors as JSON. Only allowlisted, non-sensitive
- // rejection categories are persisted; never log the raw database response.
+ // Classify PostgREST errors without persisting untrusted error text, order data,
+ // or secrets. SQLSTATE codes are fixed-format; messages are pattern-matched only.
  let rejection=null;
  if(!res.ok){
   rejection='database_rejected_order';
   try{
    const error=await res.json();
-   const message=typeof error?.message==='string'?error.message:'';
-   const categories={
-    'Invalid order':'invalid_order_fields',
-    'Invalid quantity':'invalid_quantity',
-    'Unknown product or currency':'unknown_product_or_currency',
-    'Payment total mismatch':'payment_total_mismatch',
-    'Conflicting transaction':'conflicting_transaction'
-   };
-   rejection=categories[message]||rejection;
-  }catch{/* Keep the generic category if the response is not JSON. */}
+   const message=typeof error?.message==='string'?error.message.toLowerCase():'';
+   const code=typeof error?.code==='string'?error.code:'';
+   if(/unknown product or currency/.test(message))rejection='unknown_product_or_currency';
+   else if(/payment total mismatch/.test(message))rejection='payment_total_mismatch';
+   else if(/conflicting transaction/.test(message))rejection='conflicting_transaction';
+   else if(/invalid quantity/.test(message))rejection='invalid_quantity';
+   else if(/invalid order/.test(message))rejection='invalid_order_fields';
+   else if(code==='42883'||code==='PGRST202')rejection='registration_function_missing';
+   else if(code==='42501')rejection='database_permission_denied';
+   else if(code==='23505')rejection='duplicate_database_record';
+   else if(code==='23503')rejection='missing_related_record';
+   else if(code==='23502')rejection='required_database_field_missing';
+   else if(code==='22P02')rejection='invalid_database_field_type';
+   else if(code==='23514')rejection='database_constraint_failed';
+   else if(code==='P0001')rejection='unclassified_database_exception';
+   else if(/^PGRST[0-9]{3}$/.test(code))rejection='postgrest_request_error';
+   else if(/^42[0-9A-Z]{3}$/.test(code))rejection='database_schema_error';
+  }catch{/* Keep the generic category for non-JSON errors. */}
  }
  diagnostic(res.ok?'order_registered':'registration_failed',res.ok?{}:{http_status:res.status,reason:rejection});
  await record(res.ok?'order_registered':'registration_failed',rejection,res.status);
