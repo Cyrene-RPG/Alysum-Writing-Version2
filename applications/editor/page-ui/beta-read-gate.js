@@ -27,13 +27,8 @@ export function mountBetaReadGate({ host, betaReadId, authorUsername, onAccept }
     button.textContent = notice.acknowledgeLabel;
     wrap.append(title, subtitle, introduction, lead, list, closing, button);
     host.replaceChildren(wrap);
-    const accepted = () => {
-        try { return localStorage.getItem(key) === "yes"; } catch { return false; }
-    };
     const proceed = () => { wrap.remove(); onAccept(); };
     button.addEventListener("click", () => {
-        try { localStorage.setItem(key, "yes"); } catch { /* optional */ }
         proceed();
     });
-    if (accepted()) proceed();
 }
