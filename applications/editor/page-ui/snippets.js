@@ -1,3 +1,5 @@
+import { createBetaReadApi } from "./beta-read-api.js";
+import { supabase as betaReadSupabase } from "@alysum/authentication/client.js";
 import { mountBetaReadPicker } from "./beta-read-picker.js";
 import { requestSnippetDownload, shareSnippet, copyReadingLink } from "/site-appearance/js-runtime/snippet-export.js";
 import { normalizeExcerpt, countExcerptWords, MAX_EXCERPT_CHARACTERS, MAX_EXCERPT_WORDS } from "/core/publishing/excerpts.js";
@@ -103,7 +105,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
             : Promise.resolve();
         return fontPromise;
     }
-    const betaPicker = mountBetaReadPicker({ host: dialog, getBook, getAuthor, api: betaReadApi });
+    const betaPicker = mountBetaReadPicker({ host: dialog, getBook, getAuthor, api: betaReadApi || createBetaReadApi(betaReadSupabase) });
     function setMode(nextMode) {
         mode = nextMode;
         pageIndex = 0;
