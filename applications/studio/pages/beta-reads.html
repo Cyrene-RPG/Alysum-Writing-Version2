@@ -30,6 +30,7 @@ article section h3{font:700 1.25rem Georgia,serif;margin:18px 0 8px}
 .snapshot-view .prose .alysum-indent{text-indent:1.5em}
 .snapshot-view .prose blockquote{font:inherit}
 .snapshot-view .prose h1,.snapshot-view .prose h2,.snapshot-view .prose h3{font-family:Georgia,serif}
+.beta-delete{background:transparent!important;color:#ffc4ce!important;border-color:#a85c73!important}.beta-delete:hover{background:#4b2938!important}.beta-delete:focus-visible{outline:3px solid #f7b4cb;outline-offset:3px}
 </style></head>
 <body><main><a class="back" href="/studio">← Back to Studio</a><h1>Beta Reads</h1><p class="intro">Your private reading copies, guest feedback, and archived sessions—all in one place.</p><div id="reads">Loading…</div></main>
 <script type="module">
@@ -112,6 +113,18 @@ async function refresh(){
     close.addEventListener("click",async()=>{if(!confirm("Close this link? Feedback will be preserved."))return;close.disabled=true;try{await api.close(read.id);await refresh();}catch(e){alert(e.message);close.disabled=false;}});
     card.append(close);
    }
+   const remove=element("button","Delete permanently");
+   remove.className="beta-delete";
+   remove.title="Delete this beta copy and its feedback permanently";
+   remove.addEventListener("click",async()=>{
+    const confirmed=prompt("Permanently delete this beta copy and all its feedback? This cannot be undone.\n\nType the exact title to confirm:\n"+read.title);
+    if(confirmed===null)return;
+    if(confirmed!==read.title){alert("Title did not match. Nothing was deleted.");return;}
+    remove.disabled=true;
+    try{await api.delete(read.id,confirmed);await refresh();}
+    catch(e){alert(e.message);remove.disabled=false;}
+   });
+   card.append(remove);
    root.append(card);
   }
  }catch(e){root.replaceChildren(element("p",e.message));}
