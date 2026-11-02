@@ -83,13 +83,31 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
                 remove.type = "button";
                 remove.textContent = "Delete my comment";
                 remove.setAttribute("aria-label", "Delete your comment");
+                const deleteStatus = document.createElement("p");
+                deleteStatus.setAttribute("role", "status");
+                deleteStatus.style.cssText = "font-size:.85rem;color:#e3cafa;margin:5px 0 12px";
+                let awaitingConfirmation = false;
                 remove.addEventListener("click", async () => {
-                    if (!confirm("Delete this comment?")) return;
+                    if (!awaitingConfirmation) {
+                        awaitingConfirmation = true;
+                        remove.textContent = "Confirm delete";
+                        deleteStatus.textContent = "Tap again to permanently remove your comment.";
+                        return;
+                    }
                     remove.disabled = true;
-                    try { await send("delete-comment", { commentId: comment.id }); await reload(); }
-                    catch (error) { remove.disabled = false; alert(error.message); }
+                    remove.textContent = "Deleting…";
+                    deleteStatus.textContent = "Removing comment…";
+                    try {
+                        await send("delete-comment", { commentId: comment.id });
+                        deleteStatus.textContent = "Comment removed.";
+                        await reload();
+                    } catch (error) {
+                        remove.disabled = false;
+                        remove.textContent = "Try deleting again";
+                        deleteStatus.textContent = error?.message || "Could not delete comment.";
+                    }
                 });
-                box.append(remove);
+                box.append(remove, deleteStatus);
             }
         }
         const reply = document.createElement("textarea");
