@@ -86,7 +86,7 @@ function show(index){
  const threads=(feedback.chapters.find(c=>c.id===chapter.id)?.threads||[]);
  $("chapters").querySelectorAll("button").forEach((button,i)=>button.setAttribute("aria-current",String(i===index)));
  const panel=$("threads");panel.replaceChildren();
- if(!threads.length)panel.append(el("p","No feedback on this chapter yet.")).className="empty";
+ if(!threads.length){const empty=el("p","No feedback on this chapter yet.");empty.className="empty";panel.append(empty);}
  for(const thread of threads){
   markQuote(prose,thread);
   const box=el("section");box.className="thread";box.dataset.thread=thread.id;
