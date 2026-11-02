@@ -1,8 +1,14 @@
-import "./beta-read-picker.css";
 import { listBetaReadChapters, prepareBetaReadSnapshot } from "./beta-read-snapshot.js";
 
 /** Isolated Beta Read picker; does not alter Image or Reading Link flows. */
 export function mountBetaReadPicker({ host, getBook, getAuthor, api }) {
+    if (!document.querySelector('link[data-beta-picker-style]')) {
+        const sheet = document.createElement("link");
+        sheet.rel = "stylesheet";
+        sheet.href = "/applications/editor/page-ui/beta-read-picker.css";
+        sheet.dataset.betaPickerStyle = "true";
+        document.head.append(sheet);
+    }
     const panel = document.createElement("section");
     panel.hidden = true;
     panel.className = "quote-beta-panel";
