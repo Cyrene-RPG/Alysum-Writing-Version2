@@ -105,6 +105,14 @@ export async function onRequest({ request, env }) {
                 await update(env, "snippet_beta_reads", { id: `eq.${read.id}` }, { status: "closed", closed_at: new Date().toISOString() });
                 return json({ closed: true });
             }
+            if (action === "snapshot") {
+                const chapters = await rows(env, "snippet_beta_chapters", {
+                    beta_read_id: `eq.${read.id}`,
+                    select: "id,title,content,ordinal",
+                    order: "ordinal.asc",
+                });
+                return json({ id: read.id, title: read.title, authorUsername: read.author_username, status: read.status, chapters });
+            }
             if (action === "threads") {
                 const chapters = await rows(env, "snippet_beta_chapters", { beta_read_id: `eq.${read.id}`, select: "id,title,ordinal", order: "ordinal.asc" });
                 return json({ chapters: await Promise.all(chapters.map(async chapter => ({ ...chapter, threads: await threadsForChapter(env, read.id, chapter.id) }))) });
