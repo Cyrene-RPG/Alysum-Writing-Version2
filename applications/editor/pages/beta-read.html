@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<title>Beta Read · Alysum Writing</title>
+<title>Beta Read · Alysum Writing</title><script type="importmap">{"imports":{"@alysum/authentication/":"/core/authentication/"}}</script>
 <style>
 body{margin:0;background:#171820;color:#f4f0e8;font:16px/1.7 system-ui,sans-serif}
 main{max-width:800px;margin:3rem auto;padding:0 1.25rem}
@@ -62,17 +62,20 @@ main.beta-document{max-width:1500px;margin:0 auto;padding:16px clamp(12px,2vw,28
 @media(max-width:850px){.beta-document-layout{grid-template-columns:minmax(0,1fr)}.beta-document .reader-comments{position:static;max-height:none;margin-top:4px}.beta-document .reader-chapter{min-height:40vh}.beta-document-header{position:relative;top:auto}}
 @media(max-width:600px){main.beta-document{padding:10px 10px 50px}.beta-document-header{padding:12px}.beta-document-header .doc-status{font-size:.74rem}.beta-document .reader-chapter{padding:26px 20px}.beta-document .reader-comments{padding:16px}.beta-document-controls{padding:10px;flex-wrap:wrap}.beta-document-controls select{flex-basis:100%}}
 
+.beta-account-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}.beta-account-actions button+button{background:#373142;color:#f3eaff;border:1px solid #827296}.beta-account-form{margin-top:20px;border-top:1px solid #62546e;padding-top:20px}.beta-account-form[hidden]{display:none}.beta-account-form input{display:block;width:100%;box-sizing:border-box;background:#171820;border:1px solid #847198;border-radius:8px;padding:12px;color:#fff;margin:10px 0;font:inherit}.beta-account-form button{margin:8px 10px 4px 0}.beta-account-gate{max-width:650px;margin:8vh auto;padding:clamp(22px,5vw,40px)}
 </style>
 </head>
 <body><main id="app"><h1>Beta Read</h1><p>Loading…</p></main>
 <script type="module">
+import { supabase } from "@alysum/authentication/client.js";
 import { mountBetaFeedback } from "/applications/editor/page-ui/beta-read-feedback.js";
 import { mountBetaReadGate } from "/applications/editor/page-ui/beta-read-gate.js";
 const app=document.getElementById("app");
 const token=new URL(location.href).searchParams.get("token");
 const error=(message)=>{app.replaceChildren();const p=document.createElement("p");p.textContent=message;app.append(p);};
 async function call(action,body={}){
- const response=await fetch("/api/beta-reads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,token,...body}),cache:"no-store"});
+ const {data:{session}}=await supabase.auth.getSession();
+ const response=await fetch("/api/beta-reads",{method:"POST",headers:{"Content-Type":"application/json",...(session?.access_token?{Authorization:"Bearer "+session.access_token}:{})},body:JSON.stringify({action,token,...body}),cache:"no-store"});
  const data=await response.json().catch(()=>({}));
  if(!response.ok)throw Error(data.error||"Could not load beta read.");
  return data;
@@ -145,12 +148,42 @@ async function renderReader(){
  app.append(header,layout);
  await show();
 }
+async function askAccount(next) {
+ const {data:{session}}=await supabase.auth.getSession();
+ if(session?.user){await next();return;}
+ const panel=document.createElement("section");panel.className="beta-read-gate beta-account-gate";
+ panel.append(node("h1","Welcome to Beta Reading"),node("p","Would you like to sign in to your Alysum account? Your comments will show your username instead of Guest. You can also continue without an account."));
+ const signIn=node("button","Yes, sign in");signIn.type="button";
+ const guest=node("button","No, continue as guest");guest.type="button";
+ const form=document.createElement("form");form.hidden=true;form.className="beta-account-form";
+ const email=document.createElement("input");email.type="email";email.placeholder="Email";email.required=true;email.autocomplete="email";
+ const password=document.createElement("input");password.type="password";password.placeholder="Password";password.required=true;password.autocomplete="current-password";
+ const submit=node("button","Sign in");submit.type="submit";
+ const google=node("button","Continue with Google");google.type="button";
+ const status=node("p","");status.setAttribute("role","status");
+ form.append(email,password,submit,google,status);
+ signIn.addEventListener("click",()=>{form.hidden=false;email.focus();});
+ guest.addEventListener("click",()=>void next());
+ form.addEventListener("submit",async event=>{
+  event.preventDefault();submit.disabled=true;status.textContent="Signing in…";
+  const {error}=await supabase.auth.signInWithPassword({email:email.value,password:password.value});
+  submit.disabled=false;
+  if(error){status.textContent=error.message;return;}
+  await next();
+ });
+ google.addEventListener("click",async()=>{
+  const {error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.href}});
+  if(error)status.textContent=error.message;
+ });
+ const actions=document.createElement("div");actions.className="beta-account-actions";actions.append(signIn,guest);
+ panel.append(actions,form);app.replaceChildren(panel);
+}
 async function start(){
  if(!token||! /^[A-Za-z0-9_-]{32,256}$/.test(token)){error("Invalid beta reading link.");return;}
  try{
   const meta=await call("preview");
   if(meta.status!=="active"){error("This beta read is closed.");return;}
-  mountBetaReadGate({host:app,betaReadId:meta.id,authorUsername:meta.authorUsername,onAccept:()=>void renderReader().catch(e=>error(e.message))});
+  await askAccount(()=>mountBetaReadGate({host:app,betaReadId:meta.id,authorUsername:meta.authorUsername,onAccept:()=>void renderReader().catch(e=>error(e.message))}));
  }catch(e){error(e.message);}
 }
 void start();
