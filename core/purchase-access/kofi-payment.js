@@ -34,7 +34,25 @@ export async function handleKofiPayment(request,env,{fetcher=fetch}={}){
  if(!/^\d{1,7}(\.\d{1,2})?$/.test(amount)||!['USD','GBP','EUR','CAD','AUD'].includes(currency)){diagnostic('invalid_payment');await record('invalid_order','invalid_payment',422);return reply({error:'Invalid payment'},422);}
  await record('verified_shop_order');
  const res=await fetcher(env.SUPABASE_URL+'/rest/v1/rpc/register_kofi_order',{method:'POST',headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_transaction:String(payment.kofi_transaction_id),p_email:String(payment.email).toLowerCase(),p_items:items,p_currency:currency,p_total:amount,p_owner:ownerId})});
- diagnostic(res.ok?'order_registered':'registration_failed',res.ok?{}:{http_status:res.status});
- await record(res.ok?'order_registered':'registration_failed',res.ok?null:'database_rejected_order',res.status);
+ // PostgREST returns database errors as JSON. Only allowlisted, non-sensitive
+ // rejection categories are persisted; never log the raw database response.
+ let rejection=null;
+ if(!res.ok){
+  rejection='database_rejected_order';
+  try{
+   const error=await res.json();
+   const message=typeof error?.message==='string'?error.message:'';
+   const categories={
+    'Invalid order':'invalid_order_fields',
+    'Invalid quantity':'invalid_quantity',
+    'Unknown product or currency':'unknown_product_or_currency',
+    'Payment total mismatch':'payment_total_mismatch',
+    'Conflicting transaction':'conflicting_transaction'
+   };
+   rejection=categories[message]||rejection;
+  }catch{/* Keep the generic category if the response is not JSON. */}
+ }
+ diagnostic(res.ok?'order_registered':'registration_failed',res.ok?{}:{http_status:res.status,reason:rejection});
+ await record(res.ok?'order_registered':'registration_failed',rejection,res.status);
  return res.ok?reply({accepted:true}):reply({error:'Could not register verified order'},503);
 }
