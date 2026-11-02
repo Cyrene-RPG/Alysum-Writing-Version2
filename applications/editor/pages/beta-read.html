@@ -63,6 +63,41 @@ main.beta-document{max-width:1500px;margin:0 auto;padding:16px clamp(12px,2vw,28
 @media(max-width:600px){main.beta-document{padding:10px 10px 50px}.beta-document-header{padding:12px}.beta-document-header .doc-status{font-size:.74rem}.beta-document .reader-chapter{padding:26px 20px}.beta-document .reader-comments{padding:16px}.beta-document-controls{padding:10px;flex-wrap:wrap}.beta-document-controls select{flex-basis:100%}}
 
 .beta-account-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}.beta-account-actions button+button{background:#373142;color:#f3eaff;border:1px solid #827296}.beta-account-form{margin-top:20px;border-top:1px solid #62546e;padding-top:20px}.beta-account-form[hidden]{display:none}.beta-account-form input{display:block;width:100%;box-sizing:border-box;background:#171820;border:1px solid #847198;border-radius:8px;padding:12px;color:#fff;margin:10px 0;font:inherit}.beta-account-form button{margin:8px 10px 4px 0}.beta-account-gate{max-width:650px;margin:8vh auto;padding:clamp(22px,5vw,40px)}
+
+/* Alysum Writing visual language — presentation only, no reader behavior changes. */
+:root{color-scheme:dark;--alysum-bg:#15151e;--alysum-panel:#24222f;--alysum-surface:#302b3d;--alysum-border:#50465e;--alysum-text:#f5f0eb;--alysum-muted:#c8bdd3;--alysum-lavender:#d7c1ff;--alysum-accent:#a88adf}
+*{box-sizing:border-box}
+body{background:radial-gradient(ellipse at 85% -10%,#352641 0%,transparent 42%),var(--alysum-bg);color:var(--alysum-text)}
+.beta-read-gate{max-width:720px;margin:clamp(28px,6vh,75px) auto;padding:clamp(24px,5vw,46px);background:linear-gradient(155deg,#292436,#201e2b);border:1px solid #5d4b70;border-radius:22px;box-shadow:0 24px 70px #0005}
+.beta-read-gate h1{font:700 clamp(2rem,5vw,3rem)/1.12 Georgia,serif;letter-spacing:-.025em;margin:0 0 12px}
+.beta-read-gate h2{font:700 clamp(1.25rem,3vw,1.55rem)/1.3 Georgia,serif;color:var(--alysum-lavender)}
+.beta-read-gate p,.beta-read-gate li{color:#e1d9e8}
+.beta-read-gate ul{padding-left:1.35rem;display:grid;gap:9px}
+.beta-read-gate button,.beta-document button{background:linear-gradient(140deg,#e1d2ff,#cbb2f4);color:#281c38;border:1px solid #cdb4f6;border-radius:11px;padding:10px 17px;font-weight:700;transition:filter .15s,transform .15s}
+.beta-read-gate button:hover,.beta-document button:hover{filter:brightness(1.07)}
+.beta-read-gate button:active,.beta-document button:active{transform:translateY(1px)}
+.beta-account-actions button+button{background:#352d42;color:#eee2ff;border-color:#716080}
+.beta-account-form{border-color:#665776}
+.beta-account-form input{background:#1b1926;border-color:#736186;border-radius:11px}
+.beta-document-header{background:linear-gradient(115deg,#292334,#211f2c);border-color:#5a4c69;border-radius:18px}
+.beta-document-header .doc-symbol{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;background:#49365e;color:#e9d9ff}
+.beta-document-header .doc-status{background:#42334f;border-color:#78638f;color:#e9dbff}
+.beta-document-controls,.beta-document .reader-comments{background:var(--alysum-panel);border-color:var(--alysum-border);border-radius:15px}
+.beta-document-controls select{background:#1c1b27;border-color:#746184;border-radius:10px;min-height:44px}
+.beta-document .reader-chapter{background:linear-gradient(165deg,#292633,#24222d);border-color:#55485e;border-radius:16px;box-shadow:0 20px 60px #0004}
+.beta-document .reader-chapter h2{color:#f8f0ff;border-color:#655573}
+.beta-document .reader-chapter .chapter-prose{color:#f4eee9}
+.beta-document .reader-comments>h2{color:#f6ecff}
+.beta-document .reader-comments .comment{background:#302b3c;border-color:#5e4c70;border-radius:13px}
+.beta-document .reader-comments .comment blockquote{color:#e9d9fa;border-color:#b89ae9}
+.beta-document .reader-comments .comment button{font-size:.86rem;padding:8px 13px;min-height:38px}
+.beta-document textarea{background:#1b1a26;border-color:#7c698f;border-radius:11px;resize:vertical}
+.beta-selection-composer{background:#31293f;border-color:#9b80bd;border-radius:15px;box-shadow:0 12px 32px #0004}
+.beta-anchored-text{background:rgba(185,150,255,.38);box-decoration-break:clone}
+.beta-document button:focus-visible,.beta-read-gate button:focus-visible,.beta-account-form input:focus-visible{outline:3px solid #d5b9ff;outline-offset:3px}
+@media(max-width:850px){.beta-document-header{position:static}.beta-document .reader-comments{border-radius:15px}}
+@media(max-width:600px){.beta-read-gate{margin:18px 10px;padding:24px 20px}.beta-document-header{gap:10px}.beta-document-header .doc-identity{min-width:120px}.beta-document .reader-chapter{padding:26px 21px}.beta-document .reader-comments{padding:16px}.beta-account-actions{display:grid;grid-template-columns:1fr}.beta-account-actions button{width:100%}}
+
 </style>
 </head>
 <body><main id="app"><h1>Beta Read</h1><p>Loading…</p></main>
