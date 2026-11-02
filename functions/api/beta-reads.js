@@ -61,7 +61,7 @@ async function threadsForChapter(env, betaId, chapterId) {
     const comments = await rows(env, "snippet_beta_comments", { beta_read_id: `eq.${betaId}`, select: "*", order: "created_at.asc" });
     return threads.map(t => ({ id: t.id, quote: t.quote, startOffset: t.start_offset, endOffset: t.end_offset, resolvedAt: t.resolved_at, comments: comments.filter(c => c.thread_id === t.id).map(c => ({
         id: c.id, parentCommentId: c.parent_comment_id, body: c.deleted_at ? "[Comment removed]" : c.body,
-        authorLabel: c.author_id ? "Author" : labels.get(c.guest_id) || "Guest", createdAt: c.created_at,
+        authorLabel: c.author_id ? "Author" : labels.get(c.guest_id) || "Guest", guestId: c.guest_id, deleted: Boolean(c.deleted_at), createdAt: c.created_at,
     })) }));
 }
 export async function onRequest({ request, env }) {
@@ -126,12 +126,13 @@ export async function onRequest({ request, env }) {
         }
         const read = await publicRead(env, body.token);
         if (!read || read.status !== "active") return fail("This beta read is unavailable or closed.", 404);
-        if (["join", "comment", "reply"].includes(action)) {
+        if (["join", "comment", "reply", "delete-comment"].includes(action)) {
             try {
                 const result = await handleBetaGuestAction({
                     action, body, read,
                     rows: (table, query) => rows(env, table, query),
                     insert: (table, data) => insert(env, table, data),
+                    update: (table, query, data) => update(env, table, query, data),
                     sha, random,
                 });
                 return json(result);
@@ -152,7 +153,10 @@ export async function onRequest({ request, env }) {
         if (action === "chapter-threads") {
             const chapter = (await rows(env, "snippet_beta_chapters", { id: `eq.${body.chapterId}`, beta_read_id: `eq.${read.id}`, select: "id" }))[0];
             if (!chapter) return fail("Chapter not found.", 404);
-            return json({ threads: await threadsForChapter(env, read.id, chapter.id) });
+            const guestHash = await sha(String(body.guestToken || ""));
+            const guest = (await rows(env, "snippet_beta_guests", { beta_read_id: "eq." + read.id, guest_token_hash: "eq." + guestHash, select: "id" }))[0];
+            const threads = await threadsForChapter(env, read.id, chapter.id);
+            return json({ threads: threads.map(t => ({ ...t, comments: t.comments.map(c => ({ ...c, canDelete: !c.deleted && Boolean(guest) && c.guestId === guest.id, guestId: undefined })) })) });
         }
         return fail("Unknown action.");
     } catch (error) {
