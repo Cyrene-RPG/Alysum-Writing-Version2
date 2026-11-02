@@ -93,7 +93,7 @@ export async function onRequest({ request, env }) {
                     await db(env, "snippet_beta_reads", { method: "DELETE", query: { id: `eq.${saved.id}` } });
                     throw error;
                 }
-                return json({ id: saved.id, url: `${new URLSearchParams({ token }).toString()}` });
+                return json({ id: saved.id, url: `${request.headers.get("x-forwarded-proto") || "https"}://${request.headers.get("host") || "alysumwriting.com"}/applications/editor/pages/beta-read.html?token=${token}` });
             }
             if (action === "list") {
                 const reads = await rows(env, "snippet_beta_reads", { owner_id: `eq.${user.id}`, select: "id,title,author_username,status,created_at,closed_at", order: "created_at.desc" });
