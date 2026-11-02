@@ -78,6 +78,19 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
             const line = document.createElement("p");
             line.textContent = `${comment.authorLabel}: ${comment.body}`;
             box.append(line);
+            if (comment.canDelete) {
+                const remove = document.createElement("button");
+                remove.type = "button";
+                remove.textContent = "Delete my comment";
+                remove.setAttribute("aria-label", "Delete your comment");
+                remove.addEventListener("click", async () => {
+                    if (!confirm("Delete this comment?")) return;
+                    remove.disabled = true;
+                    try { await send("delete-comment", { commentId: comment.id }); await reload(); }
+                    catch (error) { remove.disabled = false; alert(error.message); }
+                });
+                box.append(remove);
+            }
         }
         const reply = document.createElement("textarea");
         reply.placeholder = "Reply";
