@@ -3,6 +3,7 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
     const heading = document.createElement("h2");
     heading.textContent = "Feedback";
     host.append(heading);
+    if (!prose) throw new Error("Chapter content is not ready.");
     markBetaAnchors(prose, threads);
     const toolbar = document.createElement("div");
     toolbar.className = "beta-selection-toolbar";
@@ -11,7 +12,7 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
     toolbarButton.type = "button";
     toolbarButton.textContent = "✎ Comment";
     toolbar.append(toolbarButton);
-    prose.parentElement.append(toolbar);
+    host.prepend(toolbar);
     const composer = document.createElement("div");
     composer.className = "beta-selection-composer";
     composer.hidden = true;
