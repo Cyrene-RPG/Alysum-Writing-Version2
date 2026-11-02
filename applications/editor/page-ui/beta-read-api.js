@@ -22,6 +22,7 @@ export function createBetaReadApi(supabase, { origin = location.origin } = {}) {
         list: () => request("list"),
         close: (id) => request("close", { id }),
         threads: (id) => request("threads", { id }),
+        snapshot: (id) => request("snapshot", { id }),
         moderate: (id, threadId, operation) => request("moderate", { id, threadId, operation }),
     });
 }
