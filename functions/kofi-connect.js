@@ -37,7 +37,7 @@ async function load(preferredPassId){
  el('pass').replaceChildren();
  for(const p of data.passes){const opt=document.createElement('option');opt.value=p.id;opt.textContent=p.title;el('pass').append(opt)}
  if(data.passes.some(p=>p.id===selected))el('pass').value=selected;
- el('existing').textContent=data.mappings.map(m=>{const p=data.passes.find(p=>p.id===m.pass_id);return m.product_id+' → '+(p?.title||'Unknown pass')+' ('+(m.enabled?'enabled':'inactive')+')'}).join('\n')||'No products connected.';
+ el('existing').textContent=data.mappings.map(m=>{const p=data.passes.find(p=>p.id===m.pass_id);return m.product_id+' → '+(p?.title||'Unknown pass')+' ('+(m.enabled?'enabled':'inactive')+')'}).join('\\n')||'No products connected.';
  el('save').disabled=!data.accountConnected||!data.passes.length;
  status(data.accountConnected?'Ko-fi account connected.':'Connect your Ko-fi account first.');el('accountStatus').textContent=data.accountConnected?'Connected to Ko-fi.':'Account not connected. Paste your token and tap Connect account.';
 }
