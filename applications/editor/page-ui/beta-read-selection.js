@@ -19,20 +19,15 @@ export function chapterSelection(prose) {
     return { startOffset, endOffset, quote };
 }
 export function markBetaAnchors(prose, threads) {
-    // Anchor to the exact saved quote, not stale HTML-derived offsets.
+    // Never substitute a different occurrence of a quote after posting.
+    // A saved anchor is valid only when its exact text matches at its offsets.
     const chapterText = prose.textContent || "";
-    const all = (threads || []).map(thread => {
-        const quote = String(thread.quote || "");
-        if (!quote) return null;
-        let found = chapterText.indexOf(quote);
-        let best = -1, distance = Infinity;
-        while (found !== -1) {
-            const delta = Math.abs(found - Number(thread.startOffset || 0));
-            if (delta < distance) { best = found; distance = delta; }
-            found = chapterText.indexOf(quote, found + 1);
-        }
-        return best === -1 ? null : { ...thread, startOffset: best, endOffset: best + quote.length };
-    }).filter(Boolean);
+    const all = (threads || []).filter(thread => {
+        const start = Number(thread.startOffset), end = Number(thread.endOffset);
+        return Number.isInteger(start) && Number.isInteger(end) &&
+            start >= 0 && end > start && end <= chapterText.length &&
+            chapterText.slice(start, end) === String(thread.quote || "");
+    });
     if (!all.length) return;
     const walker = document.createTreeWalker(prose, NodeFilter.SHOW_TEXT);
     const nodes = [];
