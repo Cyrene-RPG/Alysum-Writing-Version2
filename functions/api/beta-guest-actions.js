@@ -1,5 +1,5 @@
 /** Public Beta Read guest actions. Called only after link-token validation. */
-export async function handleBetaGuestAction({ action, body, read, rows, insert, update, sha, random }) {
+export async function handleBetaGuestAction({ action, body, read, rows, insert, update, sha, random, authenticatedUser = null }) {
     const betaId = read.id;
     if (action === "join") {
         const token = /^[a-f\d]{64}$/.test(String(body.guestToken || "")) ? body.guestToken : random();
@@ -9,7 +9,17 @@ export async function handleBetaGuestAction({ action, body, read, rows, insert, 
             const existing = await rows("snippet_beta_guests", { beta_read_id: `eq.${betaId}`, select: "guest_number", order: "guest_number.desc", limit: "1" });
             guest = await insert("snippet_beta_guests", { beta_read_id: betaId, guest_number: (existing[0]?.guest_number || 0) + 1, guest_token_hash: hash, acknowledged_at: new Date().toISOString() });
         }
-        return { guestToken: token, guestNumber: guest.guest_number };
+        if (authenticatedUser?.id) {
+            const raw = authenticatedUser.user_metadata?.username || authenticatedUser.user_metadata?.user_name || authenticatedUser.user_metadata?.name || authenticatedUser.email?.split("@")[0] || "";
+            const username = String(raw).trim().slice(0, 80);
+            if (username) {
+                await update("snippet_beta_guests", { id: "eq." + guest.id, beta_read_id: "eq." + betaId }, {
+                    authenticated_user_id: authenticatedUser.id, authenticated_username: username,
+                });
+                guest.authenticated_username = username;
+            }
+        }
+        return { guestToken: token, guestNumber: guest.guest_number, username: guest.authenticated_username || null };
     }
     if (!["comment", "reply", "delete-comment"].includes(action)) return null;
     if (!/^[a-f\d]{64}$/.test(String(body.guestToken || ""))) throw new Error("Guest identity required.");
