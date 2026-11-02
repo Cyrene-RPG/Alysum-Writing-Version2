@@ -5,7 +5,7 @@ export async function onRequest({request,env,params}){
  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(token));
  const hash=[...new Uint8Array(digest)].map(n=>n.toString(16).padStart(2,"0")).join("");
  const url="https://jrfxgpkpbacajhcwimgz.supabase.co/rest/v1/snippet_beta_reads?select=title,author_username,status&share_token_hash=eq."+hash;
- const res=await fetch(url,{headers:{apikey:env.SUPABASE_ANON_KEY||"",Authorization:"Bearer "+env.SUPABASE_SERVICE_ROLE_KEY}});
+ const res=await fetch(url,{headers:{apikey:"sb_publishable_FnVMe0O37DKb87PCYdg6-g_DbI28pcE",Authorization:"Bearer "+env.SUPABASE_SERVICE_ROLE_KEY}});
  if(!res.ok)return new Response("Unavailable",{status:503});
  const [book]=await res.json();
  if(!book||book.status!=="active")return new Response("Not found",{status:404});
