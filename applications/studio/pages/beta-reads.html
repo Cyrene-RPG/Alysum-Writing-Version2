@@ -22,6 +22,14 @@ article section{margin-top:22px;border-top:1px solid #4d4559;padding-top:15px}
 article section h3{font:700 1.25rem Georgia,serif;margin:18px 0 8px}
 #reads>p{background:#24232f;border-radius:14px;padding:22px;color:#d9d0e2}
 @media(max-width:480px){main{padding:25px 16px 70px}.back{margin-bottom:26px}article{padding:18px}button{width:100%;margin:6px 0}}
+.snapshot-view{margin-top:20px;padding-top:18px;border-top:1px solid #5b5168}
+.snapshot-view .chapter{background:#1b1a24;border-radius:14px;padding:clamp(18px,4vw,32px);margin:18px 0}
+.snapshot-view .chapter h3{font:700 1.7rem Georgia,serif;margin:0 0 22px}
+.snapshot-view .prose{font:clamp(1.05rem,3.3vw,1.2rem)/1.85 Georgia,serif;color:#eee9e3;overflow-wrap:anywhere}
+.snapshot-view .prose p{margin:0 0 1.1em}
+.snapshot-view .prose .alysum-indent{text-indent:1.5em}
+.snapshot-view .prose blockquote{font:inherit}
+.snapshot-view .prose h1,.snapshot-view .prose h2,.snapshot-view .prose h3{font-family:Georgia,serif}
 </style></head>
 <body><main><a class="back" href="/studio">← Back to Studio</a><h1>Beta Reads</h1><p class="intro">Your private reading copies, guest feedback, and archived sessions—all in one place.</p><div id="reads">Loading…</div></main>
 <script type="module">
@@ -30,6 +38,24 @@ import { createBetaReadApi } from "/applications/editor/page-ui/beta-read-api.js
 const api=createBetaReadApi(supabase),root=document.getElementById("reads");
 root.textContent="Loading your beta reads…";
 function element(tag,text){const el=document.createElement(tag);el.textContent=text;return el;}
+function safeProse(html) {
+ const wrapper=document.createElement("div");wrapper.className="prose";
+ const parsed=new DOMParser().parseFromString(String(html||""),"text/html");
+ const allowed=new Set(["P","BR","I","EM","B","STRONG","U","S","DEL","BLOCKQUOTE","H1","H2","H3","UL","OL","LI","DIV","SPAN","HR","SUP","SUB"]);
+ const blocked=new Set(["SCRIPT","STYLE","IFRAME","OBJECT","EMBED","FORM","INPUT","BUTTON","SVG","MATH","VIDEO","AUDIO","IMG","LINK","META","TEMPLATE"]);
+ function clean(source,target){
+  for(const child of Array.from(source.childNodes)){
+   if(child.nodeType===Node.TEXT_NODE){target.append(document.createTextNode(child.textContent));continue;}
+   if(child.nodeType!==Node.ELEMENT_NODE)continue;
+   if(blocked.has(child.tagName))continue;
+   if(!allowed.has(child.tagName)){clean(child,target);continue;}
+   const el=document.createElement(child.tagName.toLowerCase());
+   if(child.classList.contains("alysum-indent"))el.classList.add("alysum-indent");
+   clean(child,el);target.append(el);
+  }
+ }
+ clean(parsed.body,wrapper);return wrapper;
+}
 async function refresh(){
  try {
   const {reads}=await api.list();root.replaceChildren();
@@ -58,7 +84,26 @@ async function refresh(){
      card.append(section);
     }catch(e){card.append(element("p",e.message));}finally{review.disabled=false;}
    });
-   card.append(review);
+   const view=element("button","Read full beta copy");
+   view.addEventListener("click",async()=>{
+    const existing=card.querySelector(".snapshot-view");
+    if(existing){existing.remove();view.textContent="Read full beta copy";return;}
+    view.disabled=true;view.textContent="Loading chapters…";
+    try{
+     const data=await api.snapshot(read.id);
+     const panel=element("section","");panel.className="snapshot-view";
+     panel.append(element("h3","Full beta-reading copy"));
+     for(const chapter of data.chapters){
+      const chapterCard=element("div","");chapterCard.className="chapter";
+      chapterCard.append(element("h3",chapter.title),safeProse(chapter.content));
+      panel.append(chapterCard);
+     }
+     if(!data.chapters.length)panel.append(element("p","This copy has no chapters."));
+     card.append(panel);view.textContent="Hide full beta copy";
+    }catch(error){const message=element("p",error.message);message.setAttribute("role","alert");card.append(message);view.textContent="Read full beta copy";}
+    finally{view.disabled=false;}
+   });
+   card.append(view,review);
    if(read.status==="active"){
     const close=element("button","Close and archive");
     close.addEventListener("click",async()=>{if(!confirm("Close this link? Feedback will be preserved."))return;close.disabled=true;try{await api.close(read.id);await refresh();}catch(e){alert(e.message);close.disabled=false;}});
