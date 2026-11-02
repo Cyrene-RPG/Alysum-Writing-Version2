@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Beta Reads · Studio</title>
+<style>body{background:#181821;color:#f4f0e8;font:16px/1.6 system-ui;margin:0}main{max-width:900px;margin:3rem auto;padding:1rem}article{border:1px solid #5b5668;border-radius:12px;padding:1rem;margin:1rem 0}button{padding:.5rem .9rem;margin:.25rem;cursor:pointer}a{color:#dfcfff}blockquote{border-left:3px solid #8f77c8;padding-left:1rem}small{color:#c2bace}</style></head>
+<body><main><p><a href="/studio">Studio</a></p><h1>Beta Reads</h1><p>Manage active beta copies and review archived feedback.</p><div id="reads">Loading…</div></main>
+<script type="module">
+import { supabase } from "@alysum/authentication/client.js";
+import { createBetaReadApi } from "/applications/editor/page-ui/beta-read-api.js";
+const api=createBetaReadApi(supabase),root=document.getElementById("reads");
+function element(tag,text){const el=document.createElement(tag);el.textContent=text;return el;}
+async function refresh(){
+ try {
+  const {reads}=await api.list();root.replaceChildren();
+  if(!reads.length){root.append(element("p","No beta reads yet. Create one from Snippet Share in the editor."));return;}
+  for(const read of reads){
+   const card=element("article","");
+   card.append(element("h2",read.title),element("p",read.status==="closed"?"Archived · Link closed":"Active · No automatic expiration"),element("small","by "+read.author_username));
+   const review=element("button","Review feedback");
+   review.addEventListener("click",async()=>{
+    review.disabled=true;
+    try{
+     const {chapters}=await api.threads(read.id);
+     card.querySelectorAll("[data-feedback]").forEach(el=>el.remove());
+     const section=element("section","");section.dataset.feedback="yes";
+     for(const chapter of chapters){
+      section.append(element("h3",chapter.title));
+      for(const thread of chapter.threads){
+       const block=element("blockquote",thread.quote);
+       section.append(block);
+       for(const comment of thread.comments)section.append(element("p",comment.authorLabel+": "+comment.body));
+       const toggle=element("button",thread.resolvedAt?"Reopen":"Resolve");
+       toggle.addEventListener("click",async()=>{await api.moderate(read.id,thread.id,thread.resolvedAt?"reopen":"resolve");await review.click();});
+       section.append(toggle);
+      }
+     }
+     card.append(section);
+    }catch(e){card.append(element("p",e.message));}finally{review.disabled=false;}
+   });
+   card.append(review);
+   if(read.status==="active"){
+    const close=element("button","Close and archive");
+    close.addEventListener("click",async()=>{if(!confirm("Close this link? Feedback will be preserved."))return;close.disabled=true;try{await api.close(read.id);await refresh();}catch(e){alert(e.message);close.disabled=false;}});
+    card.append(close);
+   }
+   root.append(card);
+  }
+ }catch(e){root.replaceChildren(element("p",e.message));}
+}
+void refresh();
+</script></body></html>
