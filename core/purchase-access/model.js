@@ -9,6 +9,7 @@ export function passSnapshot(book,mode,ids=[]){
  if(readWorkTags(book.publish_meta).workType==='fanfiction')throw Error('Fan fiction is free and cannot have purchase passes.');
  if(book.media_format&&book.media_format!=='novel')throw Error('Choose an original written book for Purchase Passes.');
  if(!['book','bundle'].includes(mode))throw Error('Choose a whole-book pass or a bundle.');
+ if(book.publish_meta?.epubEdition===true&&mode!=='book')throw Error('EPUB editions require a whole-book pass.');
  const chapters=listBodyChapters(book.sections);
  const selected=mode==='book'?chapters:chapters.filter(ch=>Array.isArray(ids)&&ids.includes(String(ch.id)));
  if(!selected.length||selected.length>500||mode==='bundle'&&(!Array.isArray(ids)||new Set(ids).size!==ids.length||selected.length!==ids.length))throw Error('Choose 1–500 valid chapters.');

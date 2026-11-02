@@ -68,7 +68,7 @@
 <p id="passStatus" role="status" aria-live="polite">Loading…</p>
 <section class="pass-card" id="passSetup" hidden><h2>Purchase Passes are being prepared</h2><p>This feature is temporarily unavailable. Your existing purchases are kept.</p><button type="button" id="checkPassSetup">Try again</button></section>
 <div class="pass-tabs" role="tablist" aria-label="Purchase Passes"><button type="button" id="passAuthorTab" role="tab" aria-controls="passAuthorPanel" aria-selected="true">Author tools</button><button type="button" id="passReaderTab" role="tab" aria-controls="passReaderPanel" aria-selected="false">Redeem &amp; read</button></div>
-<section id="passAuthorPanel" role="tabpanel" aria-labelledby="passAuthorTab">
+<section id="passAuthorPanel" role="tabpanel" aria-labelledby="passAuthorTab"><div class="pass-card"><h2>Ko-fi shop integration</h2><p>Connect your own Ko-fi account and link its products to your Purchase Passes. Automatic delivery is being tested; connections remain inactive until verified.</p><p><a href="/kofi-connect">Connect my Ko-fi shop</a></p></div>
 <form id="passCreateForm" class="pass-card"><h2>1. Create a pass</h2>
 <div class="pass-grid"><label>Original story<select id="passBook" required><option value="">Choose a saved book</option></select></label><label>Pass type<select id="passMode"><option value="book">Whole book</option><option value="bundle">Chapter bundle</option></select></label></div>
 <label>Pass name<input id="passTitle" required maxlength="200" placeholder="Whole book or Opening Arc"></label>
