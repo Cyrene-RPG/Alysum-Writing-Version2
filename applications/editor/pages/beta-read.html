@@ -11,7 +11,15 @@ h1,h2{font-family:Georgia,serif}button,select,textarea{font:inherit}
 button{cursor:pointer;background:#ddd0ff;color:#201630;border:0;border-radius:8px;padding:.6rem 1rem}
 button:disabled{opacity:.5;cursor:not-allowed}
 .beta-read-gate,.reader-chapter,.reader-comments{padding:1.5rem;background:#242530;border-radius:12px;margin:1rem 0}
-.reader-chapter{white-space:pre-wrap;overflow-wrap:anywhere}
+.reader-chapter{overflow-wrap:anywhere;font:clamp(1.05rem,2.6vw,1.22rem)/1.85 Georgia,serif;color:#f3eee7}
+.reader-chapter h2{font-size:clamp(1.7rem,5vw,2.3rem);line-height:1.25;margin:0 0 1.5rem}
+.reader-chapter .chapter-prose{white-space:normal}
+.reader-chapter .chapter-prose p{margin:0 0 1.15em}
+.reader-chapter .chapter-prose p.alysum-indent{text-indent:1.5em}
+.reader-chapter .chapter-prose em,.reader-chapter .chapter-prose i{font-style:italic}
+.reader-chapter .chapter-prose blockquote{margin:1.2em 0;padding-left:1em;border-left:2px solid #9b8bc0}
+.reader-chapter .chapter-prose h1,.reader-chapter .chapter-prose h2,.reader-chapter .chapter-prose h3{text-align:center;margin:1.5em 0 .8em}
+@media(max-width:600px){main{margin:1rem auto;padding:0 .75rem}.reader-chapter,.reader-comments{padding:1.25rem}.reader-chapter{line-height:1.75}}
 textarea{width:100%;box-sizing:border-box;min-height:5rem}
 .comment{border-top:1px solid #555;padding:.75rem 0}
 small{color:#c4bfd0}
@@ -31,6 +39,27 @@ async function call(action,body={}){
  return data;
 }
 function node(tag,text){const element=document.createElement(tag);element.textContent=text;return element;}
+function renderChapterMarkup(html){
+ const root=document.createElement("div");
+ root.className="chapter-prose";
+ const parsed=new DOMParser().parseFromString(String(html||""),"text/html");
+ const allowed=new Set(["P","BR","I","EM","B","STRONG","U","S","DEL","BLOCKQUOTE","H1","H2","H3","UL","OL","LI","DIV","SPAN","HR","SUP","SUB"]);
+ const blocked=new Set(["SCRIPT","STYLE","IFRAME","OBJECT","EMBED","FORM","INPUT","BUTTON","SVG","MATH","VIDEO","AUDIO","IMG","LINK","META","TEMPLATE"]);
+ function clean(source,target){
+  for(const child of Array.from(source.childNodes)){
+   if(child.nodeType===Node.TEXT_NODE){target.append(document.createTextNode(child.textContent));continue;}
+   if(child.nodeType!==Node.ELEMENT_NODE)continue;
+   if(blocked.has(child.tagName))continue;
+   if(!allowed.has(child.tagName)){clean(child,target);continue;}
+   const element=document.createElement(child.tagName.toLowerCase());
+   if(child.classList.contains("alysum-indent"))element.classList.add("alysum-indent");
+   clean(child,element);
+   target.append(element);
+  }
+ }
+ clean(parsed.body,root);
+ return root;
+}
 let guestToken = "";
 async function renderReader(){
  const key = "alysum-beta-guest:" + token;
@@ -47,7 +76,7 @@ async function renderReader(){
  const comments=document.createElement("section");comments.className="reader-comments";
  async function show(){
   const chapter=data.chapters[Number(selector.value)||0];if(!chapter)return;
-  article.replaceChildren(node("h2",chapter.title),node("div",chapter.content));
+  article.replaceChildren(node("h2",chapter.title),renderChapterMarkup(chapter.content));
   comments.replaceChildren();
   const threads=await call("chapter-threads",{chapterId:chapter.id,guestToken});
   mountBetaFeedback({host:comments,chapter,threads:threads.threads||[],send:(action,payload)=>call(action,{...payload,guestToken}),reload:show});
