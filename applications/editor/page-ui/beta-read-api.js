@@ -7,7 +7,7 @@ export function createBetaReadApi(supabase, { origin = location.origin } = {}) {
     }
     async function request(action, payload = {}) {
         const token = await requireSession();
-        const response = await fetch(new URL("/api/beta-reads", origin), {
+        const response = await fetch(origin + "/api/beta-reads", {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ action, ...payload }),
