@@ -7,7 +7,7 @@ export async function handleKofiPayment(request,env,{fetcher=fetch}={}){
  if(raw.length>65536)return reply({error:'Too large'},413);
  let payment;try{payment=JSON.parse(new URLSearchParams(raw).get('data')||'');}catch{return reply({error:'Invalid payload'},400);}
  const token=String(payment.verification_token||'');
- if(!/^[a-z0-9-]{20,128}$/i.test(token))return reply({error:'Unauthorized'},401);
+ if(!/^[\x21-\x7e]{16,256}$/.test(token))return reply({error:'Unauthorized'},401);
  const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token))),b=>b.toString(16).padStart(2,'0')).join('');
  const auth=await fetcher(env.SUPABASE_URL+'/rest/v1/kofi_author_accounts?token_sha256=eq.'+digest+'&select=owner_id&limit=1',{headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY}});
  if(!auth.ok)return reply({error:'Account verification unavailable'},503);
