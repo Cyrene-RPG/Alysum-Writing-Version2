@@ -28,11 +28,11 @@ export function mountBetaReadGate({ host, betaReadId, authorUsername, onAccept }
     wrap.append(title, subtitle, introduction, lead, list, closing, button);
     host.replaceChildren(wrap);
     const accepted = () => {
-        try { return sessionStorage.getItem(key) === "yes"; } catch { return false; }
+        try { return localStorage.getItem(key) === "yes"; } catch { return false; }
     };
     const proceed = () => { wrap.remove(); onAccept(); };
     button.addEventListener("click", () => {
-        try { sessionStorage.setItem(key, "yes"); } catch { /* optional */ }
+        try { localStorage.setItem(key, "yes"); } catch { /* optional */ }
         proceed();
     });
     if (accepted()) proceed();
