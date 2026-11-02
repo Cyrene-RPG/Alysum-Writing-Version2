@@ -6,17 +6,6 @@ export async function handleKofiPayment(request,env,{fetcher=fetch}={}){
  diagnostic('received');
  if(!env.SUPABASE_SERVICE_ROLE_KEY||!env.SUPABASE_URL){diagnostic('configuration_missing');return reply({error:'Not configured'},503);}
  if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(env.SUPABASE_URL)){diagnostic('invalid_database_host');return reply({error:'Invalid database host'},503);}
- let raw;try{raw=await request.text();}catch{diagnostic('body_read_failed');return reply({error:'Invalid request'},400);}
- if(raw.length>65536){diagnostic('payload_too_large');return reply({error:'Too large'},413);}
- let payment;try{payment=JSON.parse(new URLSearchParams(raw).get('data')||'');}catch{diagnostic('invalid_payload');return reply({error:'Invalid payload'},400);}
- const token=String(payment.verification_token||'');
- if(!/^[\x21-\x7e]{16,256}$/.test(token)){diagnostic('invalid_token_format');return reply({error:'Unauthorized'},401);}
- const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token))),b=>b.toString(16).padStart(2,'0')).join('');
- const auth=await fetcher(env.SUPABASE_URL+'/rest/v1/kofi_author_accounts?token_sha256=eq.'+digest+'&select=owner_id&limit=1',{headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY}});
- if(!auth.ok){diagnostic('account_lookup_failed',{http_status:auth.status});return reply({error:'Account verification unavailable'},503);}
- const accounts=await auth.json();
- if(accounts.length!==1){diagnostic('account_not_connected');return reply({error:'Unauthorized'},401);}
- const ownerId=accounts[0].owner_id;
  // Best-effort diagnostics; never include private payment data.
  const record=async(stage,reason=null,http_status=null)=>{
   try{
@@ -24,7 +13,19 @@ export async function handleKofiPayment(request,env,{fetcher=fetch}={}){
    if(!response.ok)diagnostic('diagnostic_write_failed',{http_status:response.status});
   }catch{diagnostic('diagnostic_write_failed');}
  };
- if(payment.type!=='Shop Order'){diagnostic('non_shop_order');return reply({ignored:true});}
+
+ let raw;try{raw=await request.text();}catch{diagnostic('body_read_failed');await record('invalid_order','body_read_failed',400);return reply({error:'Invalid request'},400);}
+ if(raw.length>65536){diagnostic('payload_too_large');await record('invalid_order','payload_too_large',413);return reply({error:'Too large'},413);}
+ let payment;try{payment=JSON.parse(new URLSearchParams(raw).get('data')||'');}catch{diagnostic('invalid_payload');await record('invalid_order','invalid_payload',400);return reply({error:'Invalid payload'},400);}
+ const token=String(payment.verification_token||'');
+ if(!/^[\x21-\x7e]{16,256}$/.test(token)){diagnostic('invalid_token_format');await record('invalid_order','invalid_token_format',401);return reply({error:'Unauthorized'},401);}
+ const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token))),b=>b.toString(16).padStart(2,'0')).join('');
+ const auth=await fetcher(env.SUPABASE_URL+'/rest/v1/kofi_author_accounts?token_sha256=eq.'+digest+'&select=owner_id&limit=1',{headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY}});
+ if(!auth.ok){diagnostic('account_lookup_failed',{http_status:auth.status});await record('invalid_order','account_lookup_failed',auth.status);return reply({error:'Account verification unavailable'},503);}
+ const accounts=await auth.json();
+ if(accounts.length!==1){diagnostic('account_not_connected');await record('invalid_order','account_not_connected',401);return reply({error:'Unauthorized'},401);}
+ const ownerId=accounts[0].owner_id;
+ if(payment.type!=='Shop Order'){diagnostic('non_shop_order');await record('invalid_order','non_shop_order',200);return reply({ignored:true});}
  if(!payment.kofi_transaction_id||!payment.email||!Array.isArray(payment.shop_items)){diagnostic('incomplete_order');await record('invalid_order','incomplete_order',400);return reply({error:'Incomplete order'},400);}
  const items=payment.shop_items.map(item=>({product_id:String(item.direct_link_code||''),quantity:Number(item.quantity||1)}));
  if(items.length<1||items.length>20||items.some(item=>!item.product_id||!Number.isSafeInteger(item.quantity)||item.quantity<1||item.quantity>20)){diagnostic('invalid_items');await record('invalid_order','invalid_items',422);return reply({error:'Invalid items'},422);}
