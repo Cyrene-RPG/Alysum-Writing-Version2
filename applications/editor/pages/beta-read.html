@@ -38,7 +38,7 @@ async function renderReader(){
  const guest = await call("join", {guestToken});
  guestToken = guest.guestToken;
  try { localStorage.setItem(key, guestToken); } catch {}
- const data=await call("read");
+ const data=await call("read",{guestToken});
  app.replaceChildren(node("h1",data.title||"Beta Read"),node("p","by "+data.authorUsername),node("p","You are Guest "+guest.guestNumber));
  const selector=document.createElement("select");
  selector.setAttribute("aria-label","Choose chapter");
@@ -49,7 +49,7 @@ async function renderReader(){
   const chapter=data.chapters[Number(selector.value)||0];if(!chapter)return;
   article.replaceChildren(node("h2",chapter.title),node("div",chapter.content));
   comments.replaceChildren();
-  const threads=await call("chapter-threads",{chapterId:chapter.id});
+  const threads=await call("chapter-threads",{chapterId:chapter.id,guestToken});
   mountBetaFeedback({host:comments,chapter,threads:threads.threads||[],send:(action,payload)=>call(action,{...payload,guestToken}),reload:show});
   for(const thread of []){
    const item=document.createElement("div");item.className="comment";
