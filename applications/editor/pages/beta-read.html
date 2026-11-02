@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Beta Read · Alysum Writing</title>
+<style>
+body{margin:0;background:#171820;color:#f4f0e8;font:16px/1.7 system-ui,sans-serif}
+main{max-width:800px;margin:3rem auto;padding:0 1.25rem}
+h1,h2{font-family:Georgia,serif}button,select,textarea{font:inherit}
+button{cursor:pointer;background:#ddd0ff;color:#201630;border:0;border-radius:8px;padding:.6rem 1rem}
+button:disabled{opacity:.5;cursor:not-allowed}
+.beta-read-gate,.reader-chapter,.reader-comments{padding:1.5rem;background:#242530;border-radius:12px;margin:1rem 0}
+.reader-chapter{white-space:pre-wrap;overflow-wrap:anywhere}
+textarea{width:100%;box-sizing:border-box;min-height:5rem}
+.comment{border-top:1px solid #555;padding:.75rem 0}
+small{color:#c4bfd0}
+</style>
+</head>
+<body><main id="app"><h1>Beta Read</h1><p>Loading…</p></main>
+<script type="module">
+import { mountBetaReadGate } from "/applications/editor/page-ui/beta-read-gate.js";
+const app=document.getElementById("app");
+const token=new URL(location.href).searchParams.get("token");
+const error=(message)=>{app.replaceChildren();const p=document.createElement("p");p.textContent=message;app.append(p);};
+async function call(action,body={}){
+ const response=await fetch("/api/beta-reads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,token,...body}),cache:"no-store"});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw Error(data.error||"Could not load beta read.");
+ return data;
+}
+function node(tag,text){const element=document.createElement(tag);element.textContent=text;return element;}
+async function renderReader(){
+ const data=await call("read");
+ app.replaceChildren(node("h1",data.title||"Beta Read"),node("p","by "+data.authorUsername));
+ const selector=document.createElement("select");
+ selector.setAttribute("aria-label","Choose chapter");
+ (data.chapters||[]).forEach((chapter,i)=>{const option=document.createElement("option");option.value=String(i);option.textContent=chapter.title;selector.append(option);});
+ const article=node("article","");article.className="reader-chapter";
+ const comments=document.createElement("section");comments.className="reader-comments";
+ async function show(){
+  const chapter=data.chapters[Number(selector.value)||0];if(!chapter)return;
+  article.replaceChildren(node("h2",chapter.title),node("div",chapter.content));
+  comments.replaceChildren(node("h2","Comments"));
+  const threads=await call("chapter-threads",{chapterId:chapter.id});
+  for(const thread of threads.threads||[]){
+   const item=document.createElement("div");item.className="comment";
+   item.append(node("small",thread.quote||"Chapter feedback"));
+   for(const comment of thread.comments||[])item.append(node("p",(comment.authorLabel||"Guest")+": "+comment.body));
+   comments.append(item);
+  }
+ }
+ selector.addEventListener("change",()=>void show().catch(e=>error(e.message)));
+ app.append(selector,article,comments);
+ await show();
+}
+async function start(){
+ if(!token||! /^[A-Za-z0-9_-]{32,256}$/.test(token)){error("Invalid beta reading link.");return;}
+ try{
+  const meta=await call("preview");
+  if(meta.status!=="active"){error("This beta read is closed.");return;}
+  mountBetaReadGate({host:app,betaReadId:meta.id,authorUsername:meta.authorUsername,onAccept:()=>void renderReader().catch(e=>error(e.message))});
+ }catch(e){error(e.message);}
+}
+void start();
+</script></body></html>
