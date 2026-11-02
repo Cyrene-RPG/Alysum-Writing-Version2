@@ -56,8 +56,8 @@ async function verifyBook(request, bookId, userId) {
 }
 async function threadsForChapter(env, betaId, chapterId) {
     const threads = await rows(env, "snippet_beta_threads", { beta_read_id: `eq.${betaId}`, chapter_id: `eq.${chapterId}`, select: "*", order: "created_at.asc" });
-    const guests = await rows(env, "snippet_beta_guests", { beta_read_id: `eq.${betaId}`, select: "id,guest_number" });
-    const labels = new Map(guests.map(g => [g.id, `Guest ${g.guest_number}`]));
+    const guests = await rows(env, "snippet_beta_guests", { beta_read_id: `eq.${betaId}`, select: "id,guest_number,authenticated_username" });
+    const labels = new Map(guests.map(g => [g.id, g.authenticated_username || `Guest ${g.guest_number}`]));
     const comments = await rows(env, "snippet_beta_comments", { beta_read_id: `eq.${betaId}`, select: "*", order: "created_at.asc" });
     return threads.map(t => ({ id: t.id, quote: t.quote, startOffset: t.start_offset, endOffset: t.end_offset, resolvedAt: t.resolved_at, comments: comments.filter(c => c.thread_id === t.id).map(c => ({
         id: c.id, parentCommentId: c.parent_comment_id, body: c.deleted_at ? "[Comment removed]" : c.body,
@@ -141,7 +141,7 @@ export async function onRequest({ request, env }) {
                     rows: (table, query) => rows(env, table, query),
                     insert: (table, data) => insert(env, table, data),
                     update: (table, query, data) => update(env, table, query, data),
-                    sha, random,
+                    sha, random, authenticatedUser: await userFromRequest(request),
                 });
                 return json(result);
             } catch (error) {
