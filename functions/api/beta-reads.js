@@ -8,8 +8,9 @@ const fail = (message, status = 400) => json({ error: message }, status);
 const sha = async value => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)))].map(b => b.toString(16).padStart(2, "0")).join("");
 const random = () => { const bytes = crypto.getRandomValues(new Uint8Array(32)); return Array.from(bytes, b => b.toString(16).padStart(2, "0")).join(""); };
 function db(env, table, { method = "GET", query = {}, body, prefer = "" } = {}) {
-    const url = new URL(`${URL}/rest/v1/${table}`);
-    for (const [k, v] of Object.entries(query)) url.searchParams.set(k, v);
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(query)) params.set(k, v);
+    const url = `${URL}/rest/v1/${table}?${params.toString()}`;
     return fetch(url, { method, headers: {
         apikey: KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
         "Content-Type": "application/json", ...(prefer ? { Prefer: prefer } : {}),
@@ -48,7 +49,7 @@ async function publicRead(env, token) {
     return (await rows(env, "snippet_beta_reads", { share_token_hash: `eq.${hash}`, select: "*" }))[0] || null;
 }
 async function verifyBook(request, bookId, userId) {
-    const response = await fetch(new URL(`${URL}/rest/v1/books?select=id&id=eq.${encodeURIComponent(bookId)}&user_id=eq.${encodeURIComponent(userId)}`), {
+    const response = await fetch(`${URL}/rest/v1/books?select=id&id=eq.${encodeURIComponent(bookId)}&user_id=eq.${encodeURIComponent(userId)}`, {
         headers: { apikey: KEY, Authorization: request.headers.get("Authorization") },
     });
     return response.ok && (await response.json()).length === 1;
@@ -92,7 +93,7 @@ export async function onRequest({ request, env }) {
                     await db(env, "snippet_beta_reads", { method: "DELETE", query: { id: `eq.${saved.id}` } });
                     throw error;
                 }
-                return json({ id: saved.id, url: new URL(`/applications/editor/pages/beta-read.html?token=${token}`, request.url).href });
+                return json({ id: saved.id, url: `${new URLSearchParams({ token }).toString()}` });
             }
             if (action === "list") {
                 const reads = await rows(env, "snippet_beta_reads", { owner_id: `eq.${user.id}`, select: "id,title,author_username,status,created_at,closed_at", order: "created_at.desc" });
