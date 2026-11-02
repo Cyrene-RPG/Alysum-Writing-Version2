@@ -33,6 +33,35 @@ small{color:#c4bfd0}
 .beta-selection-composer blockquote{margin:0 0 12px;border-left:3px solid #bb9cec;padding-left:12px;color:#e8dafa}
 .beta-selection-actions{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap}
 
+
+/* Document workspace: Alysum dark ink and lavender, with Docs-style navigation. */
+body{background:#171820;color:#f4f0e8}
+main.beta-document{max-width:1500px;margin:0 auto;padding:16px clamp(12px,2vw,28px) 70px}
+.beta-document-header{position:sticky;top:0;z-index:5;background:#1c1b27;border:1px solid #484055;border-radius:14px;padding:12px 18px;margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:0 8px 25px #0004}
+.beta-document-header .doc-symbol{font-size:1.7rem;color:#d9c8ff}
+.beta-document-header .doc-identity{flex:1;min-width:160px}
+.beta-document-header h1{font:700 clamp(1.15rem,3vw,1.55rem)/1.25 Georgia,serif;margin:0}
+.beta-document-header p{font-size:.84rem;color:#c6bcd5;margin:3px 0 0}
+.beta-document-header .doc-status{background:#30293e;border:1px solid #5a4b72;color:#e5d6ff;border-radius:99px;padding:6px 12px;font-size:.82rem}
+.beta-document-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(270px,340px);gap:20px;align-items:start}
+.beta-document-body{min-width:0}
+.beta-document-controls{display:flex;align-items:center;gap:12px;margin-bottom:14px;background:#242530;border:1px solid #464051;border-radius:12px;padding:12px 16px}
+.beta-document-controls label{font-size:.88rem;color:#d7cce5;white-space:nowrap}
+.beta-document-controls select{min-width:0;flex:1;background:#171820;color:#f4f0e8;border:1px solid #706080;border-radius:9px;padding:9px}
+.beta-document .reader-chapter{margin:0;background:#242530;border:1px solid #464051;border-radius:12px;min-height:65vh;padding:clamp(24px,5vw,70px) clamp(20px,6vw,76px);box-shadow:0 12px 32px #0003}
+.beta-document .reader-chapter h2{border-bottom:1px solid #4b4259;padding-bottom:22px;margin-bottom:30px}
+.beta-document .reader-comments{position:sticky;top:110px;max-height:calc(100vh - 125px);overflow-y:auto;overscroll-behavior:contain;margin:0;padding:18px;background:#242530;border:1px solid #464051;border-radius:12px}
+.beta-document .reader-comments>h2{font:700 1.45rem Georgia,serif;margin:0 0 14px}
+.beta-document .reader-comments .comment{background:#2d2938;border:1px solid #514661;border-radius:10px;padding:14px;margin:12px 0}
+.beta-document .reader-comments .comment blockquote{border-left:3px solid #ad92e8;padding-left:12px;margin:0 0 14px;color:#ded2ef;overflow-wrap:anywhere}
+.beta-document .reader-comments .comment p{overflow-wrap:anywhere}
+.beta-document textarea{background:#191923;color:#f5f0f9;border:1px solid #726486;border-radius:8px;padding:12px;min-height:80px}
+.beta-document textarea::placeholder{color:#bdb3c9}
+.beta-document button{min-height:42px}
+.beta-document button:focus-visible,.beta-document select:focus-visible,.beta-document textarea:focus-visible{outline:3px solid #b89af5;outline-offset:2px}
+@media(max-width:850px){.beta-document-layout{grid-template-columns:minmax(0,1fr)}.beta-document .reader-comments{position:static;max-height:none;margin-top:4px}.beta-document .reader-chapter{min-height:40vh}.beta-document-header{position:relative;top:auto}}
+@media(max-width:600px){main.beta-document{padding:10px 10px 50px}.beta-document-header{padding:12px}.beta-document-header .doc-status{font-size:.74rem}.beta-document .reader-chapter{padding:26px 20px}.beta-document .reader-comments{padding:16px}.beta-document-controls{padding:10px;flex-wrap:wrap}.beta-document-controls select{flex-basis:100%}}
+
 </style>
 </head>
 <body><main id="app"><h1>Beta Read</h1><p>Loading…</p></main>
@@ -78,8 +107,19 @@ async function renderReader(){
  guestToken = guest.guestToken;
  try { localStorage.setItem(key, guestToken); } catch {}
  const data=await call("read",{guestToken});
- app.replaceChildren(node("h1",data.title||"Beta Read"),node("p","by "+data.authorUsername),node("p","You are Guest "+guest.guestNumber));
+ app.replaceChildren();app.classList.add("beta-document");
+ const header=document.createElement("header");header.className="beta-document-header";
+ const symbol=node("span","✦");symbol.className="doc-symbol";symbol.setAttribute("aria-hidden","true");
+ const identity=document.createElement("div");identity.className="doc-identity";
+ identity.append(node("h1",data.title||"Beta Read"),node("p","by "+data.authorUsername+" · You are Guest "+guest.guestNumber));
+ const state=node("span","Read-only beta copy");state.className="doc-status";
+ header.append(symbol,identity,state);
+ const layout=document.createElement("div");layout.className="beta-document-layout";
+ const body=document.createElement("div");body.className="beta-document-body";
+ const controls=document.createElement("div");controls.className="beta-document-controls";
+ const chapterLabel=node("label","Chapter");chapterLabel.htmlFor="beta-chapter-select";
  const selector=document.createElement("select");
+ selector.id="beta-chapter-select";
  selector.setAttribute("aria-label","Choose chapter");
  (data.chapters||[]).forEach((chapter,i)=>{const option=document.createElement("option");option.value=String(i);option.textContent=chapter.title;selector.append(option);});
  const article=node("article","");article.className="reader-chapter";
@@ -100,7 +140,9 @@ async function renderReader(){
   }
  }
  selector.addEventListener("change",()=>void show().catch(e=>error(e.message)));
- app.append(selector,article,comments);
+ controls.append(chapterLabel,selector);
+ body.append(controls,article);layout.append(body,comments);
+ app.append(header,layout);
  await show();
 }
 async function start(){
