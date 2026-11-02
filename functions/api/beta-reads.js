@@ -139,6 +139,11 @@ export async function onRequest({ request, env }) {
             }
         }
         if (action === "preview") return json({ id: read.id, authorUsername: read.author_username, status: read.status });
+        if (action === "read" || action === "chapter-threads") {
+            const guestHash = /^[a-f\\d]{64}$/.test(String(body.guestToken || "")) ? await sha(body.guestToken) : "";
+            const guest = (await rows(env, "snippet_beta_guests", { beta_read_id: `eq.${read.id}`, guest_token_hash: `eq.${guestHash}`, select: "id,acknowledged_at" }))[0];
+            if (!guest?.acknowledged_at) return fail("Copyright acknowledgment required.", 403);
+        }
         if (action === "read") {
             const chapters = await rows(env, "snippet_beta_chapters", { beta_read_id: `eq.${read.id}`, select: "id,title,content,ordinal", order: "ordinal.asc" });
             return json({ id: read.id, title: read.title, authorUsername: read.author_username, chapters });
