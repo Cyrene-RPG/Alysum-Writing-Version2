@@ -32,10 +32,24 @@ export async function handleBetaGuestAction({ action, body, read, rows, insert, 
     if (action === "comment") {
         const chapter = (await rows("snippet_beta_chapters", { beta_read_id: `eq.${betaId}`, id: `eq.${body.chapterId}`, select: "id,content" }))[0];
         if (!chapter) throw new Error("Chapter not found.");
-        const plain = String(chapter.content).replace(/<[^>]*>/g, "");
+        // Decode common HTML entities and mirror the reader's text-node stream.
+        const plain = String(chapter.content)
+            .replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi, "")
+            .replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi, "")
+            .replace(/<[^>]*>/g, "")
+            .replace(/&(#x[0-9a-f]+|#\\d+|amp|lt|gt|quot|apos|nbsp);/gi, (entity, code) => {
+                const named = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: "\\u00a0" };
+                if (code[0] === "#") {
+                    const number = code[1]?.toLowerCase() === "x" ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10);
+                    return Number.isInteger(number) && number > 0 && number <= 0x10ffff ? String.fromCodePoint(number) : entity;
+                }
+                return named[code.toLowerCase()] || entity;
+            });
         const start = Number(body.startOffset), end = Number(body.endOffset);
+        const selectedQuote = String(body.quote || "");
         if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end <= start || end > plain.length || end - start > 2000) throw new Error("Select a passage to comment on.");
-        const thread = await insert("snippet_beta_threads", { beta_read_id: betaId, chapter_id: chapter.id, quote: plain.slice(start, end), start_offset: start, end_offset: end });
+        if (!selectedQuote || selectedQuote !== plain.slice(start, end)) throw new Error("Selection changed. Highlight the passage again.");
+        const thread = await insert("snippet_beta_threads", { beta_read_id: betaId, chapter_id: chapter.id, quote: selectedQuote, start_offset: start, end_offset: end });
         threadId = thread.id;
     } else {
         const thread = (await rows("snippet_beta_threads", { beta_read_id: `eq.${betaId}`, id: `eq.${threadId}`, select: "id" }))[0];
