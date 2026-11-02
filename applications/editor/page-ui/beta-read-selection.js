@@ -4,13 +4,19 @@ export function chapterSelection(prose) {
     if (!selection || selection.isCollapsed || !selection.rangeCount) return null;
     const range = selection.getRangeAt(0);
     if (!prose.contains(range.startContainer) || !prose.contains(range.endContainer)) return null;
-    const prefix = range.cloneRange();
-    prefix.selectNodeContents(prose);
-    prefix.setEnd(range.startContainer, range.startOffset);
-    const startOffset = prefix.toString().length;
-    const quote = range.toString();
+    // Use the same text-node coordinate system as the highlight renderer.
+    // Range.toString() may insert newlines between block elements on mobile.
+    const walker = document.createTreeWalker(prose, NodeFilter.SHOW_TEXT);
+    let node, offset = 0, startOffset = null, endOffset = null;
+    while ((node = walker.nextNode())) {
+        if (node === range.startContainer) startOffset = offset + range.startOffset;
+        if (node === range.endContainer) endOffset = offset + range.endOffset;
+        offset += node.textContent.length;
+    }
+    if (startOffset === null || endOffset === null || endOffset <= startOffset) return null;
+    const quote = prose.textContent.slice(startOffset, endOffset);
     if (!quote.trim() || quote.length > 2000) return null;
-    return { startOffset, endOffset: startOffset + quote.length, quote };
+    return { startOffset, endOffset, quote };
 }
 export function markBetaAnchors(prose, threads) {
     const all = (threads || []).filter(t => Number.isInteger(t.startOffset) && Number.isInteger(t.endOffset) && t.endOffset > t.startOffset);
