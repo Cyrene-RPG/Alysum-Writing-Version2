@@ -58,7 +58,7 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
         if (!captured) { status.textContent = "Highlight a passage first."; return; }
         button.disabled = true;
         try {
-            await send("comment", { chapterId: chapter.id, startOffset: captured.startOffset, endOffset: captured.endOffset, message: input.value });
+            await send("comment", { chapterId: chapter.id, startOffset: captured.startOffset, endOffset: captured.endOffset, quote: captured.quote, message: input.value });
             composer.hidden = true;
             captured = null;
             toolbar.hidden = true;
