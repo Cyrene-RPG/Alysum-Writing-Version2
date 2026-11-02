@@ -46,8 +46,13 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
     prose.addEventListener("keyup", capture);
     toolbarButton.addEventListener("pointerdown", event => event.preventDefault());
     toolbarButton.addEventListener("click", () => {
+        // Mobile selection handles may move after the last selectionchange event.
+        // Capture the actual final range when Comment is tapped.
+        const finalSelection = chapterSelection(prose);
+        if (finalSelection) captured = finalSelection;
         if (!captured) return;
         selectedQuote.textContent = captured.quote;
+        status.textContent = "Check the quoted passage above before posting.";
         composer.hidden = false;
         toolbar.hidden = true;
         composer.scrollIntoView({ behavior: "smooth", block: "nearest" });
