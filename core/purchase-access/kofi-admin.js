@@ -30,7 +30,7 @@ export async function handleKofiAdmin(request,env,{fetcher=fetch}={}){
   const body=await request.json();
   if(body.action==='connectAccount'){
    const secret=String(body.verificationToken||'').trim();
-   if(!/^[a-z0-9-]{20,128}$/i.test(secret))return response({error:'Invalid Ko-fi verification token'},400);
+   if(!/^[\x21-\x7e]{16,256}$/.test(secret))return response({error:'Invalid Ko-fi verification token'},400);
    const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(secret))),b=>b.toString(16).padStart(2,'0')).join('');
    const other=await db('kofi_author_accounts?token_sha256=eq.'+digest+'&select=owner_id&limit=1');
    if(other.length&&other[0].owner_id!==member.id)return response({error:'This Ko-fi account is connected to another author'},409);
