@@ -12,7 +12,7 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
     toolbarButton.type = "button";
     toolbarButton.textContent = "✎ Comment";
     toolbar.append(toolbarButton);
-    host.prepend(toolbar);
+    document.body.append(toolbar);
     const composer = document.createElement("div");
     composer.className = "beta-selection-composer";
     composer.hidden = true;
@@ -42,6 +42,7 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
     };
     document.addEventListener("selectionchange", capture);
     prose.addEventListener("pointerup", capture);
+    prose.addEventListener("touchend", () => setTimeout(capture, 180), { passive: true });
     prose.addEventListener("keyup", capture);
     toolbarButton.addEventListener("pointerdown", event => event.preventDefault());
     toolbarButton.addEventListener("click", () => {
@@ -50,7 +51,7 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
         composer.hidden = false;
         toolbar.hidden = true;
         composer.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        input.focus();
+        if (!matchMedia("(pointer: coarse)").matches) input.focus();
     });
     cancel.addEventListener("click", () => { composer.hidden = true; captured = null; toolbar.hidden = true; });
     button.addEventListener("click", async () => {
@@ -62,6 +63,7 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
             captured = null;
             toolbar.hidden = true;
             document.removeEventListener("selectionchange", capture);
+            toolbar.remove();
             await reload();
         } catch (error) { status.textContent = error.message; }
         finally { button.disabled = false; }
