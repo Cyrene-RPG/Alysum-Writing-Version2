@@ -19,7 +19,20 @@ export function chapterSelection(prose) {
     return { startOffset, endOffset, quote };
 }
 export function markBetaAnchors(prose, threads) {
-    const all = (threads || []).filter(t => Number.isInteger(t.startOffset) && Number.isInteger(t.endOffset) && t.endOffset > t.startOffset);
+    // Anchor to the exact saved quote, not stale HTML-derived offsets.
+    const chapterText = prose.textContent || "";
+    const all = (threads || []).map(thread => {
+        const quote = String(thread.quote || "");
+        if (!quote) return null;
+        let found = chapterText.indexOf(quote);
+        let best = -1, distance = Infinity;
+        while (found !== -1) {
+            const delta = Math.abs(found - Number(thread.startOffset || 0));
+            if (delta < distance) { best = found; distance = delta; }
+            found = chapterText.indexOf(quote, found + 1);
+        }
+        return best === -1 ? null : { ...thread, startOffset: best, endOffset: best + quote.length };
+    }).filter(Boolean);
     if (!all.length) return;
     const walker = document.createTreeWalker(prose, NodeFilter.SHOW_TEXT);
     const nodes = [];
