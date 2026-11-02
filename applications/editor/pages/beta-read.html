@@ -19,6 +19,7 @@ small{color:#c4bfd0}
 </head>
 <body><main id="app"><h1>Beta Read</h1><p>Loading…</p></main>
 <script type="module">
+import { mountBetaFeedback } from "/applications/editor/page-ui/beta-read-feedback.js";
 import { mountBetaReadGate } from "/applications/editor/page-ui/beta-read-gate.js";
 const app=document.getElementById("app");
 const token=new URL(location.href).searchParams.get("token");
@@ -30,9 +31,15 @@ async function call(action,body={}){
  return data;
 }
 function node(tag,text){const element=document.createElement(tag);element.textContent=text;return element;}
+let guestToken = "";
 async function renderReader(){
+ const key = "alysum-beta-guest:" + token;
+ try { guestToken = localStorage.getItem(key) || ""; } catch {}
+ const guest = await call("join", {guestToken});
+ guestToken = guest.guestToken;
+ try { localStorage.setItem(key, guestToken); } catch {}
  const data=await call("read");
- app.replaceChildren(node("h1",data.title||"Beta Read"),node("p","by "+data.authorUsername));
+ app.replaceChildren(node("h1",data.title||"Beta Read"),node("p","by "+data.authorUsername),node("p","You are Guest "+guest.guestNumber));
  const selector=document.createElement("select");
  selector.setAttribute("aria-label","Choose chapter");
  (data.chapters||[]).forEach((chapter,i)=>{const option=document.createElement("option");option.value=String(i);option.textContent=chapter.title;selector.append(option);});
@@ -41,9 +48,10 @@ async function renderReader(){
  async function show(){
   const chapter=data.chapters[Number(selector.value)||0];if(!chapter)return;
   article.replaceChildren(node("h2",chapter.title),node("div",chapter.content));
-  comments.replaceChildren(node("h2","Comments"));
+  comments.replaceChildren();
   const threads=await call("chapter-threads",{chapterId:chapter.id});
-  for(const thread of threads.threads||[]){
+  mountBetaFeedback({host:comments,chapter,threads:threads.threads||[],send:(action,payload)=>call(action,{...payload,guestToken}),reload:show});
+  for(const thread of []){
    const item=document.createElement("div");item.className="comment";
    item.append(node("small",thread.quote||"Chapter feedback"));
    for(const comment of thread.comments||[])item.append(node("p",(comment.authorLabel||"Guest")+": "+comment.body));
