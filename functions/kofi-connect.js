@@ -15,6 +15,11 @@ const page = `<!doctype html>
 <label>Ko-fi product link <input id="product" type="url" placeholder="https://ko-fi.com/s/1034cbe6ff"></label>
 <label><input id="active" type="checkbox" style="width:auto"> Activate this Ko-fi product for automatic purchase-code delivery</label><button id="save">Save product connection</button><p id="productStatus" role="status" aria-live="polite"></p><p id="existing"></p>
 </section></div>
+<script>
+window.addEventListener('error',e=>{const s=document.getElementById('status');if(s)s.textContent='Page error: '+(e.message||'Unknown script error')});
+window.addEventListener('unhandledrejection',e=>{const s=document.getElementById('status');if(s)s.textContent='Connection error: '+(e.reason?.message||String(e.reason||'Unknown error'))});
+setTimeout(()=>{const s=document.getElementById('status');if(s&&s.textContent==='Checking sign-in…')s.textContent='Sign-in is taking too long. Please reload; if this persists, the sign-in script is not loading.'},10000);
+</script>
 <script type="module">
 let supabase;
 const timeout=(promise,ms,message)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(Error(message)),ms))]);
@@ -38,6 +43,6 @@ async function load(preferredPassId){
 }
 el('account').onclick=async()=>{try{el('account').disabled=true;await api('POST',{action:'connectAccount',verificationToken:el('secret').value});el('secret').value='';await load()}catch(e){status(e.message);el('accountStatus').textContent=e.message}finally{el('account').disabled=false}};
 el('save').onclick=async()=>{try{el('save').disabled=true;const passId=el('pass').value;const passTitle=el('pass').selectedOptions[0]?.textContent||'selected pass';await api('POST',{passId,productUrl:el('product').value,enabled:el('active').checked});await load(passId);status('Saved Ko-fi product connection to '+passTitle+'. '+(el('active').checked?'Mapping enabled.':'Mapping inactive.'));el('productStatus').textContent=el('status').textContent}catch(e){status(e.message);el('productStatus').textContent=e.message}finally{el('save').disabled=false}};
-timeout(import('/core/authentication/client.js'),15000,'Could not load Alysum sign-in. Refresh the page.').then(m=>{supabase=m.supabase;return load()}).catch(e=>status('Unable to load Ko-fi connection: '+e.message));
+timeout(import('/core/authentication/client.js?v=kofi-fix-4'),15000,'Could not load Alysum sign-in. Refresh the page.').then(m=>{supabase=m.supabase;return load()}).catch(e=>status('Unable to load Ko-fi connection: '+e.message));
 </script></html>`;
 export const onRequestGet=()=>new Response(page,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'}});
