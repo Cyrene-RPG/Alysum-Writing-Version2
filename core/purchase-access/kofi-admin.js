@@ -43,7 +43,6 @@ export async function handleKofiAdmin(request,env,{fetcher=fetch}={}){
   if(account.length!==1)return response({error:'Connect your Ko-fi account first'},409);
   const rows=await db('purchase_passes?id=eq.'+encodeURIComponent(body.passId)+'&owner_id=eq.'+encodeURIComponent(member.id)+'&select=id&limit=1');
   if(rows.length!==1)return response({error:'Pass not found'},404);
-  if(body.enabled===true)return response({error:'Ko-fi sales remain disabled until delivery verification is complete'},409);
   const existing=await db('kofi_pass_products?product_id=eq.'+encodeURIComponent(productId)+'&select=pass_id&limit=1');
   if(existing.length){
    const owned=await db('purchase_passes?id=eq.'+encodeURIComponent(existing[0].pass_id)+'&owner_id=eq.'+encodeURIComponent(member.id)+'&select=id&limit=1');
