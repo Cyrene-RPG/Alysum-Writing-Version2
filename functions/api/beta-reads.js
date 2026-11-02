@@ -62,7 +62,7 @@ async function threadsForChapter(env, betaId, chapterId) {
     return threads.map(t => ({ id: t.id, quote: t.quote, startOffset: t.start_offset, endOffset: t.end_offset, resolvedAt: t.resolved_at, comments: comments.filter(c => c.thread_id === t.id).map(c => ({
         id: c.id, parentCommentId: c.parent_comment_id, body: c.deleted_at ? "[Comment removed]" : c.body,
         authorLabel: c.author_id ? "Author" : labels.get(c.guest_id) || "Guest", guestId: c.guest_id, deleted: Boolean(c.deleted_at), createdAt: c.created_at,
-    })) }));
+    })) })).filter(thread => thread.comments.some(comment => !comment.deleted));
 }
 export async function onRequest({ request, env }) {
     if (request.method !== "POST") return fail("Method not allowed.", 405);
