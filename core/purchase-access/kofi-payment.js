@@ -60,6 +60,20 @@ export async function handleKofiPayment(request,env,{fetcher=fetch}={}){
    else if(/^42[0-9A-Z]{3}$/.test(code))rejection='database_schema_error';
   }catch{/* Keep the generic category for non-JSON errors. */}
  }
+ // Diagnose a rejected product without storing buyer information, product IDs,
+ // transaction IDs, webhook secrets, or request bodies. This is read-only and
+ // only runs after a failed registration.
+ if(!res.ok&&rejection==='unknown_product_or_currency'){
+  try{
+   const mapped=await fetcher(env.SUPABASE_URL+'/rest/v1/kofi_pass_products?select=product_id,enabled&product_id=in.('+items.map(x=>encodeURIComponent('"'+x.product_id.replace(/"/g,'')+'"')).join(',')+')',{headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY}});
+   if(mapped.ok){
+    const rows=await mapped.json();
+    const ids=new Set(rows.filter(x=>x.enabled===true).map(x=>x.product_id));
+    if(items.some(x=>!ids.has(x.product_id)))rejection='unmapped_or_disabled_product';
+    else rejection='mapped_product_pass_or_currency_mismatch';
+   }
+  }catch{/* Diagnostics must never affect webhook response. */}
+ }
  diagnostic(res.ok?'order_registered':'registration_failed',res.ok?{}:{http_status:res.status,reason:rejection});
  await record(res.ok?'order_registered':'registration_failed',rejection,res.status);
  return res.ok?reply({accepted:true}):reply({error:'Could not register verified order'},503);
