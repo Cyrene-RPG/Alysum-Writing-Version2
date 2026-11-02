@@ -17,12 +17,12 @@ function db(env, table, { method = "GET", query = {}, body, prefer = "" } = {}) 
 }
 async function rows(env, table, query) {
     const response = await db(env, table, { query });
-    if (!response.ok) throw new Error("Database unavailable.");
+    if (!response.ok) { const detail = await response.json().catch(() => ({})); console.error("Beta Read query failed", table, response.status, detail.code); throw new Error(`Beta Read database query failed (HTTP ${response.status}).`); }
     return response.json();
 }
 async function insert(env, table, body) {
     const response = await db(env, table, { method: "POST", body, prefer: "return=representation" });
-    if (!response.ok) throw new Error("Could not save beta read.");
+    if (!response.ok) { const detail = await response.json().catch(() => ({})); console.error("Beta Read insert failed", table, response.status, detail.code, detail.message); throw new Error(`Beta Read database insert failed (${table}, HTTP ${response.status}${detail.code ? `, ${detail.code}` : ""}).`); }
     return (await response.json())[0];
 }
 async function update(env, table, query, body) {
@@ -155,6 +155,6 @@ export async function onRequest({ request, env }) {
         }
         return fail("Unknown action.");
     } catch (error) {
-        return fail(error?.message === "Database unavailable." ? "Beta Read database is not ready." : "Beta Read request failed.", 503);
+        console.error("Beta Read API failed", action, error?.message); return fail(error?.message || "Beta Read request failed.", 503);
     }
 }
