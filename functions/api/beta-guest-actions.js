@@ -1,5 +1,5 @@
 /** Public Beta Read guest actions. Called only after link-token validation. */
-export async function handleBetaGuestAction({ action, body, read, rows, insert, sha, random }) {
+export async function handleBetaGuestAction({ action, body, read, rows, insert, update, sha, random }) {
     const betaId = read.id;
     if (action === "join") {
         const token = /^[a-f\d]{64}$/.test(String(body.guestToken || "")) ? body.guestToken : random();
@@ -11,11 +11,19 @@ export async function handleBetaGuestAction({ action, body, read, rows, insert, 
         }
         return { guestToken: token, guestNumber: guest.guest_number };
     }
-    if (action !== "comment" && action !== "reply") return null;
+    if (!["comment", "reply", "delete-comment"].includes(action)) return null;
     if (!/^[a-f\d]{64}$/.test(String(body.guestToken || ""))) throw new Error("Guest identity required.");
     const hash = await sha(body.guestToken);
     const guest = (await rows("snippet_beta_guests", { beta_read_id: `eq.${betaId}`, guest_token_hash: `eq.${hash}`, select: "id" }))[0];
     if (!guest) throw new Error("Guest identity not found.");
+    if (action === "delete-comment") {
+        const id = String(body.commentId || "");
+        if (!/^[a-f0-9-]{36}$/i.test(id)) throw new Error("Invalid comment.");
+        const filters = { id: "eq." + id, beta_read_id: "eq." + betaId, guest_id: "eq." + guest.id, deleted_at: "is.null" };
+        const changed = await update("snippet_beta_comments", filters, { body: "[Comment removed]", deleted_at: new Date().toISOString() });
+        if (!changed.length) throw new Error("Comment not found or not yours.");
+        return { deleted: true };
+    }
     const message = String(body.message || "").trim();
     if (!message || message.length > 4000) throw new Error("Comment must contain 1–4000 characters.");
     const recent = await rows("snippet_beta_comments", { guest_id: `eq.${guest.id}`, select: "created_at", order: "created_at.desc", limit: "1" });
