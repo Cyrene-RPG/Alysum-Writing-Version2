@@ -2,35 +2,23 @@ import { listBetaReadChapters, prepareBetaReadSnapshot } from "./beta-read-snaps
 
 /** Isolated Beta Read picker; does not alter Image or Reading Link flows. */
 export function mountBetaReadPicker({ host, getBook, getAuthor, api }) {
-    if (!document.querySelector('link[data-beta-picker-style]')) {
-        const sheet = document.createElement("link");
-        sheet.rel = "stylesheet";
-        sheet.href = "/applications/editor/page-ui/beta-read-picker.css";
-        sheet.dataset.betaPickerStyle = "true";
-        document.head.append(sheet);
-    }
     const panel = document.createElement("section");
     panel.hidden = true;
     panel.className = "quote-beta-panel";
     const heading = document.createElement("h3");
     heading.textContent = "Beta Read";
     const hint = document.createElement("p");
-    hint.className = "beta-intro";
     hint.textContent = "Select the chapters you want guests to read and comment on. Your original manuscript stays private and unchanged.";
-    const choices = document.createElement("div");
-    choices.className = "beta-chapters";
-    choices.setAttribute("role", "group");
-    choices.setAttribute("aria-label", "Chapters to share");
-    const count = document.createElement("span");
-    count.className = "beta-count";
+    const choices = document.createElement("fieldset");
+    const legend = document.createElement("legend");
+    legend.textContent = "Chapters";
+    choices.append(legend);
     const create = document.createElement("button");
     create.type = "button";
     create.className = "quote-button quote-primary";
     create.textContent = "Create beta read";
-    create.classList.add("beta-create");
     const result = document.createElement("div");
     result.hidden = true;
-    result.className = "beta-result";
     const url = document.createElement("input");
     url.readOnly = true;
     url.setAttribute("aria-label", "Beta Read link");
@@ -38,43 +26,31 @@ export function mountBetaReadPicker({ host, getBook, getAuthor, api }) {
     copy.type = "button";
     copy.className = "quote-button";
     copy.textContent = "Copy link";
-    const linkRow = document.createElement("div");
-    linkRow.className = "beta-link-row";
-    linkRow.append(url, copy);
-    const ready = document.createElement("strong");
-    ready.textContent = "Your reading link is ready";
-    const note = document.createElement("p");
-    note.className = "beta-note";
-    note.textContent = "Anyone with this link can read the selected chapters after accepting your copyright notice.";
-    result.append(ready, linkRow, note);
+    result.append(url, copy);
     const status = document.createElement("p");
     status.setAttribute("role", "status");
-    status.className = "beta-status";
-    panel.append(heading, hint, count, choices, create, result, status);
+    status.className = "quote-hint";
+    panel.append(heading, hint, choices, create, result, status);
     host.append(panel);
     function open() {
         panel.hidden = false;
         result.hidden = true;
         status.textContent = "";
-        choices.replaceChildren();
+        choices.replaceChildren(legend);
         for (const chapter of listBetaReadChapters(getBook())) {
             const label = document.createElement("label");
-            label.className = "beta-chapter";
+            label.className = "quote-check";
             const check = document.createElement("input");
             check.type = "checkbox";
             check.value = chapter.id;
             check.addEventListener("change", update);
-            const name = document.createElement("span");
-            name.textContent = chapter.title;
-            label.append(check, name);
+            label.append(check, document.createTextNode(" " + chapter.title));
             choices.append(label);
         }
         update();
     }
     function update() {
-        const selected = choices.querySelectorAll("input:checked").length;
-        count.textContent = selected ? selected + " chapters selected" : "Choose at least one chapter";
-        create.disabled = !api || !selected;
+        create.disabled = !api || !choices.querySelector("input:checked");
         if (!api) status.textContent = "Beta Read storage is not configured.";
     }
     create.addEventListener("click", async () => {
