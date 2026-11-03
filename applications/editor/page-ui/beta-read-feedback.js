@@ -1,5 +1,5 @@
 import { chapterSelection, markBetaAnchors } from "./beta-read-selection.js";
-export function mountBetaFeedback({ host, prose, chapter, threads, send, reload }) {
+export function mountBetaFeedback({ host, prose, chapter, threads, suggestions = [], send, reload }) {
     const heading = document.createElement("h2");
     heading.textContent = "Feedback";
     host.append(heading);
@@ -11,7 +11,10 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
     const toolbarButton = document.createElement("button");
     toolbarButton.type = "button";
     toolbarButton.textContent = "✎ Comment";
-    toolbar.append(toolbarButton);
+    const suggestButton = document.createElement("button");
+    suggestButton.type = "button";
+    suggestButton.textContent = "✦ Suggest edit";
+    toolbar.append(toolbarButton, suggestButton);
     toolbar.setAttribute("role", "toolbar");
     toolbar.setAttribute("aria-label", "Selected passage actions");
     document.body.append(toolbar);
@@ -31,6 +34,10 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
     const input = document.createElement("textarea");
     input.placeholder = "Write feedback about this passage…";
     input.setAttribute("aria-label", "Comment on highlighted text");
+    const replacement = document.createElement("textarea");
+    replacement.placeholder = "Proposed replacement (leave empty to suggest deletion)…";
+    replacement.setAttribute("aria-label", "Suggested replacement text");
+    replacement.hidden = true;
     const actions = document.createElement("div");
     actions.className = "beta-selection-actions";
     const button = document.createElement("button");
@@ -42,7 +49,24 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
     actions.append(button, cancel);
     const status = document.createElement("p");
     status.setAttribute("role", "status");
-    composer.append(selectedQuote, input, actions, status);
+    composer.append(selectedQuote, replacement, input, actions, status);
+    let mode = "comment";
+    const openComposer = (nextMode) => {
+        const finalSelection = chapterSelection(prose);
+        if (finalSelection) captured = finalSelection;
+        if (!captured) return;
+        mode = nextMode;
+        selectedQuote.textContent = captured.quote;
+        replacement.hidden = mode !== "suggest";
+        input.placeholder = mode === "suggest" ? "Optional note explaining your revision…" : "Write feedback about this passage…";
+        input.setAttribute("aria-label", mode === "suggest" ? "Optional suggestion note" : "Comment on highlighted text");
+        button.textContent = mode === "suggest" ? "Submit suggestion" : "Post comment";
+        status.textContent = "Review the selected passage before submitting.";
+        composer.hidden = false;
+        toolbar.hidden = true;
+        composer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        if (!matchMedia("(pointer: coarse)").matches) (mode === "suggest" ? replacement : input).focus();
+    };
     host.append(composer);
     let captured = null;
     const capture = () => {
@@ -60,25 +84,20 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
     window.addEventListener("scroll", hideToolbar, { passive: true });
     window.addEventListener("resize", hideToolbar);
     toolbarButton.addEventListener("pointerdown", event => event.preventDefault());
-    toolbarButton.addEventListener("click", () => {
-        // Mobile selection handles may move after the last selectionchange event.
-        // Capture the actual final range when Comment is tapped.
-        const finalSelection = chapterSelection(prose);
-        if (finalSelection) captured = finalSelection;
-        if (!captured) return;
-        selectedQuote.textContent = captured.quote;
-        status.textContent = "Check the quoted passage above before posting.";
-        composer.hidden = false;
-        toolbar.hidden = true;
-        composer.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        if (!matchMedia("(pointer: coarse)").matches) input.focus();
-    });
+    suggestButton.addEventListener("pointerdown", event => event.preventDefault());
+    toolbarButton.addEventListener("click", () => openComposer("comment"));
+    suggestButton.addEventListener("click", () => openComposer("suggest"));
     cancel.addEventListener("click", () => { composer.hidden = true; captured = null; toolbar.hidden = true; });
     button.addEventListener("click", async () => {
         if (!captured) { status.textContent = "Highlight a passage first."; return; }
         button.disabled = true;
         try {
-            await send("comment", { chapterId: chapter.id, startOffset: captured.startOffset, endOffset: captured.endOffset, quote: captured.quote, message: input.value });
+            if (mode === "suggest") {
+                if (replacement.value === captured.quote) throw new Error("Your proposed wording must differ from the selected passage.");
+                await send("suggest", { chapterId: chapter.id, startOffset: captured.startOffset, endOffset: captured.endOffset, quote: captured.quote, replacement: replacement.value, note: input.value });
+            } else {
+                await send("comment", { chapterId: chapter.id, startOffset: captured.startOffset, endOffset: captured.endOffset, quote: captured.quote, message: input.value });
+            }
             composer.hidden = true;
             captured = null;
             toolbar.hidden = true;
@@ -90,6 +109,28 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
         } catch (error) { status.textContent = error.message; }
         finally { button.disabled = false; }
     });
+    for (const suggestion of suggestions) {
+        const box = document.createElement("section");
+        box.className = "comment beta-suggestion";
+        const title = document.createElement("strong");
+        title.textContent = "✦ " + (suggestion.authorLabel || "Reader") + " · " + suggestion.status;
+        const original = document.createElement("blockquote");
+        original.textContent = suggestion.quote;
+        const proposed = document.createElement("p");
+        const del = document.createElement("del");
+        del.textContent = suggestion.quote;
+        const ins = document.createElement("ins");
+        ins.textContent = suggestion.replacement || "∅ (delete selection)";
+        ins.style.cssText = "color:#d9b9ff;text-decoration:none;background:#59416b;padding:2px 4px;border-radius:4px";
+        proposed.append(del, document.createTextNode(" → "), ins);
+        box.append(title, original, proposed);
+        if (suggestion.note) {
+            const note = document.createElement("p");
+            note.textContent = suggestion.note;
+            box.append(note);
+        }
+        host.append(box);
+    }
     for (const thread of threads) {
         const box = document.createElement("section");
         box.className = "comment";
