@@ -149,7 +149,7 @@ function openBook(id){
 const b=book(id),u=user(b.author),protectedBook=u.name===actor();
 modal(b.title,`<div class="md-row"><div class="md-row-start"><span class="md-book-spine">${esc(b.title[0])}</span><div><strong>${esc(u.name)}</strong><p class="md-muted">${b.genre} · ${b.chapters} published chapters</p></div></div>${badge(b.status)}</div><p class="md-muted">Public listing and published-content review only. An author’s private drafts remain private.</p>${protectedBook?'<div class="md-callout amber">This is your book. Another staff member must handle moderation actions.</div>':''}<h3>Related cases</h3>${cases.filter(c=>c.book===id).map(c=>`<div class="md-item md-row">${button(c.id+' · '+c.reason,'case',c.id,'md-text-button')}${badge(c.status)}</div>`).join('')||'<p class="md-muted">No reports for this book.</p>'}<div class="md-actions">${!protectedBook?button('Request corrections','book-message',b.id)+(b.status==='Visible'?button('Hide pending review','book-action','hide:'+id):button('Restore visibility','book-action','restore:'+id))+(state.role==='admin'&&b.status!=='Removed'?button('Remove public listing','book-action','remove:'+id,'md-danger'):''):''}</div><p class="md-muted md-small">Removing a public listing does not delete the author’s manuscript. Visibility changes are recorded and reversible.</p>`);
 }
-function messageForm(userId='u1',bookId='',template='custom',caseId=''){
+function messageForm(userId='u1',bookId='',template='review',caseId=''){
 const u=user(userId),booksForUser=books.filter(b=>b.author===userId),b=book(bookId)||booksForUser[0];
 modal('New official message',`<form id="md-message-form" data-case="${esc(caseId)}"><label for="md-message-user">To</label><select id="md-message-user">${users.map(x=>`<option value="${x.id}" ${x.id===userId?'selected':''}>${esc(x.name)}</option>`).join('')}</select><label for="md-message-book">Related book</label><select id="md-message-book"><option value="">Account message</option>${booksForUser.map(x=>`<option value="${x.id}" ${x.id===b?.id?'selected':''}>${esc(x.title)}</option>`).join('')}</select><label for="md-template">Message template</label><select id="md-template">${Object.entries(templates).map(([v,t])=>`<option value="${v}" ${v===template?'selected':''}>${t.label}</option>`).join('')}</select><label for="md-subject">Subject</label><input id="md-subject" maxlength="160" required><label for="md-message-text">Message to the user</label><textarea id="md-message-text" maxlength="4000" required rows="8"></textarea><label for="md-message-deadline">Requested response date (optional)</label><input id="md-message-deadline" type="date"><div class="md-callout">Sent as <strong>Alysum Moderation</strong> to the user’s on-site inbox. Reporter details and private case notes are not attached.</div><p id="md-form-error" class="md-error" role="alert"></p><div class="md-actions"><button type="submit" class="md-primary">Send official message</button>${button('Cancel','close-dialog')}</div></form>`);
 fillTemplate();
@@ -157,6 +157,7 @@ fillTemplate();
 function fillTemplate(){
 const t=templates[$('#md-template').value],u=user($('#md-message-user').value),b=book($('#md-message-book').value);
 $('#md-subject').value=t.subject+(b?' — '+b.title:'');$('#md-message-text').value=t.text.replaceAll('{name}',u.name.split(' ')[0]).replaceAll('{book}',b?.title||'your account');
+const issue=$('#md-form-error');if(issue)issue.textContent='';
 }
 function accountAction(raw){
 const [action,id]=raw.split(':'),u=user(id);if(!u||u.staff||action==='ban'&&state.role!=='admin')return toast('This action is unavailable for this account.');
@@ -241,7 +242,7 @@ c.status=status;c.assigned=assignee;c.due=$('#md-case-due').value;if(note)c.note
 if(f.id==='md-message-form'){
 const uid=$('#md-message-user').value,bid=$('#md-message-book').value,subject=$('#md-subject').value.trim(),text=$('#md-message-text').value.trim(),deadline=$('#md-message-deadline').value;
 if(subject.length<3||text.length<10)return error('Add a subject and at least 10 characters of explanation.');
-if(/\[[^\]]+\]/.test(text))return error('Replace the template placeholders before sending.');
+const leftover=text.match(/\[[^\]]+\]/g);if(leftover)return error('Replace leftover fill-in notes '+leftover.join(' ')+'. Delete the square brackets after you fill those in.');
 const t=addNotice(uid,subject,text+(deadline?'\nRequested response date: '+deadline:''),bid);t.caseId=f.dataset.case||'';state.thread=t.id;go('conversations');return toast('Sample message delivered to the user inbox.');
 }
 if(f.id==='md-reply'){

@@ -4,21 +4,25 @@ import {createModeratorChatService} from '/core/moderation/chat.js';
 import {mountModeratorChat} from './chat.js';
 import {esc,$,date,label,badge,button,title,table,formShell,field,select,modal,close,toast,showError,clearPrivate,bindDialog} from './common.js';
 import {privateMessageForm,threadPrivateChrome,conversationRowKind,conversationsHeadingActions} from './direct.js';
+import {officialTemplates as templates,leftoverFillIns,leftoverFillInMessage,officialTemplateHint} from './templates.js';
 import {sendStaffEmailCode,verifyStaffEmailCode,emailCodeRetrySeconds} from '/core/moderation/email-auth.js?v=2';
 const api=createModerationService(client);
 let chat=null;
 function stopChat(){chat?.destroy();chat=null;}
 const state={view:location.pathname.includes('book-reports')?'reports':new URLSearchParams(location.search).get('view')||'dashboard',role:'',user:null,epoch:0,offset:0,filters:{},rows:[],selected:null,lastAction:Date.now(),busy:false};
 const reasons=[['','All reasons'],['suspected_ai','Suspected Use of AI'],['improper_tags','Improperly Tagged Book'],['incorrect_rating','Incorrect Age Rating'],['plagiarism','Suspected Plagiarism / Stolen Work'],['harassment','Harassment / Targeted Abuse'],['site_rules','Content Violating Site Rules'],['spam','Spam / Scam / Malicious Links'],['other','Other']];
-const templates={
- review:['Book under review','We’re reviewing your book following a reader concern. No decision has been made. We will contact you here with questions or an outcome.'],
- tags:['Please review your content warnings','Please review the tags and content warnings for your book, especially [chapter / content]. Reply here once you have checked them or if you need clarification.'],
- rating:['Age rating review','Please review the age rating for your published book. [Explain the specific concern.] Reply when you have checked the rating or if you need clarification.'],
- clarify:['Request for clarification','We received a concern about your book. No conclusion has been reached. Could you provide context about [specific concern]?'],
- warning:['Official policy warning','We are contacting you about [specific behavior] under [site rule]. Please [requested action]. You can reply here or appeal an account restriction.'],
- outcome:['Review outcome','Our review is complete. [Explain the finding, action, duration, and appeal route.]'],
- custom:['A message from Alysum Moderation','']
-};
+function applyOfficialTemplate(){
+ const t=templates[$('#mc-template')?.value];if(!t)return;
+ $('#mc-subject').value=t[0];$('#mc-message').value=t[1];
+ const hint=$('#mc-template-hint');if(hint)hint.textContent=officialTemplateHint(t[1]);
+ const issue=$('#mc-message-form [data-form-error]');if(issue)issue.textContent='';
+}
+function refreshOfficialMessageHint(){
+ const body=$('#mc-message')?.value||'';
+ const hint=$('#mc-template-hint');if(hint)hint.textContent=officialTemplateHint(body);
+ const issue=$('#mc-message-form [data-form-error]');
+ if(issue&&!leftoverFillIns(body).length)issue.textContent='';
+}
 let pendingEmail='',lastCodeSent=0,codeRetryAt=0,codeSending=false,oauthPending=sessionStorage.getItem('alysum-mod-oauth')==='1',fresh=false;
 const call=(action,payload={},key)=>api.call(action,payload,key);
 function gate(message=''){
@@ -141,9 +145,12 @@ async function reportDetail(id,eventsOffset=0){
 function messageForm(userId='',bookId='',reportId=''){
  modal('New official message',formShell('mc-message-form',
  field('mc-recipient','Recipient account ID','text',userId)+field('mc-message-book','Related book ID (optional)','text',bookId)+
- select('mc-template','Template',Object.entries(templates).map(([v,t])=>[v,t[0]]),'custom')+field('mc-subject','Subject','text','A message from Alysum Moderation')+field('mc-message','Message the user will receive')+field('mc-deadline','Response date (optional)','date')+
+ select('mc-template','Template',Object.entries(templates).map(([v,t])=>[v,t[0]]),'review')+field('mc-subject','Subject','text')+field('mc-message','Message the user will receive')+
+ '<p class="md-muted md-small" id="mc-template-hint"></p>'+
+ field('mc-deadline','Response date (optional)','date')+
  '<div class="md-callout">Sent as Alysum Moderation to the user’s on-site inbox. Visible to all staff. Private case notes and reporter identities are not attached.</div>','Send official message','data-report="'+esc(reportId)+'"'));
  $('#mc-message-book').required=false;$('#mc-deadline').required=false;
+ applyOfficialTemplate();
 }
 async function threadDetail(id,offset=0,older=[]){
  const generation=state.epoch;const data=await call('conversation',{id,offset});if(generation!==state.epoch||!state.role)return;state.selected={kind:'thread',data};
@@ -177,7 +184,8 @@ async function action(name,id){
  if(name==='ip-remove')return modal('Remove IP block',formShell('mc-ip-remove-form',field('mc-explanation','Reason for removing this block'),'Remove block','data-rule="'+esc(id)+'"'));
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-live]');if(!b)return;state.lastAction=Date.now();void action(b.dataset.live,b.dataset.id).catch(showError);});
-document.addEventListener('change',e=>{if(e.target.id==='mc-template'){const t=templates[e.target.value];$('#mc-subject').value=t[0];$('#mc-message').value=t[1];}});
+document.addEventListener('change',e=>{if(e.target.id==='mc-template')applyOfficialTemplate();});
+document.addEventListener('input',e=>{if(e.target.id==='mc-message')refreshOfficialMessageHint();});
 document.addEventListener('submit',async e=>{
  const f=e.target;if(!f.id.startsWith('mc-'))return;e.preventDefault();if(state.busy)return;state.busy=true;const token=state.epoch;const buttons=[...f.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);const issue=f.querySelector('[data-form-error]');if(issue)issue.textContent='';
  try{
@@ -193,7 +201,11 @@ document.addEventListener('submit',async e=>{
  let method,payload;const text=()=>$('#mc-explanation')?.value.trim()||'';
  if(f.id==='mc-sanction-form'){method='sanction';payload={userId:f.dataset.user,kind:$('#mc-sanction-kind').value,days:Number($('#mc-duration').value),reason:$('#mc-rule').value.trim(),body:text()};}
  if(f.id==='mc-revoke-form'){method='revoke_sanction';payload={id:f.dataset.sanction,body:text()};}
- if(f.id==='mc-message-form'){method='message';payload={userId:$('#mc-recipient').value.trim(),bookId:$('#mc-message-book').value.trim(),reportId:f.dataset.report,subject:$('#mc-subject').value.trim(),body:$('#mc-message').value.trim(),deadline:$('#mc-deadline').value};}
+ if(f.id==='mc-message-form'){
+ payload={userId:$('#mc-recipient').value.trim(),bookId:$('#mc-message-book').value.trim(),reportId:f.dataset.report,subject:$('#mc-subject').value.trim(),body:$('#mc-message').value.trim(),deadline:$('#mc-deadline').value};
+ const leftover=leftoverFillInMessage(payload.body);if(leftover)throw Error(leftover);
+ method='message';
+ }
  if(f.id==='mc-direct-form'){method='direct_message';payload={userId:$('#mc-direct-recipient').value.trim(),subject:$('#mc-direct-subject').value.trim(),body:$('#mc-direct-message').value.trim(),deadline:$('#mc-direct-deadline').value};}
  if(f.id==='mc-invite-form'){method='invite_staff';payload={threadId:state.selected.data.thread.id,staffId:$('#mc-invite-staff').value};}
  if(f.id==='mc-thread-form'){method='staff_reply';payload={threadId:state.selected.data.thread.id,body:$('#mc-reply').value.trim()};}
