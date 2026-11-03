@@ -36,3 +36,10 @@ Open `/moderation?view=chat` or choose Moderator Chat in the verified staff side
 Every history read and send checks current staff membership, signed email-code proof and the existing staff lease through the separate moderation client. Normal users and unverified, expired or revoked staff cannot read/send, including through direct RPC calls. Reads/polling never extend the idle lease. Lock, account changes, navigation and access-loss clear the room; drafts/history are not persisted in browser storage. This room is separate from author conversations and sends no user inbox notifications.
 
 `/moderation-preview?view=chat` is an isolated sample with invented staff and messages; nothing is transmitted. Validation uses `core/tests/moderation/chat-security.sql`, service tests, and `chat-ui.mjs` with external jsdom. An optional disposable runner uses `PGLITE_MODULE=... node --test core/tests/moderation/chat-database.mjs`.
+
+## Private on-site messages
+Run `supabase/live-site/supabase-moderation-direct-messages.sql` after the email-code migration (and after chat, if that is installed). Rerun it after reinstalling the Center or email-code migrations, which replace `mc_call`. No live SQL is executed by source deployment. Nothing is emailed: delivery is an `inbox_notifications` row (`moderation_message`) plus `/moderation-inbox` and the site Notifications inbox.
+
+From a user profile or Conversations, staff can send a **private message** that only they can open. Official messages stay visible to the whole staff roster. The owner may invite **one** additional current moderator; a third staff member cannot be added, and admins do not see other people’s private threads unless invited. Recipients still see branded Alysum Moderation copy with no staff account IDs. Audit rows record that a private thread started or that a second moderator was invited, never the message body.
+
+Validation uses `core/tests/moderation/direct-security.sql` and `direct.test.mjs`.

@@ -11,7 +11,7 @@ async function start(more=false){
  $('#md-nav').replaceChildren();if(!more)$('#md-screen').innerHTML=title('Moderation messages','Loading your conversations…');
  const dataInbox=await call('my_inbox',{offset:more?threads.length:0});if(generation!==epoch)return;
  threads=more?[...threads,...dataInbox.threads]:dataInbox.threads;sanctions=dataInbox.sanctions;
- $('#md-screen').innerHTML=title('Moderation messages','Official on-site conversations with Alysum staff. You can reply and appeal even while your account is suspended.')+
+ $('#md-screen').innerHTML=title('Moderation messages','On-site conversations with Alysum staff. These stay in your website inbox. You can reply and appeal even while your account is suspended.')+
  '<p id="mc-page-error" class="md-error" role="alert"></p>'+
  (sanctions.length?'<section class="md-panel"><h2>Account notices</h2>'+sanctions.map(s=>'<div class="md-item"><strong>'+esc(label(s.kind))+'</strong><p>'+esc(s.reason)+'</p><p class="md-pre">'+esc(s.explanation)+'</p><small class="md-muted">Issued '+date(s.createdAt)+' · '+(s.expiresAt?'Expires '+date(s.expiresAt):s.kind==='warning'?'Official warning':'No expiry')+'</small><div class="md-actions">'+(['pending','awaiting_information'].includes(s.appealStatus)?badge('Appeal '+label(s.appealStatus)):button('Request appeal','appeal',s.id))+'</div></div>').join('')+'</section>':'')+
  table(['Conversation','Requested response date','Updated'],threads.map(t=>[button(t.subject,'thread',t.id,'md-text-button')+(!t.recipient_read_at||new Date(t.updated_at)>new Date(t.recipient_read_at)?'<small>New message</small>':''),t.deadline||'—',date(t.updated_at)]))+(threads.length<dataInbox.total?button('Load more conversations','more'):'');

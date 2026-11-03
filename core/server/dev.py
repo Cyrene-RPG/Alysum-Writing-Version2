@@ -39,6 +39,8 @@ EXACT = {
     "/purchase-passes": "applications/studio/pages/purchase-passes.html",
     "/beta-reads": "applications/studio/pages/beta-reads.html",
     "/beta-read-document": "applications/studio/pages/beta-read-document.html",
+    "/moderation": "applications/moderation/pages/moderation.html",
+    "/moderation-inbox": "applications/moderation/pages/inbox.html",
     "/sw.js": "applications/main-site/public/sw.js",
     "/manifest.webmanifest": "applications/main-site/public/manifest.webmanifest",
     "/robots.txt": "applications/main-site/public/robots.txt",

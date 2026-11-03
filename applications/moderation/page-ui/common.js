@@ -14,5 +14,5 @@ export function modal(name,body){lastFocus=document.activeElement;$('#md-dialog-
 export function close(){if($('#md-dialog').open)$('#md-dialog').close();document.body.style.overflow='';lastFocus?.isConnected&&lastFocus.focus({preventScroll:true});}
 export function toast(text){$('#md-toast').textContent=text;$('#md-toast').hidden=false;clearTimeout(toast.timeout);toast.timeout=setTimeout(()=>$('#md-toast').hidden=true,6000);}
 export function showError(error){const target=$('[data-form-error]')||$('#mc-page-error');if(target)target.textContent=error.message||String(error);else toast(error.message||String(error));}
-export function clearPrivate(){close();$('#md-screen').replaceChildren();$('#md-nav').replaceChildren();$('#md-toast').hidden=true;}
+export function clearPrivate(){close();$('#md-screen')?.replaceChildren();$('#md-nav')?.replaceChildren();if($('#md-toast'))$('#md-toast').hidden=true;}
 export function bindDialog(){document.querySelector('[data-action="close-dialog"]')?.addEventListener('click',close);document.querySelector('#md-dialog').addEventListener('cancel',e=>{e.preventDefault();close();});}
