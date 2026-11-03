@@ -51,7 +51,7 @@ SELECT public.report_test_assert(NOT EXISTS(SELECT 1 FROM public.mc_audit WHERE 
 SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000003';
 SET request.jwt.claims='{"session_id":"10000000-0000-0000-0000-000000000003","aal":"aal1"}';
 SET ROLE authenticated;
-SELECT public.report_test_assert((SELECT count(*) FROM public.library WHERE id='book-1')=1,'author can still open the hidden listing');
+SELECT public.report_test_assert((SELECT count(*) FROM public.books WHERE id='book-1')=1,'author can still open the studio manuscript');
 SELECT public.mc_call('user_reply',jsonb_build_object('requestId','a1000000-0000-0000-0000-000000000009','threadId',current_setting('test.mc.cover'),'body','I can still reply after the listing left the public library.'));
 RESET ROLE;
 CREATE TEMP TABLE deadline_counts AS SELECT (SELECT count(*) FROM public.mc_book_visibility WHERE visibility='hidden') h,(SELECT count(*) FROM public.mc_threads WHERE deadline_enforced_at IS NOT NULL) e,(SELECT count(*) FROM public.books) b;
