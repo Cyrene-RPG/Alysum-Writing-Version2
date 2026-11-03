@@ -26,7 +26,12 @@ small{color:#c4bfd0}
 .reader-chapter .chapter-prose{user-select:text;-webkit-user-select:text}
 .reader-chapter ::selection{background:#a98cf0;color:#17121f}
 .beta-anchored-text{background:rgba(185,150,255,.36);color:inherit;border-radius:3px;cursor:pointer}
-.beta-selection-toolbar{position:sticky;bottom:14px;z-index:3;display:flex;justify-content:flex-end;padding:10px 0}
+.beta-selection-toolbar{position:fixed;top:12px;left:12px;bottom:auto;z-index:30;display:flex;align-items:center;padding:5px;background:#30293e;border:1px solid #8e76b5;border-radius:12px;box-shadow:0 10px 32px #0008}
+.beta-selection-toolbar button{min-height:36px;padding:6px 12px}
+.beta-anchored-text{transition:background .15s ease,box-shadow .15s ease}
+.beta-anchored-text:hover,.beta-anchored-text:focus-visible,.beta-anchored-text.is-active{background:rgba(191,156,255,.62);box-shadow:0 0 0 2px rgba(191,156,255,.3);outline:none}
+.beta-document .reader-comments .comment.is-active{border-color:#c4a4ff;background:#393047;box-shadow:0 0 0 1px #a68cce}
+.beta-document .reader-comments .comment:focus-visible{outline:2px solid #c4a4ff;outline-offset:2px}
 .beta-selection-toolbar[hidden],.beta-selection-composer[hidden]{display:none!important}
 .beta-selection-toolbar button{box-shadow:0 4px 18px #0008;font-weight:700}
 .beta-selection-composer{border:1px solid #8c77ad;background:#302b3d;padding:14px;border-radius:12px;margin:12px 0}
