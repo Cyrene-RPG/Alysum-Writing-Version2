@@ -173,7 +173,7 @@ async function renderReader(){
   const prose = article.querySelector(".chapter-prose");
   comments.replaceChildren();
   const threads=await call("chapter-threads",{chapterId:chapter.id,guestToken});
-  mountBetaFeedback({host:comments,prose,chapter,threads:threads.threads||[],send:(action,payload)=>call(action,{...payload,guestToken}),reload:show});
+  mountBetaFeedback({host:comments,prose,chapter,threads:threads.threads||[],suggestions:threads.suggestions||[],send:(action,payload)=>call(action,{...payload,guestToken}),reload:show});
   /* Thread rendering is handled by mountBetaFeedback. */
   for(const thread of []){
    const item=document.createElement("div");item.className="comment";
