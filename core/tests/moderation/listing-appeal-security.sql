@@ -3,11 +3,11 @@ SELECT public.report_test_assert(current_database()='moderation_test' OR current
 RESET ROLE;
 SELECT set_config('test.mc.cover',(SELECT id::text FROM public.mc_threads WHERE book_id='book-1' AND deadline_enforced_at IS NOT NULL ORDER BY deadline_enforced_at DESC LIMIT 1),false);
 SELECT public.report_test_assert(nullif(current_setting('test.mc.cover',true),'') IS NOT NULL,'listing appeal tests reuse the auto-unpublished cover conversation');
-SELECT public.report_expect_error($q$SELECT public.mc_submit_listing_appeal(current_setting('test.mc.cover')::uuid,'Please restore this listing to the public Library.')$q$,'permission denied');
 UPDATE auth.sessions SET created_at=clock_timestamp();
 SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000004';
 SET request.jwt.claims='{"session_id":"10000000-0000-0000-0000-000000000004","aal":"aal1"}';
 SET ROLE authenticated;
+SELECT public.report_expect_error($q$SELECT public.mc_submit_listing_appeal(current_setting('test.mc.cover')::uuid,'Please restore this listing to the public Library.')$q$,'permission denied');
 SELECT public.report_expect_error(format('SELECT public.mc_call(''submit_listing_appeal'',jsonb_build_object(''requestId'',gen_random_uuid(),''threadId'',%L,''body'',''Please restore this listing to the public Library.''))',current_setting('test.mc.cover')),'not available');
 RESET ROLE;
 SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000003';
