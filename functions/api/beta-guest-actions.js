@@ -37,7 +37,7 @@ export async function handleBetaGuestAction({ action, body, read, rows, insert, 
     const message = action === "suggest" ? "Suggested revision" : String(body.message || "").trim();
     if (!message || message.length > 4000) throw new Error("Comment must contain 1–4000 characters.");
     const recent = await rows("snippet_beta_comments", { guest_id: `eq.${guest.id}`, select: "created_at", order: "created_at.desc", limit: "1" });
-    const recentSuggestions = await rows("snippet_beta_suggestions", { guest_id: "eq." + guest.id, select: "created_at", order: "created_at.desc", limit: "1" });
+    const recentSuggestions = action === "suggest" ? await rows("snippet_beta_suggestions", { guest_id: "eq." + guest.id, select: "created_at", order: "created_at.desc", limit: "1" }) : [];
     const lastActivity = Math.max(
         recent[0] ? Date.parse(recent[0].created_at) : 0,
         recentSuggestions[0] ? Date.parse(recentSuggestions[0].created_at) : 0
