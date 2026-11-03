@@ -5,6 +5,7 @@ import {mountModeratorChat} from './chat.js';
 import {esc,$,date,label,badge,button,title,table,formShell,field,select,modal,close,toast,showError,clearPrivate,bindDialog} from './common.js';
 import {privateMessageForm,threadPrivateChrome,conversationRowKind,conversationsHeadingActions} from './direct.js';
 import {conversationStatusBadge,threadResolveChrome} from './resolve.js';
+import {officialBookDeadlineCallout,bookDeadlineStaffNote} from './deadline.js';
 import {officialTemplates as templates,leftoverFillIns,leftoverFillInMessage,officialTemplateHint} from './templates.js';
 import {sendStaffEmailCode,verifyStaffEmailCode,emailCodeRetrySeconds} from '/core/moderation/email-auth.js?v=2';
 const api=createModerationService(client);
@@ -150,14 +151,14 @@ function messageForm(userId='',bookId='',reportId=''){
  select('mc-template','Template',Object.entries(templates).map(([v,t])=>[v,t[0]]),'review')+field('mc-subject','Subject','text')+field('mc-message','Message the user will receive')+
  '<p class="md-muted md-small" id="mc-template-hint"></p>'+
  field('mc-deadline','Response date (optional)','date')+
- '<div class="md-callout">Sent as Alysum Moderation to the user’s on-site inbox. Visible to all staff. Private case notes and reporter identities are not attached.</div>','Send official message','data-report="'+esc(reportId)+'"'));
+ officialBookDeadlineCallout(),'Send official message','data-report="'+esc(reportId)+'"'));
  $('#mc-message-book').required=false;$('#mc-deadline').required=false;
  applyOfficialTemplate();
 }
 async function threadDetail(id,offset=0,older=[]){
  const generation=state.epoch;const data=await call('conversation',{id,offset});if(generation!==state.epoch||!state.role)return;state.selected={kind:'thread',data};
  const messages=[...data.messages,...older],isDirect=data.thread.kind==='direct';
- modal(data.thread.subject,'<p class="md-muted">To '+esc(data.recipientName)+' · '+esc(data.thread.book_id||'Account conversation')+'</p>'+threadPrivateChrome(data)+'<div class="md-messages">'+messages.map(m=>'<article class="md-message '+esc(m.side)+'"><strong>'+esc(m.side==='staff'?'Alysum Moderation':data.recipientName)+'</strong><p>'+esc(m.body)+'</p><small>'+date(m.created_at)+(m.side==='staff'?' · Staff sender: '+esc(m.sender_name):'')+'</small></article>').join('')+'</div>'+(data.thread.resolved_at?threadResolveChrome(data):formShell('mc-thread-form',field('mc-reply',isDirect?'Private reply (on-site inbox only)':'Reply as Alysum Moderation'),'Send reply')+threadResolveChrome(data))+(offset+data.messages.length<data.total?button('Load earlier messages','thread-more',String(offset+data.messages.length)):''));
+ modal(data.thread.subject,'<p class="md-muted">To '+esc(data.recipientName)+' · '+esc(data.thread.book_id||'Account conversation')+'</p>'+bookDeadlineStaffNote(data.thread)+threadPrivateChrome(data)+'<div class="md-messages">'+messages.map(m=>'<article class="md-message '+esc(m.side)+'"><strong>'+esc(m.side==='staff'?'Alysum Moderation':data.recipientName)+'</strong><p>'+esc(m.body)+'</p><small>'+date(m.created_at)+(m.side==='staff'?' · Staff sender: '+esc(m.sender_name):'')+'</small></article>').join('')+'</div>'+(data.thread.resolved_at?threadResolveChrome(data):formShell('mc-thread-form',field('mc-reply',isDirect?'Private reply (on-site inbox only)':'Reply as Alysum Moderation'),'Send reply')+threadResolveChrome(data))+(offset+data.messages.length<data.total?button('Load earlier messages','thread-more',String(offset+data.messages.length)):''));
  state.selected.messages=messages;
 }
 function sanctionForm(id){

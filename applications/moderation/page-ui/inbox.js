@@ -1,6 +1,7 @@
 import {supabase as client} from '/core/authentication/client.js';
 import {createModerationService} from '/core/moderation/service.js';
 import {esc,$,date,label,badge,button,title,table,formShell,field,modal,close,toast,showError,clearPrivate,bindDialog} from './common.js';
+import {bookDeadlineRecipientNote} from './deadline.js';
 const api=createModerationService(client);let userId='',epoch=0,threads=[],sanctions=[],opened=null,messages=[],offset=0,busy=false;
 const call=(action,payload={},key)=>api.call(action,payload,key);
 async function start(more=false){
@@ -22,6 +23,7 @@ async function openThread(id,more=false){
  const generation=epoch,data=await call('my_thread',{id,offset:more?offset:0});if(generation!==epoch)return;
  opened=data;messages=more?[...data.messages,...messages]:data.messages;offset=more?offset+data.messages.length:data.messages.length;
  modal(data.subject,(data.deadline?'<p class="md-muted">Requested response date: '+esc(data.deadline)+'</p>':'')+
+ bookDeadlineRecipientNote(data)+
  (data.resolvedAt?'<p class="md-muted">This conversation is resolved. You can still read it.</p>':'')+
  '<div class="md-messages">'+messages.map(m=>'<article class="md-message '+esc(m.side)+'"><strong>'+esc(m.side==='staff'?'Alysum Moderation':'You')+'</strong><p>'+esc(m.body)+'</p><small>'+date(m.createdAt)+'</small></article>').join('')+'</div>'+
  (data.resolvedAt?'':formShell('mc-user-reply',field('mc-user-body','Reply to moderation'),'Send reply'))+(offset<data.total?button('Load earlier messages','earlier',String(offset)):''));

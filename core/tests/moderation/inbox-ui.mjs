@@ -3,21 +3,22 @@ import test from 'node:test';import assert from 'node:assert/strict';import vm f
 const {JSDOM}=createRequire(import.meta.url)(process.env.JSDOM_MODULE||'jsdom');
 const pause=()=>new Promise(r=>setTimeout(r,5));async function until(check){for(let i=0;i<100;i++){if(check())return;await pause();}throw Error('Inbox did not settle');}
 function dialogPolyfill(el){if(typeof el.showModal==='function')return;el.open=false;el.showModal=function(){this.open=true;this.setAttribute('open','');};el.close=function(){this.open=false;this.removeAttribute('open');};}
-async function harness({signedIn=true,thread='thread-1',resolved=false}={}){
+async function harness({signedIn=true,thread='thread-1',resolved=false,bookId=null,deadline=null}={}){
  const html=await fs.readFile(new URL('../../../applications/moderation/pages/inbox.html',import.meta.url),'utf8');
  const dom=new JSDOM(html,{url:'https://alysum.test/moderation-inbox'+(thread?'?thread='+encodeURIComponent(thread):''),pretendToBeVisual:true});
  const {window}=dom;dialogPolyfill(window.document.getElementById('md-dialog'));
  const context=vm.createContext({document:window.document,window,location:window.location,history:window.history,crypto:webcrypto,setTimeout,clearTimeout,URL,URLSearchParams,Error});
  const resolvedAt=resolved?'2026-11-03T22:50:00.000Z':null;
- const threads=[{id:'thread-1',subject:'Book under review',deadline:null,updated_at:'2026-11-03T22:40:00.000Z',recipient_read_at:null,resolved_at:resolvedAt}];
- const threadRow={id:'thread-1',subject:'Book under review',deadline:null,resolvedAt,total:1,messages:[{id:'m1',side:'staff',body:'Thank you in advance!',createdAt:'2026-11-03T22:40:00.000Z'}]};
+ const threads=[{id:'thread-1',subject:'Book under review',deadline,updated_at:'2026-11-03T22:40:00.000Z',recipient_read_at:null,resolved_at:resolvedAt,book_id:bookId}];
+ const threadRow={id:'thread-1',subject:'Book under review',deadline,bookId,resolvedAt,total:1,messages:[{id:'m1',side:'staff',body:'Thank you in advance!',createdAt:'2026-11-03T22:40:00.000Z'}]};
  const calls=[];
  const clientMod=new vm.SyntheticModule(['supabase'],function(){this.setExport('supabase',{auth:{getSession:async()=>({data:{session:signedIn?{user:{id:'user-1'}}:null},error:null}),onAuthStateChange(){return {data:{subscription:{unsubscribe(){}}}};}}});},{context,identifier:'client.js'});
  const serviceMod=new vm.SyntheticModule(['createModerationService'],function(){this.setExport('createModerationService',()=>({call:async(action,payload)=>{calls.push({action,payload});if(action==='my_inbox')return {threads,sanctions:[],total:threads.length};if(action==='my_thread')return threadRow;throw Error('unexpected '+action);}}));},{context,identifier:'service.js'});
  const commonMod=new vm.SourceTextModule(await fs.readFile(new URL('../../../applications/moderation/page-ui/common.js',import.meta.url),'utf8'),{context,identifier:'common.js'});
- await clientMod.link(()=>{});await clientMod.evaluate();await serviceMod.link(()=>{});await serviceMod.evaluate();await commonMod.link(()=>{});await commonMod.evaluate();
+ const deadlineMod=new vm.SourceTextModule(await fs.readFile(new URL('../../../applications/moderation/page-ui/deadline.js',import.meta.url),'utf8'),{context,identifier:'deadline.js'});
+ await clientMod.link(()=>{});await clientMod.evaluate();await serviceMod.link(()=>{});await serviceMod.evaluate();await commonMod.link(()=>{});await commonMod.evaluate();await deadlineMod.link(()=>{});await deadlineMod.evaluate();
  const inboxMod=new vm.SourceTextModule(await fs.readFile(new URL('../../../applications/moderation/page-ui/inbox.js',import.meta.url),'utf8'),{context,identifier:'inbox.js'});
- await inboxMod.link(spec=>{if(spec.startsWith('/core/authentication/client'))return clientMod;if(spec.startsWith('/core/moderation/service'))return serviceMod;if(spec.includes('common.js'))return commonMod;throw Error('unexpected import '+spec);});
+ await inboxMod.link(spec=>{if(spec.startsWith('/core/authentication/client'))return clientMod;if(spec.startsWith('/core/moderation/service'))return serviceMod;if(spec.includes('common.js'))return commonMod;if(spec.includes('deadline.js'))return deadlineMod;throw Error('unexpected import '+spec);});
  await inboxMod.evaluate();
  if(signedIn)await until(()=>window.document.getElementById('mc-page-error'));
  else await until(()=>/Sign in to read/.test(window.document.getElementById('md-screen')?.textContent||''));
@@ -43,6 +44,12 @@ test('notification ?thread= opens the conversation instead of a blank page',asyn
   assert.match(h.window.document.getElementById('md-dialog-body').textContent,/Thank you in advance!/);
   assert.equal(h.calls.some(c=>c.action==='my_thread'&&c.payload.id==='thread-1'),true);
   assert.equal(h.window.location.search,'');
+ }finally{h.destroy();}
+});
+test('open book conversations with a response date warn that the library listing will unpublish',async()=>{
+ const h=await harness({thread:'thread-1',bookId:'book-1',deadline:'2026-11-10'});try{
+  assert.match(h.window.document.getElementById('md-dialog-body').textContent,/unpublished from the Library/);
+  assert.match(h.window.document.getElementById('md-dialog-body').textContent,/Studio copy stays/);
  }finally{h.destroy();}
 });
 test('resolved conversations stay readable and hide the reply form',async()=>{
