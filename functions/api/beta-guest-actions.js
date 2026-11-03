@@ -21,7 +21,7 @@ export async function handleBetaGuestAction({ action, body, read, rows, insert, 
         }
         return { guestToken: token, guestNumber: guest.guest_number, username: guest.authenticated_username || null };
     }
-    if (!["comment", "reply", "delete-comment"].includes(action)) return null;
+    if (!["comment", "suggest", "reply", "delete-comment"].includes(action)) return null;
     if (!/^[a-f\d]{64}$/.test(String(body.guestToken || ""))) throw new Error("Guest identity required.");
     const hash = await sha(body.guestToken);
     const guest = (await rows("snippet_beta_guests", { beta_read_id: `eq.${betaId}`, guest_token_hash: `eq.${hash}`, select: "id" }))[0];
@@ -34,12 +34,12 @@ export async function handleBetaGuestAction({ action, body, read, rows, insert, 
         if (!changed.length) throw new Error("Comment not found or not yours.");
         return { deleted: true };
     }
-    const message = String(body.message || "").trim();
+    const message = action === "suggest" ? "Suggested revision" : String(body.message || "").trim();
     if (!message || message.length > 4000) throw new Error("Comment must contain 1–4000 characters.");
     const recent = await rows("snippet_beta_comments", { guest_id: `eq.${guest.id}`, select: "created_at", order: "created_at.desc", limit: "1" });
     if (recent[0] && Date.now() - Date.parse(recent[0].created_at) < 10000) throw new Error("Wait 10 seconds before commenting again.");
     let threadId = String(body.threadId || "");
-    if (action === "comment") {
+    if (action === "comment" || action === "suggest") {
         const chapter = (await rows("snippet_beta_chapters", { beta_read_id: `eq.${betaId}`, id: `eq.${body.chapterId}`, select: "id,content" }))[0];
         if (!chapter) throw new Error("Chapter not found.");
         // Reconstruct the reader's text stream from the snapshot HTML.
@@ -71,6 +71,18 @@ export async function handleBetaGuestAction({ action, body, read, rows, insert, 
         }
         if (anchorStart < 0) throw new Error("Selected passage could not be matched. Please highlight it again.");
         const anchorEnd = anchorStart + selectedQuote.length;
+        if (action === "suggest") {
+            const replacement = String(body.replacement ?? "");
+            const note = String(body.note ?? "").trim();
+            if (replacement.length > 2000 || replacement === selectedQuote) throw new Error("Suggestion must differ from the selected text and be at most 2,000 characters.");
+            if (note.length > 4000) throw new Error("Suggestion note is too long.");
+            const suggestion = await insert("snippet_beta_suggestions", {
+                beta_read_id: betaId, chapter_id: chapter.id, guest_id: guest.id,
+                quote: selectedQuote, start_offset: anchorStart, end_offset: anchorEnd,
+                replacement, note, status: "pending"
+            });
+            return { suggestionId: suggestion.id };
+        }
         const thread = await insert("snippet_beta_threads", { beta_read_id: betaId, chapter_id: chapter.id, quote: selectedQuote, start_offset: anchorStart, end_offset: anchorEnd });
         threadId = thread.id;
     } else {
