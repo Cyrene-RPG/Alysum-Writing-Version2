@@ -36,8 +36,8 @@ export function clearDesktopLocalHost() {
 /** Login / sign-up gate URL (desktop app vs website). */
 export function loginPageUrl(next) {
   if (!isAlysumDesktop()) {
-    if (next) return `login.html?next=${encodeURIComponent(next)}`;
-    return "login.html";
+    if (next) return `/login.html?next=${encodeURIComponent(next)}`;
+    return "/login.html";
   }
   const params = new URLSearchParams();
   if (next) params.set("next", next);

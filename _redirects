@@ -1,4 +1,6 @@
 /purchase-passes  /applications/studio/pages/purchase-passes  200
+/beta-reads  /applications/studio/pages/beta-reads  200
+/beta-read-document  /applications/studio/pages/beta-read-document  200
 /moderation /applications/moderation/pages/moderation 200
 /moderation-inbox /applications/moderation/pages/inbox 200
 /staff/book-reports /applications/moderation/pages/moderation 200
@@ -25,6 +27,8 @@
 /book.html  /book  308
 /read.html  /read  308
 /publish.html  /publish  308
+/beta-reads.html  /beta-reads  308
+/beta-read-document.html  /beta-read-document  308
 /login.html  /login  308
 /signup.html  /signup  308
 /settings.html  /settings  308

@@ -1,4 +1,5 @@
 import { supabase } from "@alysum/authentication/client.js";
+import { requireStudioSession } from "/core/desktop/studio-session.js";
 import { createBetaReadApi } from "/applications/editor/page-ui/beta-read-api.js";
 import { activateBetaAnchor, markBetaAnchors } from "/applications/editor/page-ui/beta-read-selection.js";
 
@@ -54,10 +55,21 @@ function bindAnchors(prose, panel) {
     }
 }
 
-export function bootBetaReadDocument() {
+export async function bootBetaReadDocument() {
+    const $ = name => document.getElementById(name);
+    const nextPath = "/beta-read-document" + location.search;
+    if (location.pathname !== "/beta-read-document") {
+        history.replaceState({}, "", nextPath + location.hash);
+    }
+    const session = await requireStudioSession(supabase, nextPath);
+    if (!session) return;
+    if (session.mode !== "cloud") {
+        $("title").textContent = "Sign in online";
+        $("chapter-title").textContent = "Beta copies are stored on your Alysum account. Sign in online to review them.";
+        return;
+    }
     const api = createBetaReadApi(supabase);
     const id = new URL(location.href).searchParams.get("id");
-    const $ = name => document.getElementById(name);
     let snapshot, feedback, current = 0;
 
     async function show(index) {

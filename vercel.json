@@ -17,6 +17,14 @@
       "destination": "/applications/studio/pages/purchase-passes.html"
     },
     {
+      "source": "/beta-reads",
+      "destination": "/applications/studio/pages/beta-reads.html"
+    },
+    {
+      "source": "/beta-read-document",
+      "destination": "/applications/studio/pages/beta-read-document.html"
+    },
+    {
       "source": "/story-bible-selection-preview",
       "destination": "/applications/editor/pages/story-bible-preview.html"
     },

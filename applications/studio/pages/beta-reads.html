@@ -1,133 +1,74 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow"><script type="importmap">{"imports":{"@alysum/authentication/":"/core/authentication/"}}</script><title>Beta Reads · Studio</title>
-<style>
-:root{color-scheme:dark}*{box-sizing:border-box}
-body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 95% 0%,#30253c 0%,transparent 45%),#15151d;color:#f4f0e8;font:16px/1.55 system-ui,sans-serif}
-main{max-width:920px;margin:0 auto;padding:clamp(22px,5vw,55px) 18px 90px}
-a{color:#d9c7ff}a:hover{text-decoration:none}
-.back{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:600;margin-bottom:32px}
-h1{font:700 clamp(2.3rem,7vw,3.8rem)/1.1 Georgia,serif;letter-spacing:-.035em;margin:0 0 16px}
-.intro{color:#c9c2d1;font-size:1.05rem;margin:0 0 36px;max-width:600px}
-#reads{display:grid;gap:18px}
-article{background:#24232f;border:1px solid #45404f;border-radius:18px;padding:clamp(18px,4vw,28px);box-shadow:0 12px 30px #0002;min-width:0}
-article h2{font:700 clamp(1.5rem,5vw,2rem)/1.25 Georgia,serif;margin:0 0 10px}
-article p{color:#d0c9d9;margin:8px 0}
-article small{display:block;color:#b6adc4;margin:8px 0 18px}
-button{font:600 0.95rem system-ui;cursor:pointer;border:1px solid #77668f;border-radius:11px;background:#d8c9f8;color:#211b2a;padding:12px 16px;margin:6px 10px 6px 0;min-height:44px}
-button+button{background:transparent;color:#eee2ff}
-button:disabled{opacity:.6;cursor:wait}
-blockquote{border-left:3px solid #ad92e8;background:#302b3d;border-radius:0 8px 8px 0;padding:12px 15px;margin:18px 0;overflow-wrap:anywhere}
-article section{margin-top:22px;border-top:1px solid #4d4559;padding-top:15px}
-article section h3{font:700 1.25rem Georgia,serif;margin:18px 0 8px}
-#reads>p{background:#24232f;border-radius:14px;padding:22px;color:#d9d0e2}
-@media(max-width:480px){main{padding:25px 16px 70px}.back{margin-bottom:26px}article{padding:18px}button{width:100%;margin:6px 0}}
-.snapshot-view{margin-top:20px;padding-top:18px;border-top:1px solid #5b5168}
-.snapshot-view .chapter{background:#1b1a24;border-radius:14px;padding:clamp(18px,4vw,32px);margin:18px 0}
-.snapshot-view .chapter h3{font:700 1.7rem Georgia,serif;margin:0 0 22px}
-.snapshot-view .prose{font:clamp(1.05rem,3.3vw,1.2rem)/1.85 Georgia,serif;color:#eee9e3;overflow-wrap:anywhere}
-.snapshot-view .prose p{margin:0 0 1.1em}
-.snapshot-view .prose .alysum-indent{text-indent:1.5em}
-.snapshot-view .prose blockquote{font:inherit}
-.snapshot-view .prose h1,.snapshot-view .prose h2,.snapshot-view .prose h3{font-family:Georgia,serif}
-.beta-delete{background:transparent!important;color:#ffc4ce!important;border-color:#a85c73!important}.beta-delete:hover{background:#4b2938!important}.beta-delete:focus-visible{outline:3px solid #f7b4cb;outline-offset:3px}
-</style></head>
-<body><main><a class="back" href="/studio">← Back to Studio</a><h1>Beta Reads</h1><p class="intro">Your private reading copies, guest feedback, and archived sessions—all in one place.</p><div id="reads">Loading…</div></main>
-<script type="module">
-import { supabase } from "@alysum/authentication/client.js";
-import { createBetaReadApi } from "/applications/editor/page-ui/beta-read-api.js";
-const api=createBetaReadApi(supabase),root=document.getElementById("reads");
-root.textContent="Loading your beta reads…";
-function element(tag,text){const el=document.createElement(tag);el.textContent=text;return el;}
-function safeProse(html) {
- const wrapper=document.createElement("div");wrapper.className="prose";
- const parsed=new DOMParser().parseFromString(String(html||""),"text/html");
- const allowed=new Set(["P","BR","I","EM","B","STRONG","U","S","DEL","BLOCKQUOTE","H1","H2","H3","UL","OL","LI","DIV","SPAN","HR","SUP","SUB"]);
- const blocked=new Set(["SCRIPT","STYLE","IFRAME","OBJECT","EMBED","FORM","INPUT","BUTTON","SVG","MATH","VIDEO","AUDIO","IMG","LINK","META","TEMPLATE"]);
- function clean(source,target){
-  for(const child of Array.from(source.childNodes)){
-   if(child.nodeType===Node.TEXT_NODE){target.append(document.createTextNode(child.textContent));continue;}
-   if(child.nodeType!==Node.ELEMENT_NODE)continue;
-   if(blocked.has(child.tagName))continue;
-   if(!allowed.has(child.tagName)){clean(child,target);continue;}
-   const el=document.createElement(child.tagName.toLowerCase());
-   if(child.classList.contains("alysum-indent"))el.classList.add("alysum-indent");
-   clean(child,el);target.append(el);
-  }
- }
- clean(parsed.body,wrapper);return wrapper;
-}
-async function refresh(){
- try {
-  const {reads}=await api.list();root.replaceChildren();
-  if(!reads.length){root.append(element("p","No beta reads yet. Create one from Snippet Share in the editor."));return;}
-  for(const read of reads){
-   const card=element("article","");
-   card.append(element("h2",read.title),element("p",read.status==="closed"?"Archived · Link closed":"Active · No automatic expiration"),element("small","by "+read.author_username));
-   const review=element("button","Review feedback");
-   review.addEventListener("click",async()=>{
-    review.disabled=true;
-    try{
-     const {chapters}=await api.threads(read.id);
-     card.querySelectorAll("[data-feedback]").forEach(el=>el.remove());
-     const section=element("section","");section.dataset.feedback="yes";
-     for(const chapter of chapters){
-      section.append(element("h3",chapter.title));
-      for(const thread of chapter.threads){
-       const block=element("blockquote",thread.quote);
-       section.append(block);
-       for(const comment of thread.comments)section.append(element("p",comment.authorLabel+": "+comment.body));
-       const toggle=element("button",thread.resolvedAt?"Reopen":"Resolve");
-       toggle.addEventListener("click",async()=>{await api.moderate(read.id,thread.id,thread.resolvedAt?"reopen":"resolve");await review.click();});
-       section.append(toggle);
+<!DOCTYPE html><html lang="en">
+<head>
+    <script type="importmap">
+    {
+      "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/writing-engine/": "/core/writing-engine/",
+        "@alysum/synchronization-engine/": "/core/synchronization-engine/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/library/": "/core/library/",
+        "@alysum/publishing/": "/core/publishing/",
+        "@alysum/encyclopedia/": "/core/encyclopedia/",
+        "@alysum/collaboration/": "/core/collaboration/",
+        "@alysum/statistics/": "/core/statistics/"
       }
-     }
-     card.append(section);
-    }catch(e){card.append(element("p",e.message));}finally{review.disabled=false;}
-   });
-   const view=element("button","Read full beta copy");
-   view.addEventListener("click",()=>{ location.href="/applications/studio/pages/beta-read-document.html?id="+encodeURIComponent(read.id); });
-   /* Previous inline viewer retained but disabled to preserve the original feedback management code.
-   view.addEventListener("click",async()=>{
-    const existing=card.querySelector(".snapshot-view");
-    if(existing){existing.remove();view.textContent="Read full beta copy";return;}
-    view.disabled=true;view.textContent="Loading chapters…";
-    try{
-     const data=await api.snapshot(read.id);
-     const panel=element("section","");panel.className="snapshot-view";
-     panel.append(element("h3","Full beta-reading copy"));
-     for(const chapter of data.chapters){
-      const chapterCard=element("div","");chapterCard.className="chapter";
-      chapterCard.append(element("h3",chapter.title),safeProse(chapter.content));
-      panel.append(chapterCard);
-     }
-     if(!data.chapters.length)panel.append(element("p","This copy has no chapters."));
-     card.append(panel);view.textContent="Hide full beta copy";
-    }catch(error){const message=element("p",error.message);message.setAttribute("role","alert");card.append(message);view.textContent="Read full beta copy";}
-    finally{view.disabled=false;}
-   });
-   */
-   card.append(view,review);
-   if(read.status==="active"){
-    const close=element("button","Close and archive");
-    close.addEventListener("click",async()=>{if(!confirm("Close this link? Feedback will be preserved."))return;close.disabled=true;try{await api.close(read.id);await refresh();}catch(e){alert(e.message);close.disabled=false;}});
-    card.append(close);
-   }
-   const remove=element("button","Delete permanently");
-   remove.className="beta-delete";
-   remove.title="Delete this beta copy and its feedback permanently";
-   remove.addEventListener("click",async()=>{
-    const confirmed=prompt("Permanently delete this beta copy and all its feedback? This cannot be undone.\n\nType the exact title to confirm:\n"+read.title);
-    if(confirmed===null)return;
-    if(confirmed!==read.title){alert("Title did not match. Nothing was deleted.");return;}
-    remove.disabled=true;
-    try{await api.delete(read.id,confirmed);await refresh();}
-    catch(e){alert(e.message);remove.disabled=false;}
-   });
-   card.append(remove);
-   root.append(card);
-  }
- }catch(e){root.replaceChildren(element("p",e.message));}
-}
-void refresh();
-</script></body></html>
+    }
+    </script>
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css?v=8" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes-dim/index.css" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css?v=10" />
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css?v=12" />
+    <script src="/site-appearance/js-runtime/body-background-presets-data.js?v=3"></script>
+    <script src="/site-appearance/js-runtime/text-ink-data.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/boot.js?v=7"></script>
+    <script src="/site-appearance/js-runtime/body-background-sync.js"></script>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow">
+    <title>Beta Reads — Alysum</title>
+    <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=30" />
+    <link rel="stylesheet" href="/css/studio/page.css?v=18" />
+    <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
+    <link rel="stylesheet" href="/applications/studio/studio-css/beta-reads.css">
+</head>
+<body>
+    <header class="wd-welcome-bar ui-bar" aria-label="Welcome">
+        <div class="wd-welcome-inner">
+            <div class="wd-pfp-menu" id="welcomePfpMenu">
+                <button type="button" class="wd-pfp-btn" id="welcomePfpBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="welcomePfpDropdown" aria-label="Account menu">
+                    <span class="wd-pfp" id="welcomePfp">
+                        <img id="welcomePfpImg" alt="" hidden />
+                        <span class="wd-pfp-initial" id="welcomePfpInitial" aria-hidden="true">A</span>
+                    </span>
+                </button>
+                <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
+                    <a role="menuitem" href="/library" data-close-pfp-menu>Home</a>
+                    <a role="menuitem" href="overview.html" data-close-pfp-menu>Profile</a>
+                    <a role="menuitem" href="settings.html" data-close-pfp-menu>Settings</a>
+                    <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
+                </div>
+            </div>
+            <div class="wd-welcome-copy">
+                <h1 class="wd-welcome-title" id="welcomeTitle">Writing <span class="wd-name">Studio</span></h1>
+                <p class="wd-welcome-sub" id="welcomeSubtitle"></p>
+            </div>
+        </div>
+    </header>
+    <main class="beta-reads">
+        <nav class="beta-reads-nav" aria-label="Return links"><a href="/studio">← Studio</a><a href="/library">Library</a></nav>
+        <header>
+            <p class="beta-reads-eyebrow">Studio</p>
+            <h1>Beta Reads</h1>
+            <p>Your private reading copies, guest feedback, and archived sessions—all in one place.</p>
+        </header>
+        <div id="beta-reads-list">Loading…</div>
+    </main>
+    <script type="module" src="/applications/studio/page-ui/beta-reads.js"></script>
+</body>
+</html>

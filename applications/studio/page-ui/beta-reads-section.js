@@ -12,7 +12,7 @@ export function mountStudioBetaReads(anchor, supabase, session) {
     section.setAttribute("aria-labelledby", "studioBetaReadsTitle");
     section.innerHTML = `<div class="studio-section-head">
         <h2 id="studioBetaReadsTitle">Beta Readers</h2>
-        <a href="/applications/studio/pages/beta-reads.html" class="studio-shelf-count">Manage all</a>
+        <a href="/beta-reads" class="studio-shelf-count">Manage all</a>
     </div>
     <p class="studio-shared-help">Private copies shared for feedback. Your original books stay unchanged.</p>
     <div class="studio-shared-list" data-beta-list aria-live="polite">
@@ -30,7 +30,7 @@ export function mountStudioBetaReads(anchor, supabase, session) {
             return;
         }
         list.innerHTML = reads.map(read => `<a class="studio-book studio-shared-book"
-            href="/applications/studio/pages/beta-reads.html">
+            href="/beta-reads">
             <span class="studio-coeditor-badge">${read.status === "closed" ? "Archived" : "Beta Read"}</span>
             <div class="studio-shared-copy">
                 <h3 class="studio-book-title">${esc(read.title || "Untitled book")}</h3>
@@ -45,7 +45,7 @@ export function mountStudioBetaReads(anchor, supabase, session) {
             message.className = "studio-book-meta";
             message.textContent = "Beta Reads could not load. ";
             const link = document.createElement("a");
-            link.href = "/applications/studio/pages/beta-reads.html";
+            link.href = "/beta-reads";
             link.textContent = "Open Beta Reads";
             message.append(link);
             list.append(message);
