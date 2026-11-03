@@ -6,6 +6,7 @@ import {esc,$,date,label,badge,button,title,table,formShell,field,select,modal,c
 import {privateMessageForm,threadPrivateChrome,conversationRowKind,conversationsHeadingActions} from './direct.js';
 import {conversationStatusBadge,threadResolveChrome} from './resolve.js';
 import {officialBookDeadlineCallout,bookDeadlineStaffNote} from './deadline.js';
+import {appealKindLabel,appealGrantLabel} from './listing-appeal.js';
 import {officialTemplates as templates,leftoverFillIns,leftoverFillInMessage,officialTemplateHint} from './templates.js';
 import {sendStaffEmailCode,verifyStaffEmailCode,emailCodeRetrySeconds} from '/core/moderation/email-auth.js?v=2';
 const api=createModerationService(client);
@@ -119,7 +120,7 @@ async function load(more=false){
  if(action==='reports')body=table(['Book / report','Reason','Status','Assigned','Updated'],rows.map(r=>[button(r.book_title,'report',r.id,'md-text-button')+'<small>'+esc(r.id)+'</small>',esc(reasons.find(x=>x[0]===r.reason)?.[1]||label(r.reason)),badge(r.phase),r.assigned_id?esc(r.assigned_name):'Unassigned',date(r.updated_at)]));
  if(action==='books')body=table(['Book','Author','Chapters','Reports','Visibility',''],rows.map(b=>[esc(b.title||'Untitled')+'<small>'+esc(b.id)+'</small>',button(b.author||'Author','user',b.user_id,'md-text-button'),String(b.chapters),String(b.reports),badge(b.visibility),button('Review book','book',b.id)]));
  if(action==='conversations')body=table(['Conversation','User','Updated','Type'],rows.map(t=>[button(t.subject,'thread',t.id,'md-text-button')+(t.unread?'<small>New user reply</small>':'')+conversationStatusBadge(t),esc(t.recipient_name),date(t.updated_at),conversationRowKind(t)]));
- if(action==='appeals')body=table(['User','Restriction','Status','Submitted',''],rows.map(a=>[esc(a.username),esc(label(a.kind))+'<small>'+esc(a.reason)+'</small>',badge(a.status),date(a.created_at),button('Review appeal','appeal',a.id)]));
+ if(action==='appeals')body=table(['User','Restriction','Status','Submitted',''],rows.map(a=>[esc(a.username),esc(appealKindLabel(a.kind))+'<small>'+esc(a.reason)+'</small>',badge(a.status),date(a.created_at),button('Review appeal','appeal',a.id)]));
  if(action==='audit')body=table(['Action','Subject','Staff member','When'],rows.map(a=>[esc(a.action),esc(a.target),esc(a.actor_name),date(a.created_at)]));
  $('#md-screen').innerHTML=title(action==='reports'?'Book Reports':label(action),action==='users'?'Live accounts, including profiles that are not completed yet. Activity counts use distinct days; refreshes do not inflate them. Dates use America/Los_Angeles.':action==='audit'?'Audit records cannot be edited or deleted through staff tools.':action==='conversations'?'Official mail is visible to all staff. Private messages stay in the user’s on-site inbox and are only visible to you unless you invite one additional moderator. Mark a conversation resolved when it no longer needs a reply.':'Current records from the site.',action==='conversations'?conversationsHeadingActions():'')+controls()+'<p id="mc-page-error" class="md-error" role="alert"></p>'+body+(rows.length<data.total?button('Load more','more'):'');
  for(const input of document.querySelectorAll('#mc-filter input'))input.required=false;
@@ -171,7 +172,7 @@ function bookForm(id){
 }
 function appealForm(id){
  const a=state.rows.find(a=>a.id===id);state.selected={kind:'appeal',data:a};
- modal('Review appeal','<p><strong>'+esc(a.username)+'</strong> · '+esc(label(a.kind))+'</p><p class="md-pre">'+esc(a.body)+'</p><p class="md-muted">Original decision by '+esc(a.original_actor)+'</p>'+formShell('mc-appeal-form',select('mc-decision','Decision',[['awaiting_information','Request clarification'],['upheld','Uphold decision'],['granted','Reverse restriction']])+field('mc-explanation','Explanation the user will receive'),'Save decision and notify user'));
+ modal('Review appeal','<p><strong>'+esc(a.username)+'</strong> · '+esc(appealKindLabel(a.kind))+'</p><p class="md-pre">'+esc(a.body)+'</p><p class="md-muted">Original decision by '+esc(a.original_actor)+'</p>'+formShell('mc-appeal-form',select('mc-decision','Decision',[['awaiting_information','Request clarification'],['upheld','Uphold decision'],['granted',appealGrantLabel(a.kind)]])+field('mc-explanation','Explanation the user will receive'),'Save decision and notify user'));
 }
 async function action(name,id){
  if(name==='close')return close();if(name==='lock')return lock();if(name==='nav')return go(id);if(name==='more')return load(true);

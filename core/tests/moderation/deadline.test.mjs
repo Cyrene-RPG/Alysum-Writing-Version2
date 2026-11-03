@@ -12,6 +12,7 @@ test('staff see the library unpublish warning on open book threads with a date',
  assert.equal(bookDeadlineStaffNote({id:'t1'}), '');
  assert.match(bookDeadlineStaffNote({book_id:'book-1',deadline:'2026-11-10'}),/unpublished from the Library/);
  assert.equal(bookDeadlineStaffNote({book_id:'book-1',deadline:'2026-11-10',resolved_at:'2026-11-03T22:50:00.000Z'}), '');
+ assert.equal(bookDeadlineStaffNote({book_id:'book-1',deadline:'2026-11-10',deadline_enforced_at:'2026-11-03T22:50:00.000Z'}), '');
 });
 
 test('recipients are warned only on open book conversations with a response date',()=>{
@@ -21,6 +22,7 @@ test('recipients are warned only on open book conversations with a response date
  assert.match(bookDeadlineRecipientNote({bookId:'book-1',deadline:'2026-11-10'}),/unpublished from the Library/);
  assert.match(bookDeadlineRecipientNote({book_id:'book-1',deadline:'2026-11-10'}),/Studio copy stays/);
  assert.equal(bookDeadlineRecipientNote({bookId:'book-1',deadline:'2026-11-10',resolvedAt:'2026-11-03T22:50:00.000Z'}), '');
+ assert.equal(bookDeadlineRecipientNote({bookId:'book-1',deadline:'2026-11-10',deadlineEnforcedAt:'2026-11-03T22:50:00.000Z'}), '');
 });
 
 test('cover template asks for a specific fill-in before send',()=>{

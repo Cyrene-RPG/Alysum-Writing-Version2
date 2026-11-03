@@ -23,7 +23,7 @@ RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pub
 DECLARE
  thread public.mc_threads%ROWTYPE;
  hidden integer:=0;
- note text:='The requested response date passed without a reply. This book was unpublished from the Library. Your Studio copy and manuscript are unchanged. You can still reply here.';
+ note text:='The requested response date passed without a reply. This book was unpublished from the Library. Your Studio copy and manuscript are unchanged. You can still reply here or submit an appeal ticket in Moderation Messages.';
  reason text:='No reply by the requested response date. Unpublished from the Library; Studio copy unchanged.';
 BEGIN
  PERFORM pg_advisory_xact_lock(hashtextextended('mc:book-deadlines',0));
