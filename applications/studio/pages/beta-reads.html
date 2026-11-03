@@ -60,15 +60,25 @@
             </div>
         </div>
     </header>
-    <main class="beta-reads">
-        <nav class="beta-reads-nav" aria-label="Return links"><a href="/studio">← Studio</a><a href="/library">Library</a></nav>
-        <header>
-            <p class="beta-reads-eyebrow">Studio</p>
-            <h1>Beta Reads</h1>
-            <p>Your private reading copies, guest feedback, and archived sessions—all in one place.</p>
-        </header>
-        <div id="beta-reads-list">Loading…</div>
-    </main>
+    <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
+        <div class="wd-nav">
+            <a href="/studio" class="is-active">Studio</a>
+            <a href="/word-wars-lobby">Word Wars</a>
+            <a href="/library">Library</a>
+            <a href="/updates">What’s New</a>
+            <a href="/write-update">Write an update</a>
+        </div>
+    </nav>
+    <div class="wrap">
+        <div class="panel" id="betaReadsShell">
+            <div class="studio-section-head">
+                <h1>Beta Reads</h1>
+            </div>
+            <p class="studio-shared-help">Private copies shared for feedback. Your original books stay unchanged.</p>
+            <div id="beta-reads-list">Loading…</div>
+        </div>
+    </div>
+    <script src="/js/pwa-register.js?v=5" defer></script>
     <script type="module" src="/applications/studio/page-ui/beta-reads.js"></script>
 </body>
 </html>

@@ -17,6 +17,8 @@ test("Beta Reads manager sends unsigned visitors to login and uses pretty Studio
     const dev = readFileSync(new URL("core/server/dev.py", root), "utf8");
 
     assert.match(page, /site-appearance\/js-runtime\/boot\.js/);
+    assert.match(page, /class="wd-nav"/);
+    assert.match(page, /studio-section-head/);
     assert.match(page, /\/applications\/studio\/page-ui\/beta-reads\.js/);
     assert.match(script, /requireStudioSession/);
     assert.match(script, /\/beta-read-document/);

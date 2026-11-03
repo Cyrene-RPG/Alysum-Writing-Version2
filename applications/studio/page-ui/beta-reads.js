@@ -4,7 +4,7 @@ import { loadWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { createBetaReadApi } from "/applications/editor/page-ui/beta-read-api.js";
 import { initWorkspaceShell } from "./shell.js";
 
-const WELCOME = { lead: "Writing ", accent: "Studio", subtitle: "Beta Reads" };
+const WELCOME = { lead: "Writing ", accent: "Studio", subtitle: "Open a book and keep writing." };
 const DOCUMENT_PATH = "/beta-read-document";
 const REVIEW_LABEL = { pending: "Pending review", accepted: "Accepted", rejected: "Rejected" };
 const REVIEW_ACTIONS = {
@@ -94,14 +94,19 @@ function paintFeedback(section, chapters, read, api, reload) {
 function paintRead(root, read, api, refreshList) {
     const card = el("article");
     card.className = "beta-reads-card";
-    card.append(
-        el("h2", read.title || "Untitled book"),
-        el("p", read.status === "closed" ? "Archived · Link closed" : "Active · No automatic expiration"),
-        el("small", "by " + authorName(read))
-    );
+    const badge = el("span", read.status === "closed" ? "Archived" : "Beta Read");
+    badge.className = "studio-coeditor-badge";
+    const title = el("h2", read.title || "Untitled book");
+    const status = el("p", read.status === "closed" ? "Link closed · Feedback preserved" : "Active · Private feedback copy");
+    status.className = "studio-book-meta";
+    const by = el("p", "By " + authorName(read));
+    by.className = "studio-book-meta";
+    card.append(badge, title, by, status);
+
+    const actions = el("div");
+    actions.className = "beta-reads-actions";
 
     const open = el("a", "Open document");
-    open.className = "beta-reads-open";
     open.href = DOCUMENT_PATH + "?id=" + encodeURIComponent(read.id);
 
     const review = el("button", "Review feedback");
@@ -133,7 +138,7 @@ function paintRead(root, read, api, refreshList) {
         }
     });
 
-    card.append(open, review);
+    actions.append(open, review);
 
     if (read.status === "active") {
         const close = el("button", "Close and archive");
@@ -148,7 +153,7 @@ function paintRead(root, read, api, refreshList) {
                 close.disabled = false;
             }
         });
-        card.append(close);
+        actions.append(close);
     }
 
     const remove = el("button", "Delete permanently");
@@ -170,7 +175,8 @@ function paintRead(root, read, api, refreshList) {
             remove.disabled = false;
         }
     });
-    card.append(remove);
+    actions.append(remove);
+    card.append(actions);
     root.append(card);
 }
 
