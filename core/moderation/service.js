@@ -1,4 +1,4 @@
-const WRITES=new Set(['sanction','revoke_sanction','message','staff_reply','direct_message','invite_staff','report_save','book_visibility','appeal_decision','set_staff','ip_add','ip_remove','user_reply','submit_appeal']);
+const WRITES=new Set(['sanction','revoke_sanction','message','staff_reply','direct_message','invite_staff','report_save','book_visibility','appeal_decision','set_staff','ip_add','ip_remove','user_reply','submit_appeal','resolve_thread','reopen_thread']);
 export function createModerationService(client){
  return {async call(action,payload={},requestId){
  const args={...payload};if(WRITES.has(action))args.requestId=requestId||crypto.randomUUID();

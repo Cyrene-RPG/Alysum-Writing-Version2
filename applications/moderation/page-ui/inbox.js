@@ -14,7 +14,7 @@ async function start(more=false){
  $('#md-screen').innerHTML=title('Moderation messages','On-site conversations with Alysum staff. These stay in your website inbox. You can reply and appeal even while your account is suspended.')+
  '<p id="mc-page-error" class="md-error" role="alert"></p>'+
  (sanctions.length?'<section class="md-panel"><h2>Account notices</h2>'+sanctions.map(s=>'<div class="md-item"><strong>'+esc(label(s.kind))+'</strong><p>'+esc(s.reason)+'</p><p class="md-pre">'+esc(s.explanation)+'</p><small class="md-muted">Issued '+date(s.createdAt)+' · '+(s.expiresAt?'Expires '+date(s.expiresAt):s.kind==='warning'?'Official warning':'No expiry')+'</small><div class="md-actions">'+(['pending','awaiting_information'].includes(s.appealStatus)?badge('Appeal '+label(s.appealStatus)):button('Request appeal','appeal',s.id))+'</div></div>').join('')+'</section>':'')+
- table(['Conversation','Requested response date','Updated'],threads.map(t=>[button(t.subject,'thread',t.id,'md-text-button')+(!t.recipient_read_at||new Date(t.updated_at)>new Date(t.recipient_read_at)?'<small>New message</small>':''),t.deadline||'—',date(t.updated_at)]))+(threads.length<dataInbox.total?button('Load more conversations','more'):'');
+ table(['Conversation','Requested response date','Updated'],threads.map(t=>[button(t.subject,'thread',t.id,'md-text-button')+(!t.recipient_read_at||new Date(t.updated_at)>new Date(t.recipient_read_at)?'<small>New message</small>':'')+(t.resolved_at?badge('resolved'):''),t.deadline||'—',date(t.updated_at)]))+(threads.length<dataInbox.total?button('Load more conversations','more'):'');
  const thread=new URLSearchParams(location.search).get('thread');if(thread&&!more){history.replaceState(null,'',location.pathname);await openThread(thread);}
  }catch(error){if(generation===epoch)showError(error);}
 }
@@ -22,8 +22,9 @@ async function openThread(id,more=false){
  const generation=epoch,data=await call('my_thread',{id,offset:more?offset:0});if(generation!==epoch)return;
  opened=data;messages=more?[...data.messages,...messages]:data.messages;offset=more?offset+data.messages.length:data.messages.length;
  modal(data.subject,(data.deadline?'<p class="md-muted">Requested response date: '+esc(data.deadline)+'</p>':'')+
+ (data.resolvedAt?'<p class="md-muted">This conversation is resolved. You can still read it.</p>':'')+
  '<div class="md-messages">'+messages.map(m=>'<article class="md-message '+esc(m.side)+'"><strong>'+esc(m.side==='staff'?'Alysum Moderation':'You')+'</strong><p>'+esc(m.body)+'</p><small>'+date(m.createdAt)+'</small></article>').join('')+'</div>'+
- formShell('mc-user-reply',field('mc-user-body','Reply to moderation'),'Send reply')+(offset<data.total?button('Load earlier messages','earlier',String(offset)):''));
+ (data.resolvedAt?'':formShell('mc-user-reply',field('mc-user-body','Reply to moderation'),'Send reply'))+(offset<data.total?button('Load earlier messages','earlier',String(offset)):''));
 }
 document.addEventListener('click',e=>{
  const b=e.target.closest('[data-live]');if(!b)return;

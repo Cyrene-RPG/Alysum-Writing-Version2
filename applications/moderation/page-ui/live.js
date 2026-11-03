@@ -4,6 +4,7 @@ import {createModeratorChatService} from '/core/moderation/chat.js';
 import {mountModeratorChat} from './chat.js';
 import {esc,$,date,label,badge,button,title,table,formShell,field,select,modal,close,toast,showError,clearPrivate,bindDialog} from './common.js';
 import {privateMessageForm,threadPrivateChrome,conversationRowKind,conversationsHeadingActions} from './direct.js';
+import {conversationStatusBadge,threadResolveChrome} from './resolve.js';
 import {officialTemplates as templates,leftoverFillIns,leftoverFillInMessage,officialTemplateHint} from './templates.js';
 import {sendStaffEmailCode,verifyStaffEmailCode,emailCodeRetrySeconds} from '/core/moderation/email-auth.js?v=2';
 const api=createModerationService(client);
@@ -89,7 +90,7 @@ function controls(){
  if(state.view==='users')fields=select('mc-view','View',[['all','All users'],['new','New users'],['active','Most active']],state.filters.view||'all')+field('mc-query','Search name or username','search',state.filters.query||'')+select('mc-user-status','Account status',[['all','All statuses'],['Active','Active'],['Suspended','Suspended'],['Banned','Banned']],state.filters.status||'all')+select('mc-days','Activity period',[['7','Last 7 days'],['30','Last 30 days']],String(state.filters.days||7))+select('mc-measure','Rank active users by',[['activeDays','Active days'],['readingDays','Reading days'],['writingDays','Writing days'],['communityActions','Community actions']],state.filters.measure||'activeDays')+field('mc-from','Joined from (optional)','date',state.filters.from||'')+field('mc-through','Joined through (optional)','date',state.filters.through||'');
  if(state.view==='reports')fields=select('mc-status','Status',[['open','Open reports'],['all','All statuses'],['new','New'],['under_review','Under Review'],['awaiting_changes','Awaiting Changes'],['resolved','Resolved'],['dismissed','Dismissed']],state.filters.status||'open')+select('mc-reason','Reason',reasons,state.filters.reason||'');
  if(state.view==='books')fields=field('mc-query','Search book title','search',state.filters.query||'')+select('mc-status','Visibility',[['all','All visibility'],['visible','Visible'],['hidden','Hidden'],['removed','Removed']],state.filters.status||'all');
- if(state.view==='conversations')fields=field('mc-query','Search','search',state.filters.query||'')+select('mc-kind','Visibility',[['all','All conversations'],['team','Official (all staff)'],['direct','Private (you and an invited moderator)']],state.filters.kind||'all');
+ if(state.view==='conversations')fields=field('mc-query','Search','search',state.filters.query||'')+select('mc-kind','Visibility',[['all','All conversations'],['team','Official (all staff)'],['direct','Private (you and an invited moderator)']],state.filters.kind||'all')+select('mc-status','Status',[['open','Open conversations'],['resolved','Resolved'],['all','All conversations']],state.filters.status||'open');
  if(state.view==='audit')fields=field('mc-query','Search','search',state.filters.query||'');
  return fields?'<form id="mc-filter" class="md-toolbar">'+fields+'<button type="submit">Apply filters</button></form>':'';
 }
@@ -109,16 +110,17 @@ async function load(more=false){
  table(['Staff member','Role'],staff.items.map(u=>[esc(u.name)+'<small>'+esc(u.id)+'</small>',badge(u.role)]))+
  table(['IP address','Reason','Expiry','State',''],ips.items.map(r=>[esc(r.address),esc(r.reason),date(r.expires_at),badge(r.revoked_at?'revoked':new Date(r.expires_at)>new Date()?'active':'expired'),!r.revoked_at?button('Remove block','ip-remove',r.id):'']))+
  '<p class="md-muted md-small">A shared IP is not proof of account ownership. These blocks apply to Cloudflare website traffic; they do not replace account restrictions. A database outage does not take the public site offline.</p>';return;}
- const action=state.view;const data=await call(action,{...state.filters,offset:more?state.rows.length:0});if(token!==state.epoch)return;
+ const action=state.view;const payload={...state.filters,offset:more?state.rows.length:0};if(action==='conversations'&&!payload.status)payload.status='open';
+ const data=await call(action,payload);if(token!==state.epoch)return;
  state.rows=more?[...state.rows,...data.items]:data.items||[];
  const rows=state.rows;let body='';
  if(action==='users')body=table(['User','Type','Joined / last active','Active / reading / writing days','Community','Status'],rows.map(u=>[button(u.name,'user',u.id,'md-text-button')+'<small>@'+esc(u.username)+'</small>',esc(u.accountType),date(u.joinedAt)+'<small>'+date(u.lastSeenAt)+'</small>',[u.activeDays,u.readingDays,u.writingDays].map(Number).join(' / '),String(Number(u.communityActions)),badge(u.status)]));
  if(action==='reports')body=table(['Book / report','Reason','Status','Assigned','Updated'],rows.map(r=>[button(r.book_title,'report',r.id,'md-text-button')+'<small>'+esc(r.id)+'</small>',esc(reasons.find(x=>x[0]===r.reason)?.[1]||label(r.reason)),badge(r.phase),r.assigned_id?esc(r.assigned_name):'Unassigned',date(r.updated_at)]));
  if(action==='books')body=table(['Book','Author','Chapters','Reports','Visibility',''],rows.map(b=>[esc(b.title||'Untitled')+'<small>'+esc(b.id)+'</small>',button(b.author||'Author','user',b.user_id,'md-text-button'),String(b.chapters),String(b.reports),badge(b.visibility),button('Review book','book',b.id)]));
- if(action==='conversations')body=table(['Conversation','User','Updated','Type'],rows.map(t=>[button(t.subject,'thread',t.id,'md-text-button')+(t.unread?'<small>New user reply</small>':''),esc(t.recipient_name),date(t.updated_at),conversationRowKind(t)]));
+ if(action==='conversations')body=table(['Conversation','User','Updated','Type'],rows.map(t=>[button(t.subject,'thread',t.id,'md-text-button')+(t.unread?'<small>New user reply</small>':'')+conversationStatusBadge(t),esc(t.recipient_name),date(t.updated_at),conversationRowKind(t)]));
  if(action==='appeals')body=table(['User','Restriction','Status','Submitted',''],rows.map(a=>[esc(a.username),esc(label(a.kind))+'<small>'+esc(a.reason)+'</small>',badge(a.status),date(a.created_at),button('Review appeal','appeal',a.id)]));
  if(action==='audit')body=table(['Action','Subject','Staff member','When'],rows.map(a=>[esc(a.action),esc(a.target),esc(a.actor_name),date(a.created_at)]));
- $('#md-screen').innerHTML=title(action==='reports'?'Book Reports':label(action),action==='users'?'Live accounts, including profiles that are not completed yet. Activity counts use distinct days; refreshes do not inflate them. Dates use America/Los_Angeles.':action==='audit'?'Audit records cannot be edited or deleted through staff tools.':action==='conversations'?'Official mail is visible to all staff. Private messages stay in the user’s on-site inbox and are only visible to you unless you invite one additional moderator.':'Current records from the site.',action==='conversations'?conversationsHeadingActions():'')+controls()+'<p id="mc-page-error" class="md-error" role="alert"></p>'+body+(rows.length<data.total?button('Load more','more'):'');
+ $('#md-screen').innerHTML=title(action==='reports'?'Book Reports':label(action),action==='users'?'Live accounts, including profiles that are not completed yet. Activity counts use distinct days; refreshes do not inflate them. Dates use America/Los_Angeles.':action==='audit'?'Audit records cannot be edited or deleted through staff tools.':action==='conversations'?'Official mail is visible to all staff. Private messages stay in the user’s on-site inbox and are only visible to you unless you invite one additional moderator. Mark a conversation resolved when it no longer needs a reply.':'Current records from the site.',action==='conversations'?conversationsHeadingActions():'')+controls()+'<p id="mc-page-error" class="md-error" role="alert"></p>'+body+(rows.length<data.total?button('Load more','more'):'');
  for(const input of document.querySelectorAll('#mc-filter input'))input.required=false;
  }catch(error){if(token!==state.epoch)return;showError(error);if(/Fresh staff verification|fresh staff sign-in|Sign in to continue/.test(error.message))await lock('Please verify your staff session again.');}
 }
@@ -155,7 +157,7 @@ function messageForm(userId='',bookId='',reportId=''){
 async function threadDetail(id,offset=0,older=[]){
  const generation=state.epoch;const data=await call('conversation',{id,offset});if(generation!==state.epoch||!state.role)return;state.selected={kind:'thread',data};
  const messages=[...data.messages,...older],isDirect=data.thread.kind==='direct';
- modal(data.thread.subject,'<p class="md-muted">To '+esc(data.recipientName)+' · '+esc(data.thread.book_id||'Account conversation')+'</p>'+threadPrivateChrome(data)+'<div class="md-messages">'+messages.map(m=>'<article class="md-message '+esc(m.side)+'"><strong>'+esc(m.side==='staff'?'Alysum Moderation':data.recipientName)+'</strong><p>'+esc(m.body)+'</p><small>'+date(m.created_at)+(m.side==='staff'?' · Staff sender: '+esc(m.sender_name):'')+'</small></article>').join('')+'</div>'+formShell('mc-thread-form',field('mc-reply',isDirect?'Private reply (on-site inbox only)':'Reply as Alysum Moderation'),'Send reply')+(offset+data.messages.length<data.total?button('Load earlier messages','thread-more',String(offset+data.messages.length)):''));
+ modal(data.thread.subject,'<p class="md-muted">To '+esc(data.recipientName)+' · '+esc(data.thread.book_id||'Account conversation')+'</p>'+threadPrivateChrome(data)+'<div class="md-messages">'+messages.map(m=>'<article class="md-message '+esc(m.side)+'"><strong>'+esc(m.side==='staff'?'Alysum Moderation':data.recipientName)+'</strong><p>'+esc(m.body)+'</p><small>'+date(m.created_at)+(m.side==='staff'?' · Staff sender: '+esc(m.sender_name):'')+'</small></article>').join('')+'</div>'+(data.thread.resolved_at?threadResolveChrome(data):formShell('mc-thread-form',field('mc-reply',isDirect?'Private reply (on-site inbox only)':'Reply as Alysum Moderation'),'Send reply')+threadResolveChrome(data))+(offset+data.messages.length<data.total?button('Load earlier messages','thread-more',String(offset+data.messages.length)):''));
  state.selected.messages=messages;
 }
 function sanctionForm(id){
@@ -177,6 +179,13 @@ async function action(name,id){
  if(name==='user')return userDetail(id);if(name==='report')return reportDetail(id);if(name==='report-history')return reportDetail(state.selected.data.report.id,Number(id));
  if(name==='new-message')return messageForm();if(name==='message-user')return messageForm(id);if(name==='new-direct')return privateMessageForm();if(name==='direct-user')return privateMessageForm(id);if(name==='report-message'){const d=state.selected.data;return messageForm(d.ownerId,d.report.book_id,d.report.id);}
  if(name==='thread')return threadDetail(id);if(name==='thread-more')return threadDetail(state.selected.data.thread.id,Number(id),state.selected.messages);
+ if(name==='resolve-thread'||name==='reopen-thread'){
+  const tid=id||state.selected?.data?.thread?.id;
+  await call(name==='resolve-thread'?'resolve_thread':'reopen_thread',{threadId:tid});
+  toast(name==='resolve-thread'?'Conversation marked resolved. The user can still read it.':'Conversation reopened.');
+  await load();
+  return threadDetail(tid);
+ }
  if(name==='sanction')return sanctionForm(id);if(name==='revoke')return modal('Reverse an account action',formShell('mc-revoke-form',field('mc-explanation','Reason the user will receive'),'Reverse action','data-sanction="'+esc(id)+'"'));
  if(name==='book')return bookForm(id);if(name==='appeal')return appealForm(id);
  if(name==='staff-edit')return modal('Manage staff access',formShell('mc-staff-form',field('mc-staff-id','Existing account ID','text')+select('mc-staff-role','Staff access',[['moderator','Moderator'],['admin','Admin'],['none','Remove access']])+field('mc-explanation','Reason for the access change')+'<div class="md-callout">You cannot change your own role. A change immediately invalidates the affected user’s moderation sessions.</div>','Update staff access'));
