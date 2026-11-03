@@ -12,7 +12,18 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
     toolbarButton.type = "button";
     toolbarButton.textContent = "✎ Comment";
     toolbar.append(toolbarButton);
+    toolbar.setAttribute("role", "toolbar");
+    toolbar.setAttribute("aria-label", "Selected passage actions");
     document.body.append(toolbar);
+    const positionToolbar = () => {
+        const selection = window.getSelection();
+        if (!selection?.rangeCount || selection.isCollapsed) return;
+        const rect = selection.getRangeAt(0).getBoundingClientRect();
+        if (!rect.width && !rect.height) return;
+        const width = toolbar.offsetWidth || 125;
+        toolbar.style.left = Math.max(12, Math.min(window.innerWidth - width - 12, rect.left + rect.width / 2 - width / 2)) + "px";
+        toolbar.style.top = Math.max(12, Math.min(window.innerHeight - 56, rect.top - 54)) + "px";
+    };
     const composer = document.createElement("div");
     composer.className = "beta-selection-composer";
     composer.hidden = true;
@@ -39,11 +50,15 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
         const next = chapterSelection(prose);
         if (next) captured = next;
         toolbar.hidden = !next || !composer.hidden;
+        if (!toolbar.hidden) positionToolbar();
     };
     document.addEventListener("selectionchange", capture);
     prose.addEventListener("pointerup", capture);
     prose.addEventListener("touchend", () => setTimeout(capture, 180), { passive: true });
     prose.addEventListener("keyup", capture);
+    const hideToolbar = () => { toolbar.hidden = true; };
+    window.addEventListener("scroll", hideToolbar, { passive: true });
+    window.addEventListener("resize", hideToolbar);
     toolbarButton.addEventListener("pointerdown", event => event.preventDefault());
     toolbarButton.addEventListener("click", () => {
         // Mobile selection handles may move after the last selectionchange event.
@@ -69,6 +84,8 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
             toolbar.hidden = true;
             document.removeEventListener("selectionchange", capture);
             toolbar.remove();
+            window.removeEventListener("scroll", hideToolbar);
+            window.removeEventListener("resize", hideToolbar);
             await reload();
         } catch (error) { status.textContent = error.message; }
         finally { button.disabled = false; }
@@ -76,6 +93,19 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
     for (const thread of threads) {
         const box = document.createElement("section");
         box.className = "comment";
+        box.id = "beta-thread-" + thread.id;
+        box.dataset.threadId = thread.id;
+        box.tabIndex = -1;
+        const activateThread = () => {
+            host.querySelectorAll(".comment.is-active").forEach(el => el.classList.remove("is-active"));
+            prose.querySelectorAll(".beta-anchored-text.is-active").forEach(el => el.classList.remove("is-active"));
+            box.classList.add("is-active");
+            prose.querySelectorAll(".beta-anchored-text").forEach(mark => {
+                if (mark.dataset.threadId === String(thread.id)) mark.classList.add("is-active");
+            });
+        };
+        box.addEventListener("click", activateThread);
+        box.addEventListener("focusin", activateThread);
         const quote = document.createElement("blockquote");
         quote.textContent = thread.quote;
         box.append(quote);
@@ -129,5 +159,23 @@ export function mountBetaFeedback({ host, prose, chapter, threads, send, reload 
         });
         box.append(reply, replyButton, replyStatus);
         host.append(box);
+        for (const mark of prose.querySelectorAll(".beta-anchored-text")) {
+            if (mark.dataset.threadId !== String(thread.id)) continue;
+            mark.tabIndex = 0;
+            mark.setAttribute("role", "button");
+            mark.setAttribute("aria-label", "View comment on this passage");
+            const openThread = () => {
+                activateThread();
+                box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                box.focus({ preventScroll: true });
+            };
+            mark.addEventListener("click", openThread);
+            mark.addEventListener("keydown", event => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openThread();
+                }
+            });
+        }
     }
 }
