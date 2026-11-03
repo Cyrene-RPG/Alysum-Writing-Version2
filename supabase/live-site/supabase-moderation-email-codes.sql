@@ -216,7 +216,6 @@ BEGIN
  IF length(btrim(coalesce(p_payload->>'subject',''))) NOT BETWEEN 3 AND 160 THEN RAISE EXCEPTION 'Enter a subject in 3–160 characters.'; END IF;
  IF bid IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.library WHERE id::text=bid AND user_id=target) THEN RAISE EXCEPTION 'The selected book does not belong to this user.'; END IF;
  IF rid IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.book_reports_v2 WHERE id=rid AND book_id=bid) THEN RAISE EXCEPTION 'The selected report does not match the book.'; END IF;
- IF txt ~ '\[[^]]+\]' THEN RAISE EXCEPTION 'Replace message template placeholders before sending.'; END IF;
  tid:=public.mc_notice(target,btrim(p_payload->>'subject'),txt,bid,rid,nullif(p_payload->>'deadline','')::date);
  result:=jsonb_build_object('id',tid);
  ELSIF p_action='staff_reply' THEN
