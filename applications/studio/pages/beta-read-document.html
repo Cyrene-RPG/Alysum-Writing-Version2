@@ -21,6 +21,7 @@ nav button[aria-current=true]{background:#eee8fa;color:#4b3275;font-weight:700}
 .prose p{margin:0 0 1.2em}.prose .alysum-indent{text-indent:1.5em}
 .prose blockquote{border-left:3px solid #b9a3df;padding-left:15px;margin:20px 0}
 .prose mark{background:#e3d4ff;color:inherit;border-radius:2px;cursor:pointer}
+.suggestion del{color:#8c6072;background:#f9e9ef}.suggestion ins{color:#553581;background:#efe5ff;text-decoration:none;padding:2px 4px;border-radius:3px}.suggestion .review-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.suggestion .review-state{font-size:.85rem;color:#695978}
 .thread{border:1px solid #e5dfed;border-radius:12px;padding:14px;margin-bottom:12px;background:#fff}
 .thread[aria-selected=true]{border-color:#9773d5;background:#f6f0ff}
 .thread blockquote{font:italic .9rem/1.5 Georgia,serif;color:#675477;margin:0 0 10px;border-left:3px solid #b29ada;padding-left:10px;overflow-wrap:anywhere}
@@ -83,10 +84,37 @@ function show(index){
  current=index;const chapter=snapshot.chapters[index];if(!chapter)return;
  $("chapter-title").textContent=chapter.title;
  const prose=$("prose");prose.replaceChildren(cleanMarkup(chapter.content));
- const threads=(feedback.chapters.find(c=>c.id===chapter.id)?.threads||[]);
+ const chapterFeedback=feedback.chapters.find(c=>c.id===chapter.id)||{};
+ const threads=chapterFeedback.threads||[];
+ const suggestions=chapterFeedback.suggestions||[];
  $("chapters").querySelectorAll("button").forEach((button,i)=>button.setAttribute("aria-current",String(i===index)));
  const panel=$("threads");panel.replaceChildren();
- if(!threads.length){const empty=el("p","No feedback on this chapter yet.");empty.className="empty";panel.append(empty);}
+ if(!threads.length&&!suggestions.length){const empty=el("p","No feedback on this chapter yet.");empty.className="empty";panel.append(empty);}
+ for(const suggestion of suggestions){
+  const box=el("section");box.className="thread suggestion";
+  const label=el("strong","✦ Suggested edit · "+suggestion.authorLabel);
+  const original=el("blockquote",suggestion.quote);
+  const comparison=el("p");
+  const before=el("del",suggestion.quote);
+  const after=el("ins",suggestion.replacement||"∅ (delete selection)");
+  comparison.append(before,document.createTextNode(" → "),after);
+  box.append(label,original,comparison);
+  if(suggestion.note)box.append(el("p",suggestion.note));
+  const state=el("p","Review status: "+suggestion.status+" · Does not modify manuscript");
+  state.className="review-state";box.append(state);
+  const actions=el("div");actions.className="review-actions";
+  const statuses=suggestion.status==="pending"?["accepted","rejected"]:["pending"];
+  for(const status of statuses){
+   const button=el("button",status==="accepted"?"Accept suggestion":status==="rejected"?"Reject suggestion":"Reopen suggestion");
+   button.addEventListener("click",async()=>{
+    button.disabled=true;
+    try{await api.reviewSuggestion(id,suggestion.id,status);feedback=await api.threads(id);show(current);}
+    catch(error){button.disabled=false;state.textContent=error.message;}
+   });
+   actions.append(button);
+  }
+  box.append(actions);panel.append(box);
+ }
  for(const thread of threads){
   markQuote(prose,thread);
   const box=el("section");box.className="thread";box.dataset.thread=thread.id;
