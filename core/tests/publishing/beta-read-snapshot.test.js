@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { listBetaReadChapters, prepareBetaReadSnapshot, betaReadCopyrightNotice } from "../../applications/editor/page-ui/beta-read-snapshot.js";
+import { listBetaReadChapters, prepareBetaReadSnapshot, betaReadCopyrightNotice } from "../../../applications/editor/page-ui/beta-read-snapshot.js";
 
 const book = {
     id: "book-123",
