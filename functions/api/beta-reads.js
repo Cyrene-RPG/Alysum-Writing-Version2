@@ -64,6 +64,23 @@ async function threadsForChapter(env, betaId, chapterId) {
         authorLabel: c.author_id ? "Author" : labels.get(c.guest_id) || "Guest", guestId: c.guest_id, deleted: Boolean(c.deleted_at), createdAt: c.created_at,
     })) })).filter(thread => thread.comments.some(comment => !comment.deleted));
 }
+async function suggestionsForChapter(env, betaId, chapterId) {
+    const suggestions = await rows(env, "snippet_beta_suggestions", {
+        beta_read_id: "eq." + betaId, chapter_id: "eq." + chapterId,
+        select: "id,guest_id,quote,start_offset,end_offset,replacement,note,status,reviewed_at,created_at",
+        order: "created_at.asc"
+    });
+    const guests = await rows(env, "snippet_beta_guests", {
+        beta_read_id: "eq." + betaId, select: "id,guest_number,authenticated_username"
+    });
+    const names = new Map(guests.map(g => [g.id, g.authenticated_username || "Guest " + g.guest_number]));
+    return suggestions.map(s => ({
+        id: s.id, quote: s.quote, startOffset: s.start_offset, endOffset: s.end_offset,
+        replacement: s.replacement, note: s.note, status: s.status,
+        reviewedAt: s.reviewed_at, createdAt: s.created_at,
+        authorLabel: names.get(s.guest_id) || "Guest"
+    }));
+}
 export async function onRequest({ request, env }) {
     if (request.method !== "POST") return fail("Method not allowed.", 405);
     if (!env.SUPABASE_SERVICE_ROLE_KEY) return fail("Beta Read service is not configured.", 503);
@@ -73,7 +90,7 @@ export async function onRequest({ request, env }) {
     if (!body || typeof body !== "object") return fail("Invalid request.");
     const action = String(body.action || "");
     try {
-        if (["create", "list", "close", "delete", "threads", "moderate", "snapshot"].includes(action)) {
+        if (["create", "list", "close", "delete", "threads", "moderate", "review-suggestion", "snapshot"].includes(action)) {
             const user = await userFromRequest(request);
             if (!user) return fail("Sign in required.", 401);
             if (action === "create") {
@@ -126,7 +143,17 @@ export async function onRequest({ request, env }) {
             }
             if (action === "threads") {
                 const chapters = await rows(env, "snippet_beta_chapters", { beta_read_id: `eq.${read.id}`, select: "id,title,ordinal", order: "ordinal.asc" });
-                return json({ chapters: await Promise.all(chapters.map(async chapter => ({ ...chapter, threads: await threadsForChapter(env, read.id, chapter.id) }))) });
+                return json({ chapters: await Promise.all(chapters.map(async chapter => ({ ...chapter, threads: await threadsForChapter(env, read.id, chapter.id), suggestions: await suggestionsForChapter(env, read.id, chapter.id) }))) });
+            }
+            if (action === "review-suggestion") {
+                const status = String(body.status || "");
+                if (!["accepted", "rejected", "pending"].includes(status)) return fail("Invalid review status.");
+                const suggestionId = String(body.suggestionId || "");
+                if (!/^[a-f0-9-]{36}$/i.test(suggestionId)) return fail("Invalid suggestion.");
+                const changed = await update(env, "snippet_beta_suggestions", {
+                    id: "eq." + suggestionId, beta_read_id: "eq." + read.id
+                }, { status, reviewed_at: status === "pending" ? null : new Date().toISOString() });
+                return changed.length ? json({ updated: true, status }) : fail("Suggestion not found.", 404);
             }
             if (action === "moderate") {
                 const op = String(body.operation || "");
@@ -145,7 +172,7 @@ export async function onRequest({ request, env }) {
         }
         const read = await publicRead(env, body.token);
         if (!read || read.status !== "active") return fail("This beta read is unavailable or closed.", 404);
-        if (["join", "comment", "reply", "delete-comment"].includes(action)) {
+        if (["join", "comment", "suggest", "reply", "delete-comment"].includes(action)) {
             try {
                 const result = await handleBetaGuestAction({
                     action, body, read,
@@ -175,7 +202,7 @@ export async function onRequest({ request, env }) {
             const guestHash = await sha(String(body.guestToken || ""));
             const guest = (await rows(env, "snippet_beta_guests", { beta_read_id: "eq." + read.id, guest_token_hash: "eq." + guestHash, select: "id" }))[0];
             const threads = await threadsForChapter(env, read.id, chapter.id);
-            return json({ threads: threads.map(t => ({ ...t, comments: t.comments.map(c => ({ ...c, canDelete: !c.deleted && Boolean(guest) && c.guestId === guest.id, guestId: undefined })) })) });
+            return json({ threads: threads.map(t => ({ ...t, comments: t.comments.map(c => ({ ...c, canDelete: !c.deleted && Boolean(guest) && c.guestId === guest.id, guestId: undefined })) })), suggestions: await suggestionsForChapter(env, read.id, chapter.id) });
         }
         return fail("Unknown action.");
     } catch (error) {
