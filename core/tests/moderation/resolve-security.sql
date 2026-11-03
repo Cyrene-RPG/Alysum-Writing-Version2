@@ -1,6 +1,9 @@
 \set ON_ERROR_STOP on
 SELECT public.report_test_assert(current_database()='moderation_test' OR current_setting('test.dm_disposable',true)='1','disposable resolve-conversation database');
 RESET ROLE;
+SELECT set_config('test.mc.thread',(SELECT id::text FROM public.mc_threads WHERE kind='team' LIMIT 1),false);
+SELECT set_config('test.mc.direct',(SELECT id::text FROM public.mc_threads WHERE kind='direct' LIMIT 1),false);
+SELECT public.report_test_assert(nullif(current_setting('test.mc.thread',true),'') IS NOT NULL AND nullif(current_setting('test.mc.direct',true),'') IS NOT NULL,'resolve tests reuse the official and private conversations');
 UPDATE auth.sessions SET created_at=clock_timestamp();
 SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
 SELECT set_config('request.jwt.claims',jsonb_build_object('session_id','10000000-0000-0000-0000-000000000001','email','staff@example.test','aal','aal1','amr',jsonb_build_array(jsonb_build_object('method','otp','timestamp',extract(epoch FROM clock_timestamp()))))::text,false);
@@ -24,8 +27,8 @@ SELECT public.report_test_assert((public.mc_call('my_thread',jsonb_build_object(
 SELECT public.report_expect_error(format('SELECT public.mc_call(''user_reply'',jsonb_build_object(''requestId'',gen_random_uuid(),''threadId'',%L,''body'',''I would like to keep this conversation going.''))',current_setting('test.mc.thread')),'resolved');
 SELECT public.report_expect_error(format('SELECT public.mc_call(''resolve_thread'',jsonb_build_object(''requestId'',gen_random_uuid(),''threadId'',%L))',current_setting('test.mc.thread')),'Fresh staff verification');
 RESET ROLE;
-SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
-SELECT set_config('request.jwt.claims',jsonb_build_object('session_id','10000000-0000-0000-0000-000000000002','email','staff@example.test','aal','aal1','amr',jsonb_build_array(jsonb_build_object('method','otp','timestamp',extract(epoch FROM clock_timestamp()))))::text,false);
+SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000005';
+SELECT set_config('request.jwt.claims',jsonb_build_object('session_id','10000000-0000-0000-0000-000000000005','email','staff@example.test','aal','aal1','amr',jsonb_build_array(jsonb_build_object('method','otp','timestamp',extract(epoch FROM clock_timestamp()))))::text,false);
 SET ROLE authenticated;
 SELECT public.mc_call('start');
 SELECT public.report_expect_error(format('SELECT public.mc_call(''resolve_thread'',jsonb_build_object(''requestId'',gen_random_uuid(),''threadId'',%L))',current_setting('test.mc.direct')),'not found');
