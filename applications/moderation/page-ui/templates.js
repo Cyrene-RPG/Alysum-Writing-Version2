@@ -1,5 +1,6 @@
 export const officialTemplates={
  review:['Book under review','We’re reviewing your book following a reader concern. No decision has been made. We will contact you here with questions or an outcome.'],
+ cover:['Please update your book cover','Please update the cover for your published book. [Explain the specific concern.] Reply here once you have changed it or if you need clarification.'],
  tags:['Please review your content warnings','Please review the tags and content warnings for your book, especially [chapter / content]. Reply here once you have checked them or if you need clarification.'],
  rating:['Age rating review','Please review the age rating for your published book. [Explain the specific concern.] Reply when you have checked the rating or if you need clarification.'],
  clarify:['Request for clarification','We received a concern about your book. No conclusion has been reached. Could you provide context about [specific concern]?'],
