@@ -53,4 +53,4 @@ jobs:
       - name: Chat interface checks
         run: |
           npm install --prefix "$RUNNER_TEMP/mod-chat" jsdom@26
-          JSDOM_MODULE="$RUNNER_TEMP/mod-chat/node_modules/jsdom" node --experimental-vm-modules --test core/tests/moderation/chat-ui.mjs
+          JSDOM_MODULE="$RUNNER_TEMP/mod-chat/node_modules/jsdom" node --experimental-vm-modules --test core/tests/moderation/chat-ui.mjs core/tests/moderation/inbox-ui.mjs

@@ -8,7 +8,7 @@ async function start(more=false){
  const {data,error}=await client.auth.getSession();if(error)throw error;
  if(!data?.session){clearPrivate();$('#md-screen').innerHTML=title('Moderation messages','Sign in to read private staff conversations or appeal an account restriction.')+'<a href="/login?next=%2Fmoderation-inbox">Sign in</a>';return;}
  userId=data.session.user.id;$('#md-identity').textContent='Your private conversations';
- $('#md-nav').replaceChildren();if(!more)$('#md-screen').innerHTML=title('Moderation messages','Loading your conversations…');
+ if(!more)$('#md-screen').innerHTML=title('Moderation messages','Loading your conversations…');
  const dataInbox=await call('my_inbox',{offset:more?threads.length:0});if(generation!==epoch)return;
  threads=more?[...threads,...dataInbox.threads]:dataInbox.threads;sanctions=dataInbox.sanctions;
  $('#md-screen').innerHTML=title('Moderation messages','On-site conversations with Alysum staff. These stay in your website inbox. You can reply and appeal even while your account is suspended.')+
