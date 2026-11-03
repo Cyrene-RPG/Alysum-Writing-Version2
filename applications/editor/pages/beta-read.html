@@ -26,7 +26,17 @@ small{color:#c4bfd0}
 .reader-chapter .chapter-prose{user-select:text;-webkit-user-select:text}
 .reader-chapter ::selection{background:#a98cf0;color:#17121f}
 .beta-anchored-text{background:rgba(185,150,255,.36);color:inherit;border-radius:3px;cursor:pointer}
-.beta-selection-toolbar{position:sticky;bottom:14px;z-index:3;display:flex;justify-content:flex-end;padding:10px 0}
+.beta-suggestion-anchor{background:rgba(232,196,120,.38);box-shadow:inset 0 -2px 0 #e0b36a}
+.beta-suggestion-diff del{color:#f0c4d2;background:#4a3140}.beta-suggestion-diff ins{color:#d9b9ff;text-decoration:none;background:#59416b;padding:2px 4px;border-radius:4px}
+.beta-document .reader-comments .comment.beta-suggestion{border-color:#c4a46a}
+.beta-selection-toolbar{position:fixed;top:12px;left:12px;bottom:auto;z-index:30;display:flex;align-items:center;gap:6px;padding:5px;background:#30293e;border:1px solid #8e76b5;border-radius:12px;box-shadow:0 10px 32px #0008}
+.beta-selection-toolbar button{min-height:36px;padding:6px 12px}
+.beta-anchored-text{transition:background .15s ease,box-shadow .15s ease}
+.beta-anchored-text:hover,.beta-anchored-text:focus-visible,.beta-anchored-text.is-active{background:rgba(191,156,255,.62);box-shadow:0 0 0 2px rgba(191,156,255,.3);outline:none}
+.beta-suggestion-anchor:hover,.beta-suggestion-anchor:focus-visible,.beta-suggestion-anchor.is-active{background:rgba(232,196,120,.62);box-shadow:0 0 0 2px rgba(224,163,90,.45)}
+.beta-document .reader-comments .comment.is-active{border-color:#c4a4ff;background:#393047;box-shadow:0 0 0 1px #a68cce}
+.beta-document .reader-comments .comment.beta-suggestion.is-active{border-color:#e0b36a;background:#3a3328}
+.beta-document .reader-comments .comment:focus-visible{outline:2px solid #c4a4ff;outline-offset:2px}
 .beta-selection-toolbar[hidden],.beta-selection-composer[hidden]{display:none!important}
 .beta-selection-toolbar button{box-shadow:0 4px 18px #0008;font-weight:700}
 .beta-selection-composer{border:1px solid #8c77ad;background:#302b3d;padding:14px;border-radius:12px;margin:12px 0}
@@ -94,6 +104,8 @@ body{background:radial-gradient(ellipse at 85% -10%,#352641 0%,transparent 42%),
 .beta-document textarea{background:#1b1a26;border-color:#7c698f;border-radius:11px;resize:vertical}
 .beta-selection-composer{background:#31293f;border-color:#9b80bd;border-radius:15px;box-shadow:0 12px 32px #0004}
 .beta-anchored-text{background:rgba(185,150,255,.38);box-decoration-break:clone}
+.beta-anchored-text.beta-suggestion-anchor{background:rgba(232,196,120,.38);box-shadow:inset 0 -2px 0 #e0b36a}
+.beta-anchored-text.beta-suggestion-anchor:hover,.beta-anchored-text.beta-suggestion-anchor:focus-visible,.beta-anchored-text.beta-suggestion-anchor.is-active{background:rgba(232,196,120,.62);box-shadow:0 0 0 2px rgba(224,163,90,.45)}
 .beta-document button:focus-visible,.beta-read-gate button:focus-visible,.beta-account-form input:focus-visible{outline:3px solid #d5b9ff;outline-offset:3px}
 @media(max-width:850px){.beta-document-header{position:static}.beta-document .reader-comments{border-radius:15px}}
 @media(max-width:600px){.beta-read-gate{margin:18px 10px;padding:24px 20px}.beta-document-header{gap:10px}.beta-document-header .doc-identity{min-width:120px}.beta-document .reader-chapter{padding:26px 21px}.beta-document .reader-comments{padding:16px}.beta-account-actions{display:grid;grid-template-columns:1fr}.beta-account-actions button{width:100%}}
@@ -168,14 +180,7 @@ async function renderReader(){
   const prose = article.querySelector(".chapter-prose");
   comments.replaceChildren();
   const threads=await call("chapter-threads",{chapterId:chapter.id,guestToken});
-  mountBetaFeedback({host:comments,prose,chapter,threads:threads.threads||[],send:(action,payload)=>call(action,{...payload,guestToken}),reload:show});
-  /* Thread rendering is handled by mountBetaFeedback. */
-  for(const thread of []){
-   const item=document.createElement("div");item.className="comment";
-   item.append(node("small",thread.quote||"Chapter feedback"));
-   for(const comment of thread.comments||[])item.append(node("p",(comment.authorLabel||"Guest")+": "+comment.body));
-   comments.append(item);
-  }
+  mountBetaFeedback({host:comments,prose,chapter,threads:threads.threads||[],suggestions:threads.suggestions||[],send:(action,payload)=>call(action,{...payload,guestToken}),reload:show});
  }
  selector.addEventListener("change",()=>void show().catch(e=>error(e.message)));
  controls.append(chapterLabel,selector);

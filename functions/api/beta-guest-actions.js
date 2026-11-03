@@ -1,4 +1,10 @@
 /** Public Beta Read guest actions. Called only after link-token validation. */
+import { isMissingSuggestionsTable, matchSelectedQuote, snapshotPlainText } from "./beta-quote.js";
+
+function tooSoon(timestamp) {
+    return Boolean(timestamp) && Date.now() - Date.parse(timestamp) < 10000;
+}
+
 export async function handleBetaGuestAction({ action, body, read, rows, insert, update, sha, random, authenticatedUser = null }) {
     const betaId = read.id;
     if (action === "join") {
@@ -21,7 +27,7 @@ export async function handleBetaGuestAction({ action, body, read, rows, insert, 
         }
         return { guestToken: token, guestNumber: guest.guest_number, username: guest.authenticated_username || null };
     }
-    if (!["comment", "reply", "delete-comment"].includes(action)) return null;
+    if (!["comment", "suggest", "reply", "delete-comment"].includes(action)) return null;
     if (!/^[a-f\d]{64}$/.test(String(body.guestToken || ""))) throw new Error("Guest identity required.");
     const hash = await sha(body.guestToken);
     const guest = (await rows("snippet_beta_guests", { beta_read_id: `eq.${betaId}`, guest_token_hash: `eq.${hash}`, select: "id" }))[0];
@@ -34,44 +40,52 @@ export async function handleBetaGuestAction({ action, body, read, rows, insert, 
         if (!changed.length) throw new Error("Comment not found or not yours.");
         return { deleted: true };
     }
+    if (action === "suggest") {
+        const recent = await rows("snippet_beta_comments", { guest_id: `eq.${guest.id}`, select: "created_at", order: "created_at.desc", limit: "1" });
+        let recentSuggestions = [];
+        try {
+            recentSuggestions = await rows("snippet_beta_suggestions", { guest_id: "eq." + guest.id, select: "created_at", order: "created_at.desc", limit: "1" });
+        } catch (error) {
+            if (!isMissingSuggestionsTable(error)) throw error;
+            throw new Error("Suggested edits are not available yet.");
+        }
+        if (tooSoon(recent[0]?.created_at) || tooSoon(recentSuggestions[0]?.created_at)) {
+            throw new Error("Wait 10 seconds between feedback submissions.");
+        }
+        const chapter = (await rows("snippet_beta_chapters", { beta_read_id: `eq.${betaId}`, id: `eq.${body.chapterId}`, select: "id,content" }))[0];
+        if (!chapter) throw new Error("Chapter not found.");
+        const matched = matchSelectedQuote(snapshotPlainText(chapter.content), Number(body.startOffset), Number(body.endOffset), body.quote);
+        if (!matched) throw new Error("Selected passage could not be matched. Please highlight it again.");
+        const replacement = String(body.replacement ?? "");
+        const note = String(body.note ?? "").trim();
+        if (replacement.length > 2000 || replacement === matched.quote) throw new Error("Suggestion must differ from the selected text and be at most 2,000 characters.");
+        if (note.length > 4000) throw new Error("Suggestion note is too long.");
+        try {
+            const suggestion = await insert("snippet_beta_suggestions", {
+                beta_read_id: betaId, chapter_id: chapter.id, guest_id: guest.id,
+                quote: matched.quote, start_offset: matched.startOffset, end_offset: matched.endOffset,
+                replacement, note, status: "pending"
+            });
+            return { suggestionId: suggestion.id };
+        } catch (error) {
+            if (isMissingSuggestionsTable(error)) throw new Error("Suggested edits are not available yet.");
+            throw error;
+        }
+    }
     const message = String(body.message || "").trim();
     if (!message || message.length > 4000) throw new Error("Comment must contain 1–4000 characters.");
     const recent = await rows("snippet_beta_comments", { guest_id: `eq.${guest.id}`, select: "created_at", order: "created_at.desc", limit: "1" });
-    if (recent[0] && Date.now() - Date.parse(recent[0].created_at) < 10000) throw new Error("Wait 10 seconds before commenting again.");
+    if (tooSoon(recent[0]?.created_at)) throw new Error("Wait 10 seconds between feedback submissions.");
     let threadId = String(body.threadId || "");
     if (action === "comment") {
         const chapter = (await rows("snippet_beta_chapters", { beta_read_id: `eq.${betaId}`, id: `eq.${body.chapterId}`, select: "id,content" }))[0];
         if (!chapter) throw new Error("Chapter not found.");
-        // Reconstruct the reader's text stream from the snapshot HTML.
-        const plain = String(chapter.content)
-            .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
-            .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
-            .replace(/<[^>]*>/g, "")
-            .replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos|nbsp);/gi, (entity, code) => {
-                const named = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: "\u00a0" };
-                if (code[0] !== "#") return named[code.toLowerCase()] || entity;
-                const number = code[1]?.toLowerCase() === "x" ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10);
-                return Number.isInteger(number) && number > 0 && number <= 0x10ffff && !(number >= 0xd800 && number <= 0xdfff) ? String.fromCodePoint(number) : entity;
-            });
-        const start = Number(body.startOffset), end = Number(body.endOffset);
-        const selectedQuote = String(body.quote || "");
-        if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end <= start || end - start > 2000 || !selectedQuote || selectedQuote.length !== end - start) {
-            throw new Error("Select a passage to comment on.");
-        }
-        // Reject missing quotes; tolerate source-HTML entity offset differences
-        // by choosing the occurrence nearest the original browser selection.
-        let anchorStart = plain.slice(start, end) === selectedQuote ? start : -1;
-        if (anchorStart < 0) {
-            let match = plain.indexOf(selectedQuote), nearest = Infinity;
-            while (match !== -1) {
-                const distance = Math.abs(match - start);
-                if (distance < nearest) { nearest = distance; anchorStart = match; }
-                match = plain.indexOf(selectedQuote, match + 1);
-            }
-        }
-        if (anchorStart < 0) throw new Error("Selected passage could not be matched. Please highlight it again.");
-        const anchorEnd = anchorStart + selectedQuote.length;
-        const thread = await insert("snippet_beta_threads", { beta_read_id: betaId, chapter_id: chapter.id, quote: selectedQuote, start_offset: anchorStart, end_offset: anchorEnd });
+        const matched = matchSelectedQuote(snapshotPlainText(chapter.content), Number(body.startOffset), Number(body.endOffset), body.quote);
+        if (!matched) throw new Error("Selected passage could not be matched. Please highlight it again.");
+        const thread = await insert("snippet_beta_threads", {
+            beta_read_id: betaId, chapter_id: chapter.id, quote: matched.quote,
+            start_offset: matched.startOffset, end_offset: matched.endOffset
+        });
         threadId = thread.id;
     } else {
         const thread = (await rows("snippet_beta_threads", { beta_read_id: `eq.${betaId}`, id: `eq.${threadId}`, select: "id" }))[0];
