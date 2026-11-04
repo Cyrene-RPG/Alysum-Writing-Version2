@@ -1,0 +1,41 @@
+name: Editor writing sound
+on:
+  pull_request:
+    paths:
+      - 'core/atmosphere/**'
+      - 'core/tests/atmosphere/**'
+      - 'applications/editor/page-ui/sound.js'
+      - 'applications/editor/page-ui/page.js'
+      - 'applications/editor/pages/editor.html'
+      - 'applications/editor/editor-css/sound.css'
+      - 'applications/editor/tests/sound.mjs'
+      - '.github/workflows/editor-sound-tests.yml'
+permissions:
+  contents: read
+jobs:
+  data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test core/tests/atmosphere/*.test.js
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser
+        run: |
+          npm install --prefix "$RUNNER_TEMP/editor-sound" --no-audit --no-fund playwright@1.61.1
+          "$RUNNER_TEMP/editor-sound/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Check rain, mute, and song links
+        run: PLAYWRIGHT_MODULE_PATH="$RUNNER_TEMP/editor-sound/node_modules/playwright/index.mjs" node applications/editor/tests/sound.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: editor-sound-screenshots
+          path: test-results/editor-sound
