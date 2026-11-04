@@ -66,7 +66,7 @@ export function mountEditorSound({
         node.className = 'writer-sound-panel';
         node.hidden = true;
         node.innerHTML = `
-            <p class="writer-sound-copy">Rain and room tone are made here. A favorite song opens in Spotify, YouTube, or Apple Music — Alysum does not play or store the track.</p>
+            <p class="writer-sound-copy">Rain and room tone play royalty-free loops. A favorite song opens in Spotify, YouTube, or Apple Music — Alysum does not play or store that track.</p>
             <div class="writer-sound-beds" role="group" aria-label="Atmosphere"></div>
             <div class="writer-sound-controls">
                 <button type="button" class="quote-button" id="editorSoundPlay">Play</button>

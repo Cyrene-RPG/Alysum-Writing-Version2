@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { createAtmospherePlayer } from '../../atmosphere/player.js';
 
 function fakeContext() {
-    const nodes = [];
     function param(value = 0) {
         return {
             value,
@@ -12,33 +11,25 @@ function fakeContext() {
         };
     }
     function node(extra = {}) {
-        const created = {
+        return {
             connect() { return this; },
             disconnect() {},
             start() {},
             stop() {},
             gain: param(1),
-            frequency: param(0),
-            Q: param(1),
-            type: 'lowpass',
             buffer: null,
             loop: false,
             ...extra,
         };
-        nodes.push(created);
-        return created;
     }
-    const context = {
+    return {
         sampleRate: 8000,
         currentTime: 0,
         destination: {},
         state: 'running',
-        nodes,
         async resume() { this.state = 'running'; },
         createGain() { return node(); },
-        createBiquadFilter() { return node(); },
         createBufferSource() { return node(); },
-        createOscillator() { return node({ type: 'sine' }); },
         createBuffer(channels, length, rate) {
             return {
                 numberOfChannels: channels,
@@ -48,17 +39,23 @@ function fakeContext() {
             };
         },
     };
-    return context;
 }
 
-test('rain starts from a user play call and mute silences without changing the bed', async () => {
+test('rain starts from a royalty-free loop file and mute silences without changing the bed', async () => {
     const context = fakeContext();
-    const player = createAtmospherePlayer({ createContext: () => context });
+    const loaded = [];
+    const player = createAtmospherePlayer({
+        createContext: () => context,
+        async loadLoop(next, id) {
+            loaded.push(id);
+            return next.createBuffer(1, 8, next.sampleRate);
+        },
+    });
     const started = await player.play('rain');
+    assert.deepEqual(loaded, ['rain']);
     assert.equal(started.bed, 'rain');
     assert.equal(started.playing, true);
     assert.equal(started.muted, false);
-    assert.ok(context.nodes.length > 0);
     const muted = player.setMuted(true);
     assert.equal(muted.muted, true);
     assert.equal(muted.playing, true);
@@ -66,14 +63,23 @@ test('rain starts from a user play call and mute silences without changing the b
     player.destroy();
 });
 
-test('unknown beds and pause do not invent a song source', async () => {
-    const player = createAtmospherePlayer({ createContext: () => fakeContext() });
+test('missing loops and unknown beds do not invent a song source', async () => {
+    const player = createAtmospherePlayer({
+        createContext: () => fakeContext(),
+        async loadLoop() { return null; },
+    });
     await assert.rejects(() => player.play('spotify'), /rain, cafe, night, or fire/);
-    await player.play('cafe');
-    const paused = player.pause();
+    await assert.rejects(() => player.play('cafe'), /cafe\.ogg/);
+    const ready = createAtmospherePlayer({
+        createContext: () => fakeContext(),
+        async loadLoop(next) { return next.createBuffer(1, 8, next.sampleRate); },
+    });
+    await ready.play('cafe');
+    const paused = ready.pause();
     assert.equal(paused.playing, false);
     assert.equal(paused.bed, 'cafe');
-    player.setVolume(0.2);
-    assert.equal(player.getState().volume, 0.2);
+    ready.setVolume(0.2);
+    assert.equal(ready.getState().volume, 0.2);
+    ready.destroy();
     player.destroy();
 });

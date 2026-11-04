@@ -4,6 +4,8 @@ import {
     ATMOSPHERE_BEDS,
     SOUND_STORAGE_KEY,
     atmosphereBed,
+    atmosphereLoopUrls,
+    missingLoopMessage,
     normalizeSongUrl,
     readSoundPrefs,
     songProviderLabel,
@@ -11,11 +13,17 @@ import {
     soundChipLabel,
 } from '../../atmosphere/model.js';
 
-test('atmosphere beds are named sounds Alysum generates, not uploaded songs', () => {
+test('atmosphere beds are named royalty-free loops, not uploaded songs', () => {
     assert.equal(SOUND_STORAGE_KEY, 'alysum:editor:sound');
     assert.deepEqual(ATMOSPHERE_BEDS.map((bed) => bed.id), ['rain', 'cafe', 'night', 'fire']);
     assert.equal(atmosphereBed('rain').label, 'Rain');
     assert.equal(atmosphereBed('song'), null);
+    assert.deepEqual(atmosphereLoopUrls('rain'), [
+        '/core/atmosphere/media/rain.ogg',
+        '/core/atmosphere/media/rain.mp3',
+        '/core/atmosphere/media/rain.wav',
+    ]);
+    assert.match(missingLoopMessage('rain'), /rain\.ogg/);
 });
 
 test('favorite songs must be complete HTTPS player links without credentials', () => {

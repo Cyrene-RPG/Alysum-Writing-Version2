@@ -41,12 +41,36 @@ function staticPath(path) {
     return path;
 }
 
+function wavLoop() {
+    const samples = 8000;
+    const bytes = Buffer.alloc(44 + samples * 2);
+    bytes.write('RIFF', 0);
+    bytes.writeUInt32LE(bytes.length - 8, 4);
+    bytes.write('WAVE', 8);
+    bytes.write('fmt ', 12);
+    bytes.writeUInt32LE(16, 16);
+    bytes.writeUInt16LE(1, 20);
+    bytes.writeUInt16LE(1, 22);
+    bytes.writeUInt32LE(8000, 24);
+    bytes.writeUInt32LE(16000, 28);
+    bytes.writeUInt16LE(2, 32);
+    bytes.writeUInt16LE(16, 34);
+    bytes.write('data', 36);
+    bytes.writeUInt32LE(samples * 2, 40);
+    return bytes;
+}
+
 const server = createServer(async (req, res) => {
     try {
         const url = new URL(req.url, 'http://localhost');
         if (url.pathname === '/fixture') {
             res.setHeader('Content-Type', 'text/html');
             res.end(fixture);
+            return;
+        }
+        if (url.pathname.startsWith('/core/atmosphere/media/')) {
+            res.setHeader('Content-Type', 'audio/wav');
+            res.end(wavLoop());
             return;
         }
         let path = staticPath(url.pathname);
