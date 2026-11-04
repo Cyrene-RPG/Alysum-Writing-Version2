@@ -128,7 +128,7 @@ export function mountStoryBible({ button, pageEl, supabase, session, getBook, ge
         } catch (error) { message(`Profile access is available. Appearance index: ${describeError(error)}`); }
         finally { indexing = false; }
     }
-    mountBibleSelectionMenu({ pageEl, getBook, getChapterId, saveCurrent,
+    const selectionMenu = mountBibleSelectionMenu({ pageEl, getBook, getChapterId, saveCurrent,
         async loadBible(create) {
             bible = await api.openBook(getBook().id, create);
             if (bible) { state = await api.load(bible.id); renderResults(); }
@@ -163,4 +163,5 @@ export function mountStoryBible({ button, pageEl, supabase, session, getBook, ge
     });
     panel.addEventListener('keydown', event => { if (event.key === 'Escape') { toggle(false); button.focus(); } });
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && bible && !panel.hidden) void api.load(bible.id).then(next => { state = next; selected = state.entries.find(entry => entry.id === selected?.id); renderResults(); renderDetail(); }).catch(error => message(describeError(error))); });
+    return selectionMenu;
 }
