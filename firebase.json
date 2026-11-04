@@ -348,6 +348,10 @@
         "destination": "/applications/main-site/assets/pfp-decorations/blossom.png"
       },
       {
+        "source": "/assets/pfp-decorations/moth.png",
+        "destination": "/applications/main-site/assets/pfp-decorations/moth.png"
+      },
+      {
         "source": "/js/pwa-register.js",
         "destination": "/applications/main-site/page-ui/pwa-register.js"
       },
