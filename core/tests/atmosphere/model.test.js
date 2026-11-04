@@ -1,32 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    ATMOSPHERE_BEDS,
     SOUND_STORAGE_KEY,
-    atmosphereBed,
-    atmosphereLoopUrls,
-    missingLoopMessage,
     normalizeSongUrl,
     readSoundPrefs,
     songProviderLabel,
-    soundButtonLabel,
-    soundChipLabel,
+    youtubeEmbedUrl,
+    youtubeVideoId,
 } from '../../atmosphere/model.js';
 
-test('atmosphere beds are named royalty-free loops, not uploaded songs', () => {
-    assert.equal(SOUND_STORAGE_KEY, 'alysum:editor:sound');
-    assert.deepEqual(ATMOSPHERE_BEDS.map((bed) => bed.id), ['rain', 'cafe', 'night', 'fire']);
-    assert.equal(atmosphereBed('rain').label, 'Rain');
-    assert.equal(atmosphereBed('song'), null);
-    assert.deepEqual(atmosphereLoopUrls('rain'), [
-        '/core/atmosphere/media/rain.ogg',
-        '/core/atmosphere/media/rain.mp3',
-        '/core/atmosphere/media/rain.wav',
-    ]);
-    assert.match(missingLoopMessage('rain'), /rain\.ogg/);
-});
-
 test('favorite songs must be complete HTTPS player links without credentials', () => {
+    assert.equal(SOUND_STORAGE_KEY, 'alysum:editor:sound');
     for (const unsafe of [
         'javascript:alert(1)',
         'http://open.spotify.com/track/1',
@@ -47,22 +31,25 @@ test('favorite songs must be complete HTTPS player links without credentials', (
     assert.equal(songProviderLabel('https://example.com/song'), '');
 });
 
-test('prefs keep a bed, volume, mute, and a sanitized song link', () => {
-    assert.deepEqual(readSoundPrefs(null), { bed: '', volume: 0.4, muted: false, songUrl: '' });
-    assert.deepEqual(
-        readSoundPrefs({ bed: 'rain', volume: 0.8, muted: true, songUrl: 'https://open.spotify.com/track/1' }),
-        { bed: 'rain', volume: 0.8, muted: true, songUrl: 'https://open.spotify.com/track/1' },
+test('YouTube links become an official embed and never keep the pasted address', () => {
+    assert.equal(youtubeVideoId('https://youtu.be/dQw4w9wgGcQ'), 'dQw4w9wgGcQ');
+    assert.equal(youtubeVideoId('https://www.youtube.com/watch?v=dQw4w9wgGcQ&t=90'), 'dQw4w9wgGcQ');
+    assert.equal(youtubeVideoId('https://music.youtube.com/watch?v=dQw4w9wgGcQ'), 'dQw4w9wgGcQ');
+    assert.equal(youtubeVideoId('https://www.youtube.com/shorts/dQw4w9wgGcQ'), 'dQw4w9wgGcQ');
+    assert.equal(youtubeVideoId('https://open.spotify.com/track/abc'), '');
+    assert.equal(
+        youtubeEmbedUrl('https://www.youtube.com/watch?v=dQw4w9wgGcQ&t=1m30s'),
+        'https://www.youtube-nocookie.com/embed/dQw4w9wgGcQ?rel=0&start=90',
     );
-    assert.equal(readSoundPrefs({ bed: 'tape', volume: 9, songUrl: 'javascript:alert(1)' }).bed, '');
-    assert.equal(readSoundPrefs({ volume: 9 }).volume, 1);
-    assert.equal(readSoundPrefs({ volume: -2 }).volume, 0);
+    assert.equal(youtubeEmbedUrl('javascript:alert(1)'), '');
+    assert.equal(youtubeEmbedUrl('https://evil.example/watch?v=dQw4w9wgGcQ'), '');
 });
 
-test('button and focus-mode labels do not mention hosted music', () => {
-    assert.equal(soundButtonLabel({ bed: 'rain' }, false), 'Sound');
-    assert.equal(soundButtonLabel({ bed: 'rain' }, true), 'Sound · Rain');
-    assert.equal(soundChipLabel({ bed: 'rain', muted: false }, true), 'Rain');
-    assert.equal(soundChipLabel({ bed: 'rain', muted: true }, true), 'Rain · muted');
-    assert.equal(soundChipLabel({ bed: 'fire', muted: false }, false), 'Fire · paused');
-    assert.equal(soundChipLabel({ bed: '' }, false), 'Sound');
+test('prefs keep a sanitized song link and ignore leftover rain settings', () => {
+    assert.deepEqual(readSoundPrefs(null), { songUrl: '' });
+    assert.deepEqual(
+        readSoundPrefs({ bed: 'rain', volume: 0.8, muted: true, songUrl: 'https://youtu.be/dQw4w9wgGcQ' }),
+        { songUrl: 'https://youtu.be/dQw4w9wgGcQ' },
+    );
+    assert.equal(readSoundPrefs({ songUrl: 'javascript:alert(1)' }).songUrl, '');
 });

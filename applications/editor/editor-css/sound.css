@@ -17,35 +17,10 @@
 }
 .writer-sound-error { color: #f3b4b4; }
 .writer-sound-error[hidden] { display: none !important; }
-.writer-sound-beds,
-.writer-sound-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-}
-.writer-sound-beds .quote-button,
-.writer-sound-controls .quote-button,
-.writer-sound-panel > .quote-button {
-    min-height: 36px;
-}
-.writer-sound-beds .quote-button[aria-pressed="true"],
-#editorSound.is-active,
-#editorSoundMute[aria-pressed="true"] {
+.writer-sound-panel > .quote-button { min-height: 36px; }
+#editorSound.is-active {
     outline: 2px solid var(--accent, #6d28d9);
     outline-offset: 1px;
-}
-.writer-sound-volume {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 36px;
-    color: var(--muted);
-    font-size: 12px;
-}
-.writer-sound-volume input {
-    width: min(160px, 36vw);
-    accent-color: var(--accent, #6d28d9);
 }
 .writer-sound-song {
     display: grid;
@@ -65,37 +40,41 @@
     font: inherit;
 }
 #editorSoundOpen[hidden] { display: none !important; }
-.writer-sound-chip {
-    display: none;
+.writer-sound-embed {
+    margin: 0 16px 8px;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    max-width: 36rem;
+    background: #000;
+}
+.writer-sound-embed[hidden] { display: none !important; }
+.writer-sound-embed iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+html.is-typewriter .writer-sound-embed {
     position: fixed;
-    left: calc(12px + env(safe-area-inset-left, 0px));
+    right: calc(12px + env(safe-area-inset-right, 0px));
     bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     z-index: 80;
-    min-height: 36px;
-    padding: 8px 12px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--alysum-ui-raised, #222837);
-    color: var(--text, #fff);
-    font: 600 12px/1.3 var(--font-sans, sans-serif);
-    cursor: pointer;
-}
-html.is-typewriter .writer-sound-chip.is-visible {
-    display: inline-flex;
-    align-items: center;
+    width: min(240px, 42vw);
+    margin: 0;
 }
 html.is-typewriter .writer-sound-panel,
 html.is-typewriter #editorSound {
     display: none !important;
 }
-.writer-sound-chip:focus-visible,
 .writer-sound-panel .quote-button:focus-visible,
 .writer-sound-song input:focus-visible {
     outline: 2px solid var(--accent, #6d28d9);
     outline-offset: 3px;
 }
 @media (max-width: 720px) {
-    .writer-sound-panel { margin: 0 10px 8px; }
-    .writer-sound-volume input { width: min(220px, 70vw); }
-    html.is-editor-keyboard .writer-sound-panel { display: none !important; }
+    .writer-sound-panel,
+    .writer-sound-embed { margin: 0 10px 8px; }
+    html.is-editor-keyboard .writer-sound-panel,
+    html.is-editor-keyboard:not(.is-typewriter) .writer-sound-embed { display: none !important; }
 }

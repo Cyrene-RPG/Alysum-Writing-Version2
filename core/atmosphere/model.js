@@ -1,14 +1,5 @@
-/** Personal writing atmosphere. Alysum never hosts or plays copyrighted songs. */
+/** Editor sound links. Alysum never hosts or plays copyrighted files. */
 export const SOUND_STORAGE_KEY = 'alysum:editor:sound';
-export const DEFAULT_SOUND_VOLUME = 0.4;
-export const ATMOSPHERE_MEDIA_BASE = '/core/atmosphere/media';
-export const ATMOSPHERE_BEDS = Object.freeze([
-    { id: 'rain', label: 'Rain', description: 'Soft rain' },
-    { id: 'cafe', label: 'Cafe', description: 'Quiet room tone' },
-    { id: 'night', label: 'Night', description: 'Night air' },
-    { id: 'fire', label: 'Fire', description: 'Low fire' },
-]);
-const LOOP_EXTENSIONS = Object.freeze(['ogg', 'mp3', 'wav']);
 const SONG_HOSTS = new Set([
     'open.spotify.com',
     'play.spotify.com',
@@ -19,22 +10,6 @@ const SONG_HOSTS = new Set([
     'youtu.be',
     'music.apple.com',
 ]);
-
-export function atmosphereBed(id) {
-    return ATMOSPHERE_BEDS.find((bed) => bed.id === id) || null;
-}
-
-export function atmosphereLoopUrls(id) {
-    const bed = atmosphereBed(id);
-    if (!bed) return [];
-    return LOOP_EXTENSIONS.map((extension) => `${ATMOSPHERE_MEDIA_BASE}/${bed.id}.${extension}`);
-}
-
-function clampVolume(value) {
-    const volume = Number(value);
-    if (!Number.isFinite(volume)) return DEFAULT_SOUND_VOLUME;
-    return Math.min(1, Math.max(0, volume));
-}
 
 /** Spotify / YouTube / Apple Music HTTPS links only. Alysum never fetches the audio. */
 export function normalizeSongUrl(raw) {
@@ -59,34 +34,62 @@ export function songProviderLabel(raw) {
     return 'YouTube';
 }
 
+const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
+const YOUTUBE_LIST = /^[A-Za-z0-9_-]{10,80}$/;
+
+function youtubeHost(url) {
+    const host = url.hostname.toLowerCase();
+    return host === 'youtu.be' || host.endsWith('youtube.com');
+}
+
+function startSeconds(url) {
+    const raw = String(url.searchParams.get('t') || url.searchParams.get('start') || '').trim();
+    if (!raw) return 0;
+    if (/^\d+$/.test(raw)) return Math.min(86400, Number(raw));
+    const match = raw.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/i);
+    if (!match || !match[0]) return 0;
+    const seconds = (Number(match[1]) || 0) * 3600 + (Number(match[2]) || 0) * 60 + (Number(match[3]) || 0);
+    return Math.min(86400, seconds);
+}
+
+/** Official in-page player only. Never use the pasted URL as an iframe address. */
+export function youtubeVideoId(raw) {
+    const href = normalizeSongUrl(raw);
+    if (!href) return '';
+    const url = new URL(href);
+    if (!youtubeHost(url)) return '';
+    if (url.hostname.toLowerCase() === 'youtu.be') {
+        const id = url.pathname.split('/').filter(Boolean)[0] || '';
+        return YOUTUBE_ID.test(id) ? id : '';
+    }
+    const queryId = url.searchParams.get('v');
+    if (YOUTUBE_ID.test(queryId || '')) return queryId;
+    const parts = url.pathname.split('/').filter(Boolean);
+    for (const key of ['embed', 'shorts', 'live', 'v']) {
+        const index = parts.indexOf(key);
+        if (index >= 0 && YOUTUBE_ID.test(parts[index + 1] || '')) return parts[index + 1];
+    }
+    return '';
+}
+
+export function youtubeEmbedUrl(raw) {
+    const href = normalizeSongUrl(raw);
+    if (!href) return '';
+    const url = new URL(href);
+    if (!youtubeHost(url)) return '';
+    const id = youtubeVideoId(href);
+    const list = url.searchParams.get('list');
+    const listId = YOUTUBE_LIST.test(list || '') ? list : '';
+    if (!id && !listId) return '';
+    const embed = new URL(`https://www.youtube-nocookie.com/embed/${id || 'videoseries'}`);
+    if (listId) embed.searchParams.set('list', listId);
+    embed.searchParams.set('rel', '0');
+    const start = startSeconds(url);
+    if (start) embed.searchParams.set('start', String(start));
+    return embed.href;
+}
+
 export function readSoundPrefs(raw) {
     const value = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
-    const bed = atmosphereBed(value.bed)?.id || '';
-    return {
-        bed,
-        volume: clampVolume(value.volume),
-        muted: value.muted === true,
-        songUrl: normalizeSongUrl(value.songUrl),
-    };
-}
-
-export function soundButtonLabel(prefs, playing) {
-    const bed = atmosphereBed(prefs?.bed);
-    if (playing && bed) return `Sound · ${bed.label}`;
-    return 'Sound';
-}
-
-export function soundChipLabel(prefs, playing) {
-    const bed = atmosphereBed(prefs?.bed);
-    if (!bed) return 'Sound';
-    if (prefs?.muted) return `${bed.label} · muted`;
-    if (playing) return bed.label;
-    return `${bed.label} · paused`;
-}
-
-export function missingLoopMessage(id) {
-    const bed = atmosphereBed(id);
-    const name = bed?.label || 'That sound';
-    const file = bed ? `${bed.id}.ogg` : 'rain.ogg';
-    return `${name} is not installed yet. Add a royalty-free loop as ${file}.`;
+    return { songUrl: normalizeSongUrl(value.songUrl) };
 }
