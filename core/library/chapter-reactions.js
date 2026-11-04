@@ -31,15 +31,17 @@ export function normalizeChapterReactions(value) {
         const count = Number(value?.counts?.[id]);
         return [id, Number.isSafeInteger(count) && count >= 0 ? count : 0];
     }));
-    return { counts, mine: ids.has(value?.mine) ? value.mine : null };
+    const rawMine = Array.isArray(value?.mine) ? value.mine : ids.has(value?.mine) ? [value.mine] : [];
+    return { counts, mine: [...new Set(rawMine.filter(id => ids.has(id)))] };
 }
 export async function chapterReactions(client, bookId, chapterId, options = {}) {
     if (!client || !String(bookId || '').trim() || !String(chapterId || '').trim()) throw Error('This chapter is unavailable.');
     const write = Object.hasOwn(options, 'reaction');
-    if (write && options.reaction !== null && !ids.has(options.reaction)) throw Error('Choose a chapter reaction.');
+    if (write && (!ids.has(options.reaction) || typeof options.selected !== 'boolean')) throw Error('Choose a chapter reaction.');
     const { data, error } = await client.rpc('chapter_reactions', {
         p_book: String(bookId).trim(), p_chapter: String(chapterId).trim(),
         p_write: write, p_reaction: write ? options.reaction : null,
+        p_selected: write ? options.selected : null,
     });
     if (error) {
         const failure = Error(['PGRST202', '42P01', '42883'].includes(error.code)

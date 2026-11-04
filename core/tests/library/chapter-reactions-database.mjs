@@ -18,7 +18,7 @@ async function setupDatabase(db) {
   INSERT INTO public.library_book_moderation VALUES('hidden','hidden');`);
   await db.exec(await readFile(new URL('../../../supabase/live-site/supabase-library-public-reading.sql',import.meta.url),'utf8'));
 }
-test('real reaction migration: publication boundaries, identities, switching, removal and privileges', async()=>{
+test('real reaction migration: publication boundaries, identities, multiple reactions, removal and privileges', async()=>{
  const db=new PGlite();try {
   await setupDatabase(db);
   const migration=await readFile(new URL('../../../supabase/live-site/supabase-chapter-reactions.sql',import.meta.url),'utf8');await db.exec(migration);
@@ -28,26 +28,35 @@ test('real reaction migration: publication boundaries, identities, switching, re
   assert.equal((await db.query('SELECT reaction FROM public.library_chapter_reaction_votes')).rows[0].reaction,'love');
   await db.exec('DELETE FROM public.library_chapter_reaction_votes');
   const identity=async n=>{await db.exec('RESET ROLE');await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[n?'00000000-0000-0000-0000-00000000000'+n:'']);await db.exec('SET ROLE '+(n?'authenticated':'anon'));};
-  const call=async(book='book',chapter='one',reaction=null,write=false)=>(await db.query('SELECT public.chapter_reactions($1,$2,$3,$4) AS result',[book,chapter,reaction,write])).rows[0].result;
-  await identity(0);assert.deepEqual(await call(),{counts:{},mine:null});
-  await assert.rejects(call('book','one','love',true),/Sign in/);
+  const call=async(book='book',chapter='one',reaction=null,write=false,selected=null)=>(await db.query('SELECT public.chapter_reactions($1,$2,$3,$4,$5) AS result',[book,chapter,reaction,write,selected])).rows[0].result;
+  await identity(0);assert.deepEqual(await call(),{counts:{},mine:[]});
+  await assert.rejects(call('book','one','love',true,true),/Sign in/);
   for(const [book,chapter] of [['draft','one'],['book','future'],['hidden','one'],['book','missing']])await assert.rejects(call(book,chapter),/unavailable/);
-  await identity(1);assert.equal((await call('book','one','love',true)).counts.love,1);
-  assert.equal((await call('book','one','love',true)).counts.love,1);
+  await identity(1);assert.equal((await call('book','one','love',true,true)).counts.love,1);
+  assert.equal((await call('book','one','love',true,true)).counts.love,1);
   await assert.rejects(db.query('SELECT * FROM public.library_chapter_reaction_votes'),/permission denied/);
+  await assert.rejects(db.query('SELECT * FROM public.library_chapter_reaction_import_skips'),/permission denied/);
   await assert.rejects(db.query("INSERT INTO public.library_chapter_reaction_votes VALUES('book','one','00000000-0000-0000-0000-000000000002','love',now())"),/permission denied/);
-  await assert.rejects(call('book','one','unknown',true),/Choose/);
-  for (const reaction of ['swoon','heartbreak','blush','hot','happy','proud','scared','tense','confused','mindblown','curious','suspicious','inspired','hopeful','relieved','impressed','speechless','melting']) { const result = await call('book','one',reaction,true);assert.equal(result.mine,reaction);assert.equal(result.counts[reaction],1); }
-  await call('book','one','love',true);
-  await identity(2);assert.deepEqual(await call('book','one','cry',true),{counts:{love:1,cry:1},mine:'cry'});
-  await identity(1);assert.deepEqual(await call('book','one','shock',true),{counts:{shock:1,cry:1},mine:'shock'});
-  assert.deepEqual(await call('book','one',null,true),{counts:{cry:1},mine:null});
-  await identity(0);assert.deepEqual(await call(),{counts:{cry:1},mine:null});
+  await assert.rejects(call('book','one','unknown',true,true),/Choose/);
+  await assert.rejects(call('book','one','love',true,null),/Choose/);
+  for (const reaction of ['swoon','heartbreak','blush','hot','happy','proud','scared','tense','confused','mindblown','curious','suspicious','inspired','hopeful','relieved','impressed','speechless','melting']) {
+    const result = await call('book','one',reaction,true,true);
+    assert.ok(result.mine.includes(reaction));
+    assert.equal(result.counts[reaction],1);
+    const removed = await call('book','one',reaction,true,false);
+    assert.equal(removed.mine.includes(reaction),false);
+    assert.equal(removed.counts[reaction],undefined);
+  }
+  await identity(2);assert.deepEqual(await call('book','one','cry',true,true),{counts:{love:1,cry:1},mine:['cry']});
+  await identity(1);assert.deepEqual(await call('book','one','shock',true,true),{counts:{love:1,shock:1,cry:1},mine:['love','shock']});
+  assert.deepEqual(await call('book','one','love',true,false),{counts:{shock:1,cry:1},mine:['shock']});
+  assert.deepEqual(await call('book','one','shock',true,false),{counts:{cry:1},mine:[]});
+  await identity(0);assert.deepEqual(await call(),{counts:{cry:1},mine:[]});
   await db.exec('RESET ROLE');await db.exec("INSERT INTO public.test_blocked VALUES('00000000-0000-0000-0000-000000000002')");
-  await identity(2);await assert.rejects(call('book','one','love',true),/restricted/);
+  await identity(2);await assert.rejects(call('book','one','love',true,true),/restricted/);
   await db.exec('RESET ROLE');await db.exec("INSERT INTO public.test_hidden VALUES('book')");
   await identity(2);await assert.rejects(call(),/unavailable/);
-  await db.exec('RESET ROLE');await db.exec("DELETE FROM auth.users WHERE id='00000000-0000-0000-0000-000000000002'");assert.equal((await db.query('SELECT count(*) AS total FROM public.library_chapter_reaction_votes WHERE reaction IS NOT NULL')).rows[0].total,0);
+  await db.exec('RESET ROLE');await db.exec("DELETE FROM auth.users WHERE id='00000000-0000-0000-0000-000000000002'");assert.equal((await db.query('SELECT count(*) AS total FROM public.library_chapter_reaction_votes')).rows[0].total,0);
  }finally{await db.close();}
 });
 
@@ -83,14 +92,16 @@ for (const [schema,ddl] of [['legacy reaction_type',legacyReactionDDL],['previou
    }
    await db.query("SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',false)");
    await db.exec('SET ROLE authenticated');
-   const call=async(reaction=null,write=false)=>(await db.query("SELECT public.chapter_reactions('book','one',$1,$2) AS result",[reaction,write])).rows[0].result;
-   assert.equal((await call()).mine,schema.startsWith('legacy')?'laugh':'love');
-   assert.equal((await call('mindblown',true)).mine,'mindblown');
+   const call=async(reaction=null,write=false,selected=null)=>(await db.query("SELECT public.chapter_reactions('book','one',$1,$2,$3) AS result",[reaction,write,selected])).rows[0].result;
+   const imported=schema.startsWith('legacy')?'laugh':'love';
+   assert.deepEqual((await call()).mine,[imported]);
+   assert.deepEqual((await call('mindblown',true,true)).mine,[imported,'mindblown']);
    await db.exec('RESET ROLE');await db.exec(migration);await db.exec('SET ROLE authenticated');
-   assert.equal((await call()).mine,'mindblown');
-   assert.equal((await call(null,true)).mine,null);
+   assert.deepEqual((await call()).mine,[imported,'mindblown']);
+   assert.deepEqual((await call('mindblown',true,false)).mine,[imported]);
+   assert.deepEqual((await call(imported,true,false)).mine,[]);
    await db.exec('RESET ROLE');await db.exec(migration);await db.exec('SET ROLE authenticated');
-   const removed=await call();assert.equal(removed.mine,null);assert.equal(removed.counts.mindblown,undefined);
+   const removed=await call();assert.deepEqual(removed.mine,[]);assert.equal(removed.counts.mindblown,undefined);assert.equal(removed.counts[imported],undefined);
    await assert.rejects(db.query('SELECT * FROM public.library_chapter_reaction_votes'),/permission denied/);
    await db.exec('RESET ROLE');
    assert.deepEqual((await db.query('SELECT * FROM public.chapter_reactions ORDER BY book_id,chapter_id,user_id')).rows,original);

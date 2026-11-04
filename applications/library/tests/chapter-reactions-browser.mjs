@@ -20,10 +20,13 @@ try{
  const love=page.getByRole('button',{name:/Loved it/}),shock=page.getByRole('button',{name:/Shocked me/});
  await love.waitFor({state:'visible'});await page.waitForFunction(()=>document.querySelector('.reader-reaction-count')?.textContent==='24');
  await love.click();assert.equal(await love.getAttribute('aria-pressed'),'true');assert.match(await love.getAttribute('aria-label'),/25 reactions/);
- await shock.click();assert.equal(await love.getAttribute('aria-pressed'),'false');assert.match(await love.getAttribute('aria-label'),/24 reactions/);assert.equal(await shock.getAttribute('aria-pressed'),'true');
- await shock.click();assert.equal(await shock.getAttribute('aria-pressed'),'false');
+ await shock.click();assert.equal(await love.getAttribute('aria-pressed'),'true');assert.match(await love.getAttribute('aria-label'),/25 reactions/);assert.equal(await shock.getAttribute('aria-pressed'),'true');assert.match(await shock.getAttribute('aria-label'),/19 reactions/);
+ assert.match(await page.locator('.reader-reaction-help').textContent(),/Loved it/);
+ assert.match(await page.locator('.reader-reaction-help').textContent(),/Shocked me/);
+ await shock.click();assert.equal(await shock.getAttribute('aria-pressed'),'false');assert.equal(await love.getAttribute('aria-pressed'),'true');
  await page.locator('.reader-reaction-more summary').click();
- const mindblown=page.getByRole('button',{name:/Mind blown/});await mindblown.click();assert.equal(await mindblown.getAttribute('aria-pressed'),'true');
+ const mindblown=page.getByRole('button',{name:/Mind blown/});await mindblown.click();assert.equal(await mindblown.getAttribute('aria-pressed'),'true');assert.equal(await love.getAttribute('aria-pressed'),'true');
+ assert.match(await page.locator('.reader-reaction-help').textContent(),/Loved it/);
  assert.match(await page.locator('.reader-reaction-help').textContent(),/Mind blown/);
  for(const width of [1200,390,320]){
   await page.setViewportSize({width,height:844});
@@ -34,5 +37,5 @@ try{
  await page.goto(base+'/applications/library/design/chapter-reactions.html?guest=1');await page.getByRole('link',{name:'Sign in to react'}).waitFor();
  assert.ok(await page.locator('.reader-reaction').evaluateAll(nodes=>nodes.every(n=>n.disabled)));
  assert.deepEqual(backend,[]);assert.deepEqual(errors,[]);
- console.log(name+': expanded picker, reaction switching, removing, guest state and desktop/390/320px layouts passed');
+ console.log(name+': expanded picker, multiple reactions, removing, guest state and desktop/390/320px layouts passed');
 }finally{await browser.close();server.close();}

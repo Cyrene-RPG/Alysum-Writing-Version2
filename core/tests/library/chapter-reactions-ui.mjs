@@ -15,18 +15,18 @@ async function mount(handler,{signedIn=true}={}) {
  module.namespace.mountChapterReactions(root,{work:{id:'book'},chapterId:'one',supabase:{rpc:async(name,args)=>{calls.push(args);return handler(args,calls.length);}},session:signedIn?{user:{id:'reader'}}:null});
  await tick();return {dom,root,calls,buttons:[...root.querySelectorAll('.reader-reaction')],close:()=>dom.window.close()};
 }
-test('reactions load, switch, remove and ignore repeated taps while saving',async()=>{
- let release;let server={counts:{cry:1},mine:'cry'};
- const h=await mount(async args=>{if(args.p_write){await new Promise(r=>{release=r;});server={counts:args.p_reaction?{[args.p_reaction]:1}:{},mine:args.p_reaction};}return {data:server};});
+test('reactions load, add a second feeling, remove one and ignore repeated taps while saving',async()=>{
+ let release;let server={counts:{cry:1},mine:['cry']};
+ const h=await mount(async args=>{if(args.p_write){await new Promise(r=>{release=r;});const mine=new Set(server.mine);if(args.p_selected)mine.add(args.p_reaction);else mine.delete(args.p_reaction);server={counts:{cry:mine.has('cry')?1:0,love:mine.has('love')?1:0},mine:[...mine]};}return {data:server};});
  try{
   assert.equal(h.buttons[2].getAttribute('aria-pressed'),'true');
-  h.buttons[0].click();h.buttons[3].click();assert.equal(h.calls.length,2);assert.equal(h.calls[1].p_reaction,'love');
-  release();await tick();assert.equal(h.buttons[0].getAttribute('aria-pressed'),'true');assert.equal(h.buttons[2].getAttribute('aria-pressed'),'false');
-  h.buttons[0].click();assert.equal(h.calls[2].p_reaction,null);release();await tick();assert.equal(h.buttons[0].getAttribute('aria-pressed'),'false');
+  h.buttons[0].click();h.buttons[3].click();assert.equal(h.calls.length,2);assert.equal(h.calls[1].p_reaction,'love');assert.equal(h.calls[1].p_selected,true);
+  release();await tick();assert.equal(h.buttons[0].getAttribute('aria-pressed'),'true');assert.equal(h.buttons[2].getAttribute('aria-pressed'),'true');
+  h.buttons[0].click();assert.equal(h.calls[2].p_reaction,'love');assert.equal(h.calls[2].p_selected,false);release();await tick();assert.equal(h.buttons[0].getAttribute('aria-pressed'),'false');assert.equal(h.buttons[2].getAttribute('aria-pressed'),'true');
  }finally{h.close();}
 });
 test('uncertain save clears selection and requires a confirmed read before another mutation',async()=>{
- const h=await mount(async args=>args.p_write?{error:{message:'Network failed'}}:{data:{counts:{love:2},mine:null}});
+ const h=await mount(async args=>args.p_write?{error:{message:'Network failed'}}:{data:{counts:{love:2},mine:[]}});
  try{
   h.buttons[0].click();await tick();assert.equal(h.root.querySelector('.reader-reaction-retry').hidden,false);assert.ok(h.buttons.every(b=>b.disabled));
   h.buttons[1].click();assert.equal(h.calls.length,2);
@@ -34,16 +34,16 @@ test('uncertain save clears selection and requires a confirmed read before anoth
  }finally{h.close();}
 });
 test('signed-out readers see real counts and a sign-in link without mutation',async()=>{
- const h=await mount(async()=>({data:{counts:{love:7},mine:null}}),{signedIn:false});
+ const h=await mount(async()=>({data:{counts:{love:7},mine:[]}}),{signedIn:false});
  try{assert.match(h.buttons[0].getAttribute('aria-label'),/7 reactions/);assert.ok(h.buttons.every(b=>b.disabled));assert.ok(h.root.querySelector('a').href.includes('/login?next='));h.buttons[0].click();assert.equal(h.calls.length,1);}finally{h.close();}
 });
 test('a response for a detached chapter cannot repaint the new chapter',async()=>{
  let release;const h=await mount(()=>new Promise(resolve=>{release=resolve;}));
- try{h.root.remove();const newRoot=h.dom.window.document.createElement('section');newRoot.textContent='Next chapter';h.dom.window.document.body.append(newRoot);release({data:{counts:{love:99},mine:'love'}});await tick();assert.equal(newRoot.textContent,'Next chapter');}finally{h.close();}
+ try{h.root.remove();const newRoot=h.dom.window.document.createElement('section');newRoot.textContent='Next chapter';h.dom.window.document.body.append(newRoot);release({data:{counts:{love:99},mine:['love']}});await tick();assert.equal(newRoot.textContent,'Next chapter');}finally{h.close();}
 });
 
 test('expanded choices are grouped and a saved extra reaction automatically opens the picker',async()=>{
- const h=await mount(async args=>({data:{counts:{mindblown:4},mine:'mindblown'}}));
+ const h=await mount(async args=>({data:{counts:{mindblown:4},mine:['mindblown']}}));
  try{
   const details=h.root.querySelector('details');assert.equal(details.open,true);
   assert.equal(h.buttons.length,24);assert.equal(details.querySelectorAll('[role=group]').length,3);

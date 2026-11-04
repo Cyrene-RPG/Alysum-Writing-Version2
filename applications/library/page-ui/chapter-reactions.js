@@ -6,7 +6,7 @@ export function mountChapterReactions(root, { work, chapterId, supabase, session
     const heading = document.createElement('h2');
     heading.className = 'reader-end-kicker'; heading.textContent = 'How did this chapter make you feel?';
     const help = document.createElement('p'); help.className = 'reader-reaction-help';
-    help.textContent = session?.user ? 'Choose a reaction. Tap it again to remove it.' : 'Sign in to react to this chapter.';
+    help.textContent = session?.user ? 'A good chapter makes you feel lots of things. Choose as many as you like. Tap one again to remove it.' : 'Sign in to react to this chapter.';
     const group = document.createElement('div'); group.className = 'reader-reaction-options';
     group.setAttribute('role', 'group'); group.setAttribute('aria-label', 'Popular chapter reactions');
     const more = document.createElement('details'); more.className = 'reader-reaction-more';
@@ -39,31 +39,39 @@ export function mountChapterReactions(root, { work, chapterId, supabase, session
     signIn.className = 'reader-reaction-signin'; signIn.href = `/login?next=${encodeURIComponent(location.pathname + location.search)}`; signIn.textContent = 'Sign in to react';
     root.replaceChildren(heading, help, group, more, status, retry);
     if (!session?.user) root.append(signIn);
+    function selectedItems() {
+        const mine = state?.mine || [];
+        return CHAPTER_REACTIONS.filter(item => mine.includes(item.id));
+    }
     function paint() {
+        const mine = state?.mine || [];
         for (const { button, count, item } of buttons) {
             const total = state?.counts[item.id];
+            const selected = mine.includes(item.id);
             button.disabled = busy || !state || !session?.user;
-            button.setAttribute('aria-pressed', String(state?.mine === item.id));
-            button.setAttribute('aria-label', `${item.label}${total === undefined ? '' : ` · ${total.toLocaleString()} reaction${total === 1 ? '' : 's'}`}${state?.mine === item.id ? ' · Your reaction' : ''}`);
+            button.setAttribute('aria-pressed', String(selected));
+            button.setAttribute('aria-label', `${item.label}${total === undefined ? '' : ` · ${total.toLocaleString()} reaction${total === 1 ? '' : 's'}`}${selected ? ' · Your reaction' : ''}`);
             count.textContent = total === undefined ? '—' : total.toLocaleString();
         }
         group.setAttribute('aria-busy', String(busy));
         for (const options of categories.values()) options.setAttribute('aria-busy', String(busy));
-        const selected = CHAPTER_REACTIONS.find(item => item.id === state?.mine);
-        if (session?.user) help.textContent = selected ? `Your reaction: ${selected.emoji} ${selected.label}. Tap it again to remove it.` : 'Choose a reaction. Tap it again to remove it.';
+        const picked = selectedItems();
+        if (session?.user) help.textContent = picked.length
+            ? `Your reactions: ${picked.map(item => `${item.emoji} ${item.label}`).join(', ')}. Tap one again to remove it.`
+            : 'A good chapter makes you feel lots of things. Choose as many as you like. Tap one again to remove it.';
     }
     async function update(id) {
         if (busy || (id && (!state || !session?.user))) return;
         busy = true; retry.hidden = true; status.textContent = id ? 'Saving reaction…' : 'Loading reactions…'; paint();
         try {
-            const next = await chapterReactions(supabase, work.id, chapterId, id ? { reaction: state.mine === id ? null : id } : {});
+            const next = await chapterReactions(supabase, work.id, chapterId, id ? { reaction: id, selected: !state.mine.includes(id) } : {});
             if (!root.isConnected) return;
             state = next;
             if (revealSavedReaction) {
-                if (CHAPTER_REACTIONS.find(item => item.id === state.mine)?.category) more.open = true;
+                if (selectedItems().some(item => item.category)) more.open = true;
                 revealSavedReaction = false;
             }
-            status.textContent = id ? (state.mine ? 'Your reaction is saved.' : 'Your reaction was removed.') : '';
+            status.textContent = id ? (state.mine.includes(id) ? 'Your reaction is saved.' : 'Your reaction was removed.') : '';
         } catch (error) {
             if (!root.isConnected) return;
             // A failed save may have reached the server. Reload before another write.
