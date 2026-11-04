@@ -352,6 +352,10 @@
         "destination": "/applications/main-site/assets/pfp-decorations/moth.png"
       },
       {
+        "source": "/assets/pfp-decorations/butterfly.png",
+        "destination": "/applications/main-site/assets/pfp-decorations/butterfly.png"
+      },
+      {
         "source": "/js/pwa-register.js",
         "destination": "/applications/main-site/page-ui/pwa-register.js"
       },

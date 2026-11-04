@@ -21,6 +21,13 @@ html[data-pfp-decoration="moth"] {
     --pfp-avatar-y: -0.045;
 }
 
+html[data-pfp-decoration="butterfly"] {
+    --pfp-frame-image: url("/assets/pfp-decorations/butterfly.png");
+    --pfp-avatar-size: 0.72;
+    --pfp-avatar-x: -0.075;
+    --pfp-avatar-y: 0.03;
+}
+
 .wd-pfp-btn {
     --pfp-photo-size: 56px;
 }
