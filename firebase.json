@@ -344,6 +344,10 @@
         "destination": "/applications/main-site/assets/pfp-decorations/dragon.png"
       },
       {
+        "source": "/assets/pfp-decorations/blossom.png",
+        "destination": "/applications/main-site/assets/pfp-decorations/blossom.png"
+      },
+      {
         "source": "/js/pwa-register.js",
         "destination": "/applications/main-site/page-ui/pwa-register.js"
       },

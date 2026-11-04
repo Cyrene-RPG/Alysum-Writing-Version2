@@ -7,6 +7,13 @@ html[data-pfp-decoration="dragon"] {
     --pfp-avatar-y: 0.003;
 }
 
+html[data-pfp-decoration="blossom"] {
+    --pfp-frame-image: url("/assets/pfp-decorations/blossom.png");
+    --pfp-avatar-size: 0.66;
+    --pfp-avatar-x: 0.048;
+    --pfp-avatar-y: 0.027;
+}
+
 .wd-pfp-btn {
     --pfp-photo-size: 56px;
 }
