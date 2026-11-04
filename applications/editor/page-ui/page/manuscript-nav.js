@@ -22,6 +22,7 @@ import {
 } from "../font-catalog.js";
 import { ensureEditorGoogleFont } from "../editor-google-fonts.js";
 import { confirmDeleteChapter } from "../prompt.js";
+import { mountTypingPosition } from "./typing-position.js";
 import {
     currentChapter,
     fallbackChapterId,
@@ -64,10 +65,17 @@ export function bindManuscriptNav({
         return itemKind(currentChapter(getBook(), getSelectedId()));
     }
 
+    const typingPosition = mountTypingPosition({
+        pageEl,
+        getBookId: () => getBook()?.id,
+        getChapterId: getSelectedId,
+    });
+
     function showChapter(id, options = {}) {
         const book = getBook();
         const chapter = currentChapter(book, id);
         if (!chapter) return;
+        typingPosition.remember();
         setSelectedId(chapter.id);
         const selectedId = chapter.id;
         const kind = itemKind(chapter);
@@ -89,9 +97,12 @@ export function bindManuscriptNav({
             applyChapterTypographyStyles(pageEl, chapter);
             const fontId = chapterTypography(chapter).fontId;
             if (fontId) void ensureEditorGoogleFont(fontId);
+            if (options.keepFind) typingPosition.markReady();
+            else typingPosition.restore();
         } else if (pageEl) {
             pageEl.style.removeProperty("font-family");
             pageEl.style.removeProperty("font-size");
+            typingPosition.markReady();
         }
         if (!options.keepFind) findUi?.close();
         paintWordCount(chapterWordsEl, totalWordsEl, book, selectedId);
