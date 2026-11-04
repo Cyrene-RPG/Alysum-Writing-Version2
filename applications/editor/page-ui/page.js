@@ -1,4 +1,5 @@
 import { mountEditorDailyGoal } from "./daily-goal.js";
+import { mountBreakReminders } from "./break-reminders.js";
 import { mountForceSyncButton } from "./force-sync.js";
 import { mountSaveConflict } from "./save-conflict.js";
 import { mountPendingRecovery } from "./pending-recovery.js";
@@ -260,6 +261,7 @@ async function boot() {
         return getWritingStats(profile || {}, { userId: session.user?.id });
     }
     const dailyGoal = mountEditorDailyGoal({ anchor: document.getElementById("editorActionRow"), getStats: goalStatsNow });
+    mountBreakReminders({ bookId, getWriterName: () => profile.name });
     function primeGoalMilestones() {
         lastGoalHit = goalStatsNow().checkpoint?.hit || 0;
         goalMilestonesPrimed = true;
