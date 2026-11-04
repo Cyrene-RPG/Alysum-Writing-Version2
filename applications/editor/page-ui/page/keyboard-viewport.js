@@ -1,14 +1,32 @@
 const PHONE_QUERY = "(max-width: 720px)";
 export const KEYBOARD_GAP_PX = 150;
 
-export function keyboardIsOpen({ innerHeight, visualHeight, isPhone }) {
+export function keyboardIsOpen({ innerHeight, visualHeight, restingHeight, isPhone }) {
     if (!isPhone) return false;
-    return Number(innerHeight) - Number(visualHeight) >= KEYBOARD_GAP_PX;
+    const inner = Number(innerHeight);
+    const visual = Number(visualHeight);
+    const rest = Number(restingHeight);
+    const visible = Math.min(inner, visual);
+    // iOS: layout viewport stays tall, visual viewport shrinks behind the keys.
+    if (inner - visual >= KEYBOARD_GAP_PX) return true;
+    // Android Chrome (interactive-widget=resizes-content): inner and visual
+    // shrink together, so compare against the last full-height resting size.
+    if (Number.isFinite(rest) && rest - visible >= KEYBOARD_GAP_PX) return true;
+    return false;
 }
 
 function titleFieldFocused() {
     const id = document.activeElement?.id;
     return id === "bookTitle" || id === "chapterTitle";
+}
+
+function editingFocus(pageEl) {
+    const el = document.activeElement;
+    if (!el) return false;
+    if (pageEl && (el === pageEl || pageEl.contains(el))) return true;
+    if (titleFieldFocused()) return true;
+    if (el.closest?.(".writer-find")) return true;
+    return el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && el.type !== "button");
 }
 
 export function mountKeyboardViewport({
@@ -20,12 +38,19 @@ export function mountKeyboardViewport({
     const phoneQuery = typeof isPhone === "function" ? null : window.matchMedia(PHONE_QUERY);
     const phone = () => (typeof isPhone === "function" ? isPhone() : Boolean(phoneQuery?.matches));
     let testVisualHeight;
+    let testInnerHeight;
+    let restingHeight = Math.max(window.innerHeight, window.visualViewport?.height ?? 0);
     let lastOpen = false;
     let applying = false;
 
     function visualHeight() {
         if (Number.isFinite(testVisualHeight)) return testVisualHeight;
         return window.visualViewport?.height ?? window.innerHeight;
+    }
+
+    function layoutInner() {
+        if (Number.isFinite(testInnerHeight)) return testInnerHeight;
+        return window.innerHeight;
     }
 
     function keepCaretInView() {
@@ -43,26 +68,43 @@ export function mountKeyboardViewport({
         else if (rect.top < box.top + pad) scroller.scrollTop -= (box.top + pad) - rect.top;
     }
 
+    function rememberRest(inner, height, onPhone) {
+        if (!onPhone) {
+            restingHeight = Math.max(inner, height);
+            return;
+        }
+        if (editingFocus(pageEl)) return;
+        const now = Math.max(inner, height);
+        if (now >= restingHeight - 40) restingHeight = now;
+    }
+
     function apply(override) {
         if (applying) return;
         if (override && Object.prototype.hasOwnProperty.call(override, "visualHeight")) {
             testVisualHeight = Number.isFinite(override.visualHeight) ? override.visualHeight : undefined;
         }
+        if (override && Object.prototype.hasOwnProperty.call(override, "innerHeight")) {
+            testInnerHeight = Number.isFinite(override.innerHeight) ? override.innerHeight : undefined;
+        }
         applying = true;
         try {
             const onPhone = phone();
             const height = visualHeight();
+            const inner = layoutInner();
+            rememberRest(inner, height, onPhone);
             const open = keyboardIsOpen({
-                innerHeight: window.innerHeight,
+                innerHeight: inner,
                 visualHeight: height,
+                restingHeight,
                 isPhone: onPhone,
             }) && !root.classList.contains("is-typewriter");
 
             if (onPhone) {
-                root.style.setProperty("--editor-vv-height", `${Math.round(height)}px`);
+                root.style.setProperty("--editor-vv-height", `${Math.round(Math.min(inner, height))}px`);
             } else {
                 root.style.removeProperty("--editor-vv-height");
                 testVisualHeight = undefined;
+                testInnerHeight = undefined;
             }
 
             root.classList.toggle("is-editor-keyboard", open);
@@ -79,9 +121,18 @@ export function mountKeyboardViewport({
         apply();
     }
 
+    function onOrientation() {
+        restingHeight = 0;
+        requestAnimationFrame(() => {
+            restingHeight = Math.max(layoutInner(), visualHeight());
+            apply();
+        });
+    }
+
     window.visualViewport?.addEventListener("resize", onViewport);
     window.visualViewport?.addEventListener("scroll", onViewport);
     window.addEventListener("resize", onViewport);
+    window.addEventListener("orientationchange", onOrientation);
     function onFocusOut() {
         requestAnimationFrame(onViewport);
     }
@@ -98,6 +149,7 @@ export function mountKeyboardViewport({
             window.visualViewport?.removeEventListener("resize", onViewport);
             window.visualViewport?.removeEventListener("scroll", onViewport);
             window.removeEventListener("resize", onViewport);
+            window.removeEventListener("orientationchange", onOrientation);
             document.removeEventListener("focusin", onViewport);
             document.removeEventListener("focusout", onFocusOut);
             classWatch.disconnect();

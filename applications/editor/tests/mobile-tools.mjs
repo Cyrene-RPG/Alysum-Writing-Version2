@@ -7,6 +7,8 @@ assert.equal(keyboardIsOpen({innerHeight:844,visualHeight:844,isPhone:true}),fal
 assert.equal(keyboardIsOpen({innerHeight:844,visualHeight:500,isPhone:true}),true);
 assert.equal(keyboardIsOpen({innerHeight:844,visualHeight:500,isPhone:false}),false);
 assert.equal(keyboardIsOpen({innerHeight:844,visualHeight:720,isPhone:true}),false,'url-bar shrink stays below the keyboard gap');
+assert.equal(keyboardIsOpen({innerHeight:480,visualHeight:480,restingHeight:844,isPhone:true}),true,'Android resizes layout viewport with the keyboard');
+assert.equal(keyboardIsOpen({innerHeight:480,visualHeight:480,restingHeight:844,isPhone:false}),false);
 const root=resolve(new URL('../../../',import.meta.url).pathname);
 const setup=`
 import {mountWriterChrome} from '/applications/editor/page-ui/page/chrome.js';
@@ -83,6 +85,16 @@ try {
    assert.ok(typed.y+typed.height<=480+8,'page stays inside the visual viewport');
    await page.screenshot({path:out+'/'+name+'-'+width+'-keyboard.png',fullPage:true});
    await page.evaluate(()=>window.writerChrome.syncKeyboardViewport({visualHeight:844}));
+   assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('is-editor-keyboard')),false);
+   assert.equal(await page.locator('#focusMode').isVisible(),true,'closing the keyboard restores Focus');
+   await page.evaluate(()=>window.writerChrome.syncKeyboardViewport({visualHeight:480,innerHeight:480}));
+   assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('is-editor-keyboard')),true,'Android layout-viewport shrink still hides chrome');
+   assert.equal(await page.locator('.wd-welcome-bar').evaluate(n=>getComputedStyle(n).display),'none');
+   const androidPage=await page.locator('#pageEditor').boundingBox();
+   assert.ok(androidPage && androidPage.height>180,'Android keeps a usable page above Gboard');
+   assert.ok(androidPage.y+androidPage.height<=480+8);
+   await page.screenshot({path:out+'/'+name+'-'+width+'-keyboard-android.png',fullPage:true});
+   await page.evaluate(()=>window.writerChrome.syncKeyboardViewport({visualHeight:844,innerHeight:844}));
    assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('is-editor-keyboard')),false);
    assert.equal(await page.locator('#focusMode').isVisible(),true,'closing the keyboard restores Focus');
    await page.screenshot({path:out+'/'+name+'-'+width+'-editor.png',fullPage:true});
