@@ -7,9 +7,17 @@ export function placeMorePanel(btn, panel) {
         bar.left + (bar.width - width) / 2,
         window.innerWidth - width - 8
     ));
-    panel.style.top = `${Math.round(btn.getBoundingClientRect().bottom + 4)}px`;
+    const btnBox = btn.getBoundingClientRect();
+    const above = document.documentElement.classList.contains("is-editor-keyboard");
+    if (above) {
+        const height = panel.offsetHeight || 220;
+        panel.style.top = `${Math.round(btnBox.top - height - 4)}px`;
+    } else {
+        panel.style.top = `${Math.round(btnBox.bottom + 4)}px`;
+    }
     panel.style.left = `${Math.round(left)}px`;
     panel.style.right = "auto";
+    panel.style.bottom = "auto";
 }
 
 export function bindToolbarOverflow(mount) {

@@ -1,0 +1,52 @@
+/* Phone typing: pin the shell to the visible viewport so the keyboard cannot cover the page. */
+@media (max-width: 720px) {
+    html,
+    body {
+        height: var(--editor-vv-height, 100dvh);
+        max-height: var(--editor-vv-height, 100dvh);
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    html.is-editor-keyboard .wd-welcome-bar,
+    html.is-editor-keyboard .wd-nav-wrap,
+    html.is-editor-keyboard .writer-draft-switch,
+    html.is-editor-keyboard .writer-editor-actions,
+    html.is-editor-keyboard .writer-daily-goal {
+        display: none !important;
+    }
+    html.is-editor-keyboard:not(.is-editor-keyboard-title) .writer-mobile-titlebar {
+        display: none !important;
+    }
+
+    html.is-editor-keyboard .writer-main-scroll {
+        overflow: hidden;
+    }
+    html.is-editor-keyboard .writer-page {
+        order: 1;
+        flex: 1 1 auto;
+        align-self: stretch;
+        min-height: 0;
+        overflow: auto;
+        padding-bottom: 16px;
+    }
+    html.is-editor-keyboard .writer-toolbar {
+        order: 2;
+        flex-shrink: 0;
+        position: static;
+        top: auto;
+        z-index: 6;
+        border-bottom: 0;
+        border-top: 1px solid var(--border);
+    }
+    html.is-editor-keyboard .writer-tool-dropdown:not(.writer-tool-dropdown--more) {
+        top: auto;
+        bottom: calc(100% + 4px);
+    }
+}
+
+@media (max-width: 720px) and (prefers-reduced-motion: reduce) {
+    html.is-editor-keyboard .writer-page {
+        scroll-behavior: auto;
+    }
+}
