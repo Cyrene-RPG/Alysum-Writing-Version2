@@ -41,36 +41,12 @@ function staticPath(path) {
     return path;
 }
 
-function wavLoop() {
-    const samples = 8000;
-    const bytes = Buffer.alloc(44 + samples * 2);
-    bytes.write('RIFF', 0);
-    bytes.writeUInt32LE(bytes.length - 8, 4);
-    bytes.write('WAVE', 8);
-    bytes.write('fmt ', 12);
-    bytes.writeUInt32LE(16, 16);
-    bytes.writeUInt16LE(1, 20);
-    bytes.writeUInt16LE(1, 22);
-    bytes.writeUInt32LE(8000, 24);
-    bytes.writeUInt32LE(16000, 28);
-    bytes.writeUInt16LE(2, 32);
-    bytes.writeUInt16LE(16, 34);
-    bytes.write('data', 36);
-    bytes.writeUInt32LE(samples * 2, 40);
-    return bytes;
-}
-
 const server = createServer(async (req, res) => {
     try {
         const url = new URL(req.url, 'http://localhost');
         if (url.pathname === '/fixture') {
             res.setHeader('Content-Type', 'text/html');
             res.end(fixture);
-            return;
-        }
-        if (url.pathname.startsWith('/core/atmosphere/media/')) {
-            res.setHeader('Content-Type', 'audio/wav');
-            res.end(wavLoop());
             return;
         }
         let path = staticPath(url.pathname);
@@ -104,34 +80,27 @@ try {
         await page.waitForFunction(() => window.ready);
         assert.equal(await page.evaluate(() => document.getElementById('editorSound').parentElement.id), 'editorActionRow');
         assert.equal(await page.locator('#editorSound').isVisible(), true);
+        assert.equal(await page.getByRole('button', { name: 'Rain' }).count(), 0);
         await page.getByRole('button', { name: 'Sound', exact: true }).click();
-        await page.getByRole('button', { name: 'Rain', exact: true }).click();
-        await page.waitForFunction(() => window.sound.getPrefs().playing === true);
-        assert.equal(await page.getByRole('button', { name: 'Sound · Rain' }).count(), 1);
-        await page.locator('#editorSoundVolume').evaluate((input) => {
-            input.value = '25';
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-        });
-        await page.getByRole('button', { name: 'Mute', exact: true }).click();
-        assert.equal(await page.evaluate(() => window.sound.getPrefs().muted), true);
-        assert.equal(await page.evaluate(() => window.sound.getPrefs().volume), 0.25);
         await page.locator('#editorSoundSong').fill('javascript:alert(1)');
         await page.locator('#editorSoundSong').evaluate((input) => input.dispatchEvent(new Event('change', { bubbles: true })));
-        assert.match(await page.locator('[data-sound-error]').innerText(), /does not play the song/);
+        assert.match(await page.locator('[data-sound-error]').innerText(), /YouTube, Spotify, or Apple Music/);
         assert.equal(await page.locator('#editorSoundOpen').isVisible(), false);
         await page.locator('#editorSoundSong').fill('https://open.spotify.com/track/demo');
         await page.locator('#editorSoundSong').evaluate((input) => input.dispatchEvent(new Event('change', { bubbles: true })));
         assert.equal(await page.locator('#editorSoundOpen').innerText(), 'Open in Spotify');
-        assert.equal(await page.locator('#editorSoundOpen').getAttribute('href'), 'https://open.spotify.com/track/demo');
+        assert.equal(await page.locator('#editorSoundEmbed iframe').count(), 0);
+        await page.locator('#editorSoundSong').fill('https://www.youtube.com/watch?v=dQw4w9wgGcQ');
+        await page.locator('#editorSoundSong').evaluate((input) => input.dispatchEvent(new Event('change', { bubbles: true })));
+        assert.equal(await page.locator('#editorSoundEmbed iframe').getAttribute('src'), 'https://www.youtube-nocookie.com/embed/dQw4w9wgGcQ?rel=0');
+        assert.equal(await page.locator('#editorSoundOpen').innerText(), 'Open on YouTube');
         await page.screenshot({ path: `test-results/editor-sound/panel-${width}.png`, fullPage: true });
         await page.evaluate(() => document.documentElement.classList.add('is-typewriter'));
-        assert.equal(await page.locator('#editorSoundChip').isVisible(), true);
-        assert.match(await page.locator('#editorSoundChip').innerText(), /muted/);
-        await page.locator('#editorSoundChip').click();
-        assert.equal(await page.evaluate(() => window.sound.getPrefs().muted), false);
+        assert.equal(await page.locator('#editorSoundChip').count(), 0);
+        assert.equal(await page.locator('#editorSoundEmbed iframe').isVisible(), true);
         await page.screenshot({ path: `test-results/editor-sound/focus-${width}.png`, fullPage: true });
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-        assert.equal(requests.some((url) => /spotify|youtube|apple\.com/.test(url)), false, 'Alysum never fetches the song');
+        assert.equal(requests.some((url) => /open\.spotify|music\.apple/.test(url)), false, 'Alysum never fetches Spotify or Apple Music');
         assert.deepEqual(errors, []);
         await page.close();
         console.log(`PASS editor sound dock at ${width}px`);
