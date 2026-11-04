@@ -330,3 +330,29 @@
         /* ignore */
     }
 })();
+
+(function () {
+    "use strict";
+
+    var STORAGE_KEY = "alysum:account:pfp-decoration";
+    var KNOWN = { dragon: 1 };
+
+    function applyPfpDecoration() {
+        var id = "";
+        try {
+            id = String(localStorage.getItem(STORAGE_KEY) || "").trim();
+        } catch (e) {
+            id = "";
+        }
+        if (!KNOWN[id]) id = "";
+        if (id) document.documentElement.setAttribute("data-pfp-decoration", id);
+        else document.documentElement.removeAttribute("data-pfp-decoration");
+    }
+
+    applyPfpDecoration();
+    document.addEventListener("alysum:account:pfp-decoration", applyPfpDecoration);
+    window.addEventListener("storage", function (event) {
+        if (event.key === STORAGE_KEY) applyPfpDecoration();
+    });
+})();
+
