@@ -23,8 +23,17 @@
     position: relative;
     z-index: 1;
 }
-.writer-main.has-writer-bg .writer-book-title,
-.writer-main.has-writer-bg .writer-chapter-title,
+.writer-main.has-writer-bg .writer-draft-switch,
+.writer-main.has-writer-bg .writer-mobile-titlebar,
+.writer-main.has-writer-bg .writer-editor-actions,
+.writer-main.has-writer-bg .writer-daily-goal,
+.writer-main.has-writer-bg .writer-toolbar {
+    background-color: var(--alysum-ui-chrome, #171717);
+    background-image: none;
+}
+.writer-main.has-writer-bg .writer-toolbar {
+    background-color: var(--alysum-ui-raised, #2a2a2a);
+}
 .writer-main.has-writer-bg .writer-page {
     text-shadow: 0 1px 2px color-mix(in srgb, var(--alysum-ui-panel, #111827) 72%, transparent);
 }
