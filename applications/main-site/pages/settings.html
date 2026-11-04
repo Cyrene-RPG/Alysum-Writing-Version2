@@ -259,9 +259,12 @@
             <h3 class="profile-box-title" id="profileAvatarTitle">Profile picture</h3>
             <p class="hint">Upload an image for your account. This is what others see on Profile.</p>
             <div class="profile-avatar-layout">
-                <div class="profile-avatar-preview has-initial" id="profileAvatarPreviewWrap">
-                    <img id="profileAvatarPreview" src="/Alysum-3.png" alt="Profile picture preview" />
-                    <span class="profile-avatar-preview-initial" id="profileAvatarInitial" aria-hidden="true">A</span>
+                <div class="profile-avatar-frame" id="profileAvatarFrame">
+                    <div class="profile-avatar-preview has-initial" id="profileAvatarPreviewWrap">
+                        <img id="profileAvatarPreview" src="/Alysum-3.png" alt="Profile picture preview" />
+                        <span class="profile-avatar-preview-initial" id="profileAvatarInitial" aria-hidden="true">A</span>
+                    </div>
+                    <img class="profile-avatar-decoration" id="profileAvatarDecoration" alt="" hidden />
                 </div>
                 <div>
                     <div class="field">
@@ -274,6 +277,11 @@
                         <span class="save-prompt" id="avatarMsg" role="status"></span>
                     </div>
                 </div>
+            </div>
+            <div class="field profile-decoration-field">
+                <span class="profile-decoration-label" id="profileDecorationLabel">Picture frame</span>
+                <div class="profile-decoration-picker" id="profileDecorationPicker" role="listbox" aria-labelledby="profileDecorationLabel"></div>
+                <p class="hint" style="margin-top:8px;margin-bottom:0">Sits around your profile picture.</p>
             </div>
         </section>
 
