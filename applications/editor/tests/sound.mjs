@@ -78,6 +78,8 @@ try {
         page.on('request', (request) => requests.push(request.url()));
         await page.goto(base);
         await page.waitForFunction(() => window.ready);
+        assert.equal(await page.evaluate(() => document.getElementById('editorSound').parentElement.id), 'editorActionRow');
+        assert.equal(await page.locator('#editorSound').isVisible(), true);
         await page.getByRole('button', { name: 'Sound', exact: true }).click();
         await page.getByRole('button', { name: 'Rain', exact: true }).click();
         await page.waitForFunction(() => window.sound.getPrefs().playing === true);

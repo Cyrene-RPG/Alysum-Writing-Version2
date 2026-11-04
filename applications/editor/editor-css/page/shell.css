@@ -497,6 +497,7 @@ html.is-typewriter .writer-shell-backdrop {
 /* Focus stays above formatting while the other tools move into the phone drawer. */
 .writer-editor-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; padding: 8px 16px; flex-shrink: 0; }
 .writer-editor-actions > .snippet-editor-action { padding: 0; flex-wrap: wrap; gap: 8px; }
+.writer-editor-actions > #editorSound,
 .writer-editor-actions > #focusMode { min-height: 44px; }
 .writer-editor-actions > #forceEditorSync { min-height: 44px; }
 .writer-editor-actions > #forceEditorSync[hidden] { display: none; }
