@@ -2,6 +2,11 @@ import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile,mkdir} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
+import {keyboardIsOpen} from '../page-ui/page/keyboard-viewport.js';
+assert.equal(keyboardIsOpen({innerHeight:844,visualHeight:844,isPhone:true}),false);
+assert.equal(keyboardIsOpen({innerHeight:844,visualHeight:500,isPhone:true}),true);
+assert.equal(keyboardIsOpen({innerHeight:844,visualHeight:500,isPhone:false}),false);
+assert.equal(keyboardIsOpen({innerHeight:844,visualHeight:720,isPhone:true}),false,'url-bar shrink stays below the keyboard gap');
 const root=resolve(new URL('../../../',import.meta.url).pathname);
 const setup=`
 import {mountWriterChrome} from '/applications/editor/page-ui/page/chrome.js';
@@ -19,7 +24,7 @@ window.originalEditor=$('pageEditor');window.originalActions=$('editorActions');
 for(const id of ['open-story-bible','compare-drafts','share-snippet'])$(id).addEventListener('click',()=>window.actionCalls.push(id));
 const ids=['treeToggle','settingsCollapse','railToggle','tabChapters','tabBook','chaptersPane','bookPane','bookTree','settingsPane','settingsTopbar','writerTabs','bookFootSettings','tabSettings','settingsBackTop','mobileTreeOpen','mobileRailOpen'];
 const args=Object.fromEntries(ids.map(id=>[id,$(id)]));
-mountWriterChrome({...args,shell:$('writerShell'),tree:$('chapterTree'),backdrop:$('writerShellBackdrop')});
+window.writerChrome=mountWriterChrome({...args,shell:$('writerShell'),tree:$('chapterTree'),backdrop:$('writerShellBackdrop')});
 mountTypewriter({pageEl:$('pageEditor'),editor:{focus:()=>$('pageEditor').focus()},typewriterExit:$('typewriterExit')});
 if(new URL(location.href).searchParams.has('recovery'))mountPendingRecovery({api:{listRecoveryCopies:()=>[{key:'test:book:tab',book:{id:'test',updated:1,_localRevision:'one',sections:{}}}]},bookId:'test',anchor:$('saveFeedback')});
 window.goalProfile={wordGoalMode:'track',writingGoal:200};
@@ -67,6 +72,19 @@ try {
    const title=await page.locator('#writerMobileTitlebar').boundingBox(),focus=await page.locator('#focusMode').boundingBox(),toolbar=await page.locator('#writerToolbar').boundingBox();
    const goal=await page.locator('.writer-daily-goal').boundingBox();
    assert.ok(focus.y>=title.y+title.height && focus.y+focus.height<=goal.y && goal.y+goal.height<=toolbar.y,'daily goal sits beneath Focus and above formatting');
+   assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('is-editor-keyboard')),false);
+   await page.evaluate(()=>window.writerChrome.syncKeyboardViewport({visualHeight:480}));
+   assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('is-editor-keyboard')),true);
+   assert.equal(await page.locator('.wd-welcome-bar').evaluate(n=>getComputedStyle(n).display),'none');
+   assert.equal(await page.locator('#focusMode').isVisible(),false);
+   assert.equal(await page.locator('#writerToolbar').isVisible(),true,'formatting stays so Font/More still work');
+   const typed=await page.locator('#pageEditor').boundingBox();
+   assert.ok(typed && typed.height>180,'page remains usable above the keyboard');
+   assert.ok(typed.y+typed.height<=480+8,'page stays inside the visual viewport');
+   await page.screenshot({path:out+'/'+name+'-'+width+'-keyboard.png',fullPage:true});
+   await page.evaluate(()=>window.writerChrome.syncKeyboardViewport({visualHeight:844}));
+   assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('is-editor-keyboard')),false);
+   assert.equal(await page.locator('#focusMode').isVisible(),true,'closing the keyboard restores Focus');
    await page.screenshot({path:out+'/'+name+'-'+width+'-editor.png',fullPage:true});
    for(const id of actionIds){
     await page.locator('#mobileRailOpen').tap();
@@ -95,6 +113,9 @@ try {
   }else{
    assert.equal(await page.locator('#open-story-bible').isVisible(),true,'desktop keeps the original action row');
    assert.equal(await page.locator('#writerMobileActions').isVisible(),false);
+   await page.evaluate(()=>window.writerChrome.syncKeyboardViewport({visualHeight:400}));
+   assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('is-editor-keyboard')),false,'desktop ignores a short visual viewport');
+   assert.equal(await page.locator('#open-story-bible').isVisible(),true);
    await page.screenshot({path:out+'/'+name+'-'+width+'-desktop.png',fullPage:true});
   }
   assert.equal(await page.locator('#focusMode').textContent(),'Focus mode');

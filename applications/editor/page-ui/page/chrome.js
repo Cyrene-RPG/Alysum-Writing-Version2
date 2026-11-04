@@ -1,3 +1,5 @@
+import { mountKeyboardViewport } from "./keyboard-viewport.js";
+
 const TREE_COLLAPSE_KEY = "alysum:editor:chapters-collapsed";
 const RAIL_COLLAPSE_KEY = "alysum:editor:rail-collapsed";
 const MATTER_COLLAPSE_KEY = "alysum:editor:matter-collapsed";
@@ -127,6 +129,11 @@ export function mountWriterChrome({
         setTreeDrawerOpen(false);
         setRailDrawerOpen(false);
     }
+    const keyboardViewport = mountKeyboardViewport({
+        pageEl: document.getElementById("pageEditor"),
+        isPhone: () => mobileQuery.matches,
+        onOpen: closeDrawers,
+    });
     mobileTreeOpen?.addEventListener("click", (event) => setTreeDrawerOpen(true, event.currentTarget));
     mobileRailOpen?.addEventListener("click", (event) => setRailDrawerOpen(true, event.currentTarget));
     backdrop?.addEventListener("click", (event) => {
@@ -145,6 +152,7 @@ export function mountWriterChrome({
     mobileQuery.addEventListener("change", (event) => {
         if (!event.matches) closeDrawers();
         syncEditorActions();
+        keyboardViewport.sync();
         setTreeCollapsed(treeCollapsed());
         setRailCollapsed(railCollapsed());
     });
@@ -297,5 +305,5 @@ export function mountWriterChrome({
     tabSettings?.addEventListener("click", () => setBookView("settings"));
     settingsBackTop?.addEventListener("click", () => setTab("book"));
 
-    return { setTab, expandMatter, setBookView, getBookView: () => bookView, setPreviewMode };
+    return { setTab, expandMatter, setBookView, getBookView: () => bookView, setPreviewMode, syncKeyboardViewport: keyboardViewport.sync };
 }
