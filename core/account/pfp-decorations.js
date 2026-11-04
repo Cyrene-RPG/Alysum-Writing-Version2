@@ -13,6 +13,14 @@ export const PFP_DECORATIONS = Object.freeze([
         offsetX: 0.159,
         offsetY: 0.003,
     }),
+    Object.freeze({
+        id: "blossom",
+        name: "Blossom",
+        imagePath: "/assets/pfp-decorations/blossom.png",
+        avatarSize: 0.508,
+        offsetX: 0.048,
+        offsetY: 0.027,
+    }),
 ]);
 
 export function normalizePfpDecorationId(id) {

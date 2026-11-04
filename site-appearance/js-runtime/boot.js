@@ -335,7 +335,7 @@
     "use strict";
 
     var STORAGE_KEY = "alysum:account:pfp-decoration";
-    var KNOWN = { dragon: 1 };
+    var KNOWN = { dragon: 1, blossom: 1 };
 
     function applyPfpDecoration() {
         var id = "";
