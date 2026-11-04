@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Typing position</title>
+<style>
+html,body{height:100%;margin:0}
+.writer-main-scroll{height:100%;overflow:auto}
+.writer-page{max-width:40rem;margin:0 auto;padding:24px 16px 80px;line-height:1.7;font:18px/1.7 Georgia,serif}
+</style>
+</head>
+<body>
+<div class="writer-main-scroll" id="scroll">
+<article class="writer-page" id="page" contenteditable="true"></article>
+</div>
+<script type="module">
+import { mountTypingPosition, placeTextOffset, captureTextOffset } from '/applications/editor/page-ui/page/typing-position.js';
+const page = document.getElementById('page');
+page.innerHTML = Array.from({ length: 40 }, (_, i) => `<p id="p${i}">Paragraph ${i} continues the scene so the caret can sit far from the start of the chapter.</p>`).join('');
+const mounted = mountTypingPosition({
+    pageEl: page,
+    getBookId: () => 'book-1',
+    getChapterId: () => 'chapter-one',
+});
+mounted.restore();
+window.typing = { mounted, placeTextOffset, captureTextOffset, page };
+</script>
+</body>
+</html>
