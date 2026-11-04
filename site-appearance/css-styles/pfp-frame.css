@@ -1,0 +1,92 @@
+/* Overlay for the equipped profile-picture frame. Photo stays its natural size. */
+
+html[data-pfp-decoration="dragon"] {
+    --pfp-frame-image: url("/assets/pfp-decorations/dragon.png");
+    --pfp-avatar-size: 0.315;
+    --pfp-avatar-x: 0.159;
+    --pfp-avatar-y: 0.003;
+}
+
+html[data-pfp-decoration="blossom"] {
+    --pfp-frame-image: url("/assets/pfp-decorations/blossom.png");
+    --pfp-avatar-size: 0.66;
+    --pfp-avatar-x: 0.048;
+    --pfp-avatar-y: 0.027;
+}
+
+html[data-pfp-decoration="moth"] {
+    --pfp-frame-image: url("/assets/pfp-decorations/moth.png");
+    --pfp-avatar-size: 0.58;
+    --pfp-avatar-x: 0.036;
+    --pfp-avatar-y: -0.045;
+}
+
+.wd-pfp-btn {
+    --pfp-photo-size: 56px;
+}
+
+#profileAvatarFrame {
+    --pfp-photo-size: 112px;
+}
+
+#ovAvatarWrap {
+    --pfp-photo-size: 112px;
+    position: relative;
+}
+
+#author-avatar {
+    --pfp-photo-size: 160px;
+    position: relative;
+}
+
+@media (max-width: 900px) {
+    .wd-pfp-btn {
+        --pfp-photo-size: 48px;
+    }
+}
+
+@media (max-width: 600px) {
+    #author-avatar {
+        --pfp-photo-size: 80px;
+    }
+}
+
+html[data-pfp-decoration] .wd-welcome-bar,
+html[data-pfp-decoration] .wd-welcome-inner,
+html[data-pfp-decoration] .wd-pfp-menu {
+    overflow: visible;
+}
+
+html[data-pfp-decoration] .wd-pfp-btn::before,
+html[data-pfp-decoration] #profileAvatarFrame::before,
+html[data-pfp-decoration] #ovAvatarWrap::before,
+html[data-pfp-decoration] #author-avatar[data-own-profile]::before {
+    content: "";
+    position: absolute;
+    z-index: 3;
+    pointer-events: none;
+    width: calc(var(--pfp-photo-size) / var(--pfp-avatar-size));
+    height: calc(var(--pfp-photo-size) / var(--pfp-avatar-size));
+    left: 50%;
+    top: 50%;
+    background: var(--pfp-frame-image) center / 100% 100% no-repeat;
+    transform: translate(
+        calc(-50% - (var(--pfp-avatar-x) * var(--pfp-photo-size) / var(--pfp-avatar-size))),
+        calc(-50% - (var(--pfp-avatar-y) * var(--pfp-photo-size) / var(--pfp-avatar-size)))
+    );
+}
+
+html[data-pfp-decoration] .wd-pfp-btn::after {
+    display: none;
+}
+
+html[data-pfp-decoration] #ovAvatarWrap,
+html[data-pfp-decoration] #author-avatar[data-own-profile] {
+    overflow: visible;
+}
+
+html[data-pfp-decoration] #profileAvatarFrame,
+html[data-pfp-decoration] #ovAvatarWrap,
+html[data-pfp-decoration] #author-avatar[data-own-profile] {
+    margin: calc((var(--pfp-photo-size) / var(--pfp-avatar-size) - var(--pfp-photo-size)) / 2);
+}

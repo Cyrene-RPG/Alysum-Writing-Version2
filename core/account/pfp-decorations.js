@@ -9,9 +9,25 @@ export const PFP_DECORATIONS = Object.freeze([
         id: "dragon",
         name: "Dragon",
         imagePath: "/assets/pfp-decorations/dragon.png",
-        avatarSize: 0.343,
-        offsetX: 0.085,
-        offsetY: -0.014,
+        avatarSize: 0.315,
+        offsetX: 0.159,
+        offsetY: 0.003,
+    }),
+    Object.freeze({
+        id: "blossom",
+        name: "Blossom",
+        imagePath: "/assets/pfp-decorations/blossom.png",
+        avatarSize: 0.66,
+        offsetX: 0.048,
+        offsetY: 0.027,
+    }),
+    Object.freeze({
+        id: "moth",
+        name: "Moth",
+        imagePath: "/assets/pfp-decorations/moth.png",
+        avatarSize: 0.58,
+        offsetX: 0.036,
+        offsetY: -0.045,
     }),
 ]);
 
