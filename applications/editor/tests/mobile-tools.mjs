@@ -80,6 +80,7 @@ try {
    assert.equal(await page.locator('.wd-welcome-bar').evaluate(n=>getComputedStyle(n).display),'none');
    assert.equal(await page.locator('#focusMode').isVisible(),false);
    assert.equal(await page.locator('#writerToolbar').isVisible(),true,'formatting stays so Font/More still work');
+   assert.equal(await page.evaluate(()=>{const card=document.createElement('aside');card.className='bible-selection-touch';document.body.append(card);const display=getComputedStyle(card).display;card.remove();return display;}),'none','Story Bible card stays off the page while typing');
    const typed=await page.locator('#pageEditor').boundingBox();
    assert.ok(typed && typed.height>180,'page remains usable above the keyboard');
    assert.ok(typed.y+typed.height<=480+8,'page stays inside the visual viewport');

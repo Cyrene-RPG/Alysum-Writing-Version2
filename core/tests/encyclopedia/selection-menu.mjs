@@ -35,8 +35,8 @@ async function harness({ role = 'owner', missing = false, isTouch = false, oldEd
  };
  let mounted;
  if (oldEditorShell) {
-  module.namespace.mountStoryBible({ ...options, button: null, session: { mode: 'cloud', user: { id: 'writer-1' } }, supabase: {} });
-  mounted = { touchToolbar: document.querySelector('.bible-selection-touch'), menu: document.querySelector('.bible-selection-menu'), dialog: document.querySelector('.bible-selection-dialog') };
+  const selection = module.namespace.mountStoryBible({ ...options, button: null, session: { mode: 'cloud', user: { id: 'writer-1' } }, supabase: {} });
+  mounted = { touchToolbar: document.querySelector('.bible-selection-touch'), menu: document.querySelector('.bible-selection-menu'), dialog: document.querySelector('.bible-selection-dialog'), destroy: selection.destroy };
  } else mounted = module.namespace.mountBibleSelectionMenu(options);
  function select(node = page.querySelector('strong').firstChild, start = 0, end = node.textContent.length) { const range = document.createRange(); range.setStart(node, start); range.setEnd(node, end); const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range); }
  function rightClick({ shiftKey = false } = {}) { const event = new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 30, clientY: 40, shiftKey }); page.dispatchEvent(event); return event; }
@@ -117,7 +117,7 @@ test('current editor code still mounts phone actions with a cached shell missing
   assert.equal(h.mounted.touchToolbar.hidden, false);
   assert.match(h.mounted.touchToolbar.textContent, /Iris Vale/);
   assert.equal(h.rightClick().defaultPrevented, false);
- } finally { h.dom.window.close(); }
+ } finally { h.mounted.destroy?.(); h.dom.window.close(); }
 });
 
 test('phone touchend recovers a selection when the browser omits selectionchange', async () => {
@@ -127,6 +127,24 @@ test('phone touchend recovers a selection when the browser omits selectionchange
   assert.match(h.mounted.touchToolbar.textContent, /Iris Vale/);
  } finally { h.mounted.destroy(); h.dom.window.close(); }
 });
+test('phone typing hides the Story Bible card and keeps a compact add control', async () => {
+ const h = await harness({ isTouch: true }); try {
+  h.select(); h.document.dispatchEvent(new h.window.Event('selectionchange'));
+  assert.equal(h.mounted.touchToolbar.hidden, false, 'the card still appears when the keyboard is closed');
+  const toolbar = h.document.createElement('div'); toolbar.id = 'writerToolbar'; h.document.body.append(toolbar);
+  h.document.documentElement.classList.add('is-editor-keyboard');
+  h.document.dispatchEvent(new h.window.Event('selectionchange'));
+  await until(() => h.mounted.touchToolbar.hidden);
+  const strip = h.document.querySelector('.bible-selection-strip');
+  assert.equal(strip.hidden, false, 'Bible stays on the format strip');
+  assert.equal(strip.parentElement.id, 'writerToolbar');
+  strip.click();
+  [...h.document.querySelectorAll('.bible-selection-strip-menu button')].find(button => button.textContent === 'Create entry').click();
+  await until(() => h.mounted.dialog.querySelector('input'));
+  assert.equal(h.field('Entry name').value, 'Iris Vale');
+ } finally { h.mounted.destroy(); h.dom.window.close(); }
+});
+
 test('phone detail action opens the character picker and hides when selection clears', async () => {
  const h = await harness({ isTouch: true }); try {
   h.select(h.page.querySelectorAll('p')[1].firstChild); h.document.dispatchEvent(new h.window.Event('selectionchange'));

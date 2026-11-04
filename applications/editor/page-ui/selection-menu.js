@@ -35,19 +35,64 @@ export function mountBibleSelectionMenu({ pageEl, getBook, getChapterId, saveCur
     touchToolbar.append(touchHeader, touchQuote, touchActions); document.body.append(touchToolbar);
     const touchQuery = window.matchMedia?.('(pointer: coarse), (max-width: 760px)');
     function isTouchLayout() { return Boolean(touchQuery?.matches); }
+    function keyboardOpen() { return document.documentElement.classList.contains('is-editor-keyboard'); }
+    const strip = button('Bible', () => {
+        stripMenu.hidden = !stripMenu.hidden;
+        if (!stripMenu.hidden) positionTouchSurfaces();
+    });
+    strip.className = 'writer-tool bible-selection-strip';
+    strip.hidden = true;
+    strip.setAttribute('aria-label', 'Story Bible from selection');
+    strip.setAttribute('aria-haspopup', 'true');
+    const stripMenu = element('div'); stripMenu.className = 'bible-selection-strip-menu'; stripMenu.hidden = true;
+    const stripCreate = button('Create entry', () => { stripMenu.hidden = true; void openDialog('create'); });
+    const stripDetails = button('Add details', () => { stripMenu.hidden = true; void openDialog('details'); });
+    stripMenu.append(stripCreate, stripDetails); document.body.append(stripMenu);
+    function placeStrip() {
+        const toolbar = document.getElementById('writerToolbar');
+        if (toolbar) {
+            if (strip.parentNode !== toolbar) {
+                const wordcount = toolbar.querySelector('.writer-wordcount');
+                if (wordcount) toolbar.insertBefore(strip, wordcount);
+                else toolbar.append(strip);
+            }
+            return;
+        }
+        if (!strip.isConnected) document.body.append(strip);
+    }
+    placeStrip();
+    function hideTouchSurfaces() {
+        touchToolbar.hidden = true;
+        strip.hidden = true;
+        stripMenu.hidden = true;
+    }
     function positionTouchSurfaces() {
         const viewport = window.visualViewport;
         const inset = viewport ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop) : 0;
         touchToolbar.style.bottom = `calc(${inset + 12}px + env(safe-area-inset-bottom, 0px))`;
         if (isTouchLayout()) { dialog.style.bottom = `${inset}px`; dialog.style.maxHeight = `${Math.floor((viewport?.height || window.innerHeight) * .88)}px`; }
         else { dialog.style.removeProperty('bottom'); dialog.style.removeProperty('max-height'); }
+        if (!stripMenu.hidden && !strip.hidden) {
+            const box = strip.getBoundingClientRect();
+            stripMenu.style.left = `${Math.max(8, Math.min(box.left, window.innerWidth - 180))}px`;
+            stripMenu.style.bottom = `${Math.max(8, window.innerHeight - box.top + 4)}px`;
+        }
     }
     function syncTouchSelection() {
-        if (!isTouchLayout() || dialog.open || isComposing) { touchToolbar.hidden = true; return; }
+        if (!isTouchLayout() || dialog.open || isComposing) { hideTouchSurfaces(); return; }
         const captured = captureSelection();
-        if (!captured) { touchToolbar.hidden = true; return; }
+        if (!captured) { hideTouchSurfaces(); return; }
         source = captured; touchQuote.textContent = captured.text.length > 65 ? captured.text.slice(0, 62) + '…' : captured.text;
-        positionTouchSurfaces(); touchToolbar.hidden = false;
+        positionTouchSurfaces();
+        if (keyboardOpen()) {
+            placeStrip();
+            touchToolbar.hidden = true;
+            strip.hidden = false;
+        } else {
+            strip.hidden = true;
+            stripMenu.hidden = true;
+            touchToolbar.hidden = false;
+        }
     }
     function scheduleTouchSelection() { clearTimeout(selectionTimer); selectionTimer = setTimeout(syncTouchSelection, 140); }
     // Capture before Android opens its native selection menu; a delayed callback
@@ -56,19 +101,26 @@ export function mountBibleSelectionMenu({ pageEl, getBook, getChapterId, saveCur
     pageEl.addEventListener('pointerup', scheduleTouchSelection);
     pageEl.addEventListener('touchend', scheduleTouchSelection, { passive: true });
     pageEl.addEventListener('keyup', scheduleTouchSelection);
-    pageEl.addEventListener('compositionstart', () => { isComposing = true; touchToolbar.hidden = true; });
+    pageEl.addEventListener('compositionstart', () => { isComposing = true; hideTouchSurfaces(); });
     pageEl.addEventListener('compositionend', () => { isComposing = false; scheduleTouchSelection(); });
     // Preserve native selection handles and capture the range before tapping a toolbar button.
-    for (const control of [touchCreate, touchDetails]) control.addEventListener('pointerdown', event => {
+    for (const control of [touchCreate, touchDetails, strip, stripCreate, stripDetails]) control.addEventListener('pointerdown', event => {
         const captured = captureSelection(); if (captured) source = captured;
         event.preventDefault();
     });
     document.addEventListener('pointerdown', event => {
-        if (!pageEl.contains(event.target) && !touchToolbar.contains(event.target) && !dialog.contains(event.target)) touchToolbar.hidden = true;
+        if (strip.contains(event.target) || stripMenu.contains(event.target) || event.target.closest?.('#writerToolbar')) return;
+        if (!pageEl.contains(event.target) && !touchToolbar.contains(event.target) && !dialog.contains(event.target)) hideTouchSurfaces();
     });
     window.visualViewport?.addEventListener('resize', positionTouchSurfaces);
     window.visualViewport?.addEventListener('scroll', positionTouchSurfaces);
     touchQuery?.addEventListener?.('change', syncTouchSelection);
+    const KeyboardObserver = window.MutationObserver;
+    const keyboardWatch = KeyboardObserver ? new KeyboardObserver(() => {
+        if (typeof window.getSelection !== 'function') { keyboardWatch.disconnect(); return; }
+        syncTouchSelection();
+    }) : { disconnect() {} };
+    if (KeyboardObserver) keyboardWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     function captureSelection() {
         const selection = window.getSelection();
         if (!selection?.rangeCount || selection.isCollapsed || !pageEl.contains(selection.anchorNode) || !pageEl.contains(selection.focusNode)) return null;
@@ -158,7 +210,7 @@ export function mountBibleSelectionMenu({ pageEl, getBook, getChapterId, saveCur
         }
     }
     async function openDialog(nextMode) {
-        hideMenu(); touchToolbar.hidden = true; clearTimeout(selectionTimer); if (!source || dialog.open) return;
+        hideMenu(); hideTouchSurfaces(); clearTimeout(selectionTimer); if (!source || dialog.open) return;
         mode = nextMode; cancel.textContent = 'Cancel'; loaded = null; entryId = crypto.randomUUID(); controls = null;
         title.textContent = mode === 'create' ? 'Create a Story Bible entry' : 'Add character details';
         body.replaceChildren(element('p', 'Opening this book’s Story Bible…')); error.textContent = ''; confirmation.textContent = ''; submit.hidden = true; positionTouchSurfaces(); dialog.showModal();
@@ -207,5 +259,5 @@ export function mountBibleSelectionMenu({ pageEl, getBook, getChapterId, saveCur
         } catch (exception) { showError(exception); }
         finally { isSaving = false; submit.disabled = false; cancel.disabled = false; close.disabled = false; }
     });
-    return { menu, dialog, touchToolbar, destroy() { clearTimeout(selectionTimer); hideMenu(); dialog.remove(); menu.remove(); touchToolbar.remove(); document.removeEventListener('selectionchange', syncTouchSelection); pageEl.removeEventListener('touchend', scheduleTouchSelection); window.visualViewport?.removeEventListener('resize', positionTouchSurfaces); window.visualViewport?.removeEventListener('scroll', positionTouchSurfaces); touchQuery?.removeEventListener?.('change', syncTouchSelection); } };
+    return { menu, dialog, touchToolbar, strip, destroy() { clearTimeout(selectionTimer); hideMenu(); hideTouchSurfaces(); keyboardWatch.disconnect(); dialog.remove(); menu.remove(); touchToolbar.remove(); strip.remove(); stripMenu.remove(); document.removeEventListener('selectionchange', syncTouchSelection); pageEl.removeEventListener('touchend', scheduleTouchSelection); window.visualViewport?.removeEventListener('resize', positionTouchSurfaces); window.visualViewport?.removeEventListener('scroll', positionTouchSurfaces); touchQuery?.removeEventListener?.('change', syncTouchSelection); } };
 }
