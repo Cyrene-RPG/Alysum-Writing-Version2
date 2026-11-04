@@ -37,3 +37,25 @@ export function readBreakReminder(raw) {
         startedAt: Number.isFinite(startedAt) && startedAt > 0 ? startedAt : 0,
     };
 }
+
+export function breakReminderRemainingMs(choice, now, hourMs = 60 * 60 * 1000) {
+    if (!choice?.enabled || !choice.startedAt) return 0;
+    return Math.max(0, choice.startedAt + choice.hours * hourMs - now);
+}
+
+export function remainingLabel(ms, minuteMs = 60 * 1000) {
+    const remaining = Math.max(0, Number(ms) || 0);
+    if (remaining <= 0) return 'Break now';
+    const step = Number(minuteMs) > 0 ? minuteMs : 60 * 1000;
+    const minutes = Math.max(1, Math.ceil(remaining / step));
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours && mins) return `Break in ${hours}h ${mins}m`;
+    if (hours) return hours === 1 ? 'Break in 1h' : `Break in ${hours}h`;
+    return `Break in ${mins}m`;
+}
+
+export function breakReminderStatusLabel(choice, now, hourMs = 60 * 60 * 1000) {
+    if (!choice?.enabled) return 'Break reminders';
+    return remainingLabel(breakReminderRemainingMs(choice, now, hourMs), hourMs / 60);
+}
