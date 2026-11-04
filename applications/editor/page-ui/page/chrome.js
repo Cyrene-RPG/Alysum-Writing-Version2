@@ -129,8 +129,16 @@ export function mountWriterChrome({
         setTreeDrawerOpen(false);
         setRailDrawerOpen(false);
     }
+    const pageEl = document.getElementById("pageEditor");
+    if (pageEl && !pageEl.parentElement?.classList.contains("writer-page-scroll")) {
+        const wrap = document.createElement("div");
+        wrap.className = "writer-page-scroll";
+        wrap.id = "writerPageScroll";
+        pageEl.before(wrap);
+        wrap.append(pageEl);
+    }
     const keyboardViewport = mountKeyboardViewport({
-        pageEl: document.getElementById("pageEditor"),
+        pageEl,
         isPhone: () => mobileQuery.matches,
         onOpen: closeDrawers,
     });

@@ -1,3 +1,6 @@
+/* Idle: the wrap does not change desktop or phone layout. Typing makes it the scroller. */
+.writer-page-scroll { display: contents; }
+
 /* Phone typing: pin the shell to the visible viewport so the keyboard cannot cover the page. */
 @media (max-width: 720px) {
     html,
@@ -22,12 +25,20 @@
     html.is-editor-keyboard .writer-main-scroll {
         overflow: hidden;
     }
-    html.is-editor-keyboard .writer-page {
+    html.is-editor-keyboard .writer-page-scroll {
+        display: block;
         order: 1;
         flex: 1 1 auto;
         align-self: stretch;
         min-height: 0;
         overflow: auto;
+        overscroll-behavior: contain;
+    }
+    html.is-editor-keyboard .writer-page {
+        flex: 0 0 auto;
+        align-self: stretch;
+        min-height: 0;
+        overflow: visible;
         padding-bottom: 16px;
     }
     html.is-editor-keyboard .writer-toolbar {
@@ -46,7 +57,7 @@
 }
 
 @media (max-width: 720px) and (prefers-reduced-motion: reduce) {
-    html.is-editor-keyboard .writer-page {
+    html.is-editor-keyboard .writer-page-scroll {
         scroll-behavior: auto;
     }
 }
