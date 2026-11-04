@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Writer background fixture</title>
+<link rel="stylesheet" href="/site-appearance/css-styles/theme.css">
+<link rel="stylesheet" href="/css/editor/page.css">
+<link rel="stylesheet" href="/css/editor/document.css">
+<link rel="stylesheet" href="/css/editor/snippets.css">
+<style>
+html, body { height: 100%; margin: 0; }
+.writer-shell { height: 100%; }
+.writer-main { height: 100%; }
+</style>
+</head>
+<body>
+<div class="writer-shell" id="writerShell">
+    <section class="writer-main">
+        <div class="writer-editor-actions" id="editorActionRow">
+            <div class="snippet-editor-action" id="editorActions">
+                <button type="button" id="writer-background" class="quote-button" aria-haspopup="dialog" aria-expanded="false">Background</button>
+            </div>
+        </div>
+        <div class="writer-main-scroll" id="writerWritePane">
+            <div class="writer-page-scroll" id="writerPageScroll">
+                <div class="writer-page" id="pageEditor"></div>
+            </div>
+        </div>
+    </section>
+</div>
+<script type="importmap">
+{
+  "imports": {
+    "@alysum/publishing/": "/core/publishing/"
+  }
+}
+</script>
+<script type="module">
+import { mountWriterBackground } from "/js/editor/writer-background.js";
+
+const books = {
+    one: { id: "local-book-one", publish_meta: {} },
+    two: { id: "local-book-two", publish_meta: {} },
+};
+let currentId = "one";
+const persistCalls = [];
+
+const page = document.getElementById("pageEditor");
+page.innerHTML = Array.from({ length: 40 }, (_, i) => `<p>Paragraph ${i + 1}. The writing should scroll while the picture stays still.</p>`).join("");
+
+function mountFor(bookId) {
+    return mountWriterBackground({
+        bookId,
+        session: { mode: "local", user: { id: "alysum-local-guest" } },
+        supabase: null,
+        getBook: () => books[currentId],
+        persist(next) {
+            persistCalls.push(next);
+            books[currentId] = next;
+        },
+        mainEl: document.querySelector(".writer-main"),
+    });
+}
+
+let mounted = mountFor(books[currentId].id);
+
+async function paintFile(color, label) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 900;
+    canvas.height = 1400;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 64px sans-serif";
+    ctx.fillText(label, 48, 120);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
+    await mounted.applyFile(new File([blob], `${label}.jpg`, { type: "image/jpeg" }));
+}
+
+window.writerBackgroundFixture = {
+    persistCalls,
+    books,
+    async useBook(id) {
+        currentId = id;
+        mounted.close();
+        document.getElementById("writerBackgroundOverlay")?.remove();
+        const button = document.getElementById("writer-background");
+        button?.replaceWith(button.cloneNode(true));
+        document.querySelector(".writer-bg")?.remove();
+        document.querySelector(".writer-main")?.classList.remove("has-writer-bg");
+        mounted = mountFor(books[currentId].id);
+        await mounted.refresh();
+        return mounted;
+    },
+    paintFile,
+    async paintBookOne() { return paintFile("#1d4ed8", "BOOK ONE"); },
+    async paintBookTwo() { return paintFile("#9a3412", "BOOK TWO"); },
+    main() { return document.querySelector(".writer-main"); },
+    layer() { return document.querySelector(".writer-bg"); },
+    scroller() { return document.getElementById("writerWritePane"); },
+};
+</script>
+</body>
+</html>

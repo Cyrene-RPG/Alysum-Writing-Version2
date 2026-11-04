@@ -564,6 +564,10 @@
         "destination": "/applications/editor/page-ui/document.js"
       },
       {
+        "source": "/js/editor/writer-background.js",
+        "destination": "/applications/editor/page-ui/writer-background.js"
+      },
+      {
         "source": "/js/word-wars/lobby.js",
         "destination": "/applications/word-wars/page-ui/lobby.js"
       },
@@ -850,6 +854,10 @@
       {
         "source": "/css/editor/scene-breaks.css",
         "destination": "/applications/editor/editor-css/scene-breaks.css"
+      },
+      {
+        "source": "/css/editor/writer-background.css",
+        "destination": "/applications/editor/editor-css/writer-background.css"
       },
       {
         "source": "/css/word-wars/lobby.css",

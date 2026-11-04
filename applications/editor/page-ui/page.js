@@ -1,5 +1,6 @@
 import { mountEditorDailyGoal } from "./daily-goal.js";
 import { mountBreakReminders } from "./break-reminders.js";
+import { mountWriterBackground } from "./writer-background.js";
 import { mountForceSyncButton } from "./force-sync.js";
 import { mountSaveConflict } from "./save-conflict.js";
 import { mountPendingRecovery } from "./pending-recovery.js";
@@ -515,6 +516,14 @@ async function boot() {
         getBook: () => book,
         getAuthor: () => profile.name || "",
     });
+    const writerBackground = mountWriterBackground({
+        bookId,
+        session,
+        supabase,
+        getBook: () => book,
+        persist,
+        mainEl: document.querySelector(".writer-main"),
+    });
     const findUi = mountFind({
         pageEl,
         host: document.querySelector(".writer-main") || pageEl.parentElement,
@@ -695,6 +704,7 @@ async function boot() {
             setSelectedId(keep?.id || fallbackChapterId(book.sections, listBodyChapters(book.sections)[0]?.id || ""));
             showChapter(selectedId, { rebuildTree: true });
             setWelcomeCopy({ lead: "Working On ", accent: book.title || "Untitled Book" });
+            writerBackground.refresh();
         }).catch(() => {});
     }
     onReconnect(async () => {

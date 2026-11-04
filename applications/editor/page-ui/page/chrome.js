@@ -79,7 +79,7 @@ export function mountWriterChrome({
     const actionObserver = new MutationObserver(syncEditorActions);
     actionObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     mobileActions?.addEventListener("click", (event) => {
-        if (event.target.closest("#open-story-bible, #compare-drafts, #share-snippet, #break-reminders")) setRailDrawerOpen(false);
+        if (event.target.closest("#open-story-bible, #compare-drafts, #share-snippet, #break-reminders, #writer-background")) setRailDrawerOpen(false);
     }, true);
 
     function syncBackdrop() {

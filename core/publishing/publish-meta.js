@@ -3,6 +3,7 @@ import { readWorkTags } from "./work-tags.js";
  * Shared publish draft on books.publish_meta. Preview and Publish read/write this.
  */
 import { normalizeCrop } from "./cover-upload.js";
+import { readWriterBackgroundUrl } from "./writer-background.js";
 import { normalizeGenreList, partitionGenresAndTags } from "./genres.js";
 
 import {WARNING_CATALOG,searchWarnings} from "./warning-catalog.js";
@@ -120,6 +121,7 @@ export function readPublishDraft(book) {
         textColorMain: normalizeHexColor(raw.textColorMain || raw.text_color_main),
         textColorAccent: normalizeHexColor(raw.textColorAccent || raw.text_color_accent),
         siteAccent: normalizeTextColor(raw.siteAccent || raw.site_accent),
+        writerBackgroundUrl: readWriterBackgroundUrl(raw),
     };
 }
 
