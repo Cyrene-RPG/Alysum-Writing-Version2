@@ -12,6 +12,7 @@ on:
       - 'supabase/live-site/supabase-moderation-direct-messages.sql'
       - 'supabase/live-site/supabase-moderation-resolve-conversations.sql'
       - 'supabase/live-site/supabase-moderation-book-deadlines.sql'
+      - 'supabase/live-site/supabase-moderation-listing-appeals.sql'
       - '.github/workflows/moderation-live-tests.yml'
 permissions:
   contents: read
@@ -58,6 +59,9 @@ jobs:
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-moderation-book-deadlines.sql
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-moderation-book-deadlines.sql
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/moderation/deadline-security.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-moderation-listing-appeals.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/live-site/supabase-moderation-listing-appeals.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f core/tests/moderation/listing-appeal-security.sql
       - name: Chat interface checks
         run: |
           npm install --prefix "$RUNNER_TEMP/mod-chat" jsdom@26
