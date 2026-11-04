@@ -41,7 +41,10 @@ export function mountKeyboardViewport({
     let testInnerHeight;
     let restingHeight = Math.max(window.innerHeight, window.visualViewport?.height ?? 0);
     let lastOpen = false;
+    let lastPinnedHeight = 0;
     let applying = false;
+    let closeTimer = 0;
+    const CLOSE_HOLD_MS = 280;
 
     function visualHeight() {
         if (Number.isFinite(testVisualHeight)) return testVisualHeight;
@@ -60,7 +63,7 @@ export function mountKeyboardViewport({
         const rect = sel.getRangeAt(0).getBoundingClientRect();
         if (!rect || (rect.top === 0 && rect.height === 0)) return;
         const scroller = root.classList.contains("is-editor-keyboard")
-            ? pageEl
+            ? pageEl.closest(".writer-page-scroll") || pageEl
             : pageEl.closest(".writer-main-scroll") || pageEl;
         const box = scroller.getBoundingClientRect();
         const pad = 28;
@@ -86,32 +89,52 @@ export function mountKeyboardViewport({
         if (override && Object.prototype.hasOwnProperty.call(override, "innerHeight")) {
             testInnerHeight = Number.isFinite(override.innerHeight) ? override.innerHeight : undefined;
         }
+        const forceClose = Boolean(override?.forceClose);
         applying = true;
         try {
             const onPhone = phone();
             const height = visualHeight();
             const inner = layoutInner();
             rememberRest(inner, height, onPhone);
-            const open = keyboardIsOpen({
+            const wantOpen = keyboardIsOpen({
                 innerHeight: inner,
                 visualHeight: height,
                 restingHeight,
                 isPhone: onPhone,
             }) && !root.classList.contains("is-typewriter");
+            let open = wantOpen;
+            if (wantOpen) {
+                if (closeTimer) { clearTimeout(closeTimer); closeTimer = 0; }
+            } else if (lastOpen && editingFocus(pageEl) && !forceClose) {
+                open = true;
+                if (!closeTimer) {
+                    closeTimer = setTimeout(() => { closeTimer = 0; apply({ forceClose: true }); }, CLOSE_HOLD_MS);
+                }
+            } else if (closeTimer) {
+                clearTimeout(closeTimer);
+                closeTimer = 0;
+            }
 
+            const pinned = Math.round(Math.min(inner, height));
+            const resized = open && wantOpen && pinned !== lastPinnedHeight;
             if (onPhone) {
-                root.style.setProperty("--editor-vv-height", `${Math.round(Math.min(inner, height))}px`);
+                if (wantOpen || !open) {
+                    root.style.setProperty("--editor-vv-height", `${pinned}px`);
+                    lastPinnedHeight = pinned;
+                }
             } else {
                 root.style.removeProperty("--editor-vv-height");
                 testVisualHeight = undefined;
                 testInnerHeight = undefined;
+                lastPinnedHeight = 0;
             }
 
+            const opened = open && !lastOpen;
             root.classList.toggle("is-editor-keyboard", open);
             root.classList.toggle("is-editor-keyboard-title", open && titleFieldFocused());
-            if (open && !lastOpen) onOpen?.();
+            if (opened) onOpen?.();
             lastOpen = open;
-            if (open) keepCaretInView();
+            if (opened || resized) keepCaretInView();
         } finally {
             applying = false;
         }
@@ -146,6 +169,7 @@ export function mountKeyboardViewport({
     return {
         sync: apply,
         destroy() {
+            if (closeTimer) { clearTimeout(closeTimer); closeTimer = 0; }
             window.visualViewport?.removeEventListener("resize", onViewport);
             window.visualViewport?.removeEventListener("scroll", onViewport);
             window.removeEventListener("resize", onViewport);
