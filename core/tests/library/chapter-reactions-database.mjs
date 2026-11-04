@@ -38,7 +38,8 @@ test('real reaction migration: publication boundaries, identities, multiple reac
   await assert.rejects(db.query('SELECT * FROM public.library_chapter_reaction_import_skips'),/permission denied/);
   await assert.rejects(db.query("INSERT INTO public.library_chapter_reaction_votes VALUES('book','one','00000000-0000-0000-0000-000000000002','love',now())"),/permission denied/);
   await assert.rejects(call('book','one','unknown',true,true),/Choose/);
-  await assert.rejects(call('book','one','love',true,null),/Choose/);
+  await assert.rejects(call('book','one',null,true,true),/Choose/);
+  assert.deepEqual((await call('book','one','love',true,null)).mine,['love']);
   for (const reaction of ['swoon','heartbreak','blush','hot','happy','proud','scared','tense','confused','mindblown','curious','suspicious','inspired','hopeful','relieved','impressed','speechless','melting']) {
     const result = await call('book','one',reaction,true,true);
     assert.ok(result.mine.includes(reaction));

@@ -92,6 +92,7 @@ end;
 $migration$;
 
 drop function if exists public.chapter_reactions(text,text,text,boolean);
+drop function if exists public.chapter_reactions(text,text,text,boolean,boolean);
 create or replace function public.chapter_reactions(p_book text, p_chapter text, p_reaction text default null, p_write boolean default false, p_selected boolean default null)
 returns jsonb language plpgsql security definer set search_path=pg_catalog,public as $$
 declare uid uuid := auth.uid(); visible boolean; counts jsonb; mine jsonb;
@@ -110,20 +111,25 @@ begin
     if p_write then
         if uid is null then raise exception 'Sign in to react to this chapter.'; end if;
         if not public.mc_allowed('commenting',uid) then raise exception 'Reactions are unavailable while your account is restricted.'; end if;
-        if p_reaction is null or p_reaction not in ('love','laugh','cry','shock','anger','excited','swoon','heartbreak','blush','hot','happy','proud','scared','tense','confused','mindblown','curious','suspicious','inspired','hopeful','relieved','impressed','speechless','melting') or p_selected is null then raise exception 'Choose a chapter reaction.'; end if;
+        if p_reaction is not null and p_reaction not in ('love','laugh','cry','shock','anger','excited','swoon','heartbreak','blush','hot','happy','proud','scared','tense','confused','mindblown','curious','suspicious','inspired','hopeful','relieved','impressed','speechless','melting') then raise exception 'Choose a chapter reaction.'; end if;
+        if p_reaction is null and p_selected is true then raise exception 'Choose a chapter reaction.'; end if;
         -- Serialize changes by this reader so retries keep an explicit on/off state.
         perform pg_advisory_xact_lock(hashtextextended(jsonb_build_array(p_book,p_chapter,uid)::text,0));
         -- A skip row records that this reader already wrote, so a migration re-run cannot resurrect a removed vote.
         insert into public.library_chapter_reaction_import_skips(book_id,chapter_id,user_id)
         values(p_book,p_chapter,uid)
         on conflict(book_id,chapter_id,user_id) do nothing;
-        if p_selected then
+        -- Old clients omit p_selected; treat a named reaction as add, and a null reaction as "clear mine".
+        if p_reaction is null then
+            delete from public.library_chapter_reaction_votes
+            where book_id=p_book and chapter_id=p_chapter and user_id=uid;
+        elsif p_selected is false then
+            delete from public.library_chapter_reaction_votes
+            where book_id=p_book and chapter_id=p_chapter and user_id=uid and reaction=p_reaction;
+        else
             insert into public.library_chapter_reaction_votes(book_id,chapter_id,user_id,reaction)
             values(p_book,p_chapter,uid,p_reaction)
             on conflict(book_id,chapter_id,user_id,reaction) do update set updated_at=now();
-        else
-            delete from public.library_chapter_reaction_votes
-            where book_id=p_book and chapter_id=p_chapter and user_id=uid and reaction=p_reaction;
         end if;
     end if;
     select coalesce(jsonb_object_agg(r.reaction,r.total),'{}'::jsonb) into counts

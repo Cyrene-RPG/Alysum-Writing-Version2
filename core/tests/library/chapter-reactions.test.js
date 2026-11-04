@@ -16,7 +16,7 @@ test('read, set and remove calls never accept caller-supplied reader identity', 
     await chapterReactions(client,' book ','one');
     await chapterReactions(client,'book','one',{reaction:'love',selected:true,userId:'someone-else'});
     await chapterReactions(client,'book','one',{reaction:'love',selected:false});
-    assert.equal(calls[0].args.p_write,false);
+    assert.equal(calls[0].args.p_write,false);assert.equal('p_selected' in calls[0].args,false);
     assert.deepEqual(calls[1],{name:'chapter_reactions',args:{p_book:'book',p_chapter:'one',p_write:true,p_reaction:'love',p_selected:true}});
     assert.equal(calls[2].args.p_write,true);assert.equal(calls[2].args.p_reaction,'love');assert.equal(calls[2].args.p_selected,false);
     await assert.rejects(chapterReactions(client,'book','one',{reaction:'invalid',selected:true}),/Choose/);

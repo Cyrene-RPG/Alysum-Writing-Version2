@@ -76,7 +76,9 @@ export function mountChapterReactions(root, { work, chapterId, supabase, session
             if (!root.isConnected) return;
             // A failed save may have reached the server. Reload before another write.
             if (id) state = null;
-            status.textContent = id ? 'Could not confirm your reaction. Refresh the counts before trying again.' : error.message;
+            status.textContent = id
+                ? (error.message || 'Could not confirm your reaction. Refresh the counts before trying again.')
+                : error.message;
             retry.hidden = false;
         } finally {
             busy = false;
