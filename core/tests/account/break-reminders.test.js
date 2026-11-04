@@ -3,8 +3,11 @@ import assert from 'node:assert/strict';
 import {
     BREAK_REMINDER_HOURS,
     breakReminderMessage,
+    breakReminderRemainingMs,
+    breakReminderStatusLabel,
     hoursLabel,
     readBreakReminder,
+    remainingLabel,
     storageKeyForBook,
     writerGreetingName,
 } from '../../account/break-reminders.js';
@@ -32,4 +35,18 @@ test('stored choices are account-book scoped and reject unknown hours', () => {
     assert.deepEqual(readBreakReminder({ enabled: true, hours: 2, startedAt: 50 }), { enabled: true, hours: 2, startedAt: 50 });
     assert.deepEqual(readBreakReminder({ enabled: false }), { enabled: false });
     assert.equal(readBreakReminder({ enabled: true, hours: 9, startedAt: 1 }), null);
+});
+
+test('remaining time labels count down without exposing storage', () => {
+    const hour = 60 * 60 * 1000;
+    const choice = { enabled: true, hours: 2, startedAt: 1_000 };
+    assert.equal(breakReminderRemainingMs(choice, 1_000, hour), 2 * hour);
+    assert.equal(remainingLabel(0), 'Break now');
+    assert.equal(remainingLabel(hour), 'Break in 1h');
+    assert.equal(remainingLabel(hour + 60 * 1000), 'Break in 1h 1m');
+    assert.equal(remainingLabel(2 * hour), 'Break in 2h');
+    assert.equal(remainingLabel(45 * 1000), 'Break in 1m');
+    assert.equal(breakReminderStatusLabel({ enabled: false }, 1_000), 'Break reminders');
+    assert.equal(breakReminderStatusLabel(choice, 1_000, hour), 'Break in 2h');
+    assert.equal(breakReminderStatusLabel(choice, 1_000 + hour + 18 * 60 * 1000, hour), 'Break in 42m');
 });

@@ -15,6 +15,7 @@ import {mountWriterChrome} from '/applications/editor/page-ui/page/chrome.js';
 import {mountTypewriter} from '/applications/editor/page-ui/page/typewriter.js';
 import {mountPendingRecovery} from '/applications/editor/page-ui/pending-recovery.js';
 import {mountEditorDailyGoal} from '/applications/editor/page-ui/daily-goal.js';
+import {mountBreakReminders} from '/applications/editor/page-ui/break-reminders.js';
 import {getWritingStats,recordTypedWords} from '/core/account/writing-stats.js';
 import {countWordsInHtml} from '/core/writing-engine/word-count.js';
 import {countedWordDelta} from '/core/statistics/typed-input.js';
@@ -23,7 +24,7 @@ $('loadingPanel').classList.add('hidden');$('writerShell').classList.remove('hid
 $('bookTitle').value='Sample manuscript';$('chapterTitle').value='Chapter 4';
 $('pageEditor').contentEditable='true';$('pageEditor').textContent='Keep this manuscript and its editing state unchanged.';
 window.originalEditor=$('pageEditor');window.originalActions=$('editorActions');window.actionCalls=[];
-for(const id of ['open-story-bible','compare-drafts','share-snippet'])$(id).addEventListener('click',()=>window.actionCalls.push(id));
+for(const id of ['open-story-bible','compare-drafts','share-snippet','break-reminders'])$(id).addEventListener('click',()=>window.actionCalls.push(id));
 const ids=['treeToggle','settingsCollapse','railToggle','tabChapters','tabBook','chaptersPane','bookPane','bookTree','settingsPane','settingsTopbar','writerTabs','bookFootSettings','tabSettings','settingsBackTop','mobileTreeOpen','mobileRailOpen'];
 const args=Object.fromEntries(ids.map(id=>[id,$(id)]));
 window.writerChrome=mountWriterChrome({...args,shell:$('writerShell'),tree:$('chapterTree'),backdrop:$('writerShellBackdrop')});
@@ -35,6 +36,14 @@ if(!localStorage.getItem('alysum:typed-words:'+userId))recordTypedWords({userId,
 window.dailyGoal=mountEditorDailyGoal({anchor:$('editorActionRow'),getStats:()=>getWritingStats(window.goalProfile,{userId})});
 let previousWords=countWordsInHtml($('pageEditor').innerHTML);
 $('pageEditor').addEventListener('input',event=>{const words=countWordsInHtml($('pageEditor').innerHTML),change=countedWordDelta(previousWords,words,event);previousWords=words;recordTypedWords({userId,added:Math.max(0,change),removed:Math.max(0,-change)});window.dailyGoal.refresh();});
+const breaks=new URL(location.href).searchParams.get('breaks');
+if(breaks){
+  const key='alysum:editor:break-reminder:test';
+  sessionStorage.removeItem(key);
+  if(breaks==='on')sessionStorage.setItem(key,JSON.stringify({enabled:true,hours:2,startedAt:Date.now()}));
+  if(breaks==='off')sessionStorage.setItem(key,JSON.stringify({enabled:false}));
+  window.breakReminders=mountBreakReminders({bookId:'test',getWriterName:()=>'Jane',promptDelayMs:0});
+}
 window.toolsReady=true;`;
 const server=createServer(async(req,res)=>{
  try {
@@ -66,7 +75,7 @@ try {
   const inDrawer=()=>page.locator('#editorActions').evaluate(node=>node.parentElement.id);
   assert.equal(await inDrawer(),width<=720?'writerMobileActions':'editorActionRow');
   assert.ok(await page.evaluate(()=>document.getElementById('editorActions')===window.originalActions));
-  const actionIds=['open-story-bible','compare-drafts','share-snippet'];
+  const actionIds=['open-story-bible','compare-drafts','share-snippet','break-reminders'];
   for(const id of actionIds)assert.equal(await page.locator('#'+id).count(),1);
   if(width<=720){
    assert.equal(await page.locator('#writerWritePane > .snippet-editor-action').count(),0,'no action row above formatting on phones');
@@ -191,5 +200,48 @@ try {
  await dismiss.tap();assert.equal(await dismiss.isVisible(),false);
  await recoveryPage.reload();await recoveryPage.waitForFunction(()=>window.toolsReady);assert.equal(await dismiss.isVisible(),false,'dismissal persists after reload');
  await recoveryPage.close();
+ const breakPhone=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+ await breakPhone.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
+ await breakPhone.goto(base+'/fixture?breaks=on');await breakPhone.waitForFunction(()=>window.toolsReady);
+ assert.equal(await breakPhone.locator('#break-reminder-status').textContent(),'Break in 2h');
+ assert.equal(await breakPhone.locator('#break-reminder-status').isVisible(),true);
+ const goalBox=await breakPhone.locator('.writer-daily-goal').boundingBox();
+ const chipBox=await breakPhone.locator('#break-reminder-status').boundingBox();
+ const barBox=await breakPhone.locator('#writerToolbar').boundingBox();
+ assert.ok(goalBox && chipBox && barBox && chipBox.y>=goalBox.y+goalBox.height-1 && chipBox.y+chipBox.height<=barBox.y,'break timer sits under the daily goal');
+ await breakPhone.screenshot({path:out+'/'+name+'-390-break-chip.png',fullPage:true});
+ await breakPhone.locator('#break-reminder-status').tap();
+ assert.match(await breakPhone.locator('#breakReminderOverlay').textContent(),/Break in 2h/);
+ await breakPhone.screenshot({path:out+'/'+name+'-390-break-timer.png',fullPage:true});
+ await breakPhone.keyboard.press('Escape');
+ assert.equal(await breakPhone.locator('#breakReminderOverlay').isHidden(),true);
+ await breakPhone.evaluate(()=>window.writerChrome.syncKeyboardViewport({visualHeight:480}));
+ assert.equal(await breakPhone.locator('#break-reminder-status').evaluate(n=>getComputedStyle(n).display),'none');
+ await breakPhone.close();
+ const breakOff=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+ await breakOff.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
+ await breakOff.goto(base+'/fixture?breaks=off');await breakOff.waitForFunction(()=>window.toolsReady);
+ assert.equal(await breakOff.locator('#break-reminder-status').isHidden(),true);
+ await breakOff.locator('#mobileRailOpen').tap();
+ await breakOff.waitForFunction(()=>{
+  const box=document.getElementById('break-reminders')?.getBoundingClientRect();
+  return document.getElementById('mobileRailOpen').getAttribute('aria-expanded')==='true' && box && box.x>=0 && box.width>=44;
+ });
+ assert.equal(await breakOff.locator('#break-reminders').textContent(),'Break reminders');
+ await breakOff.locator('#writerRail').screenshot({path:out+'/'+name+'-390-break-tools.png'});
+ await breakOff.locator('#break-reminders').tap();
+ assert.deepEqual(await breakOff.locator('#breakReminderOverlay button').allTextContents(),['1 hour','2 hours','3 hours']);
+ await breakOff.getByRole('button',{name:'2 hours'}).tap();
+ assert.equal(await breakOff.locator('#break-reminder-status').isVisible(),true);
+ assert.equal(await breakOff.locator('#break-reminder-status').textContent(),'Break in 2h');
+ await breakOff.close();
+ const breakDesk=await browser.newPage({viewport:{width:1280,height:844}});
+ await breakDesk.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
+ await breakDesk.goto(base+'/fixture?breaks=on');await breakDesk.waitForFunction(()=>window.toolsReady);
+ assert.equal(await breakDesk.locator('#break-reminders').isVisible(),true);
+ assert.equal(await breakDesk.locator('#break-reminders').textContent(),'Break in 2h');
+ assert.equal(await breakDesk.locator('#break-reminder-status').isVisible(),false,'desktop uses the action-row timer');
+ await breakDesk.screenshot({path:out+'/'+name+'-1280-break-timer.png',fullPage:true});
+ await breakDesk.close();
  console.log(name+': editor tools move at phone widths, preserve desktop/Typewriter behavior and button listeners, close on selection/Escape and survive resize without replacing manuscript DOM.');
 }finally{await browser.close();server.close();}

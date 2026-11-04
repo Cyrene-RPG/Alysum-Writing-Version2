@@ -15,7 +15,8 @@
     html.is-editor-keyboard .wd-nav-wrap,
     html.is-editor-keyboard .writer-draft-switch,
     html.is-editor-keyboard .writer-editor-actions,
-    html.is-editor-keyboard .writer-daily-goal {
+    html.is-editor-keyboard .writer-daily-goal,
+    html.is-editor-keyboard .writer-break-status {
         display: none !important;
     }
     html.is-editor-keyboard:not(.is-editor-keyboard-title) .writer-mobile-titlebar {
