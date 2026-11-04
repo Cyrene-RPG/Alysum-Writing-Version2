@@ -2,6 +2,7 @@ import { els } from "/js/settings/elements.js";
 import { state } from "/js/settings/state.js";
 import { TAB_PANEL_IDS, initSettingsNav } from "/js/settings/nav.js";
 import { initAppearancePickers, setAvatarPreview } from "/js/settings/appearance.js?v=18";
+import { initPfpDecorationPicker } from "/js/settings/pfp-decoration.js";
 import { refreshBackupStatusUi } from "/js/settings/backup.js";
 import {
     updateAuthorBioCount,
@@ -24,6 +25,7 @@ export function finishSettingsShell() {
     });
     applyChromeGradient(getThemePreview(getStoredGradientThemeId()));
     initAppearancePickers();
+    initPfpDecorationPicker();
     initSettingsNav();
     import("/js/feature-highlights.js?v=3").then((m) => m.applyFeatureNewBadges()).catch(() => {});
 

@@ -340,6 +340,10 @@
         "destination": "/applications/main-site/assets/discord-logo.png"
       },
       {
+        "source": "/assets/pfp-decorations/dragon.png",
+        "destination": "/applications/main-site/assets/pfp-decorations/dragon.png"
+      },
+      {
         "source": "/js/pwa-register.js",
         "destination": "/applications/main-site/page-ui/pwa-register.js"
       },
@@ -718,6 +722,10 @@
       {
         "source": "/js/settings/security.js",
         "destination": "/applications/main-site/settings/security.js"
+      },
+      {
+        "source": "/js/settings/pfp-decoration.js",
+        "destination": "/applications/main-site/settings/pfp-decoration.js"
       },
       {
         "source": "/css/site-responsive.css",
