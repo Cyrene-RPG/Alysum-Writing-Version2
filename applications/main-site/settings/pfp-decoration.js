@@ -7,35 +7,15 @@ import {
     writeStoredPfpDecorationId,
 } from "@alysum/account/pfp-decorations.js";
 
+const PFP_DECORATION_CHANGE = "alysum:account:pfp-decoration";
+
 function percent(value) {
     return `${Number(value || 0) * 100}%`;
 }
 
 export function applyPfpDecoration(id) {
-    const frame = els.profileAvatarFrame;
-    const overlay = els.profileAvatarDecoration;
-    const decoration = pfpDecorationById(id);
-    if (!frame) return;
-
-    if (!decoration || !overlay) {
-        frame.classList.remove("has-decoration");
-        frame.style.removeProperty("--pfp-avatar-size");
-        frame.style.removeProperty("--pfp-avatar-x");
-        frame.style.removeProperty("--pfp-avatar-y");
-        if (overlay) {
-            overlay.hidden = true;
-            overlay.removeAttribute("src");
-        }
-        return;
-    }
-
-    frame.style.setProperty("--pfp-avatar-size", String(decoration.avatarSize));
-    frame.style.setProperty("--pfp-avatar-x", percent(decoration.offsetX));
-    frame.style.setProperty("--pfp-avatar-y", percent(decoration.offsetY));
-    frame.classList.add("has-decoration");
-    overlay.alt = "";
-    overlay.src = decoration.imagePath;
-    overlay.hidden = false;
+    writeStoredPfpDecorationId(id);
+    document.dispatchEvent(new CustomEvent(PFP_DECORATION_CHANGE));
 }
 
 function paintPicker(activeId) {
@@ -54,9 +34,8 @@ function normalizeChipId(id) {
 }
 
 function selectDecoration(id) {
-    const clean = writeStoredPfpDecorationId(id);
-    applyPfpDecoration(clean);
-    paintPicker(clean);
+    applyPfpDecoration(id);
+    paintPicker(id);
 }
 
 function makeChip(id, name, imagePath, layout = null) {

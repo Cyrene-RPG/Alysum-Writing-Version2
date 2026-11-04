@@ -25,11 +25,18 @@ export function mountAuthorProfile({api, root = document, location = window.loca
             if(request===followEpoch) el("author-follow-status").textContent=error.message || "Could not load follow status.";
         } finally { if(request===followEpoch){saving=false;drawFollow();} }
     }
+    function paintOwnFrame() {
+        const wrap=el("author-avatar");
+        if (!wrap) return;
+        if (profile && viewerId && viewerId===profile.id) wrap.setAttribute("data-own-profile","");
+        else wrap.removeAttribute("data-own-profile");
+    }
     function setViewer(id) {
         viewerId=String(id || "");authReady=true;followEpoch++;
         following=false;followLoaded=false;saving=false;
         el("author-follow-status").textContent="";
         saving=Boolean(profile && viewerId && viewerId!==profile.id);drawFollow();
+        paintOwnFrame();
         const epoch=followEpoch;setTimeout(()=>{if(epoch===followEpoch)void refreshFollow();},0);
     }
     function renderProfile(value) {
@@ -55,6 +62,7 @@ export function mountAuthorProfile({api, root = document, location = window.loca
         el("author-updates").href="/updates?author="+encodeURIComponent(value.id);
         el("author-sheet").hidden=false;
         root.title=(value.displayName || value.username)+" — Alysum";
+        paintOwnFrame();
         void refreshFollow();
     }
     async function load() {

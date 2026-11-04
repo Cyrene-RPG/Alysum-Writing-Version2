@@ -164,6 +164,7 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
+    overflow: visible;
 }
 
 .profile-avatar-layout {
@@ -174,9 +175,6 @@
 }
 
 .profile-avatar-frame {
-    --pfp-avatar-size: 1;
-    --pfp-avatar-x: 0%;
-    --pfp-avatar-y: 0%;
     position: relative;
     width: 112px;
     height: 112px;
@@ -184,11 +182,6 @@
     display: grid;
     place-items: center;
     overflow: visible;
-}
-
-.profile-avatar-frame.has-decoration {
-    width: 252px;
-    height: 252px;
 }
 
 .profile-avatar-preview {
@@ -200,29 +193,6 @@
     background: rgba(0,0,0,0.3);
     box-shadow: 0 0 28px color-mix(in srgb, var(--purple-bright) 35%, transparent);
     z-index: 1;
-}
-
-.profile-avatar-frame.has-decoration .profile-avatar-preview {
-    position: absolute;
-    width: calc(var(--pfp-avatar-size) * 100%);
-    height: calc(var(--pfp-avatar-size) * 100%);
-    left: calc(50% + var(--pfp-avatar-x));
-    top: calc(50% + var(--pfp-avatar-y));
-    transform: translate(-50%, -50%);
-}
-
-.profile-avatar-decoration {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    pointer-events: none;
-    z-index: 2;
-}
-
-.profile-avatar-decoration[hidden] {
-    display: none;
 }
 
 .profile-avatar-preview img {
@@ -347,11 +317,6 @@
     .profile-avatar-layout {
         grid-template-columns: 1fr;
         justify-items: start;
-    }
-
-    .profile-avatar-frame.has-decoration {
-        width: 200px;
-        height: 200px;
     }
 }
 

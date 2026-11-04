@@ -81,7 +81,6 @@ export const els = {
     profileAvatarFrame: document.getElementById("profileAvatarFrame"),
     profileAvatarPreviewWrap: document.getElementById("profileAvatarPreviewWrap"),
     profileAvatarInitial: document.getElementById("profileAvatarInitial"),
-    profileAvatarDecoration: document.getElementById("profileAvatarDecoration"),
     profileDecorationPicker: document.getElementById("profileDecorationPicker"),
     saveAvatarBtn: document.getElementById("saveAvatarBtn"),
     avatarMsg: document.getElementById("avatarMsg"),
