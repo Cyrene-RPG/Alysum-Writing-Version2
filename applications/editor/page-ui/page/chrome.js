@@ -60,6 +60,12 @@ export function mountWriterChrome({
         focus.title = "Focus mode";
         actionRow.append(focus);
     }
+    const soundBtn = document.getElementById("editorSound");
+    const focusBtn = document.getElementById("focusMode");
+    if (actionRow && soundBtn && soundBtn.parentElement !== actionRow) {
+        if (focusBtn) focusBtn.before(soundBtn);
+        else actionRow.append(soundBtn);
+    }
     const editorActions = document.getElementById("editorActions");
     const mobileActions = document.getElementById("writerMobileActions");
     const railTitle = document.querySelector("#writerRail .writer-rail-title");

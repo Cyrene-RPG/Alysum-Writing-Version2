@@ -41,15 +41,21 @@ export function mountEditorSound({
     }
     function ensureButton() {
         let node = root.getElementById('editorSound');
-        if (node) return node;
-        node = root.createElement('button');
-        node.type = 'button';
-        node.id = 'editorSound';
-        node.className = 'quote-button';
-        node.setAttribute('aria-expanded', 'false');
-        node.setAttribute('aria-controls', 'editorSoundPanel');
-        node.textContent = 'Sound';
-        (actions || root.body).append(node);
+        const row = root.getElementById('editorActionRow');
+        const focus = root.getElementById('focusMode');
+        if (!node) {
+            node = root.createElement('button');
+            node.type = 'button';
+            node.id = 'editorSound';
+            node.className = 'quote-button';
+            node.setAttribute('aria-expanded', 'false');
+            node.setAttribute('aria-controls', 'editorSoundPanel');
+            node.textContent = 'Sound';
+        }
+        if (row) {
+            if (focus) focus.before(node);
+            else if (node.parentNode !== row) row.append(node);
+        } else if (!node.parentNode) (actions || root.body).append(node);
         return node;
     }
     function ensurePanel() {
