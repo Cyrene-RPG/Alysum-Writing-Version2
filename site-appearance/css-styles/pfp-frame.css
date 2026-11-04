@@ -14,6 +14,13 @@ html[data-pfp-decoration="blossom"] {
     --pfp-avatar-y: 0.027;
 }
 
+html[data-pfp-decoration="moth"] {
+    --pfp-frame-image: url("/assets/pfp-decorations/moth.png");
+    --pfp-avatar-size: 0.58;
+    --pfp-avatar-x: 0.036;
+    --pfp-avatar-y: -0.045;
+}
+
 .wd-pfp-btn {
     --pfp-photo-size: 56px;
 }
