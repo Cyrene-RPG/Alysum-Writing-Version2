@@ -1,5 +1,6 @@
 import { mountEditorDailyGoal } from "./daily-goal.js";
 import { mountBreakReminders } from "./break-reminders.js";
+import { mountEditorSound } from "./sound.js";
 import { mountWriterBackground } from "./writer-background.js";
 import { mountForceSyncButton } from "./force-sync.js";
 import { mountSaveConflict } from "./save-conflict.js";
@@ -263,6 +264,7 @@ async function boot() {
     }
     const dailyGoal = mountEditorDailyGoal({ anchor: document.getElementById("editorActionRow"), getStats: goalStatsNow });
     mountBreakReminders({ bookId, getWriterName: () => profile.name });
+    mountEditorSound({ actions: document.getElementById("editorActions") });
     function primeGoalMilestones() {
         lastGoalHit = goalStatsNow().checkpoint?.hit || 0;
         goalMilestonesPrimed = true;

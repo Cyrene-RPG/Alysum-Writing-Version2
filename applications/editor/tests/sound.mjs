@@ -1,0 +1,116 @@
+import assert from 'node:assert/strict';
+import {createServer} from 'node:http';
+import {readFile, mkdir} from 'node:fs/promises';
+import {resolve, extname} from 'node:path';
+
+const {chromium} = await import(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
+const root = resolve(new URL('../../../', import.meta.url).pathname);
+const fixture = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/css/editor/snippets.css">
+<link rel="stylesheet" href="/css/editor/sound.css">
+<style>
+:root{--text:#eee;--muted:#aaa;--accent:#8047c8;--border:#444;--alysum-ui-panel:#191919;--alysum-ui-raised:#292929}
+body{margin:0;background:#111;color:#eee;font-family:Arial,sans-serif}
+.writer-editor-actions{display:flex;flex-wrap:wrap;gap:8px;padding:8px 16px}
+html.is-typewriter .writer-editor-actions{display:none!important}
+</style></head><body>
+<div class="writer-editor-actions" id="editorActionRow">
+  <div class="snippet-editor-action" id="editorActions">
+    <button type="button" id="break-reminders" class="quote-button">Break reminders</button>
+    <button type="button" id="editorSound" class="quote-button" aria-expanded="false" aria-controls="editorSoundPanel">Sound</button>
+  </div>
+  <button type="button" id="focusMode" class="quote-button">Focus mode</button>
+</div>
+<script type="module">
+import {mountEditorSound} from '/js/editor/sound.js';
+window.sound = mountEditorSound({actions: document.getElementById('editorActions')});
+window.ready = true;
+</script></body></html>`;
+
+const redirectRules = (await readFile(resolve(root, '_redirects'), 'utf8'))
+    .split('\n').map((line) => line.trim().split(/\s+/))
+    .filter((parts) => parts.length === 3 && parts[2] === '200');
+
+function staticPath(path) {
+    for (const [source, target] of redirectRules) {
+        if (source === path) return target;
+        if (source.endsWith('*') && path.startsWith(source.slice(0, -1))) {
+            return target.replace(':splat', path.slice(source.length - 1));
+        }
+    }
+    return path;
+}
+
+const server = createServer(async (req, res) => {
+    try {
+        const url = new URL(req.url, 'http://localhost');
+        if (url.pathname === '/fixture') {
+            res.setHeader('Content-Type', 'text/html');
+            res.end(fixture);
+            return;
+        }
+        let path = staticPath(url.pathname);
+        path = resolve(root, '.' + path);
+        if (!path.startsWith(root + '/')) throw new Error('Outside fixture');
+        const content = await readFile(path);
+        res.setHeader('Content-Type', ({
+            '.css': 'text/css',
+            '.html': 'text/html',
+            '.js': 'text/javascript',
+        }[extname(path)]) || 'text/javascript');
+        res.end(content);
+    } catch {
+        res.statusCode = 404;
+        res.end();
+    }
+});
+await new Promise((done) => server.listen(0, '127.0.0.1', done));
+const base = `http://127.0.0.1:${server.address().port}/fixture`;
+const browser = await chromium.launch({ headless: true });
+
+try {
+    await mkdir('test-results/editor-sound', { recursive: true });
+    for (const width of [1440, 390, 320]) {
+        const page = await browser.newPage({ viewport: { width, height: 900 } });
+        const errors = [];
+        const requests = [];
+        page.on('pageerror', (error) => errors.push(error.message));
+        page.on('request', (request) => requests.push(request.url()));
+        await page.goto(base);
+        await page.waitForFunction(() => window.ready);
+        await page.getByRole('button', { name: 'Sound', exact: true }).click();
+        await page.getByRole('button', { name: 'Rain', exact: true }).click();
+        await page.waitForFunction(() => window.sound.getPrefs().playing === true);
+        assert.equal(await page.getByRole('button', { name: 'Sound · Rain' }).count(), 1);
+        await page.locator('#editorSoundVolume').evaluate((input) => {
+            input.value = '25';
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        await page.getByRole('button', { name: 'Mute', exact: true }).click();
+        assert.equal(await page.evaluate(() => window.sound.getPrefs().muted), true);
+        assert.equal(await page.evaluate(() => window.sound.getPrefs().volume), 0.25);
+        await page.locator('#editorSoundSong').fill('javascript:alert(1)');
+        await page.locator('#editorSoundSong').evaluate((input) => input.dispatchEvent(new Event('change', { bubbles: true })));
+        assert.match(await page.locator('[data-sound-error]').innerText(), /does not play the song/);
+        assert.equal(await page.locator('#editorSoundOpen').isVisible(), false);
+        await page.locator('#editorSoundSong').fill('https://open.spotify.com/track/demo');
+        await page.locator('#editorSoundSong').evaluate((input) => input.dispatchEvent(new Event('change', { bubbles: true })));
+        assert.equal(await page.locator('#editorSoundOpen').innerText(), 'Open in Spotify');
+        assert.equal(await page.locator('#editorSoundOpen').getAttribute('href'), 'https://open.spotify.com/track/demo');
+        await page.screenshot({ path: `test-results/editor-sound/panel-${width}.png`, fullPage: true });
+        await page.evaluate(() => document.documentElement.classList.add('is-typewriter'));
+        assert.equal(await page.locator('#editorSoundChip').isVisible(), true);
+        assert.match(await page.locator('#editorSoundChip').innerText(), /muted/);
+        await page.locator('#editorSoundChip').click();
+        assert.equal(await page.evaluate(() => window.sound.getPrefs().muted), false);
+        await page.screenshot({ path: `test-results/editor-sound/focus-${width}.png`, fullPage: true });
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+        assert.equal(requests.some((url) => /spotify|youtube|apple\.com/.test(url)), false, 'Alysum never fetches the song');
+        assert.deepEqual(errors, []);
+        await page.close();
+        console.log(`PASS editor sound dock at ${width}px`);
+    }
+} finally {
+    await browser.close();
+    await new Promise((done) => server.close(done));
+}

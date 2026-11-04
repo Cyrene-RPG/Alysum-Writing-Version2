@@ -868,6 +868,10 @@
         "destination": "/applications/editor/editor-css/writer-background.css"
       },
       {
+        "source": "/css/editor/sound.css",
+        "destination": "/applications/editor/editor-css/sound.css"
+      },
+      {
         "source": "/css/word-wars/lobby.css",
         "destination": "/applications/word-wars/word-wars-css/lobby.css"
       },
