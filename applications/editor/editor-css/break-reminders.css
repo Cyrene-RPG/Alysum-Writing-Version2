@@ -1,0 +1,17 @@
+.break-reminder-overlay { z-index: 81; }
+.break-reminder-overlay .confirm-actions {
+    flex-wrap: wrap;
+}
+.break-reminder-overlay .break-reminder-interval {
+    min-width: min(100%, 160px);
+    min-height: 44px;
+}
+.break-reminder-overlay .break-reminder-intervals {
+    flex-direction: column;
+    align-items: stretch;
+}
+.break-reminder-overlay .confirm-yes:focus-visible,
+.break-reminder-overlay .confirm-no:focus-visible {
+    outline: 2px solid var(--accent, #3b82f6);
+    outline-offset: 3px;
+}
