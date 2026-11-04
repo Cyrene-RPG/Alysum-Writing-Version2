@@ -1,12 +1,14 @@
 /** Personal writing atmosphere. Alysum never hosts or plays copyrighted songs. */
 export const SOUND_STORAGE_KEY = 'alysum:editor:sound';
 export const DEFAULT_SOUND_VOLUME = 0.4;
+export const ATMOSPHERE_MEDIA_BASE = '/core/atmosphere/media';
 export const ATMOSPHERE_BEDS = Object.freeze([
     { id: 'rain', label: 'Rain', description: 'Soft rain' },
     { id: 'cafe', label: 'Cafe', description: 'Quiet room tone' },
     { id: 'night', label: 'Night', description: 'Night air' },
     { id: 'fire', label: 'Fire', description: 'Low fire' },
 ]);
+const LOOP_EXTENSIONS = Object.freeze(['ogg', 'mp3', 'wav']);
 const SONG_HOSTS = new Set([
     'open.spotify.com',
     'play.spotify.com',
@@ -20,6 +22,12 @@ const SONG_HOSTS = new Set([
 
 export function atmosphereBed(id) {
     return ATMOSPHERE_BEDS.find((bed) => bed.id === id) || null;
+}
+
+export function atmosphereLoopUrls(id) {
+    const bed = atmosphereBed(id);
+    if (!bed) return [];
+    return LOOP_EXTENSIONS.map((extension) => `${ATMOSPHERE_MEDIA_BASE}/${bed.id}.${extension}`);
 }
 
 function clampVolume(value) {
@@ -74,4 +82,11 @@ export function soundChipLabel(prefs, playing) {
     if (prefs?.muted) return `${bed.label} · muted`;
     if (playing) return bed.label;
     return `${bed.label} · paused`;
+}
+
+export function missingLoopMessage(id) {
+    const bed = atmosphereBed(id);
+    const name = bed?.label || 'That sound';
+    const file = bed ? `${bed.id}.ogg` : 'rain.ogg';
+    return `${name} is not installed yet. Add a royalty-free loop as ${file}.`;
 }

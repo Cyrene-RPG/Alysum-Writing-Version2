@@ -1,119 +1,48 @@
-import { atmosphereBed, DEFAULT_SOUND_VOLUME } from './model.js';
+import { atmosphereBed, atmosphereLoopUrls, DEFAULT_SOUND_VOLUME, missingLoopMessage } from './model.js';
 
-function noiseBuffer(context, seconds = 2) {
-    const length = Math.max(1, Math.floor(context.sampleRate * seconds));
-    const buffer = context.createBuffer(2, length, context.sampleRate);
-    for (let channel = 0; channel < buffer.numberOfChannels; channel += 1) {
-        const data = buffer.getChannelData(channel);
-        for (let i = 0; i < length; i += 1) data[i] = Math.random() * 2 - 1;
+async function decodeBuffer(context, bytes) {
+    const copy = bytes.slice(0);
+    if (typeof context.decodeAudioData !== 'function') {
+        throw new Error('This browser cannot play atmosphere sound.');
     }
-    return buffer;
-}
-
-function loopNoise(context, destination, buffer, type, frequency, q, gainValue) {
-    const source = context.createBufferSource();
-    source.buffer = buffer;
-    source.loop = true;
-    const filter = context.createBiquadFilter();
-    filter.type = type;
-    filter.frequency.value = frequency;
-    if (Number.isFinite(q)) filter.Q.value = q;
-    const gain = context.createGain();
-    gain.gain.value = gainValue;
-    source.connect(filter);
-    filter.connect(gain);
-    gain.connect(destination);
-    source.start();
-    return () => {
-        try { source.stop(); } catch { /* already stopped */ }
-        try { source.disconnect(); filter.disconnect(); gain.disconnect(); } catch { /* already torn down */ }
-    };
-}
-
-function startRain(context, destination, noise) {
-    return [
-        loopNoise(context, destination, noise, 'bandpass', 4200, 0.65, 0.28),
-        loopNoise(context, destination, noise, 'highpass', 700, 0.4, 0.16),
-    ];
-}
-
-function startCafe(context, destination, noise) {
-    return [
-        loopNoise(context, destination, noise, 'lowpass', 420, 0.7, 0.22),
-        loopNoise(context, destination, noise, 'bandpass', 180, 0.8, 0.08),
-    ];
-}
-
-function startNight(context, destination, noise) {
-    const stops = [loopNoise(context, destination, noise, 'highpass', 2400, 0.5, 0.05)];
-    let alive = true;
-    let timer = 0;
-    function chirp() {
-        if (!alive || typeof context.currentTime !== 'number') return;
-        const osc = context.createOscillator();
-        osc.type = 'triangle';
-        osc.frequency.value = 3600 + Math.random() * 1100;
-        const gain = context.createGain();
-        const now = context.currentTime;
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(0.035, now + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
-        osc.connect(gain);
-        gain.connect(destination);
-        osc.start(now);
-        osc.stop(now + 0.1);
-        timer = setTimeout(chirp, 900 + Math.random() * 2200);
+    if (context.decodeAudioData.length > 1) {
+        return await new Promise((resolve, reject) => {
+            context.decodeAudioData(copy, resolve, reject);
+        });
     }
-    timer = setTimeout(chirp, 400);
-    stops.push(() => {
-        alive = false;
-        clearTimeout(timer);
-    });
-    return stops;
+    return await context.decodeAudioData(copy);
 }
 
-function startFire(context, destination, noise) {
-    const stops = [loopNoise(context, destination, noise, 'lowpass', 240, 0.8, 0.28)];
-    let alive = true;
-    let timer = 0;
-    function pop() {
-        if (!alive || typeof context.currentTime !== 'number') return;
-        const source = context.createBufferSource();
-        source.buffer = noise;
-        const filter = context.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.value = 700 + Math.random() * 1600;
-        const gain = context.createGain();
-        const now = context.currentTime;
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(0.28, now + 0.012);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
-        source.connect(filter);
-        filter.connect(gain);
-        gain.connect(destination);
-        source.start(now);
-        source.stop(now + 0.16);
-        timer = setTimeout(pop, 350 + Math.random() * 1300);
+async function fetchLoop(context, id, fetchAudio) {
+    const request = fetchAudio || globalThis.fetch;
+    if (typeof request !== 'function') throw new Error(missingLoopMessage(id));
+    for (const url of atmosphereLoopUrls(id)) {
+        try {
+            const response = await request(url);
+            if (!response?.ok) continue;
+            const bytes = await response.arrayBuffer();
+            if (!bytes || !bytes.byteLength) continue;
+            try {
+                return await decodeBuffer(context, bytes);
+            } catch {
+                throw new Error(`${atmosphereBed(id)?.label || 'That'} file could not be read. Export it as OGG or MP3 and try again.`);
+            }
+        } catch (error) {
+            if (error instanceof Error && /could not be read/.test(error.message)) throw error;
+        }
     }
-    timer = setTimeout(pop, 200);
-    stops.push(() => {
-        alive = false;
-        clearTimeout(timer);
-    });
-    return stops;
+    throw new Error(missingLoopMessage(id));
 }
 
-const BEDS = { rain: startRain, cafe: startCafe, night: startNight, fire: startFire };
-
-export function createAtmospherePlayer({ createContext } = {}) {
+export function createAtmospherePlayer({ createContext, fetchAudio, loadLoop } = {}) {
     let context = null;
     let master = null;
-    let noise = null;
-    let stops = [];
+    let source = null;
     let bedId = '';
     let playing = false;
     let muted = false;
     let volume = DEFAULT_SOUND_VOLUME;
+    const cache = new Map();
 
     function applyGain() {
         if (!master) return;
@@ -121,10 +50,10 @@ export function createAtmospherePlayer({ createContext } = {}) {
     }
 
     function stopBed() {
-        for (const stop of stops) {
-            try { stop(); } catch { /* ignore teardown races */ }
-        }
-        stops = [];
+        if (!source) return;
+        try { source.stop(); } catch { /* already stopped */ }
+        try { source.disconnect(); } catch { /* already torn down */ }
+        source = null;
     }
 
     function ensureContext() {
@@ -139,9 +68,19 @@ export function createAtmospherePlayer({ createContext } = {}) {
         if (!context) throw new Error('This browser cannot play atmosphere sound.');
         master = context.createGain();
         master.connect(context.destination);
-        noise = noiseBuffer(context);
         applyGain();
         return context;
+    }
+
+    async function bufferFor(id) {
+        if (cache.has(id)) return cache.get(id);
+        const next = ensureContext();
+        const buffer = loadLoop
+            ? await loadLoop(next, id)
+            : await fetchLoop(next, id, fetchAudio);
+        if (!buffer) throw new Error(missingLoopMessage(id));
+        cache.set(id, buffer);
+        return buffer;
     }
 
     return {
@@ -149,11 +88,16 @@ export function createAtmospherePlayer({ createContext } = {}) {
             const bed = atmosphereBed(id);
             if (!bed) throw new Error('Choose rain, cafe, night, or fire.');
             const next = ensureContext();
+            const buffer = await bufferFor(bed.id);
             if (typeof next.resume === 'function' && next.state === 'suspended') await next.resume();
             stopBed();
+            source = next.createBufferSource();
+            source.buffer = buffer;
+            source.loop = true;
+            source.connect(master);
+            source.start();
             bedId = bed.id;
             playing = true;
-            stops = (BEDS[bed.id] || startRain)(next, master, noise);
             applyGain();
             return this.getState();
         },
@@ -180,10 +124,10 @@ export function createAtmospherePlayer({ createContext } = {}) {
         destroy() {
             this.pause();
             bedId = '';
+            cache.clear();
             try { master?.disconnect(); } catch { /* already gone */ }
             context = null;
             master = null;
-            noise = null;
         },
     };
 }
