@@ -17,7 +17,7 @@ export const PFP_DECORATIONS = Object.freeze([
         id: "blossom",
         name: "Blossom",
         imagePath: "/assets/pfp-decorations/blossom.png",
-        avatarSize: 0.508,
+        avatarSize: 0.66,
         offsetX: 0.048,
         offsetY: 0.027,
     }),
