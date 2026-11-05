@@ -50,6 +50,12 @@
         max-width: none;
     }
 
+    #studioShell .studio-shared-book .studio-book-title,
+    #studioShell .studio-shared-book .studio-book-meta {
+        color: #fff;
+        -webkit-text-fill-color: #fff;
+    }
+
     #studioShell .studio-shared-help {
         padding-left: 12px;
         padding-right: 12px;
