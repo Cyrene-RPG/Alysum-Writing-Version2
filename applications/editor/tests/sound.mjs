@@ -13,6 +13,7 @@ const fixture = `<!doctype html><html><head><meta charset="utf-8"><meta name="vi
 body{margin:0;background:#111;color:#eee;font-family:Arial,sans-serif}
 .writer-main-scroll{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 .writer-editor-actions{display:flex;flex-wrap:wrap;gap:8px;padding:8px 16px;flex-shrink:0}
+@media (max-width: 720px){#editorActionRow.writer-editor-actions{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto}}
 .writer-page{flex:1;min-height:0;overflow:auto}
 html.is-typewriter .writer-editor-actions{display:none!important}
 </style></head><body>
@@ -110,31 +111,39 @@ try {
         assert.match(embedSrc, /\/embed\/lZdzxqh-rao/);
         assert.match(embedSrc, /playlist=lZdzxqh-rao%2CdQw4w9wgGcQ/);
         assert.match(embedSrc, /index=0/);
+        assert.equal(await page.evaluate(() => document.getElementById('editorSoundControls').parentElement.id), 'editorActionRow');
         assert.equal(await page.locator('#editorSoundPlay').isVisible(), true);
         assert.equal(await page.locator('#editorSoundOpen').isVisible(), false);
         assert.match(await page.locator('.writer-sound-copy').innerText(), /green play/);
         const embedBox = await page.locator('#editorSoundEmbed').boundingBox();
-        assert.ok(embedBox && embedBox.width <= 170 && embedBox.height <= 100, 'panel player stays compact');
+        assert.ok(embedBox && embedBox.width <= 80 && embedBox.height <= 50, 'player stays on the Focus bar');
         await page.getByRole('button', { name: 'Remove song' }).nth(1).click();
         assert.equal(await page.locator('[data-sound-link]').count(), 1);
         assert.match(await page.locator('#editorSoundSong').inputValue(), /lZdzxqh-rao/);
         await page.getByRole('button', { name: '+ Song', exact: true }).click();
         await page.locator('[data-sound-link]').nth(1).fill('https://youtu.be/dQw4w9wgGcQ');
         await page.locator('[data-sound-link]').nth(1).evaluate((input) => input.dispatchEvent(new Event('input', { bubbles: true })));
-        await page.getByRole('button', { name: 'Play first song' }).click();
+        await page.locator('#editorSoundPlay').click();
         const playState = await page.locator('#editorSoundPlay').getAttribute('aria-pressed');
         const playSrc = await page.locator('#editorSoundEmbed iframe').getAttribute('src');
         assert.ok(playState === 'true' || /autoplay=1/.test(playSrc), 'Play starts the first song');
         await page.getByRole('button', { name: 'Hide video', exact: true }).click();
         assert.equal(await page.locator('#editorSoundPanel').isVisible(), false);
-        assert.equal(await page.locator('#editorSoundEmbed').evaluate((node) => node.classList.contains('is-docked')), true);
+        assert.equal(await page.evaluate(() => document.getElementById('editorSoundControls').parentElement.id), 'editorActionRow');
         assert.equal(await page.locator('#editorSoundPlay').isVisible(), true);
         const dockBox = await page.locator('#editorSoundEmbed').boundingBox();
         const pageBox = await page.locator('#pageEditor').boundingBox();
-        assert.ok(dockBox && dockBox.width <= 80 && dockBox.height <= 50, 'hidden video stays a tiny chrome player');
+        assert.ok(dockBox && dockBox.width <= 80 && dockBox.height <= 50, 'player stays a tiny bar control');
         assert.ok(pageBox && dockBox.y + dockBox.height <= pageBox.y + 1, 'player must not cover the manuscript');
+        if (width <= 720) {
+            const bar = await page.locator('#editorActionRow').evaluate((node) => {
+                const style = getComputedStyle(node);
+                return { overflowX: style.overflowX, flexWrap: style.flexWrap };
+            });
+            assert.equal(bar.overflowX, 'auto');
+            assert.equal(bar.flexWrap, 'nowrap');
+        }
         await page.getByRole('button', { name: /Sound/ }).click();
-        assert.equal(await page.locator('#editorSoundEmbed').evaluate((node) => node.classList.contains('is-docked')), false);
         if (width <= 720) {
             await page.locator('#editorSoundSong').focus();
             await page.evaluate(() => window.keyboard.sync({ visualHeight: 400, innerHeight: 844 }));

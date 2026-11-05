@@ -7,9 +7,12 @@ on:
       - 'applications/editor/page-ui/sound.js'
       - 'applications/editor/page-ui/sound-youtube.js'
       - 'applications/editor/page-ui/page/keyboard-viewport.js'
+      - 'applications/editor/page-ui/page/chrome.js'
       - 'applications/editor/page-ui/page.js'
       - 'applications/editor/pages/editor.html'
       - 'applications/editor/editor-css/sound.css'
+      - 'applications/editor/editor-css/page/actions.css'
+      - 'applications/editor/editor-css/page/keyboard.css'
       - 'applications/editor/tests/sound.mjs'
       - '.github/workflows/editor-sound-tests.yml'
 permissions:
