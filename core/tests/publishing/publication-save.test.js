@@ -18,7 +18,7 @@ async function publishSave() {
     return import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
 }
 
-function fixture({ pending = null } = {}) {
+function fixture({ pending = null, rejectBookUpdates = false, advanceEveryWrite = false } = {}) {
     let remote = original(), listing = null, race = null;
     const cacheKey = 'alysum:editor:draft-cache-owner', storage = new Map([[cacheKey, JSON.stringify(pending ? [pending] : [])]]);
     const previousStorage = globalThis.localStorage, previousWindow = globalThis.window;
@@ -39,8 +39,9 @@ function fixture({ pending = null } = {}) {
                         return resolve({ data: [], error: null });
                     }
                     if (race) { race(remote); race = null; }
+                    if (advanceEveryWrite) remote.updated += 1;
                     calls.push({ table, patch: clone(patch), filters: clone(filters) });
-                    if (String(remote.updated) !== String(filters.updated)) return resolve({ data: [], error: null });
+                    if (rejectBookUpdates || String(remote.updated) !== String(filters.updated)) return resolve({ data: [], error: null });
                     remote = { ...remote, ...patch }; return resolve({ data: [clone(remote)], error: null });
                 } catch (error) { return reject(error); }
             },
@@ -113,7 +114,7 @@ test('a change racing the final save still fails compare-and-set without replaci
     const f = fixture(); try {
         const context = await loadPublicationBook(f.api, 'book', 'owner');
         f.race(book => { book.updated = 50; book.sections.body[0].content = 'Newer online manuscript'; });
-        await assert.rejects(post(f, context), error => error.code === 'BOOK_CONFLICT');
+        await assert.rejects(post(f, context), error => error.code === 'PUBLISH_BOOK_CHANGED');
         assert.equal(f.remote().sections.body[0].content, 'Newer online manuscript');
         assert.equal(f.calls.filter(call => call.table === 'books').length, 1); assert.deepEqual(f.redirects, []);
     } finally { f.cleanup(); }
@@ -135,5 +136,39 @@ test('pending form settings cannot clear a main-draft publication review guard',
         f.change(book => { book.publish_meta.revisionNeedsPublishReview = true; });
         const context = await loadPublicationBook(f.api, 'book', 'owner');
         assert.equal(context.book.publish_meta.revisionNeedsPublishReview, true);
+    } finally { f.cleanup(); }
+});
+
+ test('a rejected book update with an unchanged version is not diagnosed as a version conflict', async () => {
+    const f = fixture({ rejectBookUpdates: true }); try {
+        const context = await loadPublicationBook(f.api, 'book', 'owner');
+        await assert.rejects(post(f, context), error => error.code === 'BOOK_UPDATE_REJECTED' && /version is unchanged/.test(error.message));
+        assert.equal(f.remote().is_published, false);
+        assert.equal(f.cache()._pending, true);
+        assert.deepEqual(f.redirects, []);
+    } finally { f.cleanup(); }
+});
+
+test('publishing retries a timestamp-only change racing the final book save', async () => {
+    const f = fixture(); try {
+        const context = await loadPublicationBook(f.api, 'book', 'owner');
+        f.race(book => { book.updated = 50; book.words = 601; });
+        await post(f, context);
+        assert.equal(f.remote().is_published, true);
+        assert.equal(f.remote().words, 601);
+        assert.equal(f.calls.filter(call => call.table === 'library').length, 1);
+        assert.equal(f.calls.filter(call => call.table === 'books').length, 2);
+        assert.deepEqual(f.redirects, ['/book?id=book']);
+    } finally { f.cleanup(); }
+});
+
+test('publication retries are bounded and never replay the public listing', async () => {
+    const f = fixture({ advanceEveryWrite: true }); try {
+        const context = await loadPublicationBook(f.api, 'book', 'owner');
+        await assert.rejects(post(f, context), error => error.code === 'BOOK_CONFLICT');
+        assert.equal(f.calls.filter(call => call.table === 'books').length, 3);
+        assert.equal(f.calls.filter(call => call.table === 'library').length, 1);
+        assert.equal(f.cache()._pending, true);
+        assert.deepEqual(f.redirects, []);
     } finally { f.cleanup(); }
 });

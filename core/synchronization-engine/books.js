@@ -321,7 +321,13 @@ export function createBooksApi(session, supabase, { writeTimeoutMs = 15000 } = {
             // The server may have committed even when its response was lost.
             // Only acknowledge an authoritative read matching every requested field.
             if (error?.code !== "SAVE_TIMEOUT") {
-                try { const remote = await cloudGet(id); if (cloud.matchesBookPatch(remote, patch)) return remote; } catch {}
+                let remote;
+                try { remote = await cloudGet(id); } catch {}
+                if (cloud.matchesBookPatch(remote, patch)) return remote;
+                if (error?.code === "BOOK_CONFLICT" && remote?._cloudUpdated != null &&
+                    String(remote._cloudUpdated) === String(base)) {
+                    throw Object.assign(new Error("The database did not save this update, although the saved book version is unchanged. The site administrator needs to check book update permissions and database rules. Your pending changes are kept on this device."), { code: "BOOK_UPDATE_REJECTED" });
+                }
             }
             throw error;
         }
