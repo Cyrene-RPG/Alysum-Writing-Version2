@@ -5,6 +5,7 @@ on:
       - 'core/atmosphere/**'
       - 'core/tests/atmosphere/**'
       - 'applications/editor/page-ui/sound.js'
+      - 'applications/editor/page-ui/sound-youtube.js'
       - 'applications/editor/page-ui/page/keyboard-viewport.js'
       - 'applications/editor/page-ui/page.js'
       - 'applications/editor/pages/editor.html'
