@@ -112,7 +112,7 @@
   });
 
   window.addEventListener('load', () => {
-    const swScript = new URL('sw.js?v=1.0.78', window.location.href);
+    const swScript = new URL('sw.js?v=1.0.79', window.location.href);
     const swScope = new URL('./', swScript).pathname;
     navigator.serviceWorker.register(swScript.href, { scope: swScope, updateViaCache: 'none' })
       .then((reg) => {

@@ -9,7 +9,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v2.53.3';
+const SW_VERSION = 'v2.54.0';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -32,6 +32,11 @@ const APP_SHELL = [
   '/Alysum-3.png',
   '/css/site-responsive.css',
   '/css/workspace-nav.css',
+  '/css/studio/page.css',
+  '/css/studio/page.css?v=18',
+  '/css/studio/phone.css',
+  '/css/studio/goal.css',
+  '/css/studio/confirm.css',
   '/js/editor/page.js',
   '/js/studio/page.js',
   '/site-appearance/css-styles/theme.css',
@@ -142,10 +147,12 @@ self.addEventListener('fetch', (event) => {
 
 async function networkFirstWorkspaceHtml(event) {
   const cache = await caches.open(SHELL_CACHE);
+  // Drop a preload that Android may satisfy from the HTTP cache. Studio has to
+  // come from the network, or a phone keeps painting the shelf it saved earlier.
+  if (event.preloadResponse) event.preloadResponse.catch(() => {});
   const network = (async () => {
     try {
-      const preload = event.preloadResponse ? await event.preloadResponse : null;
-      const fresh = preload || await fetch(event.request, { cache: 'no-store' });
+      const fresh = await fetch(event.request, { cache: 'no-store' });
       if (fresh && fresh.ok) await cache.put(event.request, fresh.clone());
       return fresh;
     } catch (_) {
@@ -155,7 +162,7 @@ async function networkFirstWorkspaceHtml(event) {
   let timer;
   const first = await Promise.race([
     network,
-    new Promise(resolve => { timer = setTimeout(() => resolve(null), 4000); }),
+    new Promise(resolve => { timer = setTimeout(() => resolve(null), 12000); }),
   ]);
   clearTimeout(timer);
   if (first && first.ok) return first;
