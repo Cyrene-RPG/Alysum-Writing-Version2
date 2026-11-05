@@ -140,6 +140,11 @@ try {
         const playState = await page.locator('#editorSoundPlay').getAttribute('aria-pressed');
         const playSrc = await page.locator('#editorSoundEmbed iframe').getAttribute('src');
         assert.ok(playState === 'true' || /autoplay=1/.test(playSrc), 'Play starts the first song');
+        await page.locator('#editorSoundPlay').click();
+        assert.equal(await page.locator('#editorSoundPlay').getAttribute('aria-pressed'), 'false');
+        assert.equal(await page.locator('#editorSoundEmbed iframe').getAttribute('src'), playSrc, 'Pause does not reload the player');
+        await page.locator('#editorSoundPlay').click();
+        assert.equal(await page.locator('#editorSoundPlay').getAttribute('aria-pressed'), 'true');
         await page.getByRole('button', { name: 'Hide video', exact: true }).click();
         assert.equal(await page.locator('#editorSoundPanel').isVisible(), false);
         assert.equal(await page.evaluate(() => document.getElementById('editorSoundControls').parentElement.id), 'editorActionRow');
