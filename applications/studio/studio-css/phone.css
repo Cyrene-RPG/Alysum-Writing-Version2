@@ -59,3 +59,11 @@
         display: none !important;
     }
 }
+
+/* Half a phone is too narrow for a cover and its title. New book and
+   Upload book stay side by side; each book uses the full shelf. */
+@media (max-width: 540px) {
+    #studioShell:not(.layout-stack) .studio-book {
+        grid-column: 1 / -1 !important;
+    }
+}

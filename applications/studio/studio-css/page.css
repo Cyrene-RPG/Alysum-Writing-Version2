@@ -437,6 +437,12 @@ body {
     #studioShell .studio-dots { display: none !important; }
 }
 
+@media (max-width: 540px) {
+    #studioShell:not(.layout-stack) .studio-book {
+        grid-column: 1 / -1 !important;
+    }
+}
+
 .studio-head-actions .studio-action {
     display:inline-flex;align-items:center;justify-content:center;min-height:40px;
     padding:8px 14px;border:1px solid var(--border);border-radius:var(--glass-radius,12px);
