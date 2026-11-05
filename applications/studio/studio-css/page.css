@@ -387,10 +387,10 @@ body {
     background: rgba(127, 29, 29, 0.5);
 }
 @media (max-width: 800px) {
-    .studio-stats { grid-template-columns: repeat(2, 1fr); }
+    .studio-stats { grid-template-columns: repeat(2, 1fr); margin-left: 12px; margin-right: 12px; border-radius: 18px; overflow: hidden; padding-bottom: 12px; }
     .studio-stat:nth-child(odd) {
         border-left: 0;
-        padding-left: 0;
+        padding-left: 14px;
     }
     .studio-stat:nth-child(n+3) {
         border-top: 1px solid var(--border, rgba(255, 255, 255, 0.1));

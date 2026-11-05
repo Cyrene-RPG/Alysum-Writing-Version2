@@ -29,6 +29,18 @@
         margin-right: 0;
     }
 
+    #studioShell .studio-stats {
+        margin-left: 12px;
+        margin-right: 12px;
+        border-radius: 18px;
+        overflow: hidden;
+        padding-bottom: 12px;
+    }
+
+    #studioShell .studio-stat:nth-child(odd) {
+        padding-left: 14px;
+    }
+
     #studioShell .studio-goal {
         margin-left: 14px;
         margin-right: 14px;
