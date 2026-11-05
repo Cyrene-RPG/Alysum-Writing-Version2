@@ -6,6 +6,7 @@ import {
     songProviderLabel,
     youtubeEmbedUrl,
 } from '/core/atmosphere/model.js';
+import { bindYoutubePlayer, loadYoutubeApi, withPlayerOrigin } from '/js/editor/sound-youtube.js';
 
 export function mountEditorSound({
     root = document,
@@ -31,6 +32,13 @@ export function mountEditorSound({
     if (!drafts.length) drafts = [''];
     let holdCloseUntil = 0;
     let playing = false;
+    const youtube = bindYoutubePlayer(() => embedHost.querySelector('iframe'), {
+        root,
+        onState(state) {
+            playing = state === 1;
+            paintPlay();
+        },
+    });
 
     function readStored() {
         try { return readSoundPrefs(JSON.parse(store?.getItem(SOUND_STORAGE_KEY) || 'null')); }
@@ -94,11 +102,6 @@ export function mountEditorSound({
         else root.body.append(host);
         return host;
     }
-    function youtubeCommand(name, args = []) {
-        const frame = embedHost.querySelector('iframe');
-        if (!frame?.contentWindow) return;
-        frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: name, args }), '*');
-    }
     function paintPlay() {
         playBtn.textContent = playing ? 'Pause' : 'Play';
         playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play first song');
@@ -122,6 +125,11 @@ export function mountEditorSound({
         input.addEventListener('focus', () => { holdCloseUntil = Date.now() + 700; });
         input.addEventListener('input', () => applyDrafts(false));
         input.addEventListener('change', () => applyDrafts(true));
+        row.querySelector('[data-sound-remove]').addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            removeRow(row);
+        });
         list.append(row);
         return input;
     }
@@ -155,13 +163,22 @@ export function mountEditorSound({
         writeStored();
         paint();
     }
+    function removeRow(row) {
+        if (!row?.parentNode || list.children.length < 2) return;
+        row.remove();
+        applyDrafts(true);
+    }
+    function frameSrc(src) {
+        return withPlayerOrigin(src, root.defaultView?.location?.origin);
+    }
     function paintEmbed() {
-        const src = youtubeEmbedUrl(prefs.songUrl);
+        const src = frameSrc(youtubeEmbedUrl(prefs.songUrl));
         controls.hidden = !src;
         embedHost.hidden = !src;
         playBtn.hidden = !src;
         let frame = embedHost.querySelector('iframe');
         if (!src) {
+            youtube.destroy();
             frame?.remove();
             playing = false;
             paintPlay();
@@ -172,6 +189,7 @@ export function mountEditorSound({
         }
         if (!frame) {
             frame = root.createElement('iframe');
+            frame.id = 'editorSoundFrame';
             frame.title = 'YouTube';
             frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
             frame.setAttribute('allowfullscreen', '');
@@ -179,9 +197,11 @@ export function mountEditorSound({
             embedHost.append(frame);
         }
         if (frame.dataset.embed !== src) {
+            youtube.destroy();
             frame.dataset.embed = src;
             frame.src = src;
             playing = false;
+            void loadYoutubeApi(root);
         }
         const dock = Boolean(src) && (
             panel.hidden
@@ -228,37 +248,28 @@ export function mountEditorSound({
         paintRows();
         songInputs().at(-1)?.focus();
     });
-    list.addEventListener('click', (event) => {
-        const remove = event.target.closest('[data-sound-remove]');
-        if (!remove || remove.hidden) return;
-        const row = remove.closest('.writer-sound-row');
-        const index = [...list.children].indexOf(row);
-        drafts = songInputs().map((input) => input.value);
-        drafts.splice(Math.max(0, index), 1);
-        if (!drafts.length) drafts = [''];
-        applyDrafts(true);
-    });
     playBtn.addEventListener('click', () => {
         holdCloseUntil = Date.now() + 700;
         const frame = embedHost.querySelector('iframe');
         if (!frame) return;
         if (playing) {
-            youtubeCommand('pauseVideo');
+            void youtube.pause();
+            const paused = new URL(frame.src);
+            paused.searchParams.delete('autoplay');
+            frame.dataset.embed = paused.href;
+            frame.src = paused.href;
             playing = false;
             paintPlay();
             return;
         }
-        youtubeCommand('playVideoAt', [0]);
-        youtubeCommand('playVideo');
         const url = new URL(frame.src);
         url.searchParams.set('autoplay', '1');
         url.searchParams.set('index', '0');
-        if (frame.dataset.embed !== url.href) {
-            frame.dataset.embed = url.href;
-            frame.src = url.href;
-        }
+        frame.dataset.embed = url.href;
+        frame.src = url.href;
         playing = true;
         paintPlay();
+        void youtube.playFirst();
     });
     hideBtn?.addEventListener('click', () => setOpen(false));
     function onPointerDown(event) {
@@ -286,6 +297,7 @@ export function mountEditorSound({
             classWatch.disconnect();
             root.removeEventListener('pointerdown', onPointerDown);
             root.removeEventListener('keydown', onKey);
+            youtube.destroy();
             root.documentElement.classList.remove('is-sound-youtube');
         },
     };

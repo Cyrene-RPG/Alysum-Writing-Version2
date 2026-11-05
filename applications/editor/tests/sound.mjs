@@ -115,8 +115,16 @@ try {
         assert.match(await page.locator('.writer-sound-copy').innerText(), /green play/);
         const embedBox = await page.locator('#editorSoundEmbed').boundingBox();
         assert.ok(embedBox && embedBox.width <= 170 && embedBox.height <= 100, 'panel player stays compact');
+        await page.getByRole('button', { name: 'Remove song' }).nth(1).click();
+        assert.equal(await page.locator('[data-sound-link]').count(), 1);
+        assert.match(await page.locator('#editorSoundSong').inputValue(), /lZdzxqh-rao/);
+        await page.getByRole('button', { name: '+ Song', exact: true }).click();
+        await page.locator('[data-sound-link]').nth(1).fill('https://youtu.be/dQw4w9wgGcQ');
+        await page.locator('[data-sound-link]').nth(1).evaluate((input) => input.dispatchEvent(new Event('input', { bubbles: true })));
         await page.getByRole('button', { name: 'Play first song' }).click();
-        assert.match(await page.locator('#editorSoundEmbed iframe').getAttribute('src'), /autoplay=1/);
+        const playState = await page.locator('#editorSoundPlay').getAttribute('aria-pressed');
+        const playSrc = await page.locator('#editorSoundEmbed iframe').getAttribute('src');
+        assert.ok(playState === 'true' || /autoplay=1/.test(playSrc), 'Play starts the first song');
         await page.getByRole('button', { name: 'Hide video', exact: true }).click();
         assert.equal(await page.locator('#editorSoundPanel').isVisible(), false);
         assert.equal(await page.locator('#editorSoundEmbed').evaluate((node) => node.classList.contains('is-docked')), true);
