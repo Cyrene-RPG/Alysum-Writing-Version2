@@ -27,11 +27,18 @@
         margin-right: 0;
     }
 
+    #studioShell .studio-goal {
+        margin-left: 14px;
+        margin-right: 14px;
+    }
+
     #studioShell .studio-shelf-wrap {
         min-width: 0;
         max-width: 100%;
         margin-left: 0;
         margin-right: 0;
+        padding-left: 12px;
+        padding-right: 12px;
     }
 
     #studioShell .studio-list {
