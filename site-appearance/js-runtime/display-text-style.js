@@ -313,6 +313,10 @@ export function applyDisplayTextStyle(id) {
         }
     }
 
+    if (typeof window !== "undefined" && window.__alysumLoadAppearanceSheets) {
+        window.__alysumLoadAppearanceSheets();
+    }
+
     try {
         root.dispatchEvent(
             new CustomEvent("alysum-display-text-style", { detail: { id: styleId } })

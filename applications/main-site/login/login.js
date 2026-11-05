@@ -104,7 +104,7 @@ async function redirectAfterLogin() {
     try {
         const { data, error } = await supabase
             .from("users")
-            .select("*")
+            .select("username, display_name, account_type, words, books, streak, daily_word_goal, writing_day_totals, last_login")
             .eq("id", user.id)
             .single();
 
@@ -125,12 +125,9 @@ async function redirectAfterLogin() {
             writingDayTotals: data.writing_day_totals || {}
         };
 
-        try {
-            const { streak } = await ensureLoginStreakCloud(supabase, user.id, data);
-            firebaseStyleData.streak = streak;
-        } catch (e) {
+        void ensureLoginStreakCloud(supabase, user.id, data).catch((e) => {
             console.warn("Login streak update failed:", e);
-        }
+        });
 
         window.location.href = homeUrlForUserData(firebaseStyleData);
     } catch (e) {

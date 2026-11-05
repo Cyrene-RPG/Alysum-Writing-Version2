@@ -44,6 +44,9 @@ export function applyGradientStyle(id) {
     } catch {
         /* ignore */
     }
+    if (typeof window !== "undefined" && window.__alysumLoadAppearanceSheets) {
+        window.__alysumLoadAppearanceSheets();
+    }
     try {
         document.documentElement.dispatchEvent(
             new CustomEvent("alysum-gradient-style", { detail: { id: styleId } })

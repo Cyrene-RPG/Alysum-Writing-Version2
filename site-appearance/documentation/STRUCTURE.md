@@ -60,10 +60,10 @@ site-appearance/
 **Skin contract** (every application page except the marketing homepage, which skips gradient theme on purpose):
 
 1. `/site-appearance/css-styles/theme.css`
-2. `/site-appearance/css-styles/gradient-themes/index.css`
-3. `/site-appearance/css-styles/typography.css`
+2. `/site-appearance/css-styles/gradient-themes/index.css` — classic tokens; appearance-sheets.js injects the saved theme
+3. `/site-appearance/css-styles/typography.css` — rules only; appearance-sheets.js injects the saved display font
 4. `/site-appearance/css-styles/surface-styles/index.css`
-5. `/site-appearance/js-runtime/boot.js` (no defer)
+5. `/site-appearance/js-runtime/appearance-sheets.js` then `/site-appearance/js-runtime/boot.js` (no defer)
 
 Settings on main-site is the **picker**. Every other application only **applies** what was saved.
 

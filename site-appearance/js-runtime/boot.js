@@ -1,6 +1,20 @@
 /**
  * Early appearance boot — prevents flash before CSS. Keep synchronous (no defer).
+ * Pair with appearance-sheets.js immediately before this file.
  */
+(function () {
+    "use strict";
+    if (window.__alysumLoadAppearanceSheets) return;
+    var src = "/site-appearance/js-runtime/appearance-sheets.js";
+    if (document.readyState === "loading") {
+        document.write('<script src="' + src + '"><\/script>');
+        return;
+    }
+    var script = document.createElement("script");
+    script.src = src;
+    document.head.appendChild(script);
+})();
+
 (function () {
     "use strict";
 

@@ -3,33 +3,19 @@ import { wireHomepageAuth } from "/js/homepage-auth-nav.js";
 import { homeUrlForUserData } from "@alysum/account/mode.js";
 import { startHomepageLibrary } from "/js/homepage-library.js";
 
+const { data: { session } } = await supabase.auth.getSession();
+if (session?.user) {
+    // Author/reader/both homes are the same URL today; skip the profile round-trip
+    // and the library catalog so a signed-in visit can leave this page immediately.
+    window.location.replace(homeUrlForUserData({}));
+    return;
+}
+
 await wireHomepageAuth(supabase);
 
 supabase.auth.onAuthStateChange(() => {
     void wireHomepageAuth(supabase);
 });
-
-const { data: { session } } = await supabase.auth.getSession();
-if (session?.user) {
-    let profile = {};
-    try {
-        const { data } = await supabase
-            .from("users")
-            .select("account_type, username, display_name")
-            .eq("id", session.user.id)
-            .maybeSingle();
-        if (data) {
-            profile = {
-                accountType: data.account_type,
-                username: data.username,
-                displayName: data.display_name,
-            };
-        }
-    } catch (e) {
-        console.warn(e);
-    }
-    window.location.replace(homeUrlForUserData(profile));
-}
 
 const backendAlert = document.getElementById("backendAlert");
 const backendAlertClose = backendAlert?.querySelector(".alert-close");

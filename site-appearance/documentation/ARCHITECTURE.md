@@ -47,10 +47,10 @@ flowchart TB
 Every application page (except the marketing homepage, which skips gradient theme on purpose) loads, in order:
 
 1. `/site-appearance/css-styles/theme.css`
-2. `/site-appearance/css-styles/gradient-themes/index.css`
-3. `/site-appearance/css-styles/typography.css`
+2. `/site-appearance/css-styles/gradient-themes/index.css` — classic tokens. `boot.js` injects the saved theme sheet.
+3. `/site-appearance/css-styles/typography.css` — rules only. `boot.js` injects the saved display font (or all fonts on Settings).
 4. `/site-appearance/css-styles/surface-styles/index.css`
-5. `/site-appearance/js-runtime/boot.js` (no defer)
+5. `/site-appearance/js-runtime/appearance-sheets.js` then `/site-appearance/js-runtime/boot.js` (no defer). Sheets inject the matching dim file when Gradient is Flat.
 
 ## Data flow (today, legacy)
 

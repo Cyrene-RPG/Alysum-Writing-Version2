@@ -1,8 +1,8 @@
 /**
  * Display title fonts + user colors (display-text-color.js).
+ * Google Font files are injected by boot.js for the saved style (or all styles
+ * on Settings) so first paint is not blocked on ~25 unused families.
  */
-
-@import url("https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Almendra:wght@700&family=Anton&family=Archivo:wght@600;700;800&family=Audiowide&family=Bebas+Neue&family=Cinzel+Decorative:wght@700&family=Cinzel:wght@600;700&family=Cormorant+Garamond:wght@600;700&family=Crimson+Pro:wght@600;700&family=Eagle+Lake&family=Grenze+Gotisch:wght@600&family=IM+Fell+English+SC&family=Libre+Baskerville:wght@700&family=Lobster&family=Lora:wght@600;700&family=MedievalSharp&family=Merriweather:wght@700;900&family=Metal+Mania&family=Montserrat:wght@700;800&family=Orbitron:wght@600;700&family=Oswald:wght@600;700&family=Playfair+Display:wght@700;800&family=Rajdhani:wght@600;700&family=Raleway:wght@700;800&family=Spectral:wght@600;700&family=UnifrakturMaguntia&display=swap");
 
 :root {
     --alysum-display-top: #ffffff;

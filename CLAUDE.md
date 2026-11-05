@@ -37,11 +37,11 @@ Same folder name under `applications/` and `core/` = screen vs. data (e.g. `appl
 Every application page (except the marketing homepage, which intentionally skips the gradient theme) loads these in order, with `boot.js` **not** deferred:
 
 1. `/site-appearance/css-styles/theme.css`
-2. `/site-appearance/css-styles/gradient-themes/index.css`
-3. `/site-appearance/css-styles/gradient-themes-dim/index.css` — flat-color variants, inert unless `data-flat-theme="1"` is set (Settings → Appearance → Gradient)
-4. `/site-appearance/css-styles/typography.css`
+2. `/site-appearance/css-styles/gradient-themes/index.css` — classic tokens; `boot.js` injects the saved theme sheet
+3. `/site-appearance/css-styles/gradient-themes-dim/index.css` — stub; `boot.js` injects the matching dim sheet when Gradient is Flat
+4. `/site-appearance/css-styles/typography.css` — rules only; `boot.js` injects the saved display font
 5. `/site-appearance/css-styles/surface-styles/index.css`
-6. `/site-appearance/js-runtime/boot.js`
+6. `/site-appearance/js-runtime/appearance-sheets.js` then `/site-appearance/js-runtime/boot.js`
 
 ### Hosting layout constraints
 

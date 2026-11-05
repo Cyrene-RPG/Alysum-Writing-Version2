@@ -116,6 +116,9 @@ export function applyGradientTheme(id) {
         }
     }
     applyChromeGradient(getThemePreview(themeId));
+    if (typeof window !== "undefined" && window.__alysumLoadAppearanceSheets) {
+        window.__alysumLoadAppearanceSheets();
+    }
 
     try {
         root.dispatchEvent(
