@@ -91,6 +91,8 @@
     border-radius: 10px;
     overflow: hidden;
     isolation: isolate;
+    contain: strict;
+    transform: translateZ(0);
     background: #000;
 }
 .writer-sound-embed iframe {
@@ -98,11 +100,12 @@
     top: 0;
     left: 0;
     display: block;
-    width: 320px;
-    height: 180px;
+    width: 200px;
+    height: 112px;
     border: 0;
-    transform: scale(0.225);
+    transform: scale(0.36);
     transform-origin: top left;
+    pointer-events: none;
 }
 html.is-typewriter .writer-sound-controls {
     position: fixed;
