@@ -459,6 +459,10 @@ body {
         scroll-snap-align: none !important;
     }
     #studioShell .studio-dots { display: none !important; }
+    #studioShell .studio-shared-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding-left: 12px; padding-right: 12px; }
+    #studioShell.layout-stack .studio-shared-list { grid-template-columns: minmax(0, 1fr); }
+    #studioShell .studio-shared-book { max-width: none; }
+    #studioShell .studio-shared-help { padding-left: 12px; padding-right: 12px; }
 }
 
 .studio-head-actions .studio-action {
