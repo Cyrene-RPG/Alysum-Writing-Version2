@@ -35,7 +35,8 @@ export function mountEditorSound({
     const youtube = bindYoutubePlayer(() => embedHost.querySelector('iframe'), {
         root,
         onState(state) {
-            playing = state === 1;
+            if (state === 1 || state === 3) playing = true;
+            else if (state === 2 || state === 0) playing = false;
             paintPlay();
         },
     });
@@ -208,6 +209,7 @@ export function mountEditorSound({
         if (!src) {
             youtube.destroy();
             frame?.remove();
+            delete embedHost.dataset.embed;
             playing = false;
             paintPlay();
             controls.classList.remove('is-docked');
@@ -224,12 +226,17 @@ export function mountEditorSound({
             frame.referrerPolicy = 'strict-origin-when-cross-origin';
             embedHost.append(frame);
         }
-        if (embedKey(frame.dataset.embed) !== embedKey(src)) {
+        const current = frame.dataset.embed || embedHost.dataset.embed || frame.src;
+        if (embedKey(current) !== embedKey(src)) {
             youtube.destroy();
             frame.dataset.embed = src;
+            embedHost.dataset.embed = src;
             frame.src = src;
             playing = false;
-            void loadYoutubeApi(root);
+            frame.onload = () => { void youtube.attach(); };
+            void loadYoutubeApi(root).then(() => youtube.attach());
+        } else {
+            void youtube.attach();
         }
         const dock = Boolean(src) && (
             panel.hidden
@@ -277,28 +284,32 @@ export function mountEditorSound({
         paintRows();
         songInputs().at(-1)?.focus();
     });
+    function enableAutoplay() {
+        const frame = embedHost.querySelector('iframe');
+        if (!frame?.src) return;
+        try {
+            const url = new URL(frame.src);
+            if (url.searchParams.get('autoplay') === '1') return;
+            url.searchParams.set('autoplay', '1');
+            url.searchParams.set('index', '0');
+            frame.dataset.embed = url.href;
+            embedHost.dataset.embed = url.href;
+            frame.src = url.href;
+            frame.onload = () => { void youtube.attach(); };
+        } catch { /* ignore bad src */ }
+    }
     playBtn.addEventListener('click', () => {
         holdCloseUntil = Date.now() + 700;
-        const frame = embedHost.querySelector('iframe');
-        if (!frame) return;
+        if (!embedHost.querySelector('iframe')) return;
         if (playing) {
-            void youtube.pause();
-            const paused = new URL(frame.src);
-            paused.searchParams.delete('autoplay');
-            frame.dataset.embed = paused.href;
-            frame.src = paused.href;
+            youtube.pause();
             playing = false;
             paintPlay();
             return;
         }
-        const url = new URL(frame.src);
-        url.searchParams.set('autoplay', '1');
-        url.searchParams.set('index', '0');
-        frame.dataset.embed = url.href;
-        frame.src = url.href;
+        if (!youtube.play()) enableAutoplay();
         playing = true;
         paintPlay();
-        void youtube.playFirst();
     });
     hideBtn?.addEventListener('click', () => setOpen(false));
     function onPointerDown(event) {

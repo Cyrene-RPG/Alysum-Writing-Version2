@@ -49,55 +49,100 @@ export function loadYoutubeApi(root) {
 
 export function bindYoutubePlayer(getIframe, { root, onState } = {}) {
     let player = null;
-    let boundSrc = '';
+    let boundEl = null;
+    let pendingPlay = false;
+    let attaching = null;
 
     function iframeNode() {
         return typeof getIframe === 'function' ? getIframe() : getIframe;
     }
 
-    async function attach() {
+    function post(func, args = []) {
+        const iframe = iframeNode();
+        try {
+            iframe?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), '*');
+        } catch { /* iframe not ready */ }
+    }
+
+    function callPlay(next) {
+        if (!next) return false;
+        try {
+            if (next.playVideo) {
+                next.playVideo();
+                pendingPlay = false;
+                return true;
+            }
+        } catch { /* player not ready */ }
+        return false;
+    }
+
+    function callPause(next) {
+        if (!next) return false;
+        try {
+            if (next.pauseVideo) {
+                next.pauseVideo();
+                return true;
+            }
+        } catch { /* player not ready */ }
+        return false;
+    }
+
+    function attachNow() {
         const iframe = iframeNode();
         if (!iframe?.isConnected) return null;
-        if (player && boundSrc === iframe.src) return player;
-        const YT = await loadYoutubeApi(root || iframe.ownerDocument);
-        if (!YT?.Player) return null;
+        if (player && boundEl === iframe) return player;
+        const win = pageWindow(root || iframe.ownerDocument);
+        if (!win.YT?.Player) return null;
         if (player?.destroy) {
             try { player.destroy(); } catch { /* player already gone */ }
+            player = null;
         }
-        boundSrc = iframe.src;
-        player = new YT.Player(iframe, {
+        boundEl = iframe;
+        player = new win.YT.Player(iframe, {
             events: {
+                onReady() {
+                    if (pendingPlay) callPlay(player);
+                },
                 onStateChange(event) { onState?.(event.data); },
             },
         });
         return player;
     }
 
+    function attach() {
+        const iframe = iframeNode();
+        if (!iframe?.isConnected) return Promise.resolve(null);
+        if (player && boundEl === iframe) return Promise.resolve(player);
+        if (attaching) return attaching;
+        attaching = loadYoutubeApi(root || iframe.ownerDocument)
+            .then(() => attachNow())
+            .finally(() => { attaching = null; });
+        return attaching;
+    }
+
     return {
-        async playFirst() {
-            const next = await attach();
-            if (next?.playVideoAt) {
-                next.playVideoAt(0);
-                return true;
-            }
-            if (next?.playVideo) {
-                next.playVideo();
-                return true;
-            }
+        attach,
+        play() {
+            pendingPlay = true;
+            if (callPlay(attachNow() || player)) return true;
+            post('playVideo');
+            void attach();
             return false;
         },
-        async pause() {
-            const next = await attach();
-            if (!next?.pauseVideo) return false;
-            next.pauseVideo();
-            return true;
+        pause() {
+            pendingPlay = false;
+            if (callPause(attachNow() || player)) return true;
+            post('pauseVideo');
+            return false;
         },
         destroy() {
+            pendingPlay = false;
             if (player?.destroy) {
                 try { player.destroy(); } catch { /* ignore */ }
             }
             player = null;
-            boundSrc = '';
+            boundEl = null;
+            attaching = null;
         },
     };
 }
