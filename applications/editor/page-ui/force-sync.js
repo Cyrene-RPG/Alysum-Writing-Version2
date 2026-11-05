@@ -54,9 +54,13 @@ export function mountForceSyncButton({ anchor, isCloud, ...options }) {
     let button = doc.getElementById('forceEditorSync');
     if (!button) {
         button = doc.createElement('button'); button.id = 'forceEditorSync';
-        button.type = 'button'; button.className = 'quote-button'; button.textContent = 'Force sync';
-        anchor.append(button);
+        button.type = 'button'; button.className = 'quote-button quote-primary'; button.textContent = 'Force sync';
+        const primary = doc.getElementById('editorPrimaryActions');
+        (primary || anchor).append(button);
     }
+    button.classList.add('quote-primary');
+    const primary = doc.getElementById('editorPrimaryActions');
+    if (primary && button.parentElement !== primary) primary.append(button);
     button.hidden = !isCloud;
     if (!isCloud) return;
     button.title = 'Save pending writing and check for the latest online version';

@@ -55,21 +55,40 @@ export function mountWriterChrome({
         const focus = document.createElement("button");
         focus.type = "button";
         focus.id = "focusMode";
-        focus.className = "quote-button";
+        focus.className = "quote-button quote-primary";
         focus.textContent = "Focus mode";
         focus.title = "Focus mode";
         actionRow.append(focus);
     }
+    ensurePrimaryActions(actionRow);
     const soundBtn = document.getElementById("editorSound");
     const soundControls = document.getElementById("editorSoundControls");
-    const focusBtn = document.getElementById("focusMode");
     if (actionRow && soundBtn && soundBtn.parentElement !== actionRow) {
-        if (focusBtn) focusBtn.before(soundBtn);
-        else actionRow.append(soundBtn);
+        actionRow.append(soundBtn);
     }
     if (actionRow && soundControls && !document.documentElement.classList.contains("is-typewriter")) {
-        if (focusBtn) focusBtn.before(soundControls);
-        else if (soundControls.parentElement !== actionRow) actionRow.append(soundControls);
+        if (soundControls.parentElement !== actionRow) actionRow.append(soundControls);
+    }
+    function ensurePrimaryActions(row) {
+        if (!row) return null;
+        let primaryNode = document.getElementById("editorPrimaryActions");
+        if (!primaryNode) {
+            primaryNode = document.createElement("div");
+            primaryNode.id = "editorPrimaryActions";
+            primaryNode.className = "writer-editor-primary";
+        }
+        if (row.firstElementChild !== primaryNode) row.prepend(primaryNode);
+        const focus = document.getElementById("focusMode");
+        const sync = document.getElementById("forceEditorSync");
+        if (focus) {
+            focus.classList.add("quote-primary");
+            if (focus.parentElement !== primaryNode) primaryNode.append(focus);
+        }
+        if (sync) {
+            sync.classList.add("quote-primary");
+            if (sync.parentElement !== primaryNode) primaryNode.append(sync);
+        }
+        return primaryNode;
     }
     const editorActions = document.getElementById("editorActions");
     const mobileActions = document.getElementById("writerMobileActions");
