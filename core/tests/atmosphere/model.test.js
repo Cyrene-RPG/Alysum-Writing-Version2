@@ -42,11 +42,11 @@ test('YouTube links become an official embed and never keep the pasted address',
     assert.equal(youtubeVideoId('https://youtu.be/lZdzxqh-rao?si=JlgpfaEfge'), 'lZdzxqh-rao');
     assert.equal(
         youtubeEmbedUrl('https://youtu.be/lZdzxqh-rao?si=JlgpfaEfge'),
-        'https://www.youtube-nocookie.com/embed/lZdzxqh-rao?rel=0&playsinline=1',
+        'https://www.youtube-nocookie.com/embed/lZdzxqh-rao?rel=0&playsinline=1&enablejsapi=1',
     );
     assert.equal(
         youtubeEmbedUrl('https://www.youtube.com/watch?v=dQw4w9wgGcQ&t=1m30s'),
-        'https://www.youtube-nocookie.com/embed/dQw4w9wgGcQ?rel=0&playsinline=1&start=90',
+        'https://www.youtube-nocookie.com/embed/dQw4w9wgGcQ?start=90&rel=0&playsinline=1&enablejsapi=1',
     );
     assert.equal(youtubeEmbedUrl('javascript:alert(1)'), '');
     assert.equal(youtubeEmbedUrl('https://evil.example/watch?v=dQw4w9wgGcQ'), '');
@@ -64,15 +64,16 @@ test('several YouTube links or a playlist become one autoplay queue', () => {
     assert.deepEqual(youtubeVideoIds(queue), ['dQw4w9wgGcQ', 'lZdzxqh-rao']);
     assert.equal(
         youtubeEmbedUrl(queue),
-        'https://www.youtube-nocookie.com/embed/dQw4w9wgGcQ?playlist=lZdzxqh-rao&rel=0&playsinline=1',
+        'https://www.youtube-nocookie.com/embed/dQw4w9wgGcQ?playlist=dQw4w9wgGcQ%2ClZdzxqh-rao&index=0&rel=0&playsinline=1&enablejsapi=1',
     );
+    assert.equal(new URL(youtubeEmbedUrl(queue)).pathname, '/embed/dQw4w9wgGcQ');
     assert.equal(
         youtubeEmbedUrl('https://www.youtube.com/playlist?list=PLabcdefghijkmnopqrs'),
-        'https://www.youtube-nocookie.com/embed/videoseries?list=PLabcdefghijkmnopqrs&rel=0&playsinline=1',
+        'https://www.youtube-nocookie.com/embed/videoseries?list=PLabcdefghijkmnopqrs&rel=0&playsinline=1&enablejsapi=1',
     );
     assert.equal(
         youtubeEmbedUrl('https://www.youtube.com/watch?v=dQw4w9wgGcQ&list=RDdQw4w9wgGcQ'),
-        'https://www.youtube-nocookie.com/embed/dQw4w9wgGcQ?list=RDdQw4w9wgGcQ&rel=0&playsinline=1',
+        'https://www.youtube-nocookie.com/embed/dQw4w9wgGcQ?list=RDdQw4w9wgGcQ&rel=0&playsinline=1&enablejsapi=1',
     );
     assert.equal(songProviderLabel(queue), 'YouTube');
 });

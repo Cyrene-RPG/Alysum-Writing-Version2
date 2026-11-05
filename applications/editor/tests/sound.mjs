@@ -106,21 +106,24 @@ try {
         assert.equal(await page.locator('[data-sound-link]').count(), 2);
         await page.locator('[data-sound-link]').nth(1).fill('https://youtu.be/dQw4w9wgGcQ');
         await page.locator('[data-sound-link]').nth(1).evaluate((input) => input.dispatchEvent(new Event('input', { bubbles: true })));
-        assert.equal(
-            await page.locator('#editorSoundEmbed iframe').getAttribute('src'),
-            'https://www.youtube-nocookie.com/embed/lZdzxqh-rao?playlist=dQw4w9wgGcQ&rel=0&playsinline=1',
-        );
+        const embedSrc = await page.locator('#editorSoundEmbed iframe').getAttribute('src');
+        assert.match(embedSrc, /\/embed\/lZdzxqh-rao/);
+        assert.match(embedSrc, /playlist=lZdzxqh-rao%2CdQw4w9wgGcQ/);
+        assert.match(embedSrc, /index=0/);
+        assert.equal(await page.locator('#editorSoundPlay').isVisible(), true);
         assert.equal(await page.locator('#editorSoundOpen').isVisible(), false);
-        assert.match(await page.locator('.writer-sound-copy').innerText(), /Hide video/);
+        assert.match(await page.locator('.writer-sound-copy').innerText(), /green play/);
         const embedBox = await page.locator('#editorSoundEmbed').boundingBox();
-        assert.ok(embedBox && embedBox.height >= 160, 'YouTube player must stay tall enough to tap Play');
+        assert.ok(embedBox && embedBox.width <= 170 && embedBox.height <= 100, 'panel player stays compact');
+        await page.getByRole('button', { name: 'Play first song' }).click();
+        assert.match(await page.locator('#editorSoundEmbed iframe').getAttribute('src'), /autoplay=1/);
         await page.getByRole('button', { name: 'Hide video', exact: true }).click();
         assert.equal(await page.locator('#editorSoundPanel').isVisible(), false);
         assert.equal(await page.locator('#editorSoundEmbed').evaluate((node) => node.classList.contains('is-docked')), true);
+        assert.equal(await page.locator('#editorSoundPlay').isVisible(), true);
         const dockBox = await page.locator('#editorSoundEmbed').boundingBox();
         const pageBox = await page.locator('#pageEditor').boundingBox();
-        assert.ok(dockBox && dockBox.width <= 130 && dockBox.height <= 80, 'hidden video stays a small chrome player');
-        assert.equal(await page.locator('#editorSoundEmbed').evaluate((node) => getComputedStyle(node).position), 'relative');
+        assert.ok(dockBox && dockBox.width <= 80 && dockBox.height <= 50, 'hidden video stays a tiny chrome player');
         assert.ok(pageBox && dockBox.y + dockBox.height <= pageBox.y + 1, 'player must not cover the manuscript');
         await page.getByRole('button', { name: /Sound/ }).click();
         assert.equal(await page.locator('#editorSoundEmbed').evaluate((node) => node.classList.contains('is-docked')), false);
