@@ -12,6 +12,7 @@
 .writer-editor-primary { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 .writer-editor-actions #editorSound,
 .writer-editor-actions #editorSoundControls,
+.writer-editor-actions #editorSoundPlay,
 .writer-editor-actions #focusMode,
 .writer-editor-actions #forceEditorSync { min-height: 44px; }
 .writer-editor-actions #forceEditorSync[hidden] { display: none; }

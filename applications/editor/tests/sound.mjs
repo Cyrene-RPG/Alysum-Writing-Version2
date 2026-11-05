@@ -126,7 +126,8 @@ try {
         assert.equal(await page.evaluate(() => document.getElementById('editorSoundControls').parentElement.id), 'editorActionRow');
         assert.equal(await page.locator('#editorSoundPlay').isVisible(), true);
         assert.equal(await page.locator('#editorSoundOpen').isVisible(), false);
-        assert.match(await page.locator('.writer-sound-copy').innerText(), /green play/);
+        assert.match(await page.locator('.writer-sound-copy').innerText(), /Tap Play/);
+        assert.equal(await page.locator('#editorSoundPlay').evaluate((node) => node.classList.contains('quote-button')), true);
         const embedBox = await page.locator('#editorSoundEmbed').boundingBox();
         assert.ok(embedBox && embedBox.width <= 80 && embedBox.height <= 50, 'player stays on the Focus bar');
         await page.getByRole('button', { name: 'Remove song' }).nth(1).click();

@@ -100,7 +100,7 @@ export function mountEditorSound({
         host.className = 'writer-sound-controls';
         host.hidden = true;
         host.innerHTML = `
-            <button type="button" class="writer-sound-play" id="editorSoundPlay" aria-label="Play first song">Play</button>
+            <button type="button" class="quote-button" id="editorSoundPlay" aria-label="Play first song">Play</button>
             <div id="editorSoundEmbed" class="writer-sound-embed"></div>
         `;
         placeControls(host);
@@ -254,7 +254,7 @@ export function mountEditorSound({
         paintRows();
         if (copyEl) {
             copyEl.textContent = embed
-                ? 'Tap the green play to start the first song. Hide video keeps a tiny player with the tools.'
+                ? 'Tap Play to start the first song. Hide video keeps a tiny player with the tools.'
                 : 'Paste a YouTube playlist, Mix, or a video link. Use + to queue another song.';
         }
         songOpen.hidden = !provider || Boolean(embed);
