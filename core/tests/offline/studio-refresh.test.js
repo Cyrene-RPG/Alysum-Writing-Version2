@@ -16,7 +16,12 @@ function fixture({fetchResponse=async()=>new Response(studio),cached=true}={}){
   listeners.fetch({request:{method:'GET',mode:'navigate',url:'https://alysumwriting.com'+path,headers:new Headers({accept:'text/html'})},respondWith(value){response=Promise.resolve(value);},waitUntil(value){pending.push(value);}});
   return{response:await response,pending,entries};
  }
- return{navigate,entries};
+ async function asset(path){
+  let response;const pending=[];
+  listeners.fetch({request:{method:'GET',mode:'no-cors',url:'https://alysumwriting.com'+path,headers:new Headers()},respondWith(value){response=Promise.resolve(value);},waitUntil(value){pending.push(value);}});
+  return{response:await response,pending};
+ }
+ return{navigate,entries,asset};
 }
 test('online Studio serves the deployed reminder controls instead of an old cached menu',async()=>{
  const f=fixture();const {response}=await f.navigate('/studio');assert.match(await response.text(),/id="bookMenuReminders"/);
@@ -49,4 +54,17 @@ test('slow editor uses its cached shell and saves the fresh shell for the next v
 });
 test('legacy Studio HTML URLs still redirect to the canonical page',async()=>{
  const {response}=await fixture().navigate('/studio.html');assert.equal(response.status,302);assert.equal(response.headers.get('location'),'https://alysumwriting.com/studio');
+});
+test('studio css waits for the network instead of a saved stylesheet',async()=>{
+ const fresh='grid-template-columns: repeat(2, minmax(0, 1fr))';
+ const f=fixture({fetchResponse:async()=>new Response(fresh,{status:200,headers:{'Content-Type':'text/css'}})});
+ f.entries.set('/css/studio/page.css',new Response('grid-auto-columns: 150px'));
+ const {response}=await f.asset('/css/studio/page.css?v=18');
+ assert.equal(await response.text(),fresh);
+});
+test('studio css falls back to the saved sheet only when the network fails',async()=>{
+ const f=fixture({fetchResponse:async()=>{throw Error('offline');}});
+ f.entries.set('/css/studio/page.css',new Response('saved sheet'));
+ const {response}=await f.asset('/css/studio/page.css?v=18');
+ assert.equal(await response.text(),'saved sheet');
 });

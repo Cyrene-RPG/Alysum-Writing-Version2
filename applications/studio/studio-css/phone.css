@@ -1,8 +1,8 @@
 /* Phone shelf. The wide studio is a two-row sideways scroller, so on a
-   phone the next cover is sliced at the screen edge. Here the books sit
-   in two columns that share the width, with the same inset on both sides. */
+   phone the next cover is sliced at the screen edge. Two columns share the
+   width. !important beats a saved copy of page.css that still sets 150px tracks. */
 
-@media (max-width: 640px) {
+@media (max-width: 800px) {
     .studio-section-head {
         flex-direction: column;
         align-items: stretch;
@@ -14,43 +14,48 @@
         justify-content: flex-start;
     }
 
-    #studioShell:not(.layout-stack) .studio-shelf-wrap {
+    #studioShell .studio-shelf-wrap {
         min-width: 0;
-    }
-
-    #studioShell:not(.layout-stack) .studio-list {
-        display: grid;
-        grid-auto-flow: row;
-        grid-template-rows: none;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        grid-auto-columns: auto;
-        gap: 12px;
-        width: 100%;
         max-width: 100%;
-        min-width: 0;
-        margin: 0;
-        padding: 0;
-        overflow: visible;
-        scroll-snap-type: none;
-        border-radius: 0;
-        box-shadow: none;
     }
 
-    #studioShell:not(.layout-stack) .studio-book,
-    #studioShell:not(.layout-stack) .studio-new-card {
-        width: 100%;
-        min-width: 0;
-        height: auto;
-        aspect-ratio: 5 / 7;
-        scroll-snap-align: none;
+    #studioShell .studio-list {
+        display: grid !important;
+        grid-auto-flow: row !important;
+        grid-template-rows: none !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        grid-auto-columns: auto !important;
+        gap: 12px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        scroll-snap-type: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
     }
 
-    #studioShell:not(.layout-stack) .studio-book-title {
-        font-size: 18px;
+    #studioShell.layout-stack .studio-list {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    #studioShell .studio-book,
+    #studioShell .studio-new-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        aspect-ratio: 5 / 7 !important;
+        scroll-snap-align: none !important;
+    }
+
+    #studioShell .studio-book-title {
         overflow-wrap: anywhere;
     }
 
-    #studioShell:not(.layout-stack) .studio-dots {
-        display: none;
+    #studioShell .studio-dots {
+        display: none !important;
     }
 }

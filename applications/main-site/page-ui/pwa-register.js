@@ -55,6 +55,44 @@
     return;
   }
 
+  // A phone can keep painting the sideways shelf from a saved stylesheet. Once the
+  // books are on screen and still wider than the phone, drop the worker and reload.
+  function releaseStuckStudioShelf() {
+    if (window.__alysumShelfRefresh) return;
+    window.__alysumShelfRefresh = true;
+    if (!window.matchMedia || !matchMedia('(max-width: 800px)').matches) return;
+    if (!navigator.serviceWorker) return;
+    let tries = 0;
+    const timer = setInterval(() => {
+      const list = document.getElementById('bookList');
+      tries += 1;
+      if (!list || list.clientWidth < 40 || !list.childElementCount) {
+        if (tries > 40) clearInterval(timer);
+        return;
+      }
+      if (list.scrollWidth <= list.clientWidth + 8) {
+        clearInterval(timer);
+        return;
+      }
+      clearInterval(timer);
+      if (!navigator.serviceWorker.controller) return;
+      let n = 0;
+      try { n = Number(sessionStorage.getItem('alysum:studio:shelf-refresh') || 0); } catch (_) { return; }
+      if (n >= 2) return;
+      try { sessionStorage.setItem('alysum:studio:shelf-refresh', String(n + 1)); } catch (_) { return; }
+      const jobs = [];
+      if (navigator.serviceWorker.getRegistrations) {
+        jobs.push(navigator.serviceWorker.getRegistrations().then((regs) => Promise.all(regs.map((r) => r.unregister()))));
+      }
+      if (window.caches && caches.keys) {
+        jobs.push(caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))));
+      }
+      Promise.all(jobs).then(() => location.reload(), () => location.reload());
+    }, 300);
+  }
+
+  releaseStuckStudioShelf();
+
   let deferredInstallPrompt = null;
 
   window.Alysum = window.Alysum || {};
@@ -112,7 +150,7 @@
   });
 
   window.addEventListener('load', () => {
-    const swScript = new URL('sw.js?v=1.0.79', window.location.href);
+    const swScript = new URL('sw.js?v=1.0.80', window.location.href);
     const swScope = new URL('./', swScript).pathname;
     navigator.serviceWorker.register(swScript.href, { scope: swScope, updateViaCache: 'none' })
       .then((reg) => {

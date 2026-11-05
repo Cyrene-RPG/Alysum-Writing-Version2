@@ -386,7 +386,7 @@ body {
 .studio-gear-pop .studio-gear-pop-danger:hover {
     background: rgba(127, 29, 29, 0.5);
 }
-@media (max-width: 640px) {
+@media (max-width: 800px) {
     .studio-stats { grid-template-columns: repeat(2, 1fr); }
     .studio-stat:nth-child(odd) {
         border-left: 0;
@@ -405,30 +405,36 @@ body {
         flex-wrap: wrap;
         justify-content: flex-start;
     }
-    /* The sideways two-row shelf slices the next cover at the screen edge. */
-    #studioShell:not(.layout-stack) .studio-list {
-        grid-auto-flow: row;
-        grid-template-rows: none;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        grid-auto-columns: auto;
-        gap: 12px;
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        margin: 0;
-        padding: 0;
-        overflow: visible;
-        scroll-snap-type: none;
+    /* Beat a saved stylesheet that still lays the shelf out as a sideways scroller. */
+    #studioShell .studio-shelf-wrap { min-width: 0; max-width: 100%; }
+    #studioShell .studio-list {
+        display: grid !important;
+        grid-auto-flow: row !important;
+        grid-template-rows: none !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        grid-auto-columns: auto !important;
+        gap: 12px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        scroll-snap-type: none !important;
     }
-    #studioShell:not(.layout-stack) .studio-book,
-    #studioShell:not(.layout-stack) .studio-new-card {
-        width: 100%;
-        min-width: 0;
-        height: auto;
-        aspect-ratio: 5 / 7;
-        scroll-snap-align: none;
+    #studioShell.layout-stack .studio-list {
+        grid-template-columns: minmax(0, 1fr) !important;
     }
-    #studioShell:not(.layout-stack) .studio-dots { display: none; }
+    #studioShell .studio-book,
+    #studioShell .studio-new-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        aspect-ratio: 5 / 7 !important;
+        scroll-snap-align: none !important;
+    }
+    #studioShell .studio-dots { display: none !important; }
 }
 
 .studio-head-actions .studio-action {

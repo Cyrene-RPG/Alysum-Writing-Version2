@@ -37,6 +37,32 @@
     <link rel="stylesheet" href="/css/studio/goal.css" />
     <link rel="stylesheet" href="/css/studio/confirm.css" />
     <link rel="stylesheet" href="/css/studio/phone.css" />
+    <style>
+      @media (max-width: 800px) {
+        #studioShell .studio-shelf-wrap { min-width: 0; max-width: 100%; }
+        #studioShell .studio-list {
+          display: grid !important;
+          grid-auto-flow: row !important;
+          grid-template-rows: none !important;
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          grid-auto-columns: auto !important;
+          gap: 12px !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: visible !important;
+          scroll-snap-type: none !important;
+        }
+        #studioShell.layout-stack .studio-list { grid-template-columns: minmax(0, 1fr) !important; }
+        #studioShell .studio-book, #studioShell .studio-new-card {
+          width: 100% !important; max-width: 100% !important; min-width: 0 !important;
+          height: auto !important; aspect-ratio: 5 / 7 !important; scroll-snap-align: none !important;
+        }
+        #studioShell .studio-dots { display: none !important; }
+      }
+    </style>
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 </head>
 <body>
@@ -163,6 +189,45 @@
     </div>
     <script src="/js/pwa-register.js?v=5" defer></script>
     <script type="module" src="/js/studio/page.js?v=46"></script>
+    <script>
+      (function () {
+        if (window.__alysumShelfRefresh) return;
+        window.__alysumShelfRefresh = true;
+        if (!window.matchMedia || !matchMedia('(max-width: 800px)').matches) return;
+        if (!navigator.serviceWorker) return;
+        var tries = 0;
+        var timer = setInterval(function () {
+          var list = document.getElementById('bookList');
+          tries += 1;
+          if (!list || list.clientWidth < 40 || !list.childElementCount) {
+            if (tries > 40) clearInterval(timer);
+            return;
+          }
+          if (list.scrollWidth <= list.clientWidth + 8) {
+            clearInterval(timer);
+            return;
+          }
+          clearInterval(timer);
+          if (!navigator.serviceWorker.controller) return;
+          var n = 0;
+          try { n = Number(sessionStorage.getItem('alysum:studio:shelf-refresh') || 0); } catch (e) { return; }
+          if (n >= 2) return;
+          try { sessionStorage.setItem('alysum:studio:shelf-refresh', String(n + 1)); } catch (e) { return; }
+          var jobs = [];
+          if (navigator.serviceWorker.getRegistrations) {
+            jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+              return Promise.all(regs.map(function (r) { return r.unregister(); }));
+            }));
+          }
+          if (window.caches && caches.keys) {
+            jobs.push(caches.keys().then(function (keys) {
+              return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+            }));
+          }
+          Promise.all(jobs).then(function () { location.reload(); }, function () { location.reload(); });
+        }, 300);
+      })();
+    </script>
 </body>
 </html>
 

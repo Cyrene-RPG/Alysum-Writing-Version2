@@ -1,67 +1,23 @@
 /* Alysum service worker
  * Strategy:
- *   - Studio/Editor HTML: network-first with a short timeout and offline cache fallback
+ *   - Studio/Editor HTML: network-first, ignore navigation preload, offline cache fallback
  *   - Other HTML documents: network-first (fall back to cache, then offline page)
- *   - Same-origin static assets (css/js/fonts/images): network-first, 4s timeout -> cache
+ *   - Studio CSS/JS: wait for the network. A saved copy is only for when the network fails.
+ *   - Other same-origin assets: network-first, 4s timeout -> cache
  *   - Cross-origin (Firebase, gstatic, googleapis, etc.): bypass entirely
- *   - On activate: clean up old caches
+ *   - Install activates immediately. Precache must not delay a phone onto the new worker.
  *
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v2.54.0';
+const SW_VERSION = 'v2.55.0';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
-const APP_SHELL = [
-  '/',
-  '/index.html',
-  '/login.html',
-  '/reset-password.html',
-  '/signup.html',
-  '/overview.html',
-  '/studio.html',
-  '/studio',
-  '/editor.html',
-  '/editor',
-  '/library',
-  '/settings.html',
-  '/privacy-policy.html',
-  '/terms-of-service.html',
-  '/manifest.webmanifest',
-  '/Alysum-3.png',
-  '/css/site-responsive.css',
-  '/css/workspace-nav.css',
-  '/css/studio/page.css',
-  '/css/studio/page.css?v=18',
-  '/css/studio/phone.css',
-  '/css/studio/goal.css',
-  '/css/studio/confirm.css',
-  '/js/editor/page.js',
-  '/js/studio/page.js',
-  '/site-appearance/css-styles/theme.css',
-  '/site-appearance/css-styles/gradient-themes/index.css',
-  '/site-appearance/css-styles/gradient-themes-dim/index.css',
-  '/site-appearance/css-styles/typography.css',
-  '/site-appearance/css-styles/surface-styles/index.css',
-  '/site-appearance/css-styles/surface-styles/glass.css',
-  '/js/workspace-nav.js',
-  '/site-appearance/js-runtime/gradient-theme-sync.js',
-  '/site-appearance/js-runtime/boot.js'
-];
-
 self.addEventListener('install', (event) => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(SHELL_CACHE);
-    await Promise.all(
-      APP_SHELL.map((url) =>
-        cache.add(new Request(url, { cache: 'reload' })).catch(() => {
-          /* ignore individual failures so install still succeeds */
-        })
-      )
-    );
-    await self.skipWaiting();
-  })());
+  // Activate as soon as the script is downloaded. Waiting on a precache list lets
+  // the previous worker keep painting the phone while those requests stall.
+  event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener('activate', (event) => {
@@ -73,7 +29,7 @@ self.addEventListener('activate', (event) => {
         .map((k) => caches.delete(k))
     );
     if (self.registration.navigationPreload) {
-      try { await self.registration.navigationPreload.enable(); } catch (_) {}
+      try { await self.registration.navigationPreload.disable(); } catch (_) {}
     }
     await self.clients.claim();
   })());
@@ -203,12 +159,20 @@ async function networkFirstHtml(event) {
   }
 }
 
+function isStudioPaintAsset(url) {
+  return url.pathname.startsWith('/css/studio/')
+    || url.pathname.startsWith('/js/studio/')
+    || /\/pwa-register\.js$/i.test(url.pathname);
+}
+
 // Network-first: online users see a deploy on the *first* reload, not the second.
-// A 4s race falls back to cache so a slow/flaky connection never hangs a script tag;
-// offline falls straight through to the cache + precached-shell chain.
+// Studio paint files wait for the network so a saved stylesheet cannot keep the
+// sliced shelf on screen. Other assets still fall back after 4s.
 async function networkFirstAsset(event) {
   const request = event.request;
+  const url = new URL(request.url);
   const cache = await caches.open(ASSET_CACHE);
+  const shell = await caches.open(SHELL_CACHE);
   // The .then is async and awaits the cache write, so `network` settles only once
   // the fresh copy is persisted — no lost writes, no waitUntil-after-finish error.
   const network = fetch(request, { cache: 'no-store' }).then(async (resp) => {
@@ -217,6 +181,15 @@ async function networkFirstAsset(event) {
     }
     return resp;
   }).catch(() => null);
+
+  if (isStudioPaintAsset(url)) {
+    const fresh = await network;
+    if (fresh && fresh.ok) return fresh;
+    const saved = await cache.match(request)
+      || await cache.match(request, { ignoreSearch: true })
+      || await shell.match(request, { ignoreSearch: true });
+    return saved || fresh || new Response('', { status: 504 });
+  }
 
   const first = await Promise.race([
     network,
@@ -228,7 +201,7 @@ async function networkFirstAsset(event) {
   event.waitUntil(network);
   const cached = await cache.match(request)
     || await cache.match(request, { ignoreSearch: true })
-    || await (await caches.open(SHELL_CACHE)).match(request, { ignoreSearch: true });
+    || await shell.match(request, { ignoreSearch: true });
   if (cached) return cached;
 
   const late = await network;
