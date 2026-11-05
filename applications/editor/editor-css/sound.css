@@ -28,7 +28,8 @@
     color: var(--muted);
     font-size: 12px;
 }
-.writer-sound-song input {
+.writer-sound-song input,
+.writer-sound-song textarea {
     width: 100%;
     min-height: 40px;
     box-sizing: border-box;
@@ -39,6 +40,11 @@
     color: var(--text, #fff);
     font: inherit;
     font-size: 16px;
+}
+.writer-sound-song textarea {
+    min-height: 72px;
+    resize: vertical;
+    line-height: 1.4;
 }
 #editorSoundOpen[hidden],
 #editorSoundHide[hidden] { display: none !important; }
@@ -87,7 +93,8 @@ html.is-typewriter #editorSound {
     display: none !important;
 }
 .writer-sound-panel .quote-button:focus-visible,
-.writer-sound-song input:focus-visible {
+.writer-sound-song input:focus-visible,
+.writer-sound-song textarea:focus-visible {
     outline: 2px solid var(--accent, #6d28d9);
     outline-offset: 3px;
 }

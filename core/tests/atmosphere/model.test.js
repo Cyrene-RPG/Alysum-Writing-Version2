@@ -2,11 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     SOUND_STORAGE_KEY,
+    parseSongLinks,
     normalizeSongUrl,
     readSoundPrefs,
     songProviderLabel,
     youtubeEmbedUrl,
     youtubeVideoId,
+    youtubeVideoIds,
 } from '../../atmosphere/model.js';
 
 test('favorite songs must be complete HTTPS player links without credentials', () => {
@@ -50,6 +52,31 @@ test('YouTube links become an official embed and never keep the pasted address',
     assert.equal(youtubeEmbedUrl('https://evil.example/watch?v=dQw4w9wgGcQ'), '');
 });
 
+test('several YouTube links or a playlist become one autoplay queue', () => {
+    const queue = [
+        'https://youtu.be/dQw4w9wgGcQ',
+        'https://youtu.be/lZdzxqh-rao?si=JlgpfaEfge',
+    ].join('\n');
+    assert.deepEqual(parseSongLinks(queue), [
+        'https://youtu.be/dQw4w9wgGcQ',
+        'https://youtu.be/lZdzxqh-rao?si=JlgpfaEfge',
+    ]);
+    assert.deepEqual(youtubeVideoIds(queue), ['dQw4w9wgGcQ', 'lZdzxqh-rao']);
+    assert.equal(
+        youtubeEmbedUrl(queue),
+        'https://www.youtube-nocookie.com/embed/dQw4w9wgGcQ?playlist=lZdzxqh-rao&rel=0&playsinline=1',
+    );
+    assert.equal(
+        youtubeEmbedUrl('https://www.youtube.com/playlist?list=PLabcdefghijkmnopqrs'),
+        'https://www.youtube-nocookie.com/embed/videoseries?list=PLabcdefghijkmnopqrs&rel=0&playsinline=1',
+    );
+    assert.equal(
+        youtubeEmbedUrl('https://www.youtube.com/watch?v=dQw4w9wgGcQ&list=RDdQw4w9wgGcQ'),
+        'https://www.youtube-nocookie.com/embed/dQw4w9wgGcQ?list=RDdQw4w9wgGcQ&rel=0&playsinline=1',
+    );
+    assert.equal(songProviderLabel(queue), 'YouTube');
+});
+
 test('prefs keep a sanitized song link and ignore leftover rain settings', () => {
     assert.deepEqual(readSoundPrefs(null), { songUrl: '' });
     assert.deepEqual(
@@ -57,4 +84,10 @@ test('prefs keep a sanitized song link and ignore leftover rain settings', () =>
         { songUrl: 'https://youtu.be/dQw4w9wgGcQ' },
     );
     assert.equal(readSoundPrefs({ songUrl: 'javascript:alert(1)' }).songUrl, '');
+    assert.equal(
+        readSoundPrefs({
+            songUrl: 'https://youtu.be/dQw4w9wgGcQ\nhttps://youtu.be/lZdzxqh-rao',
+        }).songUrl,
+        'https://youtu.be/dQw4w9wgGcQ\nhttps://youtu.be/lZdzxqh-rao',
+    );
 });
