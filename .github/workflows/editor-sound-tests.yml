@@ -5,6 +5,7 @@ on:
       - 'core/atmosphere/**'
       - 'core/tests/atmosphere/**'
       - 'applications/editor/page-ui/sound.js'
+      - 'applications/editor/page-ui/page/keyboard-viewport.js'
       - 'applications/editor/page-ui/page.js'
       - 'applications/editor/pages/editor.html'
       - 'applications/editor/editor-css/sound.css'
@@ -32,7 +33,7 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/editor-sound" --no-audit --no-fund playwright@1.61.1
           "$RUNNER_TEMP/editor-sound/node_modules/.bin/playwright" install --with-deps chromium
-      - name: Check YouTube embed and song links
+      - name: Check YouTube embed, song links, and phone keyboard
         run: PLAYWRIGHT_MODULE_PATH="$RUNNER_TEMP/editor-sound/node_modules/playwright/index.mjs" node applications/editor/tests/sound.mjs
       - uses: actions/upload-artifact@v4
         if: always()

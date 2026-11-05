@@ -20,11 +20,15 @@ function titleFieldFocused() {
     return id === "bookTitle" || id === "chapterTitle";
 }
 
+function soundFieldFocused() {
+    return document.activeElement?.id === "editorSoundSong";
+}
+
 function editingFocus(pageEl) {
     const el = document.activeElement;
     if (!el) return false;
     if (pageEl && (el === pageEl || pageEl.contains(el))) return true;
-    if (titleFieldFocused()) return true;
+    if (titleFieldFocused() || soundFieldFocused()) return true;
     if (el.closest?.(".writer-find")) return true;
     return el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && el.type !== "button");
 }
@@ -132,6 +136,7 @@ export function mountKeyboardViewport({
             const opened = open && !lastOpen;
             root.classList.toggle("is-editor-keyboard", open);
             root.classList.toggle("is-editor-keyboard-title", open && titleFieldFocused());
+            root.classList.toggle("is-editor-keyboard-sound", open && soundFieldFocused());
             if (opened) onOpen?.();
             lastOpen = open;
             if (opened || resized) keepCaretInView();
@@ -178,7 +183,7 @@ export function mountKeyboardViewport({
             document.removeEventListener("focusout", onFocusOut);
             classWatch.disconnect();
             phoneQuery?.removeEventListener?.("change", onViewport);
-            root.classList.remove("is-editor-keyboard", "is-editor-keyboard-title");
+            root.classList.remove("is-editor-keyboard", "is-editor-keyboard-title", "is-editor-keyboard-sound");
             root.style.removeProperty("--editor-vv-height");
         },
     };
