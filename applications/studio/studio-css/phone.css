@@ -51,7 +51,10 @@
     }
 
     #studioShell .studio-shared-book .studio-book-title,
-    #studioShell .studio-shared-book .studio-book-meta {
+    #studioShell .studio-shared-book .studio-book-meta,
+    #studioShell .studio-coeditor-badge,
+    #studioShell .studio-shelf-count,
+    #studioShell .studio-action {
         color: #fff;
         -webkit-text-fill-color: #fff;
     }
