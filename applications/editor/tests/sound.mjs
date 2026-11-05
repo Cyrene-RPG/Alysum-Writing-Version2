@@ -104,9 +104,17 @@ try {
         await page.locator('#editorSoundSong').evaluate((input) => input.dispatchEvent(new Event('input', { bubbles: true })));
         assert.equal(await page.locator('#editorSoundEmbed iframe').getAttribute('src'), 'https://www.youtube-nocookie.com/embed/lZdzxqh-rao?rel=0&playsinline=1');
         assert.equal(await page.locator('#editorSoundOpen').isVisible(), false);
-        assert.match(await page.locator('.writer-sound-copy').innerText(), /Tap play on the video below/);
+        assert.match(await page.locator('.writer-sound-copy').innerText(), /Hide video/);
         const embedBox = await page.locator('#editorSoundEmbed').boundingBox();
         assert.ok(embedBox && embedBox.height >= 160, 'YouTube player must stay tall enough to tap Play');
+        await page.getByRole('button', { name: 'Hide video', exact: true }).click();
+        assert.equal(await page.locator('#editorSoundPanel').isVisible(), false);
+        assert.equal(await page.locator('#editorSoundEmbed').evaluate((node) => node.classList.contains('is-docked')), true);
+        const dockBox = await page.locator('#editorSoundEmbed').boundingBox();
+        assert.ok(dockBox && dockBox.width <= 180 && dockBox.height <= 110, 'hidden video stays as a corner player');
+        assert.ok(dockBox.x + dockBox.width <= width + 1);
+        await page.getByRole('button', { name: /Sound/ }).click();
+        assert.equal(await page.locator('#editorSoundEmbed').evaluate((node) => node.classList.contains('is-docked')), false);
         if (width <= 720) {
             await page.locator('#editorSoundSong').focus();
             await page.evaluate(() => window.keyboard.sync({ visualHeight: 400, innerHeight: 844 }));
