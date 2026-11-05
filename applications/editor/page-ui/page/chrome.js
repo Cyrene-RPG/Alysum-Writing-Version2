@@ -61,10 +61,15 @@ export function mountWriterChrome({
         actionRow.append(focus);
     }
     const soundBtn = document.getElementById("editorSound");
+    const soundControls = document.getElementById("editorSoundControls");
     const focusBtn = document.getElementById("focusMode");
     if (actionRow && soundBtn && soundBtn.parentElement !== actionRow) {
         if (focusBtn) focusBtn.before(soundBtn);
         else actionRow.append(soundBtn);
+    }
+    if (actionRow && soundControls && !document.documentElement.classList.contains("is-typewriter")) {
+        if (focusBtn) focusBtn.before(soundControls);
+        else if (soundControls.parentElement !== actionRow) actionRow.append(soundControls);
     }
     const editorActions = document.getElementById("editorActions");
     const mobileActions = document.getElementById("writerMobileActions");

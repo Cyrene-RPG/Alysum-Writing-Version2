@@ -88,7 +88,10 @@ export function mountEditorSound({
     }
     function ensureControls() {
         let host = root.getElementById('editorSoundControls');
-        if (host) return host;
+        if (host) {
+            placeControls(host);
+            return host;
+        }
         host = root.createElement('div');
         host.id = 'editorSoundControls';
         host.className = 'writer-sound-controls';
@@ -97,10 +100,27 @@ export function mountEditorSound({
             <button type="button" class="writer-sound-play" id="editorSoundPlay" aria-label="Play first song">Play</button>
             <div id="editorSoundEmbed" class="writer-sound-embed"></div>
         `;
-        const panelNode = root.getElementById('editorSoundPanel');
-        if (panelNode) panelNode.after(host);
-        else root.body.append(host);
+        placeControls(host);
         return host;
+    }
+    function placeControls(host = controls) {
+        const row = root.getElementById('editorActionRow');
+        const focus = root.getElementById('focusMode');
+        if (root.documentElement.classList.contains('is-typewriter')) {
+            if (host.parentNode !== root.body) root.body.append(host);
+            return;
+        }
+        if (row) {
+            if (focus) {
+                if (host.nextElementSibling !== focus) focus.before(host);
+            } else if (host.parentNode !== row) {
+                row.append(host);
+            }
+            return;
+        }
+        const panelNode = root.getElementById('editorSoundPanel');
+        if (panelNode && host.previousElementSibling !== panelNode) panelNode.after(host);
+        else if (!panelNode && host.parentNode !== root.body) root.body.append(host);
     }
     function paintPlay() {
         playBtn.textContent = playing ? 'Pause' : 'Play';
@@ -171,6 +191,16 @@ export function mountEditorSound({
     function frameSrc(src) {
         return withPlayerOrigin(src, root.defaultView?.location?.origin);
     }
+    function embedKey(href) {
+        try {
+            const url = new URL(href);
+            url.searchParams.delete('autoplay');
+            url.searchParams.delete('origin');
+            return url.href;
+        } catch {
+            return href || '';
+        }
+    }
     function paintEmbed() {
         const src = frameSrc(youtubeEmbedUrl(prefs.songUrl));
         controls.hidden = !src;
@@ -196,7 +226,7 @@ export function mountEditorSound({
             frame.referrerPolicy = 'strict-origin-when-cross-origin';
             embedHost.append(frame);
         }
-        if (frame.dataset.embed !== src) {
+        if (embedKey(frame.dataset.embed) !== embedKey(src)) {
             youtube.destroy();
             frame.dataset.embed = src;
             frame.src = src;
@@ -211,6 +241,7 @@ export function mountEditorSound({
         controls.classList.toggle('is-docked', dock);
         embedHost.classList.toggle('is-docked', dock);
         root.documentElement.classList.toggle('is-sound-youtube', Boolean(src));
+        placeControls();
         paintPlay();
     }
     function showError(message) {
