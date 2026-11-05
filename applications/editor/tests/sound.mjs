@@ -89,6 +89,17 @@ try {
         const requests = [];
         page.on('pageerror', (error) => errors.push(error.message));
         page.on('request', (request) => requests.push(request.url()));
+        await page.addInitScript(() => {
+            function FakePlayer(el) {
+                this.playVideo = function playVideo() {};
+                this.pauseVideo = function pauseVideo() {};
+                this.unMute = function unMute() {};
+                this.setVolume = function setVolume() {};
+                this.destroy = function destroy() {};
+                this.getIframe = () => el;
+            }
+            window.YT = { Player: FakePlayer };
+        });
         await page.goto(base);
         await page.waitForFunction(() => window.ready);
         assert.equal(await page.evaluate(() => document.getElementById('editorSound').parentElement.id), 'editorActionRow');
@@ -139,7 +150,8 @@ try {
         await page.locator('#editorSoundPlay').click();
         const playState = await page.locator('#editorSoundPlay').getAttribute('aria-pressed');
         const playSrc = await page.locator('#editorSoundEmbed iframe').getAttribute('src');
-        assert.ok(playState === 'true' || /autoplay=1/.test(playSrc), 'Play starts the first song');
+        assert.equal(playState, 'true');
+        assert.match(playSrc, /autoplay=1/, 'first Play starts the song with a user gesture');
         await page.locator('#editorSoundPlay').click();
         assert.equal(await page.locator('#editorSoundPlay').getAttribute('aria-pressed'), 'false');
         assert.equal(await page.locator('#editorSoundEmbed iframe').getAttribute('src'), playSrc, 'Pause does not reload the player');

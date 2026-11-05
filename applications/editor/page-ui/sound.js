@@ -193,9 +193,12 @@ export function mountEditorSound({
     function embedKey(href) {
         try {
             const url = new URL(href);
-            url.searchParams.delete('autoplay');
-            url.searchParams.delete('origin');
-            return url.href;
+            return [
+                url.pathname,
+                url.searchParams.get('playlist') || '',
+                url.searchParams.get('list') || '',
+                url.searchParams.get('index') || '0',
+            ].join('|');
         } catch {
             return href || '';
         }
@@ -223,7 +226,7 @@ export function mountEditorSound({
             frame.title = 'YouTube';
             frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
             frame.setAttribute('allowfullscreen', '');
-            frame.referrerPolicy = 'strict-origin-when-cross-origin';
+            frame.referrerPolicy = 'origin';
             embedHost.append(frame);
         }
         const current = frame.dataset.embed || embedHost.dataset.embed || frame.src;
@@ -289,13 +292,18 @@ export function mountEditorSound({
         if (!frame?.src) return;
         try {
             const url = new URL(frame.src);
-            if (url.searchParams.get('autoplay') === '1') return;
+            const already = url.searchParams.get('autoplay') === '1';
             url.searchParams.set('autoplay', '1');
+            url.searchParams.set('mute', '0');
             url.searchParams.set('index', '0');
-            frame.dataset.embed = url.href;
-            embedHost.dataset.embed = url.href;
-            frame.src = url.href;
-            frame.onload = () => { void youtube.attach(); };
+            const next = url.href;
+            frame.dataset.embed = next;
+            embedHost.dataset.embed = next;
+            if (!already) {
+                frame.src = next;
+                frame.onload = () => { void youtube.attach(); };
+            }
+            void youtube.attach();
         } catch { /* ignore bad src */ }
     }
     playBtn.addEventListener('click', () => {
@@ -307,7 +315,11 @@ export function mountEditorSound({
             paintPlay();
             return;
         }
-        if (!youtube.play()) enableAutoplay();
+        if (youtube.isReady()) youtube.play();
+        else {
+            enableAutoplay();
+            youtube.play();
+        }
         playing = true;
         paintPlay();
     });
