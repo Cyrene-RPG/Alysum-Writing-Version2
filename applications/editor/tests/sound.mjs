@@ -11,9 +11,12 @@ const fixture = `<!doctype html><html><head><meta charset="utf-8"><meta name="vi
 <style>
 :root{--text:#eee;--muted:#aaa;--accent:#8047c8;--border:#444;--alysum-ui-panel:#191919;--alysum-ui-raised:#292929}
 body{margin:0;background:#111;color:#eee;font-family:Arial,sans-serif}
-.writer-editor-actions{display:flex;flex-wrap:wrap;gap:8px;padding:8px 16px}
+.writer-main-scroll{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.writer-editor-actions{display:flex;flex-wrap:wrap;gap:8px;padding:8px 16px;flex-shrink:0}
+.writer-page{flex:1;min-height:0;overflow:auto}
 html.is-typewriter .writer-editor-actions{display:none!important}
 </style></head><body>
+<div class="writer-main-scroll" id="writerWritePane">
 <div class="writer-editor-actions" id="editorActionRow">
   <div class="snippet-editor-action" id="editorActions">
     <button type="button" id="break-reminders" class="quote-button">Break reminders</button>
@@ -22,6 +25,7 @@ html.is-typewriter .writer-editor-actions{display:none!important}
   <button type="button" id="focusMode" class="quote-button">Focus mode</button>
 </div>
 <div class="writer-page" id="pageEditor" contenteditable="true">Draft</div>
+</div>
 <script type="module">
 import {mountEditorSound} from '/js/editor/sound.js';
 import {mountKeyboardViewport} from '/js/editor/page/keyboard-viewport.js';
@@ -96,10 +100,13 @@ try {
         await page.locator('#editorSoundSong').evaluate((input) => input.dispatchEvent(new Event('change', { bubbles: true })));
         assert.equal(await page.locator('#editorSoundOpen').innerText(), 'Open in Spotify');
         assert.equal(await page.locator('#editorSoundEmbed iframe').count(), 0);
-        await page.locator('#editorSoundSong').fill('https://www.youtube.com/watch?v=dQw4w9wgGcQ');
-        await page.locator('#editorSoundSong').evaluate((input) => input.dispatchEvent(new Event('change', { bubbles: true })));
-        assert.equal(await page.locator('#editorSoundEmbed iframe').getAttribute('src'), 'https://www.youtube-nocookie.com/embed/dQw4w9wgGcQ?rel=0');
-        assert.equal(await page.locator('#editorSoundOpen').innerText(), 'Open on YouTube');
+        await page.locator('#editorSoundSong').fill('https://youtu.be/lZdzxqh-rao?si=JlgpfaEfge');
+        await page.locator('#editorSoundSong').evaluate((input) => input.dispatchEvent(new Event('input', { bubbles: true })));
+        assert.equal(await page.locator('#editorSoundEmbed iframe').getAttribute('src'), 'https://www.youtube-nocookie.com/embed/lZdzxqh-rao?rel=0&playsinline=1');
+        assert.equal(await page.locator('#editorSoundOpen').isVisible(), false);
+        assert.match(await page.locator('.writer-sound-copy').innerText(), /Tap play on the video below/);
+        const embedBox = await page.locator('#editorSoundEmbed').boundingBox();
+        assert.ok(embedBox && embedBox.height >= 160, 'YouTube player must stay tall enough to tap Play');
         if (width <= 720) {
             await page.locator('#editorSoundSong').focus();
             await page.evaluate(() => window.keyboard.sync({ visualHeight: 400, innerHeight: 844 }));
