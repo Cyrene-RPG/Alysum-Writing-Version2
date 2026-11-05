@@ -7,23 +7,25 @@ const {chromium} = await import(process.env.PLAYWRIGHT_MODULE_PATH || 'playwrigh
 const root = resolve(new URL('../../../', import.meta.url).pathname);
 const fixture = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="/css/editor/snippets.css">
+<link rel="stylesheet" href="/css/editor/page/actions.css">
 <link rel="stylesheet" href="/css/editor/sound.css">
 <style>
 :root{--text:#eee;--muted:#aaa;--accent:#8047c8;--border:#444;--alysum-ui-panel:#191919;--alysum-ui-raised:#292929}
 body{margin:0;background:#111;color:#eee;font-family:Arial,sans-serif}
 .writer-main-scroll{display:flex;flex-direction:column;height:100vh;overflow:hidden}
-.writer-editor-actions{display:flex;flex-wrap:wrap;gap:8px;padding:8px 16px;flex-shrink:0}
-@media (max-width: 720px){#editorActionRow.writer-editor-actions{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto}}
 .writer-page{flex:1;min-height:0;overflow:auto}
 html.is-typewriter .writer-editor-actions{display:none!important}
 </style></head><body>
 <div class="writer-main-scroll" id="writerWritePane">
 <div class="writer-editor-actions" id="editorActionRow">
+  <div class="writer-editor-primary" id="editorPrimaryActions">
+    <button type="button" id="focusMode" class="quote-button quote-primary">Focus mode</button>
+    <button type="button" id="forceEditorSync" class="quote-button quote-primary">Force sync</button>
+  </div>
   <div class="snippet-editor-action" id="editorActions">
     <button type="button" id="break-reminders" class="quote-button">Break reminders</button>
-    <button type="button" id="editorSound" class="quote-button" aria-expanded="false" aria-controls="editorSoundPanel">Sound</button>
   </div>
-  <button type="button" id="focusMode" class="quote-button">Focus mode</button>
+  <button type="button" id="editorSound" class="quote-button" aria-expanded="false" aria-controls="editorSoundPanel">Sound</button>
 </div>
 <div class="writer-page" id="pageEditor" contenteditable="true">Draft</div>
 </div>
@@ -90,6 +92,16 @@ try {
         await page.goto(base);
         await page.waitForFunction(() => window.ready);
         assert.equal(await page.evaluate(() => document.getElementById('editorSound').parentElement.id), 'editorActionRow');
+        assert.equal(await page.evaluate(() => document.getElementById('focusMode').parentElement.id), 'editorPrimaryActions');
+        assert.equal(await page.evaluate(() => document.getElementById('editorPrimaryActions').parentElement.id), 'editorActionRow');
+        assert.equal(await page.evaluate(() => document.getElementById('editorActionRow').firstElementChild.id), 'editorPrimaryActions');
+        assert.equal(await page.evaluate(() => document.getElementById('focusMode').classList.contains('quote-primary')), true);
+        assert.equal(await page.evaluate(() => document.getElementById('forceEditorSync').classList.contains('quote-primary')), true);
+        assert.ok(await page.evaluate(() => {
+            const focus = document.getElementById('focusMode').getBoundingClientRect();
+            const sound = document.getElementById('editorSound').getBoundingClientRect();
+            return focus.left < sound.left;
+        }), 'Focus sits left of Sound');
         assert.equal(await page.locator('#editorSound').isVisible(), true);
         assert.equal(await page.getByRole('button', { name: 'Rain' }).count(), 0);
         await page.getByRole('button', { name: 'Sound', exact: true }).click();

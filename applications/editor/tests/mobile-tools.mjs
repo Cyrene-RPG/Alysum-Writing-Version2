@@ -57,7 +57,13 @@ const server=createServer(async(req,res)=>{
   const file=resolve(root,'.'+path);if(!file.startsWith(root+'/'))throw Error('Invalid file');
   let bytes=await readFile(file);
   if(path==='/applications/editor/pages/editor.html')bytes=Buffer.from(bytes.toString().replace(/<script src="\/js\/pwa-register[^>]*><\/script>/,'').replace(/<script src="https:\/\/cdn.jsdelivr.net[^>]*><\/script>/,'').replace(/<script type="module" src="\/js\/editor\/page.js[^>]*><\/script>/,'<script type="module">'+setup+'</script>'));
-  if(legacy && path==='/applications/editor/pages/editor.html')bytes=Buffer.from(bytes.toString().replace(/<div class="writer-editor-actions" id="editorActionRow">\s*([\s\S]*?)\s*<button type="button" id="focusMode"[^>]*>Focus mode<\/button>\s*<\/div>/,'$1'));
+  if(legacy && path==='/applications/editor/pages/editor.html'){
+    let html=bytes.toString();
+    const actions=html.match(/<div class="snippet-editor-action" id="editorActions">[\s\S]*?<\/div>/)?.[0]||'';
+    const sound=html.match(/<button type="button" id="editorSound"[^>]*>[\s\S]*?<\/button>/)?.[0]||'';
+    html=html.replace(/<div class="writer-editor-actions" id="editorActionRow">[\s\S]*?<div class="writer-toolbar"/,actions+sound+'<div class="writer-toolbar"');
+    bytes=Buffer.from(html);
+  }
   res.setHeader('Content-Type',({'.html':'text/html','.css':'text/css','.js':'text/javascript','.webmanifest':'application/manifest+json'}[extname(file)]||'application/octet-stream'));res.end(bytes);
  }catch{res.statusCode=404;res.end();}
 });
@@ -83,6 +89,8 @@ try {
    const title=await page.locator('#writerMobileTitlebar').boundingBox(),focus=await page.locator('#focusMode').boundingBox(),toolbar=await page.locator('#writerToolbar').boundingBox();
    const goal=await page.locator('.writer-daily-goal').boundingBox();
    assert.ok(focus.y>=title.y+title.height && focus.y+focus.height<=goal.y && goal.y+goal.height<=toolbar.y,'daily goal sits beneath Focus and above formatting');
+   assert.equal(await page.locator('#focusMode').evaluate((node)=>node.classList.contains('quote-primary')),true);
+   assert.equal(await page.evaluate(()=>document.getElementById('editorActionRow').firstElementChild.id),'editorPrimaryActions');
    assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('is-editor-keyboard')),false);
    await page.evaluate(()=>window.writerChrome.syncKeyboardViewport({visualHeight:480}));
    assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('is-editor-keyboard')),true);

@@ -47,10 +47,16 @@ export function mountEditorSound({
     function writeStored() {
         try { store?.setItem(SOUND_STORAGE_KEY, JSON.stringify(prefs)); } catch { /* ignore quota */ }
     }
+    function placeOnBar(node) {
+        const row = root.getElementById('editorActionRow');
+        if (row) {
+            if (node.parentNode !== row) row.append(node);
+            return;
+        }
+        if (!node.parentNode) (actions || root.body).append(node);
+    }
     function ensureButton() {
         let node = root.getElementById('editorSound');
-        const row = root.getElementById('editorActionRow');
-        const focus = root.getElementById('focusMode');
         if (!node) {
             node = root.createElement('button');
             node.type = 'button';
@@ -60,10 +66,7 @@ export function mountEditorSound({
             node.setAttribute('aria-controls', 'editorSoundPanel');
             node.textContent = 'Sound';
         }
-        if (row) {
-            if (focus) focus.before(node);
-            else if (node.parentNode !== row) row.append(node);
-        } else if (!node.parentNode) (actions || root.body).append(node);
+        placeOnBar(node);
         return node;
     }
     function ensurePanel() {
@@ -104,18 +107,13 @@ export function mountEditorSound({
         return host;
     }
     function placeControls(host = controls) {
-        const row = root.getElementById('editorActionRow');
-        const focus = root.getElementById('focusMode');
         if (root.documentElement.classList.contains('is-typewriter')) {
             if (host.parentNode !== root.body) root.body.append(host);
             return;
         }
+        const row = root.getElementById('editorActionRow');
         if (row) {
-            if (focus) {
-                if (host.nextElementSibling !== focus) focus.before(host);
-            } else if (host.parentNode !== row) {
-                row.append(host);
-            }
+            placeOnBar(host);
             return;
         }
         const panelNode = root.getElementById('editorSoundPanel');
