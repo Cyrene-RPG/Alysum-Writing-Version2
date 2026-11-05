@@ -387,11 +387,29 @@ body {
     background: rgba(127, 29, 29, 0.5);
 }
 @media (max-width: 800px) {
-    .studio-stats { grid-template-columns: repeat(2, 1fr); }
-    .studio-stat:nth-child(odd) {
-        border-left: 0;
-        padding-left: 0;
+    .wd-welcome-bar {
+        min-height: 0;
+        padding: max(14px, env(safe-area-inset-top)) 16px 14px;
+        box-sizing: border-box;
     }
+    .wd-welcome-title { font-size: 22px; line-height: 1.2; }
+    .wd-welcome-sub { margin-top: 4px; line-height: 1.35; }
+    .wd-nav-wrap > .wd-nav {
+        width: 100% !important;
+        min-width: 0 !important;
+        overflow: visible !important;
+        flex-wrap: wrap !important;
+        justify-content: flex-start;
+        gap: 6px 8px;
+        padding: 8px 12px 10px;
+    }
+    .wrap {
+        padding-left: 16px;
+        padding-right: 16px;
+        padding-bottom: calc(28px + env(safe-area-inset-bottom));
+    }
+    .studio-stats { grid-template-columns: repeat(2, 1fr); }
+    .studio-stat:nth-child(odd) { border-left: 0; padding-left: 0; }
     .studio-stat:nth-child(n+3) {
         border-top: 1px solid var(--border, rgba(255, 255, 255, 0.1));
         padding-top: 16px;
@@ -399,13 +417,16 @@ body {
     .studio-section-head {
         flex-direction: column;
         align-items: stretch;
-        gap: 14px;
+        gap: 12px;
+        margin-top: 22px;
     }
+    .studio-section-head h1 { font-size: 32px; line-height: 1.05; }
     .studio-head-actions {
         flex-wrap: wrap;
         justify-content: flex-start;
+        width: 100%;
+        gap: 8px;
     }
-    /* Beat a saved stylesheet that still lays the shelf out as a sideways scroller. */
     #studioShell .studio-shelf-wrap { min-width: 0; max-width: 100%; }
     #studioShell .studio-list {
         display: grid !important;
@@ -413,7 +434,7 @@ body {
         grid-template-rows: none !important;
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         grid-auto-columns: auto !important;
-        gap: 12px !important;
+        gap: 14px !important;
         width: 100% !important;
         max-width: 100% !important;
         min-width: 0 !important;
@@ -422,9 +443,7 @@ body {
         overflow: visible !important;
         scroll-snap-type: none !important;
     }
-    #studioShell.layout-stack .studio-list {
-        grid-template-columns: minmax(0, 1fr) !important;
-    }
+    #studioShell.layout-stack .studio-list { grid-template-columns: minmax(0, 1fr) !important; }
     #studioShell .studio-book,
     #studioShell .studio-new-card {
         width: 100% !important;
@@ -434,6 +453,7 @@ body {
         aspect-ratio: 5 / 7 !important;
         scroll-snap-align: none !important;
     }
+    #studioShell .studio-book-title { font-size: 18px; overflow-wrap: anywhere; }
     #studioShell .studio-dots { display: none !important; }
 }
 
