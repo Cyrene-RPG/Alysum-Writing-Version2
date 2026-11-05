@@ -21,7 +21,9 @@ function titleFieldFocused() {
 }
 
 function soundFieldFocused() {
-    return document.activeElement?.id === "editorSoundSong";
+    const el = document.activeElement;
+    if (!el) return false;
+    return el.id === "editorSoundSong" || Boolean(el.closest?.("#editorSoundLinks"));
 }
 
 function editingFocus(pageEl) {
