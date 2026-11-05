@@ -21,6 +21,7 @@ export function mountEditorSound({
     const songInput = panel.querySelector('#editorSoundSong');
     const songOpen = panel.querySelector('#editorSoundOpen');
     let prefs = readStored();
+    let holdCloseUntil = 0;
 
     function readStored() {
         try { return readSoundPrefs(JSON.parse(store?.getItem(SOUND_STORAGE_KEY) || 'null')); }
@@ -58,7 +59,7 @@ export function mountEditorSound({
         node.innerHTML = `
             <p class="writer-sound-copy">Paste a YouTube link to play it here while you write. Spotify and Apple Music open in their own apps. Alysum does not store the track.</p>
             <label class="writer-sound-song" for="editorSoundSong">Favorite song
-                <input id="editorSoundSong" type="url" maxlength="2000" spellcheck="false" placeholder="https://youtu.be/…">
+                <input id="editorSoundSong" type="url" inputmode="url" enterkeyhint="done" maxlength="2000" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="https://youtu.be/…">
             </label>
             <a class="quote-button" id="editorSoundOpen" hidden target="_blank" rel="noopener noreferrer">Open song</a>
             <p class="writer-sound-error" data-sound-error role="alert" hidden></p>
@@ -109,7 +110,7 @@ export function mountEditorSound({
         const provider = songProviderLabel(prefs.songUrl);
         button.textContent = provider === 'YouTube' ? 'Sound · YouTube' : 'Sound';
         button.classList.toggle('is-active', Boolean(prefs.songUrl) || panel.hidden === false);
-        songInput.value = prefs.songUrl;
+        if (root.activeElement !== songInput) songInput.value = prefs.songUrl;
         songOpen.hidden = !provider;
         songOpen.href = prefs.songUrl || '#';
         songOpen.textContent = provider ? (provider === 'YouTube' ? 'Open on YouTube' : `Open in ${provider}`) : 'Open song';
@@ -121,6 +122,9 @@ export function mountEditorSound({
         paint();
     }
     button.addEventListener('click', () => setOpen(panel.hidden));
+    songInput.addEventListener('focus', () => {
+        holdCloseUntil = Date.now() + 700;
+    });
     songInput.addEventListener('change', () => {
         const next = normalizeSongUrl(songInput.value);
         if (String(songInput.value || '').trim() && !next) {
@@ -135,6 +139,7 @@ export function mountEditorSound({
     });
     function onPointerDown(event) {
         if (panel.hidden) return;
+        if (Date.now() < holdCloseUntil) return;
         if (panel.contains(event.target) || button.contains(event.target) || embedHost.contains(event.target)) return;
         setOpen(false);
     }

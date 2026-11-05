@@ -38,6 +38,7 @@
     background: var(--alysum-ui-panel, #111827);
     color: var(--text, #fff);
     font: inherit;
+    font-size: 16px;
 }
 #editorSoundOpen[hidden] { display: none !important; }
 .writer-sound-embed {
@@ -75,6 +76,11 @@ html.is-typewriter #editorSound {
 @media (max-width: 720px) {
     .writer-sound-panel,
     .writer-sound-embed { margin: 0 10px 8px; }
-    html.is-editor-keyboard .writer-sound-panel,
+    html.is-editor-keyboard:not(.is-editor-keyboard-sound) .writer-sound-panel,
     html.is-editor-keyboard:not(.is-typewriter) .writer-sound-embed { display: none !important; }
+    html.is-editor-keyboard-sound .writer-sound-panel {
+        flex-shrink: 0;
+        margin: 8px 10px;
+    }
+    html.is-editor-keyboard-sound .writer-sound-copy { display: none; }
 }

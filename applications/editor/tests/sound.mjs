@@ -21,9 +21,15 @@ html.is-typewriter .writer-editor-actions{display:none!important}
   </div>
   <button type="button" id="focusMode" class="quote-button">Focus mode</button>
 </div>
+<div class="writer-page" id="pageEditor" contenteditable="true">Draft</div>
 <script type="module">
 import {mountEditorSound} from '/js/editor/sound.js';
+import {mountKeyboardViewport} from '/js/editor/page/keyboard-viewport.js';
 window.sound = mountEditorSound({actions: document.getElementById('editorActions')});
+window.keyboard = mountKeyboardViewport({
+  pageEl: document.getElementById('pageEditor'),
+  isPhone: () => matchMedia('(max-width: 720px)').matches,
+});
 window.ready = true;
 </script></body></html>`;
 
@@ -94,6 +100,20 @@ try {
         await page.locator('#editorSoundSong').evaluate((input) => input.dispatchEvent(new Event('change', { bubbles: true })));
         assert.equal(await page.locator('#editorSoundEmbed iframe').getAttribute('src'), 'https://www.youtube-nocookie.com/embed/dQw4w9wgGcQ?rel=0');
         assert.equal(await page.locator('#editorSoundOpen').innerText(), 'Open on YouTube');
+        if (width <= 720) {
+            await page.locator('#editorSoundSong').focus();
+            await page.evaluate(() => window.keyboard.sync({ visualHeight: 400, innerHeight: 844 }));
+            assert.equal(await page.evaluate(() => document.documentElement.classList.contains('is-editor-keyboard-sound')), true);
+            assert.equal(await page.locator('#editorSoundSong').isVisible(), true);
+            assert.equal(await page.locator('#editorSoundSong').evaluate((node) => getComputedStyle(node).fontSize), '16px');
+            await page.evaluate(() => document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })));
+            assert.equal(await page.locator('#editorSoundPanel').evaluate((node) => node.hidden), false);
+            await page.locator('#pageEditor').focus();
+            await page.evaluate(() => window.keyboard.sync({ visualHeight: 400, innerHeight: 844 }));
+            assert.equal(await page.evaluate(() => document.documentElement.classList.contains('is-editor-keyboard-sound')), false);
+            assert.equal(await page.locator('#editorSoundPanel').isVisible(), false);
+            await page.evaluate(() => window.keyboard.sync({ visualHeight: 844, innerHeight: 844, forceClose: true }));
+        }
         await page.screenshot({ path: `test-results/editor-sound/panel-${width}.png`, fullPage: true });
         await page.evaluate(() => document.documentElement.classList.add('is-typewriter'));
         assert.equal(await page.locator('#editorSoundChip').count(), 0);
