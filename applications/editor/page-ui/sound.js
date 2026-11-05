@@ -18,6 +18,7 @@ export function mountEditorSound({
     const panel = ensurePanel();
     const embedHost = ensureEmbed();
     const errorEl = panel.querySelector('[data-sound-error]');
+    const copyEl = panel.querySelector('.writer-sound-copy');
     const songInput = panel.querySelector('#editorSoundSong');
     const songOpen = panel.querySelector('#editorSoundOpen');
     let prefs = readStored();
@@ -57,7 +58,7 @@ export function mountEditorSound({
         node.className = 'writer-sound-panel';
         node.hidden = true;
         node.innerHTML = `
-            <p class="writer-sound-copy">Paste a YouTube link to play it here while you write. Spotify and Apple Music open in their own apps. Alysum does not store the track.</p>
+            <p class="writer-sound-copy">Paste a YouTube link, then tap play on the video below. Spotify and Apple Music open in their own apps.</p>
             <label class="writer-sound-song" for="editorSoundSong">Favorite song
                 <input id="editorSoundSong" type="url" inputmode="url" enterkeyhint="done" maxlength="2000" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="https://youtu.be/…">
             </label>
@@ -92,7 +93,7 @@ export function mountEditorSound({
         if (!frame) {
             frame = root.createElement('iframe');
             frame.title = 'YouTube';
-            frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+            frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
             frame.setAttribute('allowfullscreen', '');
             frame.referrerPolicy = 'strict-origin-when-cross-origin';
             embedHost.append(frame);
@@ -108,12 +109,18 @@ export function mountEditorSound({
     }
     function paint() {
         const provider = songProviderLabel(prefs.songUrl);
+        const embed = youtubeEmbedUrl(prefs.songUrl);
         button.textContent = provider === 'YouTube' ? 'Sound · YouTube' : 'Sound';
         button.classList.toggle('is-active', Boolean(prefs.songUrl) || panel.hidden === false);
         if (root.activeElement !== songInput) songInput.value = prefs.songUrl;
-        songOpen.hidden = !provider;
+        if (copyEl) {
+            copyEl.textContent = embed
+                ? 'Tap play on the video below. It stays on this page.'
+                : 'Paste a YouTube link, then tap play on the video below. Spotify and Apple Music open in their own apps.';
+        }
+        songOpen.hidden = !provider || Boolean(embed);
         songOpen.href = prefs.songUrl || '#';
-        songOpen.textContent = provider ? (provider === 'YouTube' ? 'Open on YouTube' : `Open in ${provider}`) : 'Open song';
+        songOpen.textContent = provider ? `Open in ${provider}` : 'Open song';
         paintEmbed();
     }
     function setOpen(open) {
@@ -125,18 +132,22 @@ export function mountEditorSound({
     songInput.addEventListener('focus', () => {
         holdCloseUntil = Date.now() + 700;
     });
-    songInput.addEventListener('change', () => {
-        const next = normalizeSongUrl(songInput.value);
-        if (String(songInput.value || '').trim() && !next) {
+    function applySong(raw, persistEmpty) {
+        const next = normalizeSongUrl(raw);
+        const typed = String(raw || '').trim();
+        if (typed && !next) {
+            if (!persistEmpty) return;
             showError('Use a YouTube, Spotify, or Apple Music link.');
             prefs = { songUrl: '' };
-        } else {
+        } else if (next || persistEmpty) {
             showError('');
             prefs = { songUrl: next };
-        }
+        } else return;
         writeStored();
         paint();
-    });
+    }
+    songInput.addEventListener('input', () => applySong(songInput.value, false));
+    songInput.addEventListener('change', () => applySong(songInput.value, true));
     function onPointerDown(event) {
         if (panel.hidden) return;
         if (Date.now() < holdCloseUntil) return;

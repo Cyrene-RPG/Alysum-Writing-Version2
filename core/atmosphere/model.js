@@ -84,6 +84,7 @@ export function youtubeEmbedUrl(raw) {
     const embed = new URL(`https://www.youtube-nocookie.com/embed/${id || 'videoseries'}`);
     if (listId) embed.searchParams.set('list', listId);
     embed.searchParams.set('rel', '0');
+    embed.searchParams.set('playsinline', '1');
     const start = startSeconds(url);
     if (start) embed.searchParams.set('start', String(start));
     return embed.href;

@@ -42,15 +42,20 @@
 }
 #editorSoundOpen[hidden] { display: none !important; }
 .writer-sound-embed {
+    position: relative;
+    flex: 0 0 auto;
+    width: min(36rem, calc(100% - 32px));
     margin: 0 16px 8px;
     border-radius: 12px;
     overflow: hidden;
     aspect-ratio: 16 / 9;
-    max-width: 36rem;
+    min-height: 180px;
     background: #000;
 }
 .writer-sound-embed[hidden] { display: none !important; }
 .writer-sound-embed iframe {
+    position: absolute;
+    inset: 0;
     display: block;
     width: 100%;
     height: 100%;
@@ -62,6 +67,7 @@ html.is-typewriter .writer-sound-embed {
     bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     z-index: 80;
     width: min(240px, 42vw);
+    min-height: 0;
     margin: 0;
 }
 html.is-typewriter .writer-sound-panel,
@@ -76,6 +82,7 @@ html.is-typewriter #editorSound {
 @media (max-width: 720px) {
     .writer-sound-panel,
     .writer-sound-embed { margin: 0 10px 8px; }
+    .writer-sound-embed { width: min(36rem, calc(100% - 20px)); }
     html.is-editor-keyboard:not(.is-editor-keyboard-sound) .writer-sound-panel,
     html.is-editor-keyboard:not(.is-typewriter) .writer-sound-embed { display: none !important; }
     html.is-editor-keyboard-sound .writer-sound-panel {

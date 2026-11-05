@@ -37,9 +37,14 @@ test('YouTube links become an official embed and never keep the pasted address',
     assert.equal(youtubeVideoId('https://music.youtube.com/watch?v=dQw4w9wgGcQ'), 'dQw4w9wgGcQ');
     assert.equal(youtubeVideoId('https://www.youtube.com/shorts/dQw4w9wgGcQ'), 'dQw4w9wgGcQ');
     assert.equal(youtubeVideoId('https://open.spotify.com/track/abc'), '');
+    assert.equal(youtubeVideoId('https://youtu.be/lZdzxqh-rao?si=JlgpfaEfge'), 'lZdzxqh-rao');
+    assert.equal(
+        youtubeEmbedUrl('https://youtu.be/lZdzxqh-rao?si=JlgpfaEfge'),
+        'https://www.youtube-nocookie.com/embed/lZdzxqh-rao?rel=0&playsinline=1',
+    );
     assert.equal(
         youtubeEmbedUrl('https://www.youtube.com/watch?v=dQw4w9wgGcQ&t=1m30s'),
-        'https://www.youtube-nocookie.com/embed/dQw4w9wgGcQ?rel=0&start=90',
+        'https://www.youtube-nocookie.com/embed/dQw4w9wgGcQ?rel=0&playsinline=1&start=90',
     );
     assert.equal(youtubeEmbedUrl('javascript:alert(1)'), '');
     assert.equal(youtubeEmbedUrl('https://evil.example/watch?v=dQw4w9wgGcQ'), '');
