@@ -30,26 +30,7 @@
     #studioShell .studio-goal {
         margin-left: 14px;
         margin-right: 14px;
-        padding-top: 8px;
-        padding-bottom: 10px;
-    }
-
-    #studioShell .studio-goal-top {
-        margin-bottom: 14px;
-    }
-
-    #studioShell .studio-goal-top > span:first-child,
-    #studioShell .studio-goal-pill,
-    #studioShell .studio-goal-streak {
-        line-height: 1.4;
-    }
-
-    #studioShell .studio-goal-track {
-        height: 16px;
-    }
-
-    #studioShell .studio-goal-streak {
-        margin-top: 12px;
+        border-radius: 18px;
     }
 
     #studioShell .studio-shelf-wrap {

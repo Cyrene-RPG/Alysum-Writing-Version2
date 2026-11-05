@@ -123,7 +123,6 @@ html.surface-glass .writer-rail,
 html.surface-glass .studio-book,
 html.surface-glass .studio-new-card,
 html.surface-glass .studio-stats,
-html.surface-glass .studio-goal,
 html.surface-glass .studio-shelf-nav {
     background-color: var(--glass-sheet-chrome);
     background-image: linear-gradient(
@@ -131,6 +130,26 @@ html.surface-glass .studio-shelf-nav {
         var(--glass-reflection-start) 0%,
         var(--glass-reflection-end) 40%
     );
+}
+
+/* The daily word count sits on the page as its own chip, not a flat rectangle. */
+html.surface-glass .studio-goal {
+    padding: 12px 16px;
+    background-color: var(--glass-sheet-chrome);
+    background-image: linear-gradient(
+        180deg,
+        var(--glass-reflection-start) 0%,
+        var(--glass-reflection-end) 70%
+    );
+    background-repeat: no-repeat;
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    border: 1px solid var(--glass-edge);
+    border-radius: var(--glass-radius, 18px);
+    box-shadow:
+        0 14px 28px -18px var(--glass-shadow),
+        inset 0 1px 0 var(--glass-highlight),
+        inset 0 -1px 0 var(--glass-caustic);
 }
 
 html.surface-glass .writer-shell.is-tree-collapsed .writer-tree,
