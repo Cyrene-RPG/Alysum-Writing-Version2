@@ -6,7 +6,7 @@ import {
     songProviderLabel,
     youtubeEmbedUrl,
 } from '/core/atmosphere/model.js';
-import { bindYoutubePlayer, loadYoutubeApi, withPlayerOrigin } from '/js/editor/sound-youtube.js';
+import { bindYoutubePlayer, withPlayerOrigin } from '/js/editor/sound-youtube.js';
 
 export function mountEditorSound({
     root = document,
@@ -234,12 +234,8 @@ export function mountEditorSound({
             youtube.destroy();
             frame.dataset.embed = src;
             embedHost.dataset.embed = src;
-            frame.src = src;
+            if (frame.getAttribute('src')) frame.removeAttribute('src');
             playing = false;
-            frame.onload = () => { void youtube.attach(); };
-            void loadYoutubeApi(root).then(() => youtube.attach());
-        } else {
-            void youtube.attach();
         }
         const dock = Boolean(src) && (
             panel.hidden
@@ -289,14 +285,15 @@ export function mountEditorSound({
     });
     function enableAutoplay() {
         const frame = embedHost.querySelector('iframe');
-        if (!frame?.src) return;
+        const stored = frame?.dataset.embed || frame?.src;
+        if (!frame || !stored) return;
         try {
-            const url = new URL(frame.src);
-            const already = url.searchParams.get('autoplay') === '1';
+            const url = new URL(stored);
             url.searchParams.set('autoplay', '1');
             url.searchParams.set('mute', '0');
             url.searchParams.set('index', '0');
             const next = url.href;
+            const already = frame.getAttribute('src') === next;
             frame.dataset.embed = next;
             embedHost.dataset.embed = next;
             if (!already) {
@@ -339,9 +336,21 @@ export function mountEditorSound({
     }
     root.addEventListener('pointerdown', onPointerDown);
     root.addEventListener('keydown', onKey);
-    const classWatch = new MutationObserver(paint);
+    function chromeFlags() {
+        const classes = root.documentElement.classList;
+        return `${classes.contains('is-typewriter')}:${classes.contains('is-editor-keyboard')}`;
+    }
+    let lastChrome = '';
+    function syncChrome() {
+        const flags = chromeFlags();
+        if (flags === lastChrome) return;
+        lastChrome = flags;
+        placeControls();
+    }
+    const classWatch = new MutationObserver(syncChrome);
     classWatch.observe(root.documentElement, { attributes: true, attributeFilter: ['class'] });
     paint();
+    lastChrome = chromeFlags();
 
     return {
         getPrefs: () => ({ ...prefs }),

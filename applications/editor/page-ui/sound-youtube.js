@@ -42,7 +42,7 @@ export function loadYoutubeApi(root) {
                 win.clearInterval(timer);
                 resolve(null);
             }
-        }, 50);
+        }, 250);
     });
     return win.__alysumYoutubeApi;
 }

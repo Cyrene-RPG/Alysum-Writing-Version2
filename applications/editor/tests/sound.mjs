@@ -130,10 +130,11 @@ try {
         assert.equal(await page.locator('[data-sound-link]').count(), 2);
         await page.locator('[data-sound-link]').nth(1).fill('https://youtu.be/dQw4w9wgGcQ');
         await page.locator('[data-sound-link]').nth(1).evaluate((input) => input.dispatchEvent(new Event('input', { bubbles: true })));
-        const embedSrc = await page.locator('#editorSoundEmbed iframe').getAttribute('src');
+        const embedSrc = await page.locator('#editorSoundEmbed iframe').evaluate((node) => node.dataset.embed || node.getAttribute('src') || '');
         assert.match(embedSrc, /\/embed\/lZdzxqh-rao/);
         assert.match(embedSrc, /playlist=lZdzxqh-rao%2CdQw4w9wgGcQ/);
         assert.match(embedSrc, /index=0/);
+        assert.ok(!(await page.locator('#editorSoundEmbed iframe').getAttribute('src')), 'YouTube stays unloaded until Play');
         assert.equal(await page.evaluate(() => document.getElementById('editorSoundControls').parentElement.id), 'editorActionRow');
         assert.equal(await page.locator('#editorSoundPlay').isVisible(), true);
         assert.equal(await page.locator('#editorSoundOpen').isVisible(), false);
@@ -152,6 +153,12 @@ try {
         const playSrc = await page.locator('#editorSoundEmbed iframe').getAttribute('src');
         assert.equal(playState, 'true');
         assert.match(playSrc, /autoplay=1/, 'first Play starts the song with a user gesture');
+        await page.evaluate(() => {
+            const root = document.documentElement;
+            for (let i = 0; i < 30; i += 1) root.classList.toggle('is-editor-keyboard');
+            root.classList.remove('is-editor-keyboard');
+        });
+        assert.equal(await page.locator('#editorSoundEmbed iframe').getAttribute('src'), playSrc, 'editor class changes do not reload the player');
         await page.locator('#editorSoundPlay').click();
         assert.equal(await page.locator('#editorSoundPlay').getAttribute('aria-pressed'), 'false');
         assert.equal(await page.locator('#editorSoundEmbed iframe').getAttribute('src'), playSrc, 'Pause does not reload the player');
