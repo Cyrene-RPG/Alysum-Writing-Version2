@@ -111,8 +111,10 @@ try {
         assert.equal(await page.locator('#editorSoundPanel').isVisible(), false);
         assert.equal(await page.locator('#editorSoundEmbed').evaluate((node) => node.classList.contains('is-docked')), true);
         const dockBox = await page.locator('#editorSoundEmbed').boundingBox();
-        assert.ok(dockBox && dockBox.width <= 180 && dockBox.height <= 110, 'hidden video stays as a corner player');
-        assert.ok(dockBox.x + dockBox.width <= width + 1);
+        const pageBox = await page.locator('#pageEditor').boundingBox();
+        assert.ok(dockBox && dockBox.width <= 130 && dockBox.height <= 80, 'hidden video stays a small chrome player');
+        assert.equal(await page.locator('#editorSoundEmbed').evaluate((node) => getComputedStyle(node).position), 'relative');
+        assert.ok(pageBox && dockBox.y + dockBox.height <= pageBox.y + 1, 'player must not cover the manuscript');
         await page.getByRole('button', { name: /Sound/ }).click();
         assert.equal(await page.locator('#editorSoundEmbed').evaluate((node) => node.classList.contains('is-docked')), false);
         if (width <= 720) {
