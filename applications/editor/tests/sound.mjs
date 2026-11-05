@@ -100,8 +100,12 @@ try {
         await page.locator('#editorSoundSong').evaluate((input) => input.dispatchEvent(new Event('change', { bubbles: true })));
         assert.equal(await page.locator('#editorSoundOpen').innerText(), 'Open in Spotify');
         assert.equal(await page.locator('#editorSoundEmbed iframe').count(), 0);
-        await page.locator('#editorSoundSong').fill('https://youtu.be/lZdzxqh-rao?si=JlgpfaEfge\nhttps://youtu.be/dQw4w9wgGcQ');
+        await page.locator('#editorSoundSong').fill('https://youtu.be/lZdzxqh-rao?si=JlgpfaEfge');
         await page.locator('#editorSoundSong').evaluate((input) => input.dispatchEvent(new Event('input', { bubbles: true })));
+        await page.getByRole('button', { name: '+ Song', exact: true }).click();
+        assert.equal(await page.locator('[data-sound-link]').count(), 2);
+        await page.locator('[data-sound-link]').nth(1).fill('https://youtu.be/dQw4w9wgGcQ');
+        await page.locator('[data-sound-link]').nth(1).evaluate((input) => input.dispatchEvent(new Event('input', { bubbles: true })));
         assert.equal(
             await page.locator('#editorSoundEmbed iframe').getAttribute('src'),
             'https://www.youtube-nocookie.com/embed/lZdzxqh-rao?playlist=dQw4w9wgGcQ&rel=0&playsinline=1',
