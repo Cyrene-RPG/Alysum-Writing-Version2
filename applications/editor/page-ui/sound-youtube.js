@@ -50,8 +50,11 @@ export function loadYoutubeApi(root) {
 export function bindYoutubePlayer(getIframe, { root, onState } = {}) {
     let player = null;
     let boundEl = null;
+    let boundSrc = '';
+    let ready = false;
     let pendingPlay = false;
     let attaching = null;
+    let attachingSrc = '';
 
     function iframeNode() {
         return typeof getIframe === 'function' ? getIframe() : getIframe;
@@ -64,85 +67,100 @@ export function bindYoutubePlayer(getIframe, { root, onState } = {}) {
         } catch { /* iframe not ready */ }
     }
 
-    function callPlay(next) {
-        if (!next) return false;
+    function start(next) {
+        if (!ready || !next) return false;
         try {
-            if (next.playVideo) {
-                next.playVideo();
-                pendingPlay = false;
-                return true;
-            }
-        } catch { /* player not ready */ }
-        return false;
+            next.unMute?.();
+            next.setVolume?.(100);
+            next.playVideo?.();
+            pendingPlay = false;
+            return true;
+        } catch {
+            return false;
+        }
     }
 
-    function callPause(next) {
+    function stop(next) {
         if (!next) return false;
         try {
-            if (next.pauseVideo) {
-                next.pauseVideo();
-                return true;
-            }
-        } catch { /* player not ready */ }
-        return false;
+            next.pauseVideo?.();
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     function attachNow() {
         const iframe = iframeNode();
         if (!iframe?.isConnected) return null;
-        if (player && boundEl === iframe) return player;
+        if (player && boundEl === iframe && boundSrc === iframe.src) return player;
         const win = pageWindow(root || iframe.ownerDocument);
         if (!win.YT?.Player) return null;
         if (player?.destroy) {
             try { player.destroy(); } catch { /* player already gone */ }
             player = null;
         }
+        ready = false;
         boundEl = iframe;
-        player = new win.YT.Player(iframe, {
-            events: {
-                onReady() {
-                    if (pendingPlay) callPlay(player);
+        boundSrc = iframe.src;
+        try {
+            player = new win.YT.Player(iframe, {
+                events: {
+                    onReady() {
+                        ready = true;
+                        if (pendingPlay) start(player);
+                    },
+                    onStateChange(event) { onState?.(event.data); },
                 },
-                onStateChange(event) { onState?.(event.data); },
-            },
-        });
+            });
+        } catch {
+            player = null;
+            boundEl = null;
+            boundSrc = '';
+            return null;
+        }
         return player;
     }
 
     function attach() {
         const iframe = iframeNode();
         if (!iframe?.isConnected) return Promise.resolve(null);
-        if (player && boundEl === iframe) return Promise.resolve(player);
-        if (attaching) return attaching;
+        if (player && boundEl === iframe && boundSrc === iframe.src) return Promise.resolve(player);
+        if (attaching && attachingSrc === iframe.src) return attaching;
+        attachingSrc = iframe.src;
         attaching = loadYoutubeApi(root || iframe.ownerDocument)
             .then(() => attachNow())
-            .finally(() => { attaching = null; });
+            .finally(() => { attaching = null; attachingSrc = ''; });
         return attaching;
     }
 
     return {
         attach,
+        isReady() { return Boolean(ready && player && boundEl === iframeNode()); },
         play() {
             pendingPlay = true;
-            if (callPlay(attachNow() || player)) return true;
+            if (start(player)) return true;
             post('playVideo');
             void attach();
             return false;
         },
         pause() {
             pendingPlay = false;
-            if (callPause(attachNow() || player)) return true;
+            if (stop(player)) return true;
             post('pauseVideo');
             return false;
         },
         destroy() {
             pendingPlay = false;
+            ready = false;
             if (player?.destroy) {
                 try { player.destroy(); } catch { /* ignore */ }
             }
             player = null;
             boundEl = null;
+            boundSrc = '';
             attaching = null;
+            attachingSrc = '';
         },
     };
 }
