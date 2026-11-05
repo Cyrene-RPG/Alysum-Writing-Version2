@@ -39,28 +39,26 @@
     <link rel="stylesheet" href="/css/studio/phone.css" />
     <style>
       @media (max-width: 800px) {
-        .wd-welcome-bar { min-height: 0; padding: max(14px, env(safe-area-inset-top)) 16px 14px; box-sizing: border-box; }
-        .wd-nav-wrap > .wd-nav { width: 100% !important; overflow: visible !important; flex-wrap: wrap !important; }
-        .studio-section-head { flex-direction: column; align-items: stretch; gap: 12px; }
-        .studio-section-head h1 { line-height: 1.05; }
-        .studio-head-actions { flex-wrap: wrap; justify-content: flex-start; width: 100%; }
+        #studioShell .studio-shelf-wrap { min-width: 0; max-width: 100%; }
         #studioShell .studio-list {
           display: grid !important;
           grid-auto-flow: row !important;
           grid-template-rows: none !important;
           grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
           grid-auto-columns: auto !important;
-          gap: 14px !important;
+          gap: 12px !important;
           width: 100% !important;
           max-width: 100% !important;
           min-width: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
           overflow: visible !important;
           scroll-snap-type: none !important;
         }
         #studioShell.layout-stack .studio-list { grid-template-columns: minmax(0, 1fr) !important; }
         #studioShell .studio-book, #studioShell .studio-new-card {
           width: 100% !important; max-width: 100% !important; min-width: 0 !important;
-          height: auto !important; aspect-ratio: 5 / 7 !important;
+          height: auto !important; aspect-ratio: 5 / 7 !important; scroll-snap-align: none !important;
         }
         #studioShell .studio-dots { display: none !important; }
       }
