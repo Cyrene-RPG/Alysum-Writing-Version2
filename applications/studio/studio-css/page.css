@@ -400,6 +400,8 @@ body {
         flex-direction: column;
         align-items: stretch;
         gap: 14px;
+        padding-left: 12px;
+        padding-right: 12px;
     }
     .studio-head-actions {
         flex-wrap: wrap;
