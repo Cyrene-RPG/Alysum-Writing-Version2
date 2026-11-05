@@ -90,6 +90,8 @@ export function mountEditorSound({
         let frame = embedHost.querySelector('iframe');
         if (!src) {
             frame?.remove();
+            embedHost.classList.remove('is-docked');
+            root.documentElement.classList.remove('is-sound-youtube');
             return;
         }
         if (!frame) {
@@ -110,6 +112,7 @@ export function mountEditorSound({
             || root.documentElement.classList.contains('is-editor-keyboard')
         );
         embedHost.classList.toggle('is-docked', dock);
+        root.documentElement.classList.toggle('is-sound-youtube', Boolean(src));
     }
     function showError(message) {
         errorEl.textContent = message || '';
@@ -123,7 +126,7 @@ export function mountEditorSound({
         if (root.activeElement !== songInput) songInput.value = prefs.songUrl;
         if (copyEl) {
             copyEl.textContent = embed
-                ? 'Tap play, then Hide video. The player moves to the corner so the page stays clear.'
+                ? 'Tap play, then Hide video. The player sits with the tools, not on the page.'
                 : 'Paste a YouTube link, tap play, then Hide video. Spotify and Apple Music open in their own apps.';
         }
         songOpen.hidden = !provider || Boolean(embed);
@@ -183,6 +186,7 @@ export function mountEditorSound({
             classWatch.disconnect();
             root.removeEventListener('pointerdown', onPointerDown);
             root.removeEventListener('keydown', onKey);
+            root.documentElement.classList.remove('is-sound-youtube');
         },
     };
 }
