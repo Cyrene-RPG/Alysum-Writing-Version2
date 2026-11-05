@@ -406,7 +406,12 @@ body {
         justify-content: flex-start;
     }
     /* Beat a saved stylesheet that still lays the shelf out as a sideways scroller. */
-    #studioShell .studio-shelf-wrap { min-width: 0; max-width: 100%; }
+    #studioShell .studio-shelf-wrap {
+        min-width: 0;
+        max-width: none;
+        margin-left: calc(-1 * clamp(12px, 2vw, 24px));
+        margin-right: calc(-1 * clamp(12px, 2vw, 24px));
+    }
     #studioShell .studio-list {
         display: grid !important;
         grid-auto-flow: row !important;
@@ -435,12 +440,6 @@ body {
         scroll-snap-align: none !important;
     }
     #studioShell .studio-dots { display: none !important; }
-}
-
-@media (max-width: 540px) {
-    #studioShell:not(.layout-stack) .studio-book {
-        grid-column: 1 / -1 !important;
-    }
 }
 
 .studio-head-actions .studio-action {

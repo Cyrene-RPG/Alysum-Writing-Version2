@@ -39,7 +39,11 @@
     <link rel="stylesheet" href="/css/studio/phone.css" />
     <style>
       @media (max-width: 800px) {
-        #studioShell .studio-shelf-wrap { min-width: 0; max-width: 100%; }
+        #studioShell .studio-shelf-wrap {
+          min-width: 0; max-width: none;
+          margin-left: calc(-1 * clamp(12px, 2vw, 24px));
+          margin-right: calc(-1 * clamp(12px, 2vw, 24px));
+        }
         #studioShell .studio-list {
           display: grid !important;
           grid-auto-flow: row !important;
@@ -61,9 +65,6 @@
           height: auto !important; aspect-ratio: 5 / 7 !important; scroll-snap-align: none !important;
         }
         #studioShell .studio-dots { display: none !important; }
-      }
-      @media (max-width: 540px) {
-        #studioShell:not(.layout-stack) .studio-book { grid-column: 1 / -1 !important; }
       }
     </style>
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
