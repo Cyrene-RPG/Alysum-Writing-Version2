@@ -100,9 +100,12 @@ try {
         await page.locator('#editorSoundSong').evaluate((input) => input.dispatchEvent(new Event('change', { bubbles: true })));
         assert.equal(await page.locator('#editorSoundOpen').innerText(), 'Open in Spotify');
         assert.equal(await page.locator('#editorSoundEmbed iframe').count(), 0);
-        await page.locator('#editorSoundSong').fill('https://youtu.be/lZdzxqh-rao?si=JlgpfaEfge');
+        await page.locator('#editorSoundSong').fill('https://youtu.be/lZdzxqh-rao?si=JlgpfaEfge\nhttps://youtu.be/dQw4w9wgGcQ');
         await page.locator('#editorSoundSong').evaluate((input) => input.dispatchEvent(new Event('input', { bubbles: true })));
-        assert.equal(await page.locator('#editorSoundEmbed iframe').getAttribute('src'), 'https://www.youtube-nocookie.com/embed/lZdzxqh-rao?rel=0&playsinline=1');
+        assert.equal(
+            await page.locator('#editorSoundEmbed iframe').getAttribute('src'),
+            'https://www.youtube-nocookie.com/embed/lZdzxqh-rao?playlist=dQw4w9wgGcQ&rel=0&playsinline=1',
+        );
         assert.equal(await page.locator('#editorSoundOpen').isVisible(), false);
         assert.match(await page.locator('.writer-sound-copy').innerText(), /Hide video/);
         const embedBox = await page.locator('#editorSoundEmbed').boundingBox();

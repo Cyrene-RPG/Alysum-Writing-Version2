@@ -1,6 +1,7 @@
 import {
     SOUND_STORAGE_KEY,
-    normalizeSongUrl,
+    SOUND_FIELD_MAX,
+    parseSongLinks,
     readSoundPrefs,
     songProviderLabel,
     youtubeEmbedUrl,
@@ -59,9 +60,9 @@ export function mountEditorSound({
         node.className = 'writer-sound-panel';
         node.hidden = true;
         node.innerHTML = `
-            <p class="writer-sound-copy">Paste a YouTube link, then tap play on the video below. Spotify and Apple Music open in their own apps.</p>
-            <label class="writer-sound-song" for="editorSoundSong">Favorite song
-                <input id="editorSoundSong" type="url" inputmode="url" enterkeyhint="done" maxlength="2000" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="https://youtu.be/…">
+            <p class="writer-sound-copy">Paste a YouTube playlist, Mix, or one video link per line. Tap play once and the next tracks follow.</p>
+            <label class="writer-sound-song" for="editorSoundSong">Songs
+                <textarea id="editorSoundSong" rows="3" maxlength="${SOUND_FIELD_MAX}" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="https://youtu.be/…&#10;https://youtu.be/…"></textarea>
             </label>
             <a class="quote-button" id="editorSoundOpen" hidden target="_blank" rel="noopener noreferrer">Open song</a>
             <button type="button" class="quote-button" id="editorSoundHide" hidden>Hide video</button>
@@ -126,11 +127,11 @@ export function mountEditorSound({
         if (root.activeElement !== songInput) songInput.value = prefs.songUrl;
         if (copyEl) {
             copyEl.textContent = embed
-                ? 'Tap play, then Hide video. The player sits with the tools, not on the page.'
-                : 'Paste a YouTube link, tap play, then Hide video. Spotify and Apple Music open in their own apps.';
+                ? 'Tap play once. Later tracks follow. Hide video keeps the player with the tools, not on the page.'
+                : 'Paste a YouTube playlist, Mix, or one video link per line. Spotify and Apple Music open in their own apps.';
         }
         songOpen.hidden = !provider || Boolean(embed);
-        songOpen.href = prefs.songUrl || '#';
+        songOpen.href = parseSongLinks(prefs.songUrl)[0] || '#';
         songOpen.textContent = provider ? `Open in ${provider}` : 'Open song';
         if (hideBtn) hideBtn.hidden = !embed;
         paintEmbed();
@@ -145,15 +146,15 @@ export function mountEditorSound({
         holdCloseUntil = Date.now() + 700;
     });
     function applySong(raw, persistEmpty) {
-        const next = normalizeSongUrl(raw);
+        const links = parseSongLinks(raw);
         const typed = String(raw || '').trim();
-        if (typed && !next) {
+        if (typed && !links.length) {
             if (!persistEmpty) return;
-            showError('Use a YouTube, Spotify, or Apple Music link.');
+            showError('Use YouTube, Spotify, or Apple Music links. One per line.');
             prefs = { songUrl: '' };
-        } else if (next || persistEmpty) {
+        } else if (links.length || persistEmpty) {
             showError('');
-            prefs = { songUrl: next };
+            prefs = { songUrl: links.join('\n') };
         } else return;
         writeStored();
         paint();
