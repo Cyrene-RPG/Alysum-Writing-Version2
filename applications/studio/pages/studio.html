@@ -39,11 +39,9 @@
     <link rel="stylesheet" href="/css/studio/phone.css" />
     <style>
       @media (max-width: 800px) {
-        #studioShell .studio-shelf-wrap {
-          min-width: 0; max-width: none;
-          margin-left: calc(-1 * clamp(12px, 2vw, 24px));
-          margin-right: calc(-1 * clamp(12px, 2vw, 24px));
-        }
+        .wrap { padding-left: 0 !important; padding-right: 0 !important; }
+        #studioShell.panel { max-width: none !important; width: 100% !important; margin-left: 0 !important; margin-right: 0 !important; }
+        #studioShell .studio-shelf-wrap { min-width: 0; max-width: 100%; margin-left: 0 !important; margin-right: 0 !important; }
         #studioShell .studio-list {
           display: grid !important;
           grid-auto-flow: row !important;

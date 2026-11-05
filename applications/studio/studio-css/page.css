@@ -406,11 +406,21 @@ body {
         justify-content: flex-start;
     }
     /* Beat a saved stylesheet that still lays the shelf out as a sideways scroller. */
+    .wrap {
+        padding-left: 0;
+        padding-right: 0;
+    }
+    #studioShell.panel {
+        max-width: none;
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+    }
     #studioShell .studio-shelf-wrap {
         min-width: 0;
-        max-width: none;
-        margin-left: calc(-1 * clamp(12px, 2vw, 24px));
-        margin-right: calc(-1 * clamp(12px, 2vw, 24px));
+        max-width: 100%;
+        margin-left: 0;
+        margin-right: 0;
     }
     #studioShell .studio-list {
         display: grid !important;

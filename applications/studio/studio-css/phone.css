@@ -14,13 +14,24 @@
         justify-content: flex-start;
     }
 
-    /* The shelf background uses the full screen width. Book cards stay
-       two-up inside it. */
+    /* The blue field behind the books, not the cards. */
+    .wrap {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    #studioShell.panel {
+        max-width: none;
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
     #studioShell .studio-shelf-wrap {
         min-width: 0;
-        max-width: none;
-        margin-left: calc(-1 * clamp(12px, 2vw, 24px));
-        margin-right: calc(-1 * clamp(12px, 2vw, 24px));
+        max-width: 100%;
+        margin-left: 0;
+        margin-right: 0;
     }
 
     #studioShell .studio-list {
