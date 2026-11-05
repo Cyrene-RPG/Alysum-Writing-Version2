@@ -110,30 +110,36 @@ export function youtubeVideoIds(raw) {
     return ids;
 }
 
+function playerEmbed(pathId, extra = {}) {
+    const embed = new URL(`https://www.youtube-nocookie.com/embed/${pathId}`);
+    for (const [key, value] of Object.entries(extra)) {
+        if (value !== '' && value != null) embed.searchParams.set(key, String(value));
+    }
+    embed.searchParams.set('rel', '0');
+    embed.searchParams.set('playsinline', '1');
+    embed.searchParams.set('enablejsapi', '1');
+    return embed.href;
+}
+
 export function youtubeEmbedUrl(raw) {
     const links = parseSongLinks(raw);
     if (!links.length) return '';
+    const ids = youtubeVideoIds(raw);
+    if (ids.length > 1) {
+        return playerEmbed(ids[0], { playlist: ids.join(','), index: 0 });
+    }
     const playlistLink = links.find((href) => youtubeListId(href));
     if (playlistLink) {
         const url = new URL(playlistLink);
-        const id = youtubeVideoId(playlistLink);
-        const embed = new URL(`https://www.youtube-nocookie.com/embed/${id || 'videoseries'}`);
-        embed.searchParams.set('list', youtubeListId(playlistLink));
-        embed.searchParams.set('rel', '0');
-        embed.searchParams.set('playsinline', '1');
         const start = startSeconds(url);
-        if (start) embed.searchParams.set('start', String(start));
-        return embed.href;
+        return playerEmbed(youtubeVideoId(playlistLink) || 'videoseries', {
+            list: youtubeListId(playlistLink),
+            start: start || '',
+        });
     }
-    const ids = youtubeVideoIds(raw);
     if (!ids.length) return '';
-    const embed = new URL(`https://www.youtube-nocookie.com/embed/${ids[0]}`);
-    if (ids.length > 1) embed.searchParams.set('playlist', ids.slice(1).join(','));
-    embed.searchParams.set('rel', '0');
-    embed.searchParams.set('playsinline', '1');
     const start = startSeconds(new URL(links[0]));
-    if (ids.length === 1 && start) embed.searchParams.set('start', String(start));
-    return embed.href;
+    return playerEmbed(ids[0], { start: start || '' });
 }
 
 export function readSoundPrefs(raw) {

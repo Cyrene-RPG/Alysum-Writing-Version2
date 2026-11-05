@@ -17,7 +17,9 @@ export function mountEditorSound({
 
     const button = ensureButton();
     const panel = ensurePanel();
-    const embedHost = ensureEmbed();
+    const controls = ensureControls();
+    const playBtn = controls.querySelector('#editorSoundPlay');
+    const embedHost = controls.querySelector('#editorSoundEmbed');
     const errorEl = panel.querySelector('[data-sound-error]');
     const copyEl = panel.querySelector('.writer-sound-copy');
     const list = panel.querySelector('#editorSoundLinks');
@@ -28,6 +30,7 @@ export function mountEditorSound({
     let drafts = parseSongLinks(prefs.songUrl);
     if (!drafts.length) drafts = [''];
     let holdCloseUntil = 0;
+    let playing = false;
 
     function readStored() {
         try { return readSoundPrefs(JSON.parse(store?.getItem(SOUND_STORAGE_KEY) || 'null')); }
@@ -75,17 +78,31 @@ export function mountEditorSound({
         else (actions || root.body).after(node);
         return node;
     }
-    function ensureEmbed() {
-        let node = root.getElementById('editorSoundEmbed');
-        if (node) return node;
-        node = root.createElement('div');
-        node.id = 'editorSoundEmbed';
-        node.className = 'writer-sound-embed';
-        node.hidden = true;
+    function ensureControls() {
+        let host = root.getElementById('editorSoundControls');
+        if (host) return host;
+        host = root.createElement('div');
+        host.id = 'editorSoundControls';
+        host.className = 'writer-sound-controls';
+        host.hidden = true;
+        host.innerHTML = `
+            <button type="button" class="writer-sound-play" id="editorSoundPlay" aria-label="Play first song">Play</button>
+            <div id="editorSoundEmbed" class="writer-sound-embed"></div>
+        `;
         const panelNode = root.getElementById('editorSoundPanel');
-        if (panelNode) panelNode.after(node);
-        else root.body.append(node);
-        return node;
+        if (panelNode) panelNode.after(host);
+        else root.body.append(host);
+        return host;
+    }
+    function youtubeCommand(name, args = []) {
+        const frame = embedHost.querySelector('iframe');
+        if (!frame?.contentWindow) return;
+        frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: name, args }), '*');
+    }
+    function paintPlay() {
+        playBtn.textContent = playing ? 'Pause' : 'Play';
+        playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play first song');
+        playBtn.setAttribute('aria-pressed', playing ? 'true' : 'false');
     }
     function songInputs() {
         return [...list.querySelectorAll('[data-sound-link]')];
@@ -140,10 +157,15 @@ export function mountEditorSound({
     }
     function paintEmbed() {
         const src = youtubeEmbedUrl(prefs.songUrl);
+        controls.hidden = !src;
         embedHost.hidden = !src;
+        playBtn.hidden = !src;
         let frame = embedHost.querySelector('iframe');
         if (!src) {
             frame?.remove();
+            playing = false;
+            paintPlay();
+            controls.classList.remove('is-docked');
             embedHost.classList.remove('is-docked');
             root.documentElement.classList.remove('is-sound-youtube');
             return;
@@ -159,14 +181,17 @@ export function mountEditorSound({
         if (frame.dataset.embed !== src) {
             frame.dataset.embed = src;
             frame.src = src;
+            playing = false;
         }
         const dock = Boolean(src) && (
             panel.hidden
             || root.documentElement.classList.contains('is-typewriter')
             || root.documentElement.classList.contains('is-editor-keyboard')
         );
+        controls.classList.toggle('is-docked', dock);
         embedHost.classList.toggle('is-docked', dock);
         root.documentElement.classList.toggle('is-sound-youtube', Boolean(src));
+        paintPlay();
     }
     function showError(message) {
         errorEl.textContent = message || '';
@@ -180,7 +205,7 @@ export function mountEditorSound({
         paintRows();
         if (copyEl) {
             copyEl.textContent = embed
-                ? 'Tap play once. Later tracks follow. Hide video keeps the player with the tools, not on the page.'
+                ? 'Tap the green play to start the first song. Hide video keeps a tiny player with the tools.'
                 : 'Paste a YouTube playlist, Mix, or a video link. Use + to queue another song.';
         }
         songOpen.hidden = !provider || Boolean(embed);
@@ -213,11 +238,33 @@ export function mountEditorSound({
         if (!drafts.length) drafts = [''];
         applyDrafts(true);
     });
+    playBtn.addEventListener('click', () => {
+        holdCloseUntil = Date.now() + 700;
+        const frame = embedHost.querySelector('iframe');
+        if (!frame) return;
+        if (playing) {
+            youtubeCommand('pauseVideo');
+            playing = false;
+            paintPlay();
+            return;
+        }
+        youtubeCommand('playVideoAt', [0]);
+        youtubeCommand('playVideo');
+        const url = new URL(frame.src);
+        url.searchParams.set('autoplay', '1');
+        url.searchParams.set('index', '0');
+        if (frame.dataset.embed !== url.href) {
+            frame.dataset.embed = url.href;
+            frame.src = url.href;
+        }
+        playing = true;
+        paintPlay();
+    });
     hideBtn?.addEventListener('click', () => setOpen(false));
     function onPointerDown(event) {
         if (panel.hidden) return;
         if (Date.now() < holdCloseUntil) return;
-        if (panel.contains(event.target) || button.contains(event.target) || embedHost.contains(event.target)) return;
+        if (panel.contains(event.target) || button.contains(event.target) || controls.contains(event.target)) return;
         setOpen(false);
     }
     function onKey(event) {
