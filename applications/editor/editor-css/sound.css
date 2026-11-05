@@ -40,7 +40,8 @@
     font: inherit;
     font-size: 16px;
 }
-#editorSoundOpen[hidden] { display: none !important; }
+#editorSoundOpen[hidden],
+#editorSoundHide[hidden] { display: none !important; }
 .writer-sound-embed {
     position: relative;
     flex: 0 0 auto;
@@ -61,12 +62,13 @@
     height: 100%;
     border: 0;
 }
+.writer-sound-embed.is-docked,
 html.is-typewriter .writer-sound-embed {
     position: fixed;
     right: calc(12px + env(safe-area-inset-right, 0px));
     bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     z-index: 80;
-    width: min(240px, 42vw);
+    width: min(168px, calc(100vw - 24px));
     min-height: 0;
     margin: 0;
 }
@@ -83,8 +85,7 @@ html.is-typewriter #editorSound {
     .writer-sound-panel,
     .writer-sound-embed { margin: 0 10px 8px; }
     .writer-sound-embed { width: min(36rem, calc(100% - 20px)); }
-    html.is-editor-keyboard:not(.is-editor-keyboard-sound) .writer-sound-panel,
-    html.is-editor-keyboard:not(.is-typewriter) .writer-sound-embed { display: none !important; }
+    html.is-editor-keyboard:not(.is-editor-keyboard-sound) .writer-sound-panel { display: none !important; }
     html.is-editor-keyboard-sound .writer-sound-panel {
         flex-shrink: 0;
         margin: 8px 10px;

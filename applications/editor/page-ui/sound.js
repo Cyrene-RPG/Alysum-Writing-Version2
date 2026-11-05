@@ -21,6 +21,7 @@ export function mountEditorSound({
     const copyEl = panel.querySelector('.writer-sound-copy');
     const songInput = panel.querySelector('#editorSoundSong');
     const songOpen = panel.querySelector('#editorSoundOpen');
+    const hideBtn = panel.querySelector('#editorSoundHide');
     let prefs = readStored();
     let holdCloseUntil = 0;
 
@@ -63,6 +64,7 @@ export function mountEditorSound({
                 <input id="editorSoundSong" type="url" inputmode="url" enterkeyhint="done" maxlength="2000" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="https://youtu.be/…">
             </label>
             <a class="quote-button" id="editorSoundOpen" hidden target="_blank" rel="noopener noreferrer">Open song</a>
+            <button type="button" class="quote-button" id="editorSoundHide" hidden>Hide video</button>
             <p class="writer-sound-error" data-sound-error role="alert" hidden></p>
         `;
         const row = root.getElementById('editorActionRow');
@@ -102,6 +104,12 @@ export function mountEditorSound({
             frame.dataset.embed = src;
             frame.src = src;
         }
+        const dock = Boolean(src) && (
+            panel.hidden
+            || root.documentElement.classList.contains('is-typewriter')
+            || root.documentElement.classList.contains('is-editor-keyboard')
+        );
+        embedHost.classList.toggle('is-docked', dock);
     }
     function showError(message) {
         errorEl.textContent = message || '';
@@ -115,12 +123,13 @@ export function mountEditorSound({
         if (root.activeElement !== songInput) songInput.value = prefs.songUrl;
         if (copyEl) {
             copyEl.textContent = embed
-                ? 'Tap play on the video below. It stays on this page.'
-                : 'Paste a YouTube link, then tap play on the video below. Spotify and Apple Music open in their own apps.';
+                ? 'Tap play, then Hide video. The player moves to the corner so the page stays clear.'
+                : 'Paste a YouTube link, tap play, then Hide video. Spotify and Apple Music open in their own apps.';
         }
         songOpen.hidden = !provider || Boolean(embed);
         songOpen.href = prefs.songUrl || '#';
         songOpen.textContent = provider ? `Open in ${provider}` : 'Open song';
+        if (hideBtn) hideBtn.hidden = !embed;
         paintEmbed();
     }
     function setOpen(open) {
@@ -146,6 +155,7 @@ export function mountEditorSound({
         writeStored();
         paint();
     }
+    hideBtn?.addEventListener('click', () => setOpen(false));
     songInput.addEventListener('input', () => applySong(songInput.value, false));
     songInput.addEventListener('change', () => applySong(songInput.value, true));
     function onPointerDown(event) {
@@ -163,11 +173,14 @@ export function mountEditorSound({
     }
     root.addEventListener('pointerdown', onPointerDown);
     root.addEventListener('keydown', onKey);
+    const classWatch = new MutationObserver(paint);
+    classWatch.observe(root.documentElement, { attributes: true, attributeFilter: ['class'] });
     paint();
 
     return {
         getPrefs: () => ({ ...prefs }),
         destroy() {
+            classWatch.disconnect();
             root.removeEventListener('pointerdown', onPointerDown);
             root.removeEventListener('keydown', onKey);
         },
