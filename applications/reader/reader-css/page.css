@@ -32,8 +32,9 @@ body {
     z-index: 50;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
+    gap: 6px;
+    width: 100%;
+    padding: 6px 8px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     background:
         linear-gradient(180deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.42)),
@@ -52,27 +53,44 @@ body {
 .reader-top-bar #reader-icons {
     flex: 1 1 auto;
     min-width: 0;
+    max-width: none;
 }
 
-.reader-top-tools {
+/* Beat .wd-welcome-inner { width:100% } from workspace-nav.css */
+.reader-top-bar .reader-top-tools.wd-welcome-inner {
+    position: relative;
+    z-index: 2;
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: flex-end;
+    gap: 6px;
     flex: 0 0 auto;
-    margin-left: 0;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
 }
 
-.reader-top-tools .account-mode-toggle {
-    margin-left: 0;
+.reader-top-bar .account-mode-toggle {
+    margin-left: 0 !important;
 }
 
-.reader-top-tools .wd-pfp {
+.reader-top-bar .wd-pfp-btn {
+    width: 40px;
+    height: 40px;
+}
+
+.reader-top-bar .wd-pfp {
     width: 36px;
     height: 36px;
 }
 
 .reader-top-bar .notification-bell {
-    margin-left: 0;
+    margin-left: 0 !important;
+}
+
+.reader-top-bar .account-mode-switch {
+    padding: 7px 10px;
+    font-size: 11px;
 }
 
 .reader-eyebrow {
@@ -121,7 +139,7 @@ body {
 }
 
 .reader-icon-nav {
-    display: grid;
+    display: grid !important;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 2px;
     width: 100%;
@@ -135,29 +153,37 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 2px;
+    min-width: 0;
     min-height: 52px;
     padding: 4px 2px;
     border-radius: 12px;
     text-decoration: none;
-    color: color-mix(in srgb, var(--chrome-text, #fff) 78%, transparent);
+    color: color-mix(in srgb, var(--chrome-text, #fff) 82%, transparent);
+    overflow: hidden;
 }
 .reader-icon-nav-icon {
     display: grid;
     place-items: center;
     width: 24px;
     height: 24px;
+    flex: 0 0 auto;
 }
 .reader-icon-nav-icon svg {
     width: 22px;
     height: 22px;
 }
 .reader-icon-nav-label {
+    display: block;
+    width: 100%;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.01em;
     line-height: 1.15;
     text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .reader-icon-nav a[aria-current="page"] {
     color: #fff;
@@ -167,9 +193,13 @@ body {
     stroke-width: 2;
 }
 
-@media (max-width: 380px) {
+@media (max-width: 420px) {
     .reader-icon-nav-label { font-size: 9px; }
-    .reader-top-tools .wd-pfp { width: 32px; height: 32px; }
+    .reader-top-bar .account-mode-switch span:first-child {
+        max-width: 52px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 }
 
 .reader-continue {
