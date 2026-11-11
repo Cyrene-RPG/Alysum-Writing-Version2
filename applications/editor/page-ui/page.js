@@ -28,7 +28,7 @@ import {
 import { countWordsInHtml, countWordsInSections } from "@alysum/writing-engine/word-count.js";
 import { createAutosave } from "./autosave.js";
 import { mountDocument } from "./document.js?v=11";
-import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=10";
+import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=11";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { recordTypedWords, getWritingStats } from "@alysum/account/writing-stats.js";
 import { countedWordDelta } from "@alysum/statistics/typed-input.js";
