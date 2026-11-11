@@ -1,5 +1,4 @@
 import { publicDisplayNameFromUserData } from "@alysum/account/profile-display.js";
-import { pickWelcomeLine } from "/js/welcome-lines.js";
 import { setWaypointTraveler } from "@alysum/site-appearance/js-runtime/roadmap-link.js?v=12";
 
 function fillWelcomeAvatar(imageUrl, name) {
@@ -81,7 +80,6 @@ export function fillWelcomeBar(data = {}, options = {}) {
     const title = document.getElementById("welcomeTitle");
     const sub = document.getElementById("welcomeSubtitle");
     const name = publicDisplayNameFromUserData(data) || "writer";
-    const refreshLine = options.refreshLine !== false;
 
     if (title) {
         title.replaceChildren();
@@ -92,11 +90,10 @@ export function fillWelcomeBar(data = {}, options = {}) {
         title.append(nameEl, ".");
     }
 
+    // No random tagline under Welcome back.
     if (sub) {
-        if (refreshLine || !sub.textContent.trim()) {
-            sub.textContent = pickWelcomeLine();
-        }
-        sub.classList.toggle("is-hidden", !sub.textContent.trim());
+        sub.textContent = "";
+        sub.classList.add("is-hidden");
     }
 
     fillWelcomeAvatar(data.profileImageUrl ?? data.profile_image_url, name);

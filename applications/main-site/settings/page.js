@@ -17,7 +17,7 @@ import { signOutAndGoToHome } from "@alysum/authentication/logout.js";
 import { goToLogin } from "@alysum/desktop/app.js";
 import { resolveStudioSession } from "@alysum/desktop/studio-session.js";
 import { permanentHandleFromUserData } from "@alysum/account/profile-display.js";
-import { fillWelcomeBar } from "/js/welcome-bar.js?v=2";
+import { fillWelcomeBar } from "/js/welcome-bar.js?v=3";
 import { AUTHOR_BIO_MAX_LENGTH } from "@alysum/library/author-profile.js";
 import { normalizeAccountType, homeUrlForUserData } from "@alysum/account/mode.js";
 import { mountAccountModeToggle } from "@alysum/account/mode-toggle.js";

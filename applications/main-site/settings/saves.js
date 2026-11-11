@@ -21,7 +21,7 @@ import {
     AUTHOR_BIO_MAX_LENGTH,
     supportLinksPayloadFromDraft,
 } from "@alysum/library/author-profile.js";
-import { fillWelcomeBar } from "/js/welcome-bar.js?v=2";
+import { fillWelcomeBar } from "/js/welcome-bar.js?v=3";
 
 let goalMode = DEFAULT_WORD_GOAL_MODE;
 let goalDayTotals = {};

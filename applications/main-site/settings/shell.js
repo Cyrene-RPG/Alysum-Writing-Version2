@@ -15,7 +15,7 @@ import { applyChromeGradient, getStoredGradientThemeId, getThemePreview } from "
 import { getProfileRow, LOCAL_GUEST_USER_ID } from "@alysum/synchronization-engine/local-adapter.js";
 import { normalizeAccountType } from "@alysum/account/mode.js";
 import { mountAccountModeToggle } from "@alysum/account/mode-toggle.js";
-import { fillWelcomeBar } from "/js/welcome-bar.js?v=2";
+import { fillWelcomeBar } from "/js/welcome-bar.js?v=3";
 import { applyModeChrome, modeToggleSide } from "/js/mode-chrome.js";
 import { supabase } from "@alysum/authentication/client.js";
 
