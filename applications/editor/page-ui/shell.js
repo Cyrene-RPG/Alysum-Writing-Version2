@@ -62,7 +62,10 @@ export function setWelcomeCopy(leadOrOpts, accent, subtitle) {
             titleEl.append(nameEl);
         }
     }
-    if (subEl && opts.subtitle != null) subEl.textContent = opts.subtitle;
+    if (subEl) {
+        subEl.textContent = "";
+        subEl.classList.add("is-hidden");
+    }
 }
 
 export function setWelcomeAvatar(imageUrl, name) {

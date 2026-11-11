@@ -252,11 +252,7 @@
 }
 
 .wd-welcome-sub {
-    margin: 5px 0 0;
-    color: var(--chrome-muted, rgba(255, 255, 255, 0.78));
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.01em;
+    display: none !important;
 }
 
 .wd-nav-wrap {
