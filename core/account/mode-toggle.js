@@ -1,6 +1,6 @@
 /**
  * Compact Reader ↔ Studio switch for Writer/Reader and All accounts.
- * Mounts into the welcome bar when the account supports mode toggle.
+ * Welcome-bar pill + a clear link in the workspace nav.
  */
 import {
     accountSupportsModeToggle,
@@ -49,19 +49,41 @@ function go(mode) {
     location.href = mode === "reader" ? READER_HOME_URL : "/studio";
 }
 
-export async function mountAccountModeToggle({
-    supabase,
-    userId = null,
-    accountType = null,
-    side = null,
-    host = null,
-} = {}) {
-    const type =
-        accountType != null
-            ? normalizeAccountType(accountType)
-            : await fetchAccountType(supabase, userId);
-    if (!accountSupportsModeToggle(type)) return null;
+function mountNavSwitch(active) {
+    const nav = document.querySelector(".wd-nav");
+    if (!nav) return null;
 
+    let link = document.getElementById("accountModeNavSwitch");
+    if (!link) {
+        link = document.createElement("a");
+        link.id = "accountModeNavSwitch";
+        link.className = "account-mode-nav-switch";
+        nav.insertBefore(link, nav.firstChild);
+    }
+
+    if (active === "studio") {
+        link.href = READER_HOME_URL;
+        link.textContent = "Reader";
+        link.title = "Switch to Reader";
+        link.setAttribute("aria-label", "Switch to Reader");
+        link.onclick = (event) => {
+            event.preventDefault();
+            go("reader");
+        };
+    } else {
+        link.href = "/studio";
+        link.textContent = "Studio";
+        link.title = "Switch to Studio";
+        link.setAttribute("aria-label", "Switch to Studio");
+        link.onclick = (event) => {
+            event.preventDefault();
+            go("studio");
+        };
+    }
+    return link;
+}
+
+function mountWelcomeToggle(active, host) {
     const bar = host || document.querySelector(".wd-welcome-inner");
     if (!bar) return null;
 
@@ -77,7 +99,6 @@ export async function mountAccountModeToggle({
         else bar.appendChild(el);
     }
 
-    const active = currentSide(side);
     el.innerHTML = `
         <button type="button" data-mode="reader" aria-pressed="${active === "reader" ? "true" : "false"}">Reader</button>
         <button type="button" data-mode="studio" aria-pressed="${active === "studio" ? "true" : "false"}">Studio</button>
@@ -87,8 +108,7 @@ export async function mountAccountModeToggle({
         btn.addEventListener("click", () => {
             const mode = btn.getAttribute("data-mode");
             if (!mode || mode === active) {
-                if (mode === "reader") location.href = READER_HOME_URL;
-                else location.href = "/studio";
+                location.href = mode === "reader" ? READER_HOME_URL : "/studio";
                 return;
             }
             go(mode);
@@ -96,6 +116,24 @@ export async function mountAccountModeToggle({
     });
 
     return el;
+}
+
+export async function mountAccountModeToggle({
+    supabase,
+    userId = null,
+    accountType = null,
+    side = null,
+    host = null,
+} = {}) {
+    const type =
+        accountType != null
+            ? normalizeAccountType(accountType)
+            : await fetchAccountType(supabase, userId);
+    if (!accountSupportsModeToggle(type)) return null;
+
+    const active = currentSide(side);
+    mountNavSwitch(active);
+    return mountWelcomeToggle(active, host);
 }
 
 /** Resolve type then mount — used by shells that already have a session. */

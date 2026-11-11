@@ -365,6 +365,13 @@
 .wd-nav > a.is-hidden,
 .wd-nav > button.is-hidden { display: none; }
 
+.account-mode-nav-switch {
+    border-color: color-mix(in srgb, var(--pink, #ec4899) 55%, transparent) !important;
+    background: color-mix(in srgb, var(--purple, #6d28d9) 28%, transparent) !important;
+    color: #fff !important;
+    font-weight: 800 !important;
+}
+
 .account-mode-toggle {
     margin-left: auto;
     flex: 0 0 auto;
