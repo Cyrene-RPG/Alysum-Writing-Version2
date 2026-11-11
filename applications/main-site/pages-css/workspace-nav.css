@@ -397,9 +397,27 @@
 }
 
 .wd-nav.wd-nav-icons > a.is-active .writer-glyph-shape,
-.wd-nav.wd-nav-icons > a[aria-current="page"] .writer-glyph-shape {
-    fill: currentColor;
+.wd-nav.wd-nav-icons > a[aria-current="page"] .writer-glyph-shape,
+.wd-nav.wd-nav-icons > a.is-active .writer-glyph-detail,
+.wd-nav.wd-nav-icons > a[aria-current="page"] .writer-glyph-detail {
     stroke: currentColor;
+}
+
+.wd-nav.wd-nav-icons > a.is-active .writer-glyph-shape[fill="currentColor"],
+.wd-nav.wd-nav-icons > a[aria-current="page"] .writer-glyph-shape[fill="currentColor"],
+.wd-nav.wd-nav-icons > a.is-active .writer-glyph-detail[fill="currentColor"],
+.wd-nav.wd-nav-icons > a[aria-current="page"] .writer-glyph-detail[fill="currentColor"] {
+    fill: currentColor;
+}
+
+.wd-nav.wd-nav-icons > a.is-active .wd-nav-icon svg,
+.wd-nav.wd-nav-icons > a[aria-current="page"] .wd-nav-icon svg {
+    transform: none;
+}
+
+.wd-nav.wd-nav-icons > a.is-active .writer-glyph-shape,
+.wd-nav.wd-nav-icons > a[aria-current="page"] .writer-glyph-shape {
+    stroke-width: 1.7;
 }
 
 .wd-nav > a:hover,

@@ -6,7 +6,7 @@ import { openRoadmap } from "@alysum/authentication/open-roadmap.js";
 import { initWelcomePfpMenu } from "/js/welcome-bar.js";
 import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/appearance-loadout-menu.js?v=8";
 import { applyModeChrome } from "/js/mode-chrome.js";
-import { paintWriterNav } from "/js/writer-chrome.js";
+import { paintWriterNav } from "/js/writer-chrome.js?v=writer-nav-15";
 
 function navHref(page) {
     return page;

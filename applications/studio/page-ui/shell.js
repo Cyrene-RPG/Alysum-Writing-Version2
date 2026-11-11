@@ -10,7 +10,7 @@ import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/ap
 import { resolveStudioSession } from "/core/desktop/studio-session.js";
 import { mountAccountModeToggleForSession } from "@alysum/account/mode-toggle.js";
 import { getUiMode } from "@alysum/account/mode.js";
-import { paintWriterNav } from "/js/writer-chrome.js";
+import { paintWriterNav } from "/js/writer-chrome.js?v=writer-nav-15";
 
 function closeWelcomePfpMenu() {
     const menu = document.getElementById("welcomePfpMenu");

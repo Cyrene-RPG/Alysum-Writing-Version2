@@ -1,7 +1,7 @@
 import {supabase} from '@alysum/authentication/client.js';
 import {requireStudioSession} from '@alysum/desktop/studio-session.js';
 import {loadWorkspaceProfile} from '@alysum/account/workspace-profile.js';
-import {initWorkspaceShell} from './shell.js?v=11';
+import {initWorkspaceShell} from './shell.js?v=12';
 import {createScreenplaysApi} from '/core/screenplays/client.js?v=2';
 import {mountScreenplayEditor} from './screenplay-editor.js?v=2';
 

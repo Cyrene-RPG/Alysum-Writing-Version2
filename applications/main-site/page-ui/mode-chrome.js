@@ -5,7 +5,7 @@
 import { getUiMode, isReaderPath, READER_ROUTES, setUiMode } from "@alysum/account/mode.js";
 import { wireLogoutButtons } from "@alysum/authentication/logout.js";
 import { paintReaderNav, readerAccountMenuHtml } from "/applications/reader/page-ui/chrome.js";
-import { paintWriterNav } from "/js/writer-chrome.js";
+import { paintWriterNav } from "/js/writer-chrome.js?v=writer-nav-15";
 
 export function isReaderUiMode() {
     return getUiMode() === "library" || isReaderPath();
@@ -31,7 +31,7 @@ function ensureReaderStyles() {
     const link = document.createElement("link");
     link.id = "reader-mode-chrome-styles";
     link.rel = "stylesheet";
-    link.href = "/applications/reader/reader-css/page.css?v=reader-nav-11";
+    link.href = "/applications/reader/reader-css/page.css?v=reader-nav-12";
     document.head.appendChild(link);
 }
 
