@@ -1,10 +1,12 @@
 import {
     ACCOUNT_READER,
+    accountSupportsModeToggle,
     accountUsesWriterHome,
     homeUrlForUserData,
     getUiMode,
     normalizeAccountType,
 } from "@alysum/account/mode.js";
+import { mountAccountModeToggle } from "@alysum/account/mode-toggle.js";
 
 function userProfileFromRow(row) {
     if (!row) return {};
@@ -90,4 +92,19 @@ export async function wireHomepageAuth(supabase) {
             : "Join Alysum free — your studio is waiting.";
     }
 
+    const toggleHost = document.getElementById("homeModeToggleHost");
+    if (toggleHost) {
+        if (user && accountSupportsModeToggle(profile.accountType)) {
+            toggleHost.hidden = false;
+            void mountAccountModeToggle({
+                supabase,
+                userId: user.id,
+                accountType: profile.accountType,
+                host: toggleHost,
+            });
+        } else {
+            toggleHost.hidden = true;
+            toggleHost.replaceChildren();
+        }
+    }
 }
