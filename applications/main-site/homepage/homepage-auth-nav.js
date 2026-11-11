@@ -101,6 +101,11 @@ export async function wireHomepageAuth(supabase) {
                 userId: user.id,
                 accountType: profile.accountType,
                 host: toggleHost,
+            }).then((el) => {
+                if (!el) {
+                    toggleHost.hidden = true;
+                    toggleHost.replaceChildren();
+                }
             });
         } else {
             toggleHost.hidden = true;

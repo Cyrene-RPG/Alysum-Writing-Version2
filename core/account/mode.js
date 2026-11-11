@@ -43,10 +43,14 @@ export function normalizeAccountType(raw) {
     return ACCOUNT_BOTH;
 }
 
-/** Writer / Reader and All can switch Studio ↔ Library. */
+/** True when the account has more than one path (shows the Switch dropdown). */
 export function accountSupportsModeToggle(accountType) {
     const t = normalizeAccountType(accountType);
-    return t === ACCOUNT_BOTH || t === ACCOUNT_ALL;
+    const paths =
+        Number(accountHasWriter(t)) +
+        Number(accountHasReader(t)) +
+        Number(accountHasArtist(t));
+    return paths >= 2;
 }
 
 /** Matches SQL public.account_has_writer */
