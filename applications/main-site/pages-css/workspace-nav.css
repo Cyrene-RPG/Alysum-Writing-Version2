@@ -913,19 +913,30 @@ button.fh-has-new-badge .fh-target-new,
 .fh-spotlight-dismiss:hover { filter: brightness(1.06); }
 
 @media (max-width: 900px) {
-    .wd-nav-wrap { display: flex; align-items: center; min-width: 0; touch-action: pan-x pan-y; }
-
-    /* The profile menu lives above this horizontally scrolling tab row. */
-    .wd-nav-wrap > .wd-nav {
-        flex: 1 1 auto;
-        width: 0;
+    .wd-nav-wrap {
+        display: block;
         min-width: 0;
         overflow-x: auto;
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior-x: contain;
-        touch-action: pan-x pan-y;
-        scrollbar-width: thin;
+        touch-action: pan-x;
+        scrollbar-width: none;
+    }
+    .wd-nav-wrap::-webkit-scrollbar { display: none; }
+
+    /* Keep tab labels roomy; scroll sideways instead of squeezing. */
+    .wd-nav-wrap > .wd-nav {
+        display: flex;
+        flex: 0 0 auto;
+        width: max-content;
+        min-width: 100%;
+        max-width: none;
+        overflow: visible;
+        justify-content: flex-start;
+        gap: 10px;
+        padding: 10px 16px;
+        box-sizing: border-box;
     }
 
     .wd-welcome-bar { min-height: 76px; }
@@ -933,16 +944,12 @@ button.fh-has-new-badge .fh-target-new,
     .wd-pfp { width: 48px; height: 48px; }
     .wd-welcome-sub { font-size: 12px; }
 
-    .wd-nav {
-        padding: 8px 12px;
-        gap: 8px;
-    }
-
     .wd-nav > a,
     .wd-nav > button {
-        font-size: 12px;
-        padding: 10px 14px;
-        min-height: 40px;
+        flex: 0 0 auto;
+        font-size: 13px;
+        padding: 10px 16px;
+        min-height: 42px;
     }
 }
 
