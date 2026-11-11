@@ -14,12 +14,12 @@ export function readerNavHtml(active) {
     ];
     const link = (item) => {
         const current = item.id === active ? ' aria-current="page"' : "";
-        return `<a href="${item.href}"${current}><span class="reader-bottom-nav-icon">${ICONS[item.icon]}</span><span class="reader-bottom-nav-label">${item.label}</span></a>`;
+        return `<a href="${item.href}"${current}><span class="reader-icon-nav-icon">${ICONS[item.icon]}</span><span class="reader-icon-nav-label">${item.label}</span></a>`;
     };
-    return `<nav class="reader-bottom-nav" aria-label="Reader">${items.map(link).join("")}</nav>`;
+    return `<nav class="reader-icon-nav" aria-label="Reader">${items.map(link).join("")}</nav>`;
 }
 
 export function paintReaderNav(active) {
-    const host = document.getElementById("reader-bottom");
+    const host = document.getElementById("reader-icons");
     if (host) host.innerHTML = readerNavHtml(active);
 }

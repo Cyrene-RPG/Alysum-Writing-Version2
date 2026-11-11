@@ -36,7 +36,7 @@
     <title>Library — Alysum Reader</title>
     <meta name="robots" content="noindex, nofollow">
 </head>
-<body>
+<body class="reader-shell">
 
 <a class="skip-link" href="#main">Skip to content</a>
     <header class="wd-welcome-bar ui-bar" aria-label="Welcome">
@@ -62,14 +62,7 @@
             </div>
         </div>
     </header>
-    <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
-        <div class="wd-nav">
-            <a href="/reader">Reader</a>
-            <a href="/library">Library</a>
-            <a href="/updates">What’s New</a>
-            <a href="/studio">Studio</a>
-        </div>
-    </nav>
+    <div id="reader-icons"></div>
 
 <main id="main" class="reader-page" data-reader-page="shelf">
     <p class="reader-eyebrow">Alysum Reader</p>
@@ -80,7 +73,14 @@
     <div id="reader-root" hidden></div>
 </main>
 
-<div id="reader-bottom"></div>
+<nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
+    <div class="wd-nav">
+        <a href="/reader">Reader</a>
+        <a href="/library">Library</a>
+        <a href="/updates">What’s New</a>
+        <a href="/studio">Studio</a>
+    </div>
+</nav>
 <script type="module" src="/applications/reader/page-ui/shell.js"></script>
 <script type="module" src="/applications/reader/page-ui/shelf.js"></script>
 </body></html>
