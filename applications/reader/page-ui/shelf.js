@@ -6,11 +6,7 @@ const statusEl = document.getElementById("reader-status");
 const signInEl = document.getElementById("reader-sign-in");
 const root = document.getElementById("reader-root");
 const tabs = document.getElementById("reader-tabs");
-const bottom = document.getElementById("reader-bottom");
-
-const nav = readerNavHtml("shelf");
-if (tabs) tabs.innerHTML = nav.tabs;
-if (bottom) bottom.innerHTML = nav.bottom;
+if (tabs) tabs.innerHTML = readerNavHtml("shelf");
 
 const TAB_ORDER = [
     { id: "reading", label: "Reading" },

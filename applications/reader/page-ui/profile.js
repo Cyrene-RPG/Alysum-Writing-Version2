@@ -6,11 +6,7 @@ const statusEl = document.getElementById("reader-status");
 const signInEl = document.getElementById("reader-sign-in");
 const root = document.getElementById("reader-root");
 const tabs = document.getElementById("reader-tabs");
-const bottom = document.getElementById("reader-bottom");
-
-const nav = readerNavHtml("profile");
-if (tabs) tabs.innerHTML = nav.tabs;
-if (bottom) bottom.innerHTML = nav.bottom;
+if (tabs) tabs.innerHTML = readerNavHtml("profile");
 
 function setStatus(text) {
     if (statusEl) statusEl.textContent = text || "";
