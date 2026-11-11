@@ -2,11 +2,12 @@
  * Keep shared workspace pages in Reader chrome when UI mode is library.
  * Settings / Overview / Inbox / Connections previously always showed Writer nav.
  */
-import { getUiMode, READER_HOME_URL } from "@alysum/account/mode.js";
-import { paintReaderNav } from "/applications/reader/page-ui/chrome.js";
+import { getUiMode, isReaderPath, READER_ROUTES, setUiMode } from "@alysum/account/mode.js";
+import { wireLogoutButtons } from "@alysum/authentication/logout.js";
+import { paintReaderNav, readerAccountMenuHtml } from "/applications/reader/page-ui/chrome.js";
 
 export function isReaderUiMode() {
-    return getUiMode() === "library";
+    return getUiMode() === "library" || isReaderPath();
 }
 
 export function modeToggleSide() {
@@ -33,15 +34,57 @@ function ensureReaderStyles() {
     document.head.appendChild(link);
 }
 
-function retargetHomeLinks(readerMode) {
-    const home = readerMode ? READER_HOME_URL : "/library";
-    document.querySelectorAll('.wd-pfp-dropdown a[data-close-pfp-menu]').forEach((anchor) => {
-        const label = (anchor.textContent || "").trim().toLowerCase();
-        if (label !== "home" && label !== "reader home") return;
-        anchor.setAttribute("href", home);
-        if (readerMode) anchor.textContent = "Reader home";
-        else if (label === "reader home") anchor.textContent = "Home";
+function retargetAccountMenu(readerMode) {
+    const panel = document.getElementById("welcomePfpDropdown");
+    if (!panel) return;
+    if (readerMode) {
+        panel.innerHTML = readerAccountMenuHtml();
+        return;
+    }
+    // Writer menu: restore writer destinations if we previously painted Reader links.
+    const home = panel.querySelector('a[data-close-pfp-menu]');
+    if (home && /reader home/i.test(home.textContent || "")) {
+        panel.innerHTML = `
+            <a role="menuitem" href="/library" data-close-pfp-menu>Home</a>
+            <a role="menuitem" href="/overview" data-close-pfp-menu>Profile</a>
+            <a role="menuitem" href="/settings" data-close-pfp-menu>Settings</a>
+            <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
+        `;
+    }
+}
+
+function retargetSharedLinks(readerMode) {
+    if (!readerMode) return;
+    const map = [
+        ["/overview", READER_ROUTES.profile],
+        ["overview.html", READER_ROUTES.profile],
+        ["/settings", READER_ROUTES.settings],
+        ["settings.html", READER_ROUTES.settings],
+        ["/inbox", READER_ROUTES.inbox],
+        ["/connections", READER_ROUTES.connections],
+        ["/updates", READER_ROUTES.updates],
+        ["/library", READER_ROUTES.discover],
+    ];
+    document.querySelectorAll("a[href]").forEach((anchor) => {
+        const href = anchor.getAttribute("href") || "";
+        for (const [from, to] of map) {
+            if (href === from || href.startsWith(from + "#") || href.startsWith(from + "?")) {
+                anchor.setAttribute("href", href.replace(from, to));
+                break;
+            }
+        }
     });
+    const bellInbox = document.querySelector("#notification-bell a[href='/inbox'], #notification-bell a[href^='/inbox#']");
+    if (bellInbox) {
+        const href = bellInbox.getAttribute("href") || READER_ROUTES.inbox;
+        bellInbox.setAttribute("href", href.replace("/inbox", READER_ROUTES.inbox));
+    }
+}
+
+export function retargetHomeLinks(readerMode = isReaderUiMode()) {
+    retargetAccountMenu(readerMode);
+    retargetSharedLinks(readerMode);
+    wireLogoutButtons(document);
 }
 
 /**
@@ -50,10 +93,15 @@ function retargetHomeLinks(readerMode) {
  * @returns {boolean} whether Reader chrome is active
  */
 export function applyModeChrome(options = {}) {
+    if (isReaderPath()) setUiMode("library");
+
     const writerNav =
         (options.writerNavId && document.getElementById(options.writerNavId)) ||
         document.querySelector(".wd-nav-wrap");
-    if (!writerNav) return isReaderUiMode();
+    if (!writerNav) {
+        retargetHomeLinks();
+        return isReaderUiMode();
+    }
 
     const readerMode = isReaderUiMode();
     const readerIcons = ensureReaderIcons(writerNav);

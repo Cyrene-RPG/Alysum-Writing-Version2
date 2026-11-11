@@ -71,8 +71,9 @@ export function initWelcomePfpMenu() {
         if (e.key === "Escape") closeWelcomePfpMenu();
     });
 
-    menu.querySelectorAll("[data-close-pfp-menu]").forEach((el) => {
-        el.addEventListener("click", () => closeWelcomePfpMenu());
+    // Delegate so Reader/Writer menu swaps keep working after innerHTML updates.
+    menu.addEventListener("click", (e) => {
+        if (e.target.closest("[data-close-pfp-menu]")) closeWelcomePfpMenu();
     });
 }
 

@@ -55,6 +55,13 @@ PAGES = {
     "/author": "applications/library/pages/author.html",
     "/inbox": "applications/notifications/pages/inbox.html",
     "/reader": "applications/reader/pages/home.html",
+    "/reader/discover": "applications/library/pages/library.html",
+    "/reader/shelf": "applications/library/pages/library.html",
+    "/reader/profile": "applications/main-site/pages/overview.html",
+    "/reader/settings": "applications/main-site/pages/settings.html",
+    "/reader/updates": "applications/updates/pages/updates.html",
+    "/reader/inbox": "applications/notifications/pages/inbox.html",
+    "/reader/connections": "applications/connections/pages/connections.html",
     "/updates": "applications/updates/pages/updates.html",
     "/write-update": "applications/updates/pages/write-update.html",
     "/studio": "applications/studio/pages/studio.html",
@@ -150,11 +157,7 @@ def public_to_file(url_path: str) -> Path:
     return ROOT / clean[1:]
 
 
-REDIRECTS = {
-    "/reader/profile": "/overview",
-    "/reader/discover": "/library?view=discover",
-    "/reader/shelf": "/library?view=mine",
-}
+REDIRECTS = {}
 
 
 class Handler(BaseHTTPRequestHandler):

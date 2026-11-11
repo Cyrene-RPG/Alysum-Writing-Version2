@@ -34,6 +34,22 @@ export const READER_HOME_URL = "/reader";
 /** Logged-in writer hub (books, stats, prompts). */
 export const WRITER_HOME_URL = "settings.html";
 
+/** Reader-dedicated URLs (writer counterparts stay on their own paths). */
+export const READER_ROUTES = {
+    home: "/reader",
+    discover: "/reader/discover",
+    updates: "/reader/updates",
+    profile: "/reader/profile",
+    settings: "/reader/settings",
+    inbox: "/reader/inbox",
+    connections: "/reader/connections",
+};
+
+export function isReaderPath(pathname = typeof location !== "undefined" ? location.pathname : "") {
+    const path = String(pathname || "");
+    return path === "/reader" || path.startsWith("/reader/");
+}
+
 export function isValidAccountType(raw) {
     return VALID_ACCOUNT_TYPES.has(raw);
 }

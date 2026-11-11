@@ -1,4 +1,5 @@
 /** Shared reader chrome helpers (no document ownership beyond paint). */
+import { READER_ROUTES } from "@alysum/account/mode.js";
 
 /* Clean SF-style glyphs: outline idle, solid when aria-current. */
 const ICONS = {
@@ -13,6 +14,7 @@ export function readerNavActiveFromLocation() {
     if (path === "/reader" || path === "/reader/") return "home";
     if (
         path.startsWith("/reader/discover") ||
+        path.startsWith("/reader/shelf") ||
         path === "/library" ||
         path === "/library/" ||
         view === "discover" ||
@@ -21,13 +23,17 @@ export function readerNavActiveFromLocation() {
     ) {
         return "discover";
     }
-    if (path.startsWith("/updates")) return "updates";
-    // Shared account pages: keep Reader chrome, but don't fake an active tab.
+    if (path.startsWith("/updates") || path.startsWith("/reader/updates")) return "updates";
+    // Account pages keep Reader toolbar without pretending a tab is current.
     if (
         path.startsWith("/settings") ||
         path.startsWith("/overview") ||
         path.startsWith("/connections") ||
-        path.startsWith("/inbox")
+        path.startsWith("/inbox") ||
+        path.startsWith("/reader/settings") ||
+        path.startsWith("/reader/profile") ||
+        path.startsWith("/reader/connections") ||
+        path.startsWith("/reader/inbox")
     ) {
         return "";
     }
@@ -36,9 +42,9 @@ export function readerNavActiveFromLocation() {
 
 export function readerNavHtml(active) {
     const items = [
-        { id: "home", href: "/reader", label: "Reader", icon: "reader" },
-        { id: "discover", href: "/library?view=discover", label: "Discover", icon: "discover" },
-        { id: "updates", href: "/updates", label: "What’s New", icon: "updates" },
+        { id: "home", href: READER_ROUTES.home, label: "Reader", icon: "reader" },
+        { id: "discover", href: READER_ROUTES.discover, label: "Discover", icon: "discover" },
+        { id: "updates", href: READER_ROUTES.updates, label: "What’s New", icon: "updates" },
     ];
     const link = (item) => {
         const current = item.id === active ? ' aria-current="page"' : "";
@@ -51,4 +57,21 @@ export function paintReaderNav(active) {
     const page = active || readerNavActiveFromLocation();
     const host = document.getElementById("reader-icons");
     if (host) host.innerHTML = readerNavHtml(page);
+}
+
+/** Avatar menu for Reader shell pages. */
+export function readerAccountMenuHtml() {
+    return `
+        <a role="menuitem" href="${READER_ROUTES.home}" data-close-pfp-menu>Reader home</a>
+        <a role="menuitem" href="${READER_ROUTES.profile}" data-close-pfp-menu>Profile</a>
+        <a role="menuitem" href="${READER_ROUTES.settings}" data-close-pfp-menu>Settings</a>
+        <a role="menuitem" href="${READER_ROUTES.inbox}" data-close-pfp-menu>Inbox</a>
+        <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
+    `;
+}
+
+export function paintReaderAccountMenu() {
+    const panel = document.getElementById("welcomePfpDropdown");
+    if (!panel) return;
+    panel.innerHTML = readerAccountMenuHtml();
 }

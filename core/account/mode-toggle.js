@@ -9,6 +9,8 @@ import {
     getUiMode,
     normalizeAccountType,
     READER_HOME_URL,
+    READER_ROUTES,
+    isReaderPath,
     setUiMode,
 } from "./mode.js";
 
@@ -33,10 +35,7 @@ function currentSide(explicit) {
     }
     if (typeof location !== "undefined") {
         const path = location.pathname || "";
-        // Pure Reader routes always count as Reader.
-        if (path === "/reader" || path.startsWith("/reader/")) {
-            return "reader";
-        }
+        if (isReaderPath(path)) return "reader";
         // Shared catalog/read surfaces follow the stored UI mode so Writer
         // browsing /library does not flip the Switch label by itself.
         if (
@@ -63,7 +62,7 @@ function destinationsFor(accountType) {
         items.push({
             id: "reader",
             label: "Reader",
-            href: READER_HOME_URL,
+            href: READER_ROUTES.home || READER_HOME_URL,
             mode: "library",
         });
     }
