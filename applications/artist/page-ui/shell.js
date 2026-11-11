@@ -84,7 +84,7 @@ async function refreshProfile() {
     if (generation !== profileGeneration) return;
     const preview = peekWorkspaceProfile(session);
     setWelcomeAvatar(preview.imageUrl, preview.name);
-    void mountAccountModeToggleForSession(supabase, session, { side: modeToggleSide() });
+    void mountAccountModeToggleForSession(supabase, session, { side: "artist" });
     if (session.mode !== "cloud") return;
     void loadWorkspaceProfile(supabase, session).then((profile) => {
         if (generation === profileGeneration) setWelcomeAvatar(profile.imageUrl, profile.name);

@@ -11,6 +11,9 @@ export function isReaderUiMode() {
 }
 
 export function modeToggleSide() {
+    const path = typeof location !== "undefined" ? location.pathname || "" : "";
+    if (path === "/artist" || path.startsWith("/artist-") || path.startsWith("/artist/")) return "artist";
+    if (getUiMode() === "artist") return "artist";
     return isReaderUiMode() ? "reader" : "studio";
 }
 

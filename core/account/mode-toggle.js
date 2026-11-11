@@ -29,12 +29,17 @@ async function fetchAccountType(supabase, userId) {
     }
 }
 
+function isArtistPath(path) {
+    return path === "/artist" || path.startsWith("/artist-") || path.startsWith("/artist/");
+}
+
 function currentSide(explicit) {
+    const path = typeof location !== "undefined" ? location.pathname || "" : "";
+    if (isArtistPath(path)) return "artist";
     if (explicit === "reader" || explicit === "studio" || explicit === "artist") {
         return explicit;
     }
     if (typeof location !== "undefined") {
-        const path = location.pathname || "";
         if (isReaderPath(path)) return "reader";
         // Shared catalog/read surfaces follow the stored UI mode so Writer
         // browsing /library does not flip the Switch label by itself.
@@ -49,11 +54,17 @@ function currentSide(explicit) {
             path.startsWith("/inbox") ||
             path.startsWith("/updates")
         ) {
-            return getUiMode() === "library" ? "reader" : "studio";
+            const mode = getUiMode();
+            if (mode === "library") return "reader";
+            if (mode === "artist") return "artist";
+            return "studio";
         }
         if (path.startsWith("/artist")) return "artist";
     }
-    return getUiMode() === "library" ? "reader" : "studio";
+    const mode = getUiMode();
+    if (mode === "library") return "reader";
+    if (mode === "artist") return "artist";
+    return "studio";
 }
 
 function destinationsFor(accountType) {
@@ -79,7 +90,7 @@ function destinationsFor(accountType) {
             id: "artist",
             label: "Artist",
             href: "/artist",
-            mode: null,
+            mode: "artist",
         });
     }
     return items;
@@ -151,7 +162,9 @@ function paintSwitch(root, accountType, side) {
             const id = btn.getAttribute("data-mode-id");
             const item = items.find((entry) => entry.id === id);
             closeMenu(root);
-            if (!item || item.id === current.id) return;
+            if (!item) return;
+            const nextPath = String(item.href || "").split("?")[0].split("#")[0];
+            if (item.id === current.id && location.pathname === nextPath) return;
             go(item);
         });
     });

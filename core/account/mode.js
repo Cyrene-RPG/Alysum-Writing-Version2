@@ -112,14 +112,14 @@ export function accountUsesWriterHome(accountType) {
 export function getUiMode() {
     try {
         const m = sessionStorage.getItem(UI_MODE_STORAGE_KEY);
-        if (m === "library" || m === "studio") return m;
+        if (m === "library" || m === "studio" || m === "artist") return m;
     } catch (e) {}
     return "studio";
 }
 
 export function setUiMode(mode) {
     try {
-        if (mode === "library" || mode === "studio") {
+        if (mode === "library" || mode === "studio" || mode === "artist") {
             sessionStorage.setItem(UI_MODE_STORAGE_KEY, mode);
         }
     } catch (e) {}
