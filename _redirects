@@ -92,8 +92,8 @@
 /connections  /applications/connections/pages/connections  200
 /inbox  /applications/notifications/pages/inbox  200
 /reader  /applications/reader/pages/home  200
-/reader/discover  /applications/reader/pages/discover  200
-/reader/shelf  /applications/reader/pages/shelf  200
+/reader/discover  /library?view=discover  301
+/reader/shelf  /library?view=mine  301
 /reader/profile  /overview  301
 
 # Folders (wildcards go last so exact lines match first)

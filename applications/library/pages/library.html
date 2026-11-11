@@ -33,6 +33,7 @@
     <link rel="stylesheet" href="/css/site-responsive.css?v=1" />
     <link rel="stylesheet" href="/css/workspace-nav.css?v=30" />
     <link rel="stylesheet" href="/applications/library/library-css/hub.css?v=1" />
+    <link rel="stylesheet" href="/applications/reader/reader-css/page.css?v=reader-library-7" />
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 </head>
 <body>
@@ -49,6 +50,8 @@
                     <a role="menuitem" href="/library" data-close-pfp-menu>Home</a>
                     <a role="menuitem" href="/overview" data-close-pfp-menu>Profile</a>
                     <a role="menuitem" href="/settings" data-close-pfp-menu>Settings</a>
+                    <a role="menuitem" href="/reader" data-close-pfp-menu>Reader</a>
+                    <a role="menuitem" href="/studio" data-close-pfp-menu>Studio</a>
                     <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
                 </div>
             </div>
@@ -58,7 +61,7 @@
             </div>
         </div>
     </header>
-    <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
+    <nav class="wd-nav-wrap ui-bar" id="writerLibraryNav" aria-label="Workspace">
         <div class="wd-nav">
             <a href="/studio">Studio</a>
             <a href="/word-wars-lobby">Word Wars</a>
@@ -66,8 +69,9 @@
             <a href="/updates">What’s New</a>
         </div>
     </nav>
+    <div id="reader-icons" class="reader-nav-slot" hidden></div>
     <main id="hubMain" class="hub-page"><p role="status">Opening the Library…</p></main>
     <dialog id="hubDialog" class="hub-dialog" aria-labelledby="hubDialogTitle"><div class="hub-dialog-frame"><header><h2 id="hubDialogTitle"></h2><button type="button" id="hubDialogClose" aria-label="Close dialog">×</button></header><div id="hubDialogBody"></div></div></dialog>
     <script src="/js/pwa-register.js?v=5" defer></script>
-    <script type="module" src="/applications/library/page-ui/library.js?v=1"></script>
+    <script type="module" src="/applications/library/page-ui/library.js?v=2"></script>
 </body></html>

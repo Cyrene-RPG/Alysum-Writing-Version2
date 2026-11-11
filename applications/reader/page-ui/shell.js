@@ -8,8 +8,10 @@ import { wireLogoutButtons } from "@alysum/authentication/logout.js";
 import { openRoadmap } from "@alysum/authentication/open-roadmap.js";
 import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/appearance-loadout-menu.js?v=8";
 import { mountAccountModeToggleForSession } from "@alysum/account/mode-toggle.js";
+import { setUiMode } from "@alysum/account/mode.js";
 import { paintReaderNav } from "./chrome.js";
 
+setUiMode("library");
 paintReaderNav();
 
 function closeWelcomePfpMenu() {

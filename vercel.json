@@ -14,6 +14,16 @@
       "source": "/reader/profile",
       "destination": "/overview",
       "permanent": true
+    },
+    {
+      "source": "/reader/discover",
+      "destination": "/library?view=discover",
+      "permanent": true
+    },
+    {
+      "source": "/reader/shelf",
+      "destination": "/library?view=mine",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -96,14 +106,6 @@
     {
       "source": "/reader",
       "destination": "/applications/reader/pages/home.html"
-    },
-    {
-      "source": "/reader/discover",
-      "destination": "/applications/reader/pages/discover.html"
-    },
-    {
-      "source": "/reader/shelf",
-      "destination": "/applications/reader/pages/shelf.html"
     },
     {
       "source": "/updates",

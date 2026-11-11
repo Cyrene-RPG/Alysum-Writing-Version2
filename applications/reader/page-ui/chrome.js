@@ -7,10 +7,30 @@ const ICONS = {
     updates: `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18a7 7 0 0 1 14 0"/><path d="M12 3v2"/><path d="M12 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M9.5 18v1.5a2.5 2.5 0 0 0 5 0V18"/></svg>`,
 };
 
+export function readerNavActiveFromLocation() {
+    const path = location.pathname || "";
+    const view = new URLSearchParams(location.search).get("view") || "";
+    if (path === "/reader" || path === "/reader/") return "home";
+    if (path.startsWith("/reader/shelf") || (path === "/library" && view === "mine")) {
+        return "shelf";
+    }
+    if (
+        path.startsWith("/reader/discover") ||
+        path === "/library" ||
+        path === "/library/" ||
+        view === "discover" ||
+        view === "browse"
+    ) {
+        return "discover";
+    }
+    if (path.startsWith("/updates")) return "updates";
+    return document.querySelector("[data-reader-page]")?.getAttribute("data-reader-page") || "home";
+}
+
 export function readerNavHtml(active) {
     const items = [
-        { id: "shelf", href: "/reader/shelf", label: "My Library", icon: "library" },
-        { id: "discover", href: "/reader/discover", label: "Discover", icon: "discover" },
+        { id: "shelf", href: "/library?view=mine", label: "My Library", icon: "library" },
+        { id: "discover", href: "/library?view=discover", label: "Discover", icon: "discover" },
         { id: "home", href: "/reader", label: "Reader", icon: "reader" },
         { id: "updates", href: "/updates", label: "What’s New", icon: "updates" },
     ];
@@ -22,10 +42,7 @@ export function readerNavHtml(active) {
 }
 
 export function paintReaderNav(active) {
-    const page =
-        active ||
-        document.querySelector("[data-reader-page]")?.getAttribute("data-reader-page") ||
-        "home";
+    const page = active || readerNavActiveFromLocation();
     const host = document.getElementById("reader-icons");
     if (host) host.innerHTML = readerNavHtml(page);
 }

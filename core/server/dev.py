@@ -55,8 +55,6 @@ PAGES = {
     "/author": "applications/library/pages/author.html",
     "/inbox": "applications/notifications/pages/inbox.html",
     "/reader": "applications/reader/pages/home.html",
-    "/reader/discover": "applications/reader/pages/discover.html",
-    "/reader/shelf": "applications/reader/pages/shelf.html",
     "/updates": "applications/updates/pages/updates.html",
     "/write-update": "applications/updates/pages/write-update.html",
     "/studio": "applications/studio/pages/studio.html",
@@ -154,6 +152,8 @@ def public_to_file(url_path: str) -> Path:
 
 REDIRECTS = {
     "/reader/profile": "/overview",
+    "/reader/discover": "/library?view=discover",
+    "/reader/shelf": "/library?view=mine",
 }
 
 
