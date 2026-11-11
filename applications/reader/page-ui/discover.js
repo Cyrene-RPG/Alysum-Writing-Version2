@@ -1,5 +1,5 @@
 import { filterHubBooks } from "@alysum/library/hub.js";
-import { openReaderData, bookHref, escapeHtml, bookCardHtml } from "./data.js";
+import { openReaderData, bookHref, escapeHtml, bookCardHtml, bookGridHtml } from "./data.js";
 import { paintReaderNav } from "./chrome.js";
 
 const statusEl = document.getElementById("reader-status");
@@ -52,14 +52,15 @@ function paint() {
 
     html += `<h2 class="reader-section-title">Fresh from the catalog</h2>`;
     if (fresh.length) {
-        html += `<div class="reader-book-grid">`;
-        for (const book of fresh) {
-            const when = book.lastReleaseAt || book.publishedAt;
-            const label = when ? new Date(when).toLocaleDateString() : "";
-            const meta = [book.author, label].filter(Boolean).join(" · ");
-            html += bookCardHtml(book, { href: bookHref(book.id), meta });
-        }
-        html += `</div>`;
+        const cards = fresh
+            .map((book, index) => {
+                const when = book.lastReleaseAt || book.publishedAt;
+                const label = when ? new Date(when).toLocaleDateString() : "";
+                const meta = [book.author, label].filter(Boolean).join(" · ");
+                return bookCardHtml(book, { href: bookHref(book.id), meta, index });
+            })
+            .join("");
+        html += bookGridHtml(cards);
     } else {
         html += `<div class="reader-empty">No matching stories yet. Try another search.</div>`;
     }

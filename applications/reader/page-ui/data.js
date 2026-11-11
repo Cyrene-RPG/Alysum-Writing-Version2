@@ -75,14 +75,22 @@ export function coverStyle(book) {
     return url ? ` style="background-image:url('${escapeHtml(url)}')"` : "";
 }
 
-/** Studio-style cover tile used across Reader shelves and Discover. */
-export function bookCardHtml(book, { href, meta = "" } = {}) {
+/** Same markup as Studio’s writer library shelf cards. */
+export function bookCardHtml(book, { href, meta = "", index = 0 } = {}) {
     const url = coverUrl(book);
-    const style = url ? ` style="background-image:url('${escapeHtml(url)}')"` : "";
+    const cover = url
+        ? `<img class="studio-book-art" src="${escapeHtml(url)}" alt="" decoding="async" />`
+        : "";
     const title = escapeHtml(book?.title || "Untitled");
     const line = escapeHtml(meta || book?.author || "");
-    return `<a class="reader-book${url ? " has-cover" : ""}" href="${href || bookHref(book?.id)}"${style}>
-        <strong class="reader-book-title">${title}</strong>
-        <span class="reader-book-meta">${line}</span>
+    return `<a class="studio-book${url ? " has-cover" : ""} studio-book-${index % 5}" href="${href || bookHref(book?.id)}">
+        ${cover}
+        <h2 class="studio-book-title">${title}</h2>
+        <p class="studio-book-meta">${line}</p>
     </a>`;
+}
+
+/** Same shelf shell Studio uses for the writer library. */
+export function bookGridHtml(cardsHtml) {
+    return `<div class="reader-shell-shelf"><div class="studio-shelf-wrap"><div class="studio-list">${cardsHtml}</div></div></div>`;
 }

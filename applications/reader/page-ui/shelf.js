@@ -1,5 +1,13 @@
 import { HUB_SHELVES } from "@alysum/library/hub.js";
-import { openReaderData, bookMap, bookHref, readHref, escapeHtml, bookCardHtml } from "./data.js";
+import {
+    openReaderData,
+    bookMap,
+    bookHref,
+    readHref,
+    escapeHtml,
+    bookCardHtml,
+    bookGridHtml,
+} from "./data.js";
 import { paintReaderNav } from "./chrome.js";
 
 const statusEl = document.getElementById("reader-status");
@@ -55,20 +63,21 @@ function paint() {
     if (!books.length) {
         html += `<div class="reader-empty">${escapeHtml(HUB_SHELVES[active] || "This shelf")} is empty for now. Find something in Discover, then it shows up here.</div>`;
     } else {
-        html += `<div class="reader-book-grid">`;
-        for (const book of books) {
-            const pos = state?.read("read-position")?.[book.id];
-            const href =
-                active === "reading" && pos?.chapterId
-                    ? readHref(book.id, pos.chapterId)
-                    : bookHref(book.id);
-            const meta =
-                active === "reading" && pos
-                    ? `${Math.round(Number(pos.progress) || 0)}% · ${book.author || ""}`
-                    : book.author || "";
-            html += bookCardHtml(book, { href, meta });
-        }
-        html += `</div>`;
+        const cards = books
+            .map((book, index) => {
+                const pos = state?.read("read-position")?.[book.id];
+                const href =
+                    active === "reading" && pos?.chapterId
+                        ? readHref(book.id, pos.chapterId)
+                        : bookHref(book.id);
+                const meta =
+                    active === "reading" && pos
+                        ? `${Math.round(Number(pos.progress) || 0)}% · ${book.author || ""}`
+                        : book.author || "";
+                return bookCardHtml(book, { href, meta, index });
+            })
+            .join("");
+        html += bookGridHtml(cards);
     }
 
     root.innerHTML = html;

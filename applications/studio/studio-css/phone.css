@@ -76,7 +76,8 @@
         padding-right: 12px;
     }
 
-    #studioShell .studio-shelf-wrap {
+    #studioShell .studio-shelf-wrap,
+    .reader-shell-shelf .studio-shelf-wrap {
         min-width: 0;
         max-width: 100%;
         margin-left: 0;
@@ -85,7 +86,8 @@
         padding-right: 12px;
     }
 
-    #studioShell .studio-list {
+    #studioShell .studio-list,
+    .reader-shell-shelf .studio-list {
         display: grid !important;
         grid-auto-flow: row !important;
         grid-template-rows: none !important;
@@ -103,12 +105,14 @@
         box-shadow: none !important;
     }
 
-    #studioShell.layout-stack .studio-list {
+    #studioShell.layout-stack .studio-list,
+    .reader-shell-shelf.layout-stack .studio-list {
         grid-template-columns: minmax(0, 1fr) !important;
     }
 
     #studioShell .studio-book,
-    #studioShell .studio-new-card {
+    #studioShell .studio-new-card,
+    .reader-shell-shelf .studio-book {
         width: 100% !important;
         max-width: 100% !important;
         min-width: 0 !important;
@@ -117,7 +121,8 @@
         scroll-snap-align: none !important;
     }
 
-    #studioShell .studio-book-title {
+    #studioShell .studio-book-title,
+    .reader-shell-shelf .studio-book-title {
         overflow-wrap: anywhere;
     }
 

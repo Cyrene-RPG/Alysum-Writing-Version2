@@ -8,6 +8,7 @@ import {
     escapeHtml,
     coverStyle,
     bookCardHtml,
+    bookGridHtml,
 } from "./data.js";
 import { paintReaderNav } from "./chrome.js";
 
@@ -62,11 +63,11 @@ async function boot() {
 
         html += `<h2 class="reader-section-title">Tonight</h2>`;
         if (tonight.length) {
-            html += `<div class="reader-book-grid">`;
-            for (const book of tonight.slice(0, 6)) {
-                html += bookCardHtml(book, { href: bookHref(book.id) });
-            }
-            html += `</div>`;
+            const cards = tonight
+                .slice(0, 6)
+                .map((book, index) => bookCardHtml(book, { href: bookHref(book.id), index }))
+                .join("");
+            html += bookGridHtml(cards);
         } else {
             html += `<div class="reader-empty">Fresh picks will show here once the catalog loads stories for you.</div>`;
         }
