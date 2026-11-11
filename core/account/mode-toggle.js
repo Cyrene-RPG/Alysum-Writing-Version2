@@ -33,15 +33,24 @@ function currentSide(explicit) {
     }
     if (typeof location !== "undefined") {
         const path = location.pathname || "";
+        // Pure Reader routes always count as Reader.
+        if (path === "/reader" || path.startsWith("/reader/")) {
+            return "reader";
+        }
+        // Shared catalog/read surfaces follow the stored UI mode so Writer
+        // browsing /library does not flip the Switch label by itself.
         if (
-            path === "/reader" ||
-            path.startsWith("/reader/") ||
             path === "/library" ||
             path === "/book" ||
             path === "/read" ||
-            path === "/author"
+            path === "/author" ||
+            path.startsWith("/settings") ||
+            path.startsWith("/overview") ||
+            path.startsWith("/connections") ||
+            path.startsWith("/inbox") ||
+            path.startsWith("/updates")
         ) {
-            return "reader";
+            return getUiMode() === "library" ? "reader" : "studio";
         }
         if (path.startsWith("/artist")) return "artist";
     }

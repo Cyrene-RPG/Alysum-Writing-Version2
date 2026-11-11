@@ -5,6 +5,7 @@ import { wireLogoutButtons } from "@alysum/authentication/logout.js";
 import { openRoadmap } from "@alysum/authentication/open-roadmap.js";
 import { initWelcomePfpMenu } from "/js/welcome-bar.js";
 import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/appearance-loadout-menu.js?v=8";
+import { applyModeChrome } from "/js/mode-chrome.js";
 
 function navHref(page) {
     return page;
@@ -87,6 +88,7 @@ export function initWorkspaceNav() {
     initWelcomePfpMenu();
     initAppearanceLoadoutMenu({ openRoadmap });
     mountNotificationBell({ service: createNotificationService(notificationSupabase) });
+    applyModeChrome({ writerNavId: navWrap.id || undefined });
     return navWrap;
 }
 

@@ -3,24 +3,14 @@ import {openReadingState} from '/core/library/reading-state.js';
 import {createLibraryHub} from '/core/library/hub.js';
 import {resolveStudioSession} from '/core/desktop/studio-session.js';
 import {loadWorkspaceProfile,peekWorkspaceProfile} from '/core/account/workspace-profile.js';
-import {getUiMode} from '@alysum/account/mode.js';
-import {paintReaderNav} from '/applications/reader/page-ui/chrome.js';
 import {initWorkspaceShell} from '/js/studio/shell.js?v=9';
+import {applyModeChrome} from '/js/mode-chrome.js';
 import {mountLibraryHub} from './hub.js';
 
 const root=document.getElementById('hubMain');let controller=null;
 
 function paintReaderChrome(){
-  const writerNav=document.getElementById('writerLibraryNav');
-  const readerIcons=document.getElementById('reader-icons');
-  if(!writerNav||!readerIcons)return;
-  const readerMode=getUiMode()==='library';
-  writerNav.hidden=readerMode;
-  readerIcons.hidden=!readerMode;
-  if(readerMode){
-    document.body.classList.add('reader-shell');
-    paintReaderNav();
-  }
+  applyModeChrome({writerNavId:'writerLibraryNav'});
 }
 
 async function boot(){

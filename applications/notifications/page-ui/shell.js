@@ -10,6 +10,8 @@ import { peekWorkspaceProfile, loadWorkspaceProfile } from "/core/account/worksp
 import { wireLogoutButtons } from "@alysum/authentication/logout.js";
 import { openRoadmap } from "@alysum/authentication/open-roadmap.js";
 import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/appearance-loadout-menu.js?v=8";
+import { applyModeChrome, modeToggleSide } from "/js/mode-chrome.js";
+import { mountAccountModeToggleForSession } from "@alysum/account/mode-toggle.js";
 
 function closeWelcomePfpMenu() {
     const menu = document.getElementById("welcomePfpMenu");
@@ -81,10 +83,12 @@ mountNotificationBell({ service: createNotificationService(notificationSupabase)
 
 async function refreshProfile() {
     const generation = ++profileGeneration;
+    applyModeChrome({ writerNavId: "writerInboxNav" });
     const session = await resolveStudioSession(supabase);
     if (generation !== profileGeneration) return;
     const preview = peekWorkspaceProfile(session);
     setWelcomeAvatar(preview.imageUrl, preview.name);
+    void mountAccountModeToggleForSession(supabase, session, { side: modeToggleSide() });
     if (session.mode !== "cloud") return;
     void loadWorkspaceProfile(supabase, session).then(profile => {
         if (generation === profileGeneration) setWelcomeAvatar(profile.imageUrl, profile.name);

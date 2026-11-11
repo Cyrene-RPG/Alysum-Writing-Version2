@@ -7,6 +7,8 @@ import { getProfileRow } from "@alysum/synchronization-engine/local-adapter.js";
 import { mergeUserRow, aboutMeText, supportLinksFromSources } from "/js/settings/helpers.js";
 import { supportLinksList } from "@alysum/library/author-profile.js";
 import { fillProfileStats } from "/js/statistics-ui/profile-stats.js?v=1";
+import { applyModeChrome, modeToggleSide } from "/js/mode-chrome.js";
+import { mountAccountModeToggleForSession } from "@alysum/account/mode-toggle.js";
 
 function setAvatar(url, label) {
     const wrap = document.getElementById("ovAvatarWrap");
@@ -79,6 +81,7 @@ function fillOverviewLinks(data, user) {
 async function startOverview() {
     const loading = document.getElementById("loadingPanel");
     const shell = document.getElementById("settingsShell");
+    applyModeChrome({ writerNavId: "writerOverviewNav" });
     let session;
     try {
         session = await resolveStudioSession(supabase);
@@ -90,6 +93,9 @@ async function startOverview() {
         goToLogin("overview.html");
         return;
     }
+    void mountAccountModeToggleForSession(supabase, session, {
+        side: modeToggleSide(),
+    });
     if (session.mode === "local") {
         const profile = getProfileRow();
         fillOverview(

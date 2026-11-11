@@ -21,6 +21,7 @@ import { fillWelcomeBar } from "/js/welcome-bar.js?v=2";
 import { AUTHOR_BIO_MAX_LENGTH } from "@alysum/library/author-profile.js";
 import { normalizeAccountType, homeUrlForUserData } from "@alysum/account/mode.js";
 import { mountAccountModeToggle } from "@alysum/account/mode-toggle.js";
+import { applyModeChrome, modeToggleSide } from "/js/mode-chrome.js";
 
 function showLoadError(message) {
     if (!els.loadingPanel) return;
@@ -88,10 +89,11 @@ function fillSettingsFromRow(user, row) {
     state.settingsHomeUrl = homeUrlForUserData({ ...data, accountType: acct });
     const typeSelect = document.getElementById("settingsAccountType");
     if (typeSelect) typeSelect.value = acct;
+    applyModeChrome({ writerNavId: "writerSettingsNav" });
     void mountAccountModeToggle({
         supabase,
         accountType: acct,
-        side: "studio",
+        side: modeToggleSide(),
         userId: state.settingsUserId,
     });
     return data;

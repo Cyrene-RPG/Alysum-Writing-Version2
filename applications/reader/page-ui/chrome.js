@@ -22,6 +22,15 @@ export function readerNavActiveFromLocation() {
         return "discover";
     }
     if (path.startsWith("/updates")) return "updates";
+    // Shared account pages: keep Reader chrome, but don't fake an active tab.
+    if (
+        path.startsWith("/settings") ||
+        path.startsWith("/overview") ||
+        path.startsWith("/connections") ||
+        path.startsWith("/inbox")
+    ) {
+        return "";
+    }
     return document.querySelector("[data-reader-page]")?.getAttribute("data-reader-page") || "home";
 }
 
