@@ -197,6 +197,10 @@
       "destination": "/applications/studio/page-ui/:path*"
     },
     {
+      "source": "/js/artist/:path*",
+      "destination": "/applications/artist/page-ui/:path*"
+    },
+    {
       "source": "/js/editor/:path*",
       "destination": "/applications/editor/page-ui/:path*"
     },
@@ -237,6 +241,10 @@
       "destination": "/applications/studio/studio-css/:path*"
     },
     {
+      "source": "/css/artist/:path*",
+      "destination": "/applications/artist/artist-css/:path*"
+    },
+    {
       "source": "/css/editor/:path*",
       "destination": "/applications/editor/editor-css/:path*"
     },
@@ -263,6 +271,10 @@
     {
       "source": "/studio",
       "destination": "/applications/studio/pages/studio.html"
+    },
+    {
+      "source": "/artist",
+      "destination": "/applications/artist/pages/hub.html"
     },
     {
       "source": "/editor",

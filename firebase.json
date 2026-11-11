@@ -178,6 +178,22 @@
         "destination": "/applications/main-site/pages/statistics-spec.html"
       },
       {
+        "source": "/artist",
+        "destination": "/applications/artist/pages/hub.html"
+      },
+      {
+        "source": "/js/artist/bootstrap.js",
+        "destination": "/applications/artist/page-ui/bootstrap.js"
+      },
+      {
+        "source": "/js/artist/shell.js",
+        "destination": "/applications/artist/page-ui/shell.js"
+      },
+      {
+        "source": "/css/artist/page.css",
+        "destination": "/applications/artist/artist-css/page.css"
+      },
+      {
         "source": "/studio",
         "destination": "/applications/studio/pages/studio.html"
       },

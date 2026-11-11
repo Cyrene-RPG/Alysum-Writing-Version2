@@ -84,6 +84,7 @@ PAGES = {
     "/terms-of-service": "applications/main-site/pages/terms-of-service.html",
     "/statistics-spec": "applications/main-site/pages/statistics-spec.html",
     "/roadmap": "applications/main-site/pages/roadmap-handoff.html",
+    "/artist": "applications/artist/pages/hub.html",
 }
 
 
@@ -99,6 +100,8 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/main-site/settings" / clean[len("/js/settings/") :]
     if clean.startswith("/js/studio/"):
         return ROOT / "applications/studio/page-ui" / clean[len("/js/studio/") :]
+    if clean.startswith("/js/artist/"):
+        return ROOT / "applications/artist/page-ui" / clean[len("/js/artist/") :]
     if clean.startswith("/js/editor/"):
         return ROOT / "applications/editor/page-ui" / clean[len("/js/editor/") :]
     if clean.startswith("/js/word-wars/"):
@@ -124,6 +127,8 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/main-site/settings/settings-css" / clean[len("/css/settings/") :]
     if clean.startswith("/css/studio/"):
         return ROOT / "applications/studio/studio-css" / clean[len("/css/studio/") :]
+    if clean.startswith("/css/artist/"):
+        return ROOT / "applications/artist/artist-css" / clean[len("/css/artist/") :]
     if clean.startswith("/css/editor/"):
         return ROOT / "applications/editor/editor-css" / clean[len("/css/editor/") :]
     if clean.startswith("/css/word-wars/"):

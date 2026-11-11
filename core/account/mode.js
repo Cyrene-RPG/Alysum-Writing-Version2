@@ -34,6 +34,9 @@ export const READER_HOME_URL = "/reader";
 /** Logged-in writer hub (books, stats, prompts). */
 export const WRITER_HOME_URL = "settings.html";
 
+/** Logged-in artist hub (characters roster). */
+export const ARTIST_HOME_URL = "/artist";
+
 /** Reader-dedicated URLs (writer counterparts stay on their own paths). */
 export const READER_ROUTES = {
     home: "/reader",
@@ -126,6 +129,7 @@ export function setUiMode(mode) {
 export function homeUrlForUserData(data) {
     const t = normalizeAccountType(data && (data.accountType ?? data.account_type));
     if (t === ACCOUNT_READER) return READER_HOME_URL;
+    if (t === ACCOUNT_ARTIST) return ARTIST_HOME_URL;
     if (accountUsesWriterHome(t)) return WRITER_HOME_URL;
     /* "library" in session = reading side → profile hub, not the catalog page. */
     return getUiMode() === "library" ? READER_HOME_URL : WRITER_HOME_URL;

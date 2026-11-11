@@ -1,0 +1,134 @@
+.artist-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px clamp(16px, 3vw, 32px) 64px;
+}
+
+.artist-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.artist-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.artist-heading h1 {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(28px, 4vw, 38px);
+  margin: 8px 0;
+}
+
+.artist-muted,
+.artist-note,
+#artist-status {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.artist-focus-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.artist-focus-card {
+  text-align: left;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--glass-radius, 16px);
+  background: var(--alysum-ui-panel, transparent);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.artist-focus-card:hover {
+  border-color: var(--accent);
+}
+
+.artist-focus-card strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.artist-focus-card span {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.artist-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 24px 0 16px;
+  padding: 16px 0;
+  border-block: 1px solid var(--border);
+}
+
+.artist-page button,
+.artist-heading > a {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--glass-radius, 16px);
+  background: var(--alysum-ui-panel, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.artist-char-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--glass-radius, 16px);
+  background: var(--alysum-ui-panel);
+  margin-bottom: 10px;
+}
+
+.artist-char-card h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+}
+
+.artist-char-meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.artist-empty {
+  padding: 40px 20px;
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--glass-radius, 16px);
+  color: var(--muted);
+}
+
+.artist-onboarding {
+  border: 1px solid var(--border);
+  border-radius: var(--glass-radius, 16px);
+  padding: 20px;
+  margin-bottom: 24px;
+  background: var(--alysum-ui-panel);
+}

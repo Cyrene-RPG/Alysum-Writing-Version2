@@ -78,19 +78,14 @@ function destinationsFor(accountType) {
         items.push({
             id: "artist",
             label: "Artist",
-            href: "/settings#account-focus",
+            href: "/artist",
             mode: null,
-            soon: true,
         });
     }
     return items;
 }
 
 function go(item) {
-    if (item.soon) {
-        location.href = item.href;
-        return;
-    }
     if (item.mode) setUiMode(item.mode);
     location.href = item.href;
 }
