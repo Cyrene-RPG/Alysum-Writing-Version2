@@ -32,6 +32,7 @@
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js" defer></script>
     <link rel="stylesheet" href="/css/site-responsive.css">
     <link rel="stylesheet" href="/css/workspace-nav.css?v=34">
+    <link rel="stylesheet" href="/applications/reader/reader-css/page.css?v=reader-nav-10">
     <link rel="stylesheet" href="/applications/notifications/notifications-css/page.css">
     <title>Inbox — Alysum</title>
     <meta name="robots" content="noindex, nofollow">
@@ -60,7 +61,7 @@
             </div>
         </div>
     </header>
-    <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
+    <nav class="wd-nav-wrap ui-bar" id="writerInboxNav" aria-label="Workspace">
         <div class="wd-nav">
             <a href="/studio">Studio</a>
             <a href="/word-wars-lobby">Word Wars</a>
@@ -68,6 +69,8 @@
             <a href="/updates">What’s New</a>
         </div>
     </nav>
+    <div id="reader-icons" class="reader-nav-slot" hidden></div>
+    <script src="/js/mode-chrome-boot.js?v=2"></script>
 
 <main id="main" class="inbox-page">
     <div class="inbox-heading">

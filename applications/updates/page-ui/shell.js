@@ -11,22 +11,11 @@ import { getAnnouncementAccess } from "/core/publishing/announcements.js";
 import { wireLogoutButtons } from "@alysum/authentication/logout.js";
 import { openRoadmap } from "@alysum/authentication/open-roadmap.js";
 import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/appearance-loadout-menu.js?v=8";
-import { getUiMode } from "@alysum/account/mode.js";
-import { paintReaderNav } from "/applications/reader/page-ui/chrome.js";
 import { mountAccountModeToggleForSession } from "@alysum/account/mode-toggle.js";
+import { applyModeChrome, modeToggleSide } from "/js/mode-chrome.js";
 
 function paintReaderChrome() {
-    const writerNav = document.getElementById("writerUpdatesNav");
-    const readerIcons = document.getElementById("reader-icons");
-    if (!writerNav || !readerIcons) return getUiMode() === "library";
-    const readerMode = getUiMode() === "library";
-    writerNav.hidden = readerMode;
-    readerIcons.hidden = !readerMode;
-    if (readerMode) {
-        document.body.classList.add("reader-shell");
-        paintReaderNav("updates");
-    }
-    return readerMode;
+    return applyModeChrome({ writerNavId: "writerUpdatesNav", active: "updates" });
 }
 
 function closeWelcomePfpMenu() {
@@ -105,7 +94,7 @@ async function refreshProfile() {
     const preview = peekWorkspaceProfile(session);
     setWelcomeAvatar(preview.imageUrl, preview.name);
     void mountAccountModeToggleForSession(supabase, session, {
-        side: readerMode ? "reader" : "studio",
+        side: modeToggleSide(),
     });
     const writerLink = document.getElementById("write-update-link");
     if (writerLink) writerLink.hidden = true;

@@ -45,23 +45,36 @@
       }
     ],
     "redirects": [
-      {
-        "source": "/reader/profile",
-        "destination": "/overview",
-        "type": 301
-      },
+    ],
+    "rewrites": [
       {
         "source": "/reader/discover",
-        "destination": "/library?view=discover",
-        "type": 301
+        "destination": "/applications/library/pages/library.html"
       },
       {
         "source": "/reader/shelf",
-        "destination": "/library?view=mine",
-        "type": 301
-      }
-    ],
-    "rewrites": [
+        "destination": "/applications/library/pages/library.html"
+      },
+      {
+        "source": "/reader/profile",
+        "destination": "/applications/main-site/pages/overview.html"
+      },
+      {
+        "source": "/reader/settings",
+        "destination": "/applications/main-site/pages/settings.html"
+      },
+      {
+        "source": "/reader/updates",
+        "destination": "/applications/updates/pages/updates.html"
+      },
+      {
+        "source": "/reader/inbox",
+        "destination": "/applications/notifications/pages/inbox.html"
+      },
+      {
+        "source": "/reader/connections",
+        "destination": "/applications/connections/pages/connections.html"
+      },
       {
         "source": "/purchase-passes",
         "destination": "/applications/studio/pages/purchase-passes.html"

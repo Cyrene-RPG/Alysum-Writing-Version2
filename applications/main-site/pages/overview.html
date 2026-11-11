@@ -35,6 +35,7 @@
     <link rel="stylesheet" href="/css/settings/page.css" />
     <link rel="stylesheet" href="/css/settings/overview.css?v=5" />
     <link rel="stylesheet" href="/css/workspace-nav.css?v=34" />
+    <link rel="stylesheet" href="/applications/reader/reader-css/page.css?v=reader-nav-10" />
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js" defer></script>
 </head>
 <body>
@@ -60,7 +61,7 @@
             </div>
         </div>
     </header>
-    <nav class="wd-nav-wrap ui-bar" aria-label="Workspace">
+    <nav class="wd-nav-wrap ui-bar" id="writerOverviewNav" aria-label="Workspace">
         <div class="wd-nav">
             <a href="/studio">Studio</a>
             <a href="/word-wars-lobby">Word Wars</a>
@@ -68,7 +69,9 @@
             <a href="/updates">What’s New</a>
         </div>
     </nav>
-    <script type="module" src="/js/workspace-nav.js?v=34"></script>
+    <div id="reader-icons" class="reader-nav-slot" hidden></div>
+    <script src="/js/mode-chrome-boot.js?v=2"></script>
+    <script type="module" src="/js/workspace-nav.js?v=38"></script>
 
     <div class="wrap">
         <div class="panel" id="loadingPanel">

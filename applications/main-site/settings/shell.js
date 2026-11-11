@@ -16,6 +16,7 @@ import { getProfileRow, LOCAL_GUEST_USER_ID } from "@alysum/synchronization-engi
 import { normalizeAccountType } from "@alysum/account/mode.js";
 import { mountAccountModeToggle } from "@alysum/account/mode-toggle.js";
 import { fillWelcomeBar } from "/js/welcome-bar.js?v=2";
+import { applyModeChrome, modeToggleSide } from "/js/mode-chrome.js";
 import { supabase } from "@alysum/authentication/client.js";
 
 export function finishSettingsShell() {
@@ -62,7 +63,8 @@ export function initLocalSettingsUi() {
     const acct = normalizeAccountType(profile.account_type || "author");
     const typeSelect = document.getElementById("settingsAccountType");
     if (typeSelect) typeSelect.value = acct;
-    void mountAccountModeToggle({ supabase, accountType: acct, side: "studio" });
+    applyModeChrome({ writerNavId: "writerSettingsNav" });
+    void mountAccountModeToggle({ supabase, accountType: acct, side: modeToggleSide() });
 
     setGoalUi(
         profile.word_goal_mode,

@@ -9,6 +9,7 @@ import { openRoadmap } from "@alysum/authentication/open-roadmap.js";
 import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/appearance-loadout-menu.js?v=8";
 import { resolveStudioSession } from "/core/desktop/studio-session.js";
 import { mountAccountModeToggleForSession } from "@alysum/account/mode-toggle.js";
+import { getUiMode } from "@alysum/account/mode.js";
 
 function closeWelcomePfpMenu() {
     const menu = document.getElementById("welcomePfpMenu");
@@ -109,6 +110,10 @@ export function initWorkspaceShell({ lead, accent, title, subtitle, name, imageU
     }
     if (name || imageUrl) setWelcomeAvatar(imageUrl, name);
     void resolveStudioSession(supabase)
-        .then((session) => mountAccountModeToggleForSession(supabase, session, { side: "studio" }))
+        .then((session) =>
+            mountAccountModeToggleForSession(supabase, session, {
+                side: getUiMode() === "library" ? "reader" : "studio",
+            })
+        )
         .catch(() => {});
 }

@@ -70,6 +70,7 @@
 <link rel="stylesheet" href="/css/settings/backup.css?v=2" />
 <link rel="stylesheet" href="/css/settings/security.css?v=4" />
 <link rel="stylesheet" href="/css/workspace-nav.css?v=34" />
+<link rel="stylesheet" href="/applications/reader/reader-css/page.css?v=reader-nav-10" />
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="/site-appearance/js-runtime/gradient-theme-sync.js?v=3" defer></script>
 
@@ -97,7 +98,7 @@
                 </div>
             </div>
         </header>
-        <nav class="wd-nav-wrap ui-bar" aria-label="Workspace" data-active="settings">
+        <nav class="wd-nav-wrap ui-bar" id="writerSettingsNav" aria-label="Workspace" data-active="settings">
             <div class="wd-nav">
                 <a href="/studio">Studio</a>
                 <a href="/word-wars-lobby">Word Wars</a>
@@ -105,7 +106,9 @@
                 <a href="/updates">What’s New</a>
             </div>
         </nav>
-        <script type="module" src="/js/workspace-nav.js?v=34"></script>
+        <div id="reader-icons" class="reader-nav-slot" hidden></div>
+        <script src="/js/mode-chrome-boot.js?v=2"></script>
+        <script type="module" src="/js/workspace-nav.js?v=38"></script>
 
     <div class="wrap">
     <div class="panel" id="loadingPanel">

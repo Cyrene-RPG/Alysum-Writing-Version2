@@ -9,24 +9,37 @@
       "source": "/:page.html",
       "destination": "/:page",
       "permanent": true
-    },
-    {
-      "source": "/reader/profile",
-      "destination": "/overview",
-      "permanent": true
-    },
-    {
-      "source": "/reader/discover",
-      "destination": "/library?view=discover",
-      "permanent": true
-    },
-    {
-      "source": "/reader/shelf",
-      "destination": "/library?view=mine",
-      "permanent": true
     }
   ],
   "rewrites": [
+    {
+      "source": "/reader/discover",
+      "destination": "/applications/library/pages/library.html"
+    },
+    {
+      "source": "/reader/shelf",
+      "destination": "/applications/library/pages/library.html"
+    },
+    {
+      "source": "/reader/profile",
+      "destination": "/applications/main-site/pages/overview.html"
+    },
+    {
+      "source": "/reader/settings",
+      "destination": "/applications/main-site/pages/settings.html"
+    },
+    {
+      "source": "/reader/updates",
+      "destination": "/applications/updates/pages/updates.html"
+    },
+    {
+      "source": "/reader/inbox",
+      "destination": "/applications/notifications/pages/inbox.html"
+    },
+    {
+      "source": "/reader/connections",
+      "destination": "/applications/connections/pages/connections.html"
+    },
     {
       "source": "/purchase-passes",
       "destination": "/applications/studio/pages/purchase-passes.html"

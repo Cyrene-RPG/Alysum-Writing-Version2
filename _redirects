@@ -92,9 +92,13 @@
 /connections  /applications/connections/pages/connections  200
 /inbox  /applications/notifications/pages/inbox  200
 /reader  /applications/reader/pages/home  200
-/reader/discover  /library?view=discover  301
-/reader/shelf  /library?view=mine  301
-/reader/profile  /overview  301
+/reader/discover  /applications/library/pages/library  200
+/reader/shelf  /applications/library/pages/library  200
+/reader/profile  /applications/main-site/pages/overview  200
+/reader/settings  /applications/main-site/pages/settings  200
+/reader/updates  /applications/updates/pages/updates  200
+/reader/inbox  /applications/notifications/pages/inbox  200
+/reader/connections  /applications/connections/pages/connections  200
 
 # Folders (wildcards go last so exact lines match first)
 /js/signup/*  /applications/main-site/signup/:splat  200
