@@ -1,12 +1,11 @@
 import { filterHubBooks } from "@alysum/library/hub.js";
 import { openReaderData, bookHref, escapeHtml, coverStyle } from "./data.js";
-import { readerNavHtml } from "./chrome.js";
+import { paintReaderNav } from "./chrome.js";
 
 const statusEl = document.getElementById("reader-status");
 const signInEl = document.getElementById("reader-sign-in");
 const root = document.getElementById("reader-root");
-const tabs = document.getElementById("reader-tabs");
-if (tabs) tabs.innerHTML = readerNavHtml("discover");
+paintReaderNav("discover");
 
 let catalog = [];
 let mood = "";

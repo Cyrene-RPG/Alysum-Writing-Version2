@@ -22,7 +22,7 @@ body {
 .reader-page {
     width: min(720px, 100%);
     margin: 0 auto;
-    padding: 22px clamp(16px, 3vw, 24px) 40px;
+    padding: 22px clamp(16px, 3vw, 24px) calc(88px + env(safe-area-inset-bottom, 0px));
 }
 
 .reader-eyebrow {
@@ -70,29 +70,53 @@ body {
     font-weight: 700;
 }
 
-.reader-tabs {
+.reader-bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 10px 18px calc(10px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: color-mix(in srgb, var(--alysum-ui-chrome, #0b1220) 94%, transparent);
+    backdrop-filter: blur(14px);
+}
+.reader-bottom-nav a {
     display: flex;
-    gap: 6px;
-    margin: 0 0 22px;
-    padding: 4px;
-    border-radius: 999px;
-    border: 1px solid var(--border, rgba(255,255,255,0.1));
-    background: color-mix(in srgb, var(--alysum-ui-panel, #111827) 88%, transparent);
-    overflow-x: auto;
-}
-.reader-tabs a {
-    flex: 1 0 auto;
-    text-align: center;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 48px;
+    padding: 4px 6px;
+    border-radius: 12px;
     text-decoration: none;
-    color: var(--muted, #9ca3af);
-    font-size: 13px;
-    font-weight: 700;
-    padding: 10px 14px;
-    border-radius: 999px;
+    color: rgba(226, 232, 240, 0.72);
 }
-.reader-tabs a[aria-current="page"] {
-    color: #fff;
-    background: linear-gradient(135deg, var(--purple-dark, #5b21b6), var(--purple, #6d28d9) 55%, var(--pink, #ec4899));
+.reader-bottom-nav-icon {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+}
+.reader-bottom-nav-icon svg {
+    width: 24px;
+    height: 24px;
+}
+.reader-bottom-nav-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+}
+.reader-bottom-nav a[aria-current="page"] {
+    color: var(--theme-brand-kicker, #c4b5fd);
+}
+.reader-bottom-nav a[aria-current="page"] .reader-bottom-nav-icon svg {
+    stroke-width: 2;
 }
 
 .reader-continue {

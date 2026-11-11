@@ -8,13 +8,12 @@ import {
     escapeHtml,
     coverStyle,
 } from "./data.js";
-import { readerNavHtml } from "./chrome.js";
+import { paintReaderNav } from "./chrome.js";
 
 const statusEl = document.getElementById("reader-status");
 const signInEl = document.getElementById("reader-sign-in");
 const root = document.getElementById("reader-root");
-const tabs = document.getElementById("reader-tabs");
-if (tabs) tabs.innerHTML = readerNavHtml("home");
+paintReaderNav("home");
 
 function setStatus(text) {
     if (statusEl) statusEl.textContent = text || "";
