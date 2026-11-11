@@ -32,16 +32,15 @@
     <script src="/site-appearance/js-runtime/gradient-theme-sync.js" defer></script>
     <link rel="stylesheet" href="/css/site-responsive.css">
     <link rel="stylesheet" href="/css/workspace-nav.css">
-    <link rel="stylesheet" href="/applications/reader/reader-css/page.css?v=reader-top-3">
+    <link rel="stylesheet" href="/applications/reader/reader-css/page.css?v=reader-nav-4">
     <title>Discover — Alysum Reader</title>
     <meta name="robots" content="noindex, nofollow">
 </head>
 <body class="reader-shell">
 
 <a class="skip-link" href="#main">Skip to content</a>
-<header class="reader-top-bar" aria-label="Reader">
-    <div id="reader-icons"></div>
-    <div class="wd-welcome-inner reader-top-tools">
+<header class="wd-welcome-bar ui-bar" aria-label="Welcome">
+    <div class="wd-welcome-inner">
         <div class="wd-pfp-menu" id="welcomePfpMenu">
             <button type="button" class="wd-pfp-btn" id="welcomePfpBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="welcomePfpDropdown" aria-label="Account menu">
                 <span class="wd-pfp" id="welcomePfp">
@@ -57,8 +56,13 @@
                 <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
             </div>
         </div>
+        <div class="wd-welcome-copy">
+            <h1 class="wd-welcome-title" id="welcomeTitle">Alysum <span class="wd-name">Reader</span></h1>
+            <p class="wd-welcome-sub" id="welcomeSubtitle"></p>
+        </div>
     </div>
 </header>
+<div id="reader-icons" class="reader-nav-slot"></div>
 
 <main id="main" class="reader-page" data-reader-page="discover">
     <p class="reader-eyebrow">Alysum Reader</p>
