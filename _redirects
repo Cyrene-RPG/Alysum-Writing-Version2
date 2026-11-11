@@ -94,7 +94,7 @@
 /reader  /applications/reader/pages/home  200
 /reader/discover  /applications/reader/pages/discover  200
 /reader/shelf  /applications/reader/pages/shelf  200
-/reader/profile  /applications/reader/pages/profile  200
+/reader/profile  /overview  301
 
 # Folders (wildcards go last so exact lines match first)
 /js/signup/*  /applications/main-site/signup/:splat  200

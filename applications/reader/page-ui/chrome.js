@@ -5,7 +5,6 @@ export function readerNavHtml(active) {
         { id: "home", href: "/reader", label: "Home" },
         { id: "discover", href: "/reader/discover", label: "Discover" },
         { id: "shelf", href: "/reader/shelf", label: "Shelf" },
-        { id: "profile", href: "/reader/profile", label: "Profile" },
     ];
     const link = (item) =>
         `<a href="${item.href}"${item.id === active ? ' aria-current="page"' : ""}>${item.label}</a>`;

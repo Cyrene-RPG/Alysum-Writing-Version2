@@ -44,6 +44,13 @@
         ]
       }
     ],
+    "redirects": [
+      {
+        "source": "/reader/profile",
+        "destination": "/overview",
+        "type": 301
+      }
+    ],
     "rewrites": [
       {
         "source": "/purchase-passes",
@@ -94,10 +101,6 @@
       {
         "source": "/reader/shelf",
         "destination": "/applications/reader/pages/shelf.html"
-      },
-      {
-        "source": "/reader/profile",
-        "destination": "/applications/reader/pages/profile.html"
       },
       {
         "source": "/updates",

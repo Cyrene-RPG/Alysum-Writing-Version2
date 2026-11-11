@@ -9,6 +9,11 @@
       "source": "/:page.html",
       "destination": "/:page",
       "permanent": true
+    },
+    {
+      "source": "/reader/profile",
+      "destination": "/overview",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -99,10 +104,6 @@
     {
       "source": "/reader/shelf",
       "destination": "/applications/reader/pages/shelf.html"
-    },
-    {
-      "source": "/reader/profile",
-      "destination": "/applications/reader/pages/profile.html"
     },
     {
       "source": "/updates",

@@ -57,7 +57,6 @@ PAGES = {
     "/reader": "applications/reader/pages/home.html",
     "/reader/discover": "applications/reader/pages/discover.html",
     "/reader/shelf": "applications/reader/pages/shelf.html",
-    "/reader/profile": "applications/reader/pages/profile.html",
     "/updates": "applications/updates/pages/updates.html",
     "/write-update": "applications/updates/pages/write-update.html",
     "/studio": "applications/studio/pages/studio.html",
@@ -153,10 +152,24 @@ def public_to_file(url_path: str) -> Path:
     return ROOT / clean[1:]
 
 
+REDIRECTS = {
+    "/reader/profile": "/overview",
+}
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         path = unquote(parsed.path)
+        clean = path.rstrip("/") or "/"
+        if clean in REDIRECTS:
+            dest = REDIRECTS[clean]
+            if parsed.query:
+                dest = f"{dest}?{parsed.query}"
+            self.send_response(301)
+            self.send_header("Location", dest)
+            self.end_headers()
+            return
         if path.endswith(".html") and "/" not in path[1:]:
             dest = "/" if path in ("/index.html", "/") else path[: -len(".html")]
             # Pretty-URL 308 through the service worker fails the first click
