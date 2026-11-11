@@ -14,6 +14,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 PORT = int(os.environ.get("PORT", "3000"))
+HOST = os.environ.get("HOST", "127.0.0.1").strip() or "127.0.0.1"
 
 TYPES = {
     ".html": "text/html; charset=utf-8",
@@ -271,6 +272,8 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
+    server = ThreadingHTTPServer((HOST, PORT), Handler)
     print(f"Alysum local preview: http://127.0.0.1:{PORT}/", flush=True)
+    if HOST not in ("127.0.0.1", "::1", "localhost"):
+        print(f"LAN (phone/other devices): http://{HOST}:{PORT}/ — use this PC's IP if HOST is 0.0.0.0", flush=True)
     server.serve_forever()
