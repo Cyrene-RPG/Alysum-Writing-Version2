@@ -306,15 +306,6 @@
     box-sizing: border-box;
 }
 
-.wd-nav.wd-nav-icons {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
-    width: min(720px, 100%);
-    margin: 0 auto;
-    padding: 10px 14px;
-}
-
 .wd-nav > a,
 .wd-nav > button {
     flex: none;
@@ -334,90 +325,6 @@
     cursor: pointer;
     white-space: nowrap;
     transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
-}
-
-.wd-nav.wd-nav-icons > a,
-.wd-nav.wd-nav-icons > button {
-    flex-direction: column;
-    justify-content: center;
-    gap: 5px;
-    min-width: 0;
-    min-height: 56px;
-    width: 100%;
-    padding: 8px 6px;
-    border-radius: 0;
-    border-color: transparent;
-    background: transparent;
-    color: color-mix(in srgb, var(--chrome-text, #fff) 72%, transparent);
-    font-size: 12px;
-    font-weight: 600;
-    white-space: normal;
-    box-shadow: none;
-    text-shadow: none;
-}
-
-.wd-nav-icon {
-    display: grid;
-    place-items: center;
-    width: 26px;
-    height: 26px;
-}
-
-.wd-nav-icon svg {
-    width: 24px;
-    height: 24px;
-    display: block;
-}
-
-.wd-nav-label {
-    display: block;
-    width: 100%;
-    text-align: center;
-    line-height: 1.2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.wd-nav.wd-nav-icons > a:hover,
-.wd-nav.wd-nav-icons > button:hover {
-    background: transparent;
-    color: var(--chrome-text, #fff);
-}
-
-.wd-nav.wd-nav-icons > a.is-active,
-.wd-nav.wd-nav-icons > button.is-active,
-.wd-nav.wd-nav-icons > a[aria-current="page"],
-.wd-nav.wd-nav-icons > button[aria-current="page"] {
-    color: var(--theme-brand-kicker, #c4b5fd);
-    background: transparent;
-    border-color: transparent;
-    box-shadow: none;
-    text-shadow: none;
-}
-
-.wd-nav.wd-nav-icons > a.is-active .writer-glyph-shape,
-.wd-nav.wd-nav-icons > a[aria-current="page"] .writer-glyph-shape,
-.wd-nav.wd-nav-icons > a.is-active .writer-glyph-detail,
-.wd-nav.wd-nav-icons > a[aria-current="page"] .writer-glyph-detail {
-    stroke: currentColor;
-}
-
-.wd-nav.wd-nav-icons > a.is-active .writer-glyph-shape[fill="currentColor"],
-.wd-nav.wd-nav-icons > a[aria-current="page"] .writer-glyph-shape[fill="currentColor"],
-.wd-nav.wd-nav-icons > a.is-active .writer-glyph-detail[fill="currentColor"],
-.wd-nav.wd-nav-icons > a[aria-current="page"] .writer-glyph-detail[fill="currentColor"] {
-    fill: currentColor;
-}
-
-.wd-nav.wd-nav-icons > a.is-active .wd-nav-icon svg,
-.wd-nav.wd-nav-icons > a[aria-current="page"] .wd-nav-icon svg {
-    transform: none;
-}
-
-.wd-nav.wd-nav-icons > a.is-active .writer-glyph-shape,
-.wd-nav.wd-nav-icons > a[aria-current="page"] .writer-glyph-shape {
-    stroke-width: 1.7;
 }
 
 .wd-nav > a:hover,
@@ -1018,8 +925,8 @@ button.fh-has-new-badge .fh-target-new,
     }
     .wd-nav-wrap::-webkit-scrollbar { display: none; }
 
-    /* Text-only fallback: scroll sideways. Icon nav stays a 4-up grid. */
-    .wd-nav-wrap > .wd-nav:not(.wd-nav-icons) {
+    /* Keep tab labels roomy; scroll sideways instead of squeezing. */
+    .wd-nav-wrap > .wd-nav {
         display: flex;
         flex: 0 0 auto;
         width: max-content;
@@ -1030,16 +937,6 @@ button.fh-has-new-badge .fh-target-new,
         gap: 10px;
         padding: 10px 16px;
         box-sizing: border-box;
-    }
-
-    .wd-nav-wrap > .wd-nav.wd-nav-icons {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        width: min(720px, 100%);
-        max-width: none;
-        margin: 0 auto;
-        padding: 10px 14px;
-        gap: 8px;
     }
 
     .wd-welcome-bar {

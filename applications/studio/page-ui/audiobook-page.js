@@ -4,7 +4,7 @@ import {createBooksApi} from '@alysum/synchronization-engine/books.js?v=12';
 import {loadWorkspaceProfile} from '@alysum/account/workspace-profile.js';
 import {createAudiobooksApi} from '/core/audiobooks/client.js';
 import {audioError} from '/core/audiobooks/model.js';
-import {initWorkspaceShell} from './shell.js?v=12';
+import {initWorkspaceShell} from './shell.js?v=13';
 import {mountAudiobookEditor} from './audiobook-editor.js';
 
 async function boot(){

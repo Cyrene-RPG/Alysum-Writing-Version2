@@ -3,7 +3,7 @@ import {openReadingState} from '/core/library/reading-state.js';
 import {createLibraryHub} from '/core/library/hub.js';
 import {resolveStudioSession} from '/core/desktop/studio-session.js';
 import {loadWorkspaceProfile,peekWorkspaceProfile} from '/core/account/workspace-profile.js';
-import {initWorkspaceShell} from '/js/studio/shell.js?v=12';
+import {initWorkspaceShell} from '/js/studio/shell.js?v=13';
 import {applyModeChrome} from '/js/mode-chrome.js';
 import {mountLibraryHub} from './hub.js';
 

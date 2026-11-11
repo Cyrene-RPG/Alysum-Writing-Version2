@@ -5,7 +5,6 @@
 import { getUiMode, isReaderPath, READER_ROUTES, setUiMode } from "@alysum/account/mode.js";
 import { wireLogoutButtons } from "@alysum/authentication/logout.js";
 import { paintReaderNav, readerAccountMenuHtml } from "/applications/reader/page-ui/chrome.js";
-import { paintWriterNav } from "/js/writer-chrome.js?v=writer-nav-15";
 
 export function isReaderUiMode() {
     return getUiMode() === "library" || isReaderPath();
@@ -31,7 +30,7 @@ function ensureReaderStyles() {
     const link = document.createElement("link");
     link.id = "reader-mode-chrome-styles";
     link.rel = "stylesheet";
-    link.href = "/applications/reader/reader-css/page.css?v=reader-nav-12";
+    link.href = "/applications/reader/reader-css/page.css?v=reader-nav-13";
     document.head.appendChild(link);
 }
 
@@ -89,7 +88,7 @@ export function retargetHomeLinks(readerMode = isReaderUiMode()) {
 }
 
 /**
- * Swap Writer pill nav ↔ Reader icon nav from the stored UI mode.
+ * Swap Writer text nav ↔ Reader icon nav from the stored UI mode.
  * @param {{ writerNavId?: string, active?: string|null }} [options]
  * @returns {boolean} whether Reader chrome is active
  */
@@ -113,8 +112,6 @@ export function applyModeChrome(options = {}) {
     if (readerMode) {
         ensureReaderStyles();
         paintReaderNav(options.active || undefined);
-    } else {
-        paintWriterNav();
     }
     retargetHomeLinks(readerMode);
     return readerMode;

@@ -14,7 +14,7 @@ import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=12";
 import { countBookChapters, createEmptyBook } from "@alysum/writing-engine/manuscript.js";
 import { countWordsInSections } from "@alysum/writing-engine/word-count.js";
-import { initWorkspaceShell } from "./shell.js?v=12";
+import { initWorkspaceShell } from "./shell.js?v=13";
 import { bindBookMenu } from "./book-menu.js?v=6";
 import { bindManuscriptImport } from "./manuscript-import.js";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";

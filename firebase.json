@@ -406,10 +406,6 @@
         "destination": "/applications/main-site/page-ui/workspace-nav.js"
       },
       {
-        "source": "/js/writer-chrome.js",
-        "destination": "/applications/main-site/page-ui/writer-chrome.js"
-      },
-      {
         "source": "/js/welcome-bar.js",
         "destination": "/applications/main-site/page-ui/welcome-bar.js"
       },

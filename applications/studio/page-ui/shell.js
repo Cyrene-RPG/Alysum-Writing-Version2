@@ -10,7 +10,6 @@ import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/ap
 import { resolveStudioSession } from "/core/desktop/studio-session.js";
 import { mountAccountModeToggleForSession } from "@alysum/account/mode-toggle.js";
 import { getUiMode } from "@alysum/account/mode.js";
-import { paintWriterNav } from "/js/writer-chrome.js?v=writer-nav-15";
 
 function closeWelcomePfpMenu() {
     const menu = document.getElementById("welcomePfpMenu");
@@ -113,7 +112,6 @@ export function initWorkspaceShell({ lead, accent, title, subtitle, name, imageU
         });
     }
     if (name || imageUrl) setWelcomeAvatar(imageUrl, name);
-    if (getUiMode() !== "library") paintWriterNav();
     void resolveStudioSession(supabase)
         .then((session) =>
             mountAccountModeToggleForSession(supabase, session, {
