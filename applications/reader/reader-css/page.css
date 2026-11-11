@@ -110,10 +110,10 @@ body.reader-shell {
 .reader-icon-nav {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 4px;
+    gap: 8px;
     width: min(720px, 100%);
     margin: 0 auto;
-    padding: 8px 10px;
+    padding: 10px 14px;
     background: transparent;
     border: 0;
 }
@@ -122,10 +122,10 @@ body.reader-shell {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 5px;
     min-width: 0;
-    min-height: 54px;
-    padding: 6px 4px;
+    min-height: 56px;
+    padding: 8px 6px;
     border-radius: 0;
     text-decoration: none;
     color: color-mix(in srgb, var(--chrome-text, #fff) 72%, transparent);
@@ -144,10 +144,10 @@ body.reader-shell {
 .reader-icon-nav-label {
     display: block;
     width: 100%;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.01em;
-    line-height: 1.15;
+    line-height: 1.2;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
