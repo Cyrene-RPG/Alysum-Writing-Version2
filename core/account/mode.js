@@ -130,6 +130,7 @@ export function homeUrlForUserData(data) {
     const t = normalizeAccountType(data && (data.accountType ?? data.account_type));
     if (t === ACCOUNT_READER) return READER_HOME_URL;
     if (t === ACCOUNT_ARTIST) return ARTIST_HOME_URL;
+    if (accountHasArtist(t) && getUiMode() === "artist") return ARTIST_HOME_URL;
     if (accountUsesWriterHome(t)) return WRITER_HOME_URL;
     /* "library" in session = reading side → profile hub, not the catalog page. */
     return getUiMode() === "library" ? READER_HOME_URL : WRITER_HOME_URL;

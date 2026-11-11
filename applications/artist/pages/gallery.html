@@ -6,6 +6,7 @@
     { "imports": {
         "@alysum/site-appearance/": "/site-appearance/",
         "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
         "@alysum/desktop/": "/core/desktop/",
         "@alysum/artist/": "/core/artist/"
     } }
@@ -25,6 +26,7 @@
 <body>
 <header class="wd-welcome-bar ui-bar"><div class="wd-welcome-inner">
     <div class="wd-welcome-copy"><h1 class="wd-welcome-title">Gallery</h1></div>
+    <div id="account-mode-toggle-root"></div>
 </div></header>
 <nav class="wd-nav-wrap ui-bar" aria-label="Artist"><div class="wd-nav">
     <a href="/artist">Characters</a>
@@ -38,6 +40,7 @@
     <p class="artist-status" id="status">Loading…</p>
     <div class="artist-grid" id="grid"></div>
 </main>
+<script type="module" src="/js/artist/shell.js"></script>
 <script type="module" src="/js/artist/gallery.js"></script>
 </body>
 </html>

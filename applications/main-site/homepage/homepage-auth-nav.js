@@ -1,5 +1,7 @@
 import {
+    ACCOUNT_ARTIST,
     ACCOUNT_READER,
+    accountHasArtist,
     accountSupportsModeToggle,
     accountUsesWriterHome,
     homeUrlForUserData,
@@ -19,9 +21,11 @@ function userProfileFromRow(row) {
 
 function primaryCtaLabel(accountType) {
     const t = normalizeAccountType(accountType);
+    if (t === ACCOUNT_ARTIST || (accountHasArtist(t) && getUiMode() === "artist")) return "Open Artist";
     if (t === ACCOUNT_READER) return "Open reading profile";
     if (accountUsesWriterHome(t)) return "Open Studio";
-    return getUiMode() === "library" ? "Open reading profile" : "Open Studio";
+    if (getUiMode() === "library") return "Open reading profile";
+    return "Open Studio";
 }
 
 function accountHomeHref(profile) {

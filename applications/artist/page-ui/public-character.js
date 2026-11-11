@@ -42,7 +42,7 @@ async function boot() {
     const policy = TRADE_POLICIES.find((item) => item.id === character.tradePolicy);
     document.getElementById("trade").textContent = policy ? policy.label : "";
     const portrait = document.getElementById("portrait");
-    if (character.portraitUrl) {
+    if (character.portraitUrl && character.fields?.portraitProtection) {
         const img = document.createElement("img");
         img.src = character.portraitUrl;
         img.alt = "";

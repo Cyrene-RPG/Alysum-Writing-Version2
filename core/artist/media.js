@@ -30,7 +30,7 @@ export async function uploadArtistImage(supabase, userId, file) {
     if (error) {
         const message = String(error.message || "");
         if (/bucket/i.test(message) && /not found|does not exist/i.test(message)) {
-            throw new Error("Image storage is not set up yet. Run the artist studio migration on staging.");
+            throw new Error("Image storage is not set up yet. Run supabase/live-site/supabase-artist.sql in the Supabase SQL editor.");
         }
         throw new Error(message || "Upload failed.");
     }

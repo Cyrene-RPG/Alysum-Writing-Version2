@@ -143,6 +143,7 @@ async function boot() {
         $("artist-gate").hidden = false;
         $("artist-gate").textContent = error.message || "Could not load characters.";
     }
+    $("artist-change-focus").onclick = () => mountFocus(userId);
     $("artist-save-bio").onclick = () => {
         $("artist-status").textContent = "Saving bio…";
         void saveArtistBio(supabase, userId, $("artist-bio").value)

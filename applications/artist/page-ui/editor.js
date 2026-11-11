@@ -11,6 +11,7 @@ const params = new URLSearchParams(location.search);
 const characterId = params.get("id") || "";
 let userId = "";
 let username = "";
+let record = null;
 
 function fieldText(character, key) {
     return String(character.fields?.[key] || "");
@@ -94,6 +95,7 @@ async function boot() {
         getCharacter(supabase, userId, characterId),
     ]);
     username = profile.username || "";
+    record = character;
     if (!character) {
         $("status").textContent = "That character is not on this account.";
         return;
@@ -115,14 +117,19 @@ async function boot() {
             tradePolicy: form.tradePolicy.value,
             termsText: form.termsText.value,
             fields: {
+                ...(record?.fields || {}),
                 overview: form.overview.value,
                 design: form.design.value,
                 personality: form.personality.value,
                 history: form.history.value,
             },
         }).then((saved) => {
+            record = saved;
             fill(saved);
-            $("status").textContent = "Saved.";
+            const portraitHidden = saved.visibility === "public" && saved.portraitUrl && !saved.fields?.portraitProtection;
+            $("status").textContent = portraitHidden
+                ? "Saved. The public page hides this portrait until you upload a Glaze or Nightshade export."
+                : "Saved.";
         }).catch((error) => {
             $("status").textContent = error.message || "Could not save.";
         });
@@ -131,10 +138,20 @@ async function boot() {
     $("portrait-file").addEventListener("change", () => {
         const file = $("portrait-file").files?.[0];
         if (!file) return;
+        const makingPublic = $("form").visibility.value === "public";
+        if (makingPublic && !$("portrait-ack").checked) {
+            $("status").textContent = "A public portrait has to be a Glaze or Nightshade export. Check the box, or keep the character private.";
+            return;
+        }
         $("status").textContent = "Uploading portrait…";
+        const protection = $("portrait-ack").checked ? $("portrait-protection").value : null;
         void uploadArtistImage(supabase, userId, file)
-            .then((uploaded) => updateCharacter(supabase, userId, characterId, { portraitUrl: uploaded.url }))
+            .then((uploaded) => updateCharacter(supabase, userId, characterId, {
+                portraitUrl: uploaded.url,
+                fields: { ...(record?.fields || {}), portraitProtection: protection },
+            }))
             .then((saved) => {
+                record = saved;
                 paintPortrait(saved.portraitUrl);
                 $("status").textContent = "Portrait saved.";
             })

@@ -18,7 +18,7 @@ export async function listMyCharacters(supabase, ownerId) {
     if (error) {
         if (missingTableError(error)) {
             throw new Error(
-                "Artist characters are not available on this database yet. Run the artist foundation migration on staging.",
+                "Artist characters are not on this database yet. Run supabase/live-site/supabase-artist.sql in the Supabase SQL editor.",
             );
         }
         throw error;
@@ -62,7 +62,7 @@ export async function createCharacter(supabase, ownerId, { displayName, kind = "
         }
         if (missingTableError(error)) {
             throw new Error(
-                "Artist characters are not available on this database yet. Run the artist foundation migration on staging.",
+                "Artist characters are not on this database yet. Run supabase/live-site/supabase-artist.sql in the Supabase SQL editor.",
             );
         }
         throw error;
@@ -172,7 +172,7 @@ export async function saveArtistFocus(supabase, userId, focus) {
     if (error) {
         if (missingTableError(error)) {
             throw new Error(
-                "Artist focus is not available on this database yet. Run the artist foundation migration on staging.",
+                "Artist focus is not on this database yet. Run supabase/live-site/supabase-artist.sql in the Supabase SQL editor.",
             );
         }
         throw error;
