@@ -10,26 +10,22 @@
 .discord { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--rule); border-radius: 8px; }
 .discord:hover { border-color: var(--rule-2); }
 
-.home-mode-toggle-host:not([hidden]) { display: block; }
+.home-mode-toggle-host:not([hidden]) { display: block; position: relative; z-index: 6; }
 .home-mode-toggle-host .account-mode-toggle { margin-left: 0; }
 .home-mode-toggle-host .account-mode-switch {
-    appearance: none;
-    margin: 0;
-    padding: 8px 12px;
-    border-radius: 999px;
     border: 1px solid var(--rule, rgba(255,255,255,0.18));
     background: transparent;
     color: var(--paper-2, rgba(255,255,255,0.85));
-    font: inherit;
     font-size: 12.5px;
-    font-weight: 600;
-    line-height: 1.2;
-    cursor: pointer;
-    white-space: nowrap;
+    font-weight: 700;
 }
 .home-mode-toggle-host .account-mode-switch:hover {
     color: var(--paper, #fff);
     border-color: var(--rule-2, rgba(255,255,255,0.3));
+    background: rgba(255,255,255,0.04);
+}
+.home-mode-toggle-host .account-mode-menu {
+    background: color-mix(in srgb, var(--alysum-ui-panel, #111827) 94%, black);
 }
 @media (max-width: 720px) {
     .header-right { gap: 10px; right: 16px; }

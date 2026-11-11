@@ -1,11 +1,12 @@
 /**
- * Quiet Reader ↔ Studio switch for Writer/Reader and All accounts.
- * One slim control: “Switch to Reader” or “Switch to Studio”.
+ * Mode switch dropdown for accounts with more than one path
+ * (Writer/Reader, Writer/Artist, All, etc.).
  */
 import {
-    accountSupportsModeToggle,
+    accountHasArtist,
+    accountHasReader,
+    accountHasWriter,
     getUiMode,
-    homeUrlForUserData,
     normalizeAccountType,
     READER_HOME_URL,
     setUiMode,
@@ -27,7 +28,9 @@ async function fetchAccountType(supabase, userId) {
 }
 
 function currentSide(explicit) {
-    if (explicit === "reader" || explicit === "studio") return explicit;
+    if (explicit === "reader" || explicit === "studio" || explicit === "artist") {
+        return explicit;
+    }
     if (typeof location !== "undefined") {
         const path = location.pathname || "";
         if (
@@ -40,29 +43,125 @@ function currentSide(explicit) {
         ) {
             return "reader";
         }
-        if (path === "/" || path === "/index.html") {
-            return getUiMode() === "library" ? "reader" : "studio";
-        }
+        if (path.startsWith("/artist")) return "artist";
     }
     return getUiMode() === "library" ? "reader" : "studio";
 }
 
-function go(mode) {
-    setUiMode(mode === "reader" ? "library" : "studio");
-    location.href = mode === "reader" ? READER_HOME_URL : "/studio";
+function destinationsFor(accountType) {
+    const items = [];
+    if (accountHasReader(accountType)) {
+        items.push({
+            id: "reader",
+            label: "Reader",
+            href: READER_HOME_URL,
+            mode: "library",
+        });
+    }
+    if (accountHasWriter(accountType)) {
+        items.push({
+            id: "studio",
+            label: "Studio",
+            href: "/studio",
+            mode: "studio",
+        });
+    }
+    if (accountHasArtist(accountType)) {
+        items.push({
+            id: "artist",
+            label: "Artist",
+            href: "/settings#account-focus",
+            mode: null,
+            soon: true,
+        });
+    }
+    return items;
 }
 
-function paintSwitch(el, active) {
-    const next = active === "studio" ? "reader" : "studio";
-    const label = next === "reader" ? "Switch to Reader" : "Switch to Studio";
-    el.replaceChildren();
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "account-mode-switch";
-    btn.textContent = label;
-    btn.setAttribute("aria-label", label);
-    btn.addEventListener("click", () => go(next));
-    el.appendChild(btn);
+function go(item) {
+    if (item.soon) {
+        location.href = item.href;
+        return;
+    }
+    if (item.mode) setUiMode(item.mode);
+    location.href = item.href;
+}
+
+function closeMenu(root) {
+    const panel = root.querySelector("[data-mode-menu]");
+    const btn = root.querySelector("[data-mode-trigger]");
+    if (!panel || !btn) return;
+    panel.hidden = true;
+    btn.setAttribute("aria-expanded", "false");
+    root.classList.remove("is-open");
+}
+
+function openMenu(root) {
+    const panel = root.querySelector("[data-mode-menu]");
+    const btn = root.querySelector("[data-mode-trigger]");
+    if (!panel || !btn) return;
+    panel.hidden = false;
+    btn.setAttribute("aria-expanded", "true");
+    root.classList.add("is-open");
+}
+
+function paintSwitch(root, accountType, side) {
+    const items = destinationsFor(accountType);
+    if (items.length < 2) {
+        root.remove();
+        return;
+    }
+
+    const active = currentSide(side);
+    const current = items.find((item) => item.id === active) || items[0];
+
+    root.innerHTML = `
+        <button type="button" class="account-mode-switch" data-mode-trigger aria-haspopup="menu" aria-expanded="false" aria-controls="accountModeMenu">
+            <span data-mode-current>${current.label}</span>
+            <span class="account-mode-switch-caret" aria-hidden="true"></span>
+        </button>
+        <div class="account-mode-menu" id="accountModeMenu" data-mode-menu role="menu" hidden>
+            ${items
+                .map(
+                    (item) => `
+                <button type="button" role="menuitem" data-mode-id="${item.id}" ${
+                        item.id === current.id ? 'aria-current="true"' : ""
+                    }>
+                    ${item.label}${item.soon ? " · soon" : ""}
+                </button>`
+                )
+                .join("")}
+        </div>
+    `;
+
+    const trigger = root.querySelector("[data-mode-trigger]");
+    trigger.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const panel = root.querySelector("[data-mode-menu]");
+        if (panel?.hidden) openMenu(root);
+        else closeMenu(root);
+    });
+
+    root.querySelectorAll("[data-mode-id]").forEach((btn) => {
+        btn.addEventListener("click", (event) => {
+            event.stopPropagation();
+            const id = btn.getAttribute("data-mode-id");
+            const item = items.find((entry) => entry.id === id);
+            closeMenu(root);
+            if (!item || item.id === current.id) return;
+            go(item);
+        });
+    });
+
+    if (root.dataset.wired !== "1") {
+        root.dataset.wired = "1";
+        document.addEventListener("click", (event) => {
+            if (!root.contains(event.target)) closeMenu(root);
+        });
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") closeMenu(root);
+        });
+    }
 }
 
 export async function mountAccountModeToggle({
@@ -76,13 +175,14 @@ export async function mountAccountModeToggle({
         accountType != null
             ? normalizeAccountType(accountType)
             : await fetchAccountType(supabase, userId);
-    if (!accountSupportsModeToggle(type)) return null;
+    if (!type) return null;
 
-    const active = currentSide(side);
+    const items = destinationsFor(type);
+    if (items.length < 2) return null;
+
     const bar = host || document.querySelector(".wd-welcome-inner");
     if (!bar) return null;
 
-    // Drop older clunky mounts if present.
     document.getElementById("accountModeNavSwitch")?.remove();
 
     let el = document.getElementById("accountModeToggle");
@@ -90,12 +190,14 @@ export async function mountAccountModeToggle({
         el = document.createElement("div");
         el.id = "accountModeToggle";
         el.className = "account-mode-toggle";
+        const bell = bar.querySelector("#notification-bell");
         const loadout = bar.querySelector(".wd-loadout-menu");
-        if (loadout) bar.insertBefore(el, loadout);
+        if (bell) bar.insertBefore(el, bell);
+        else if (loadout) bar.insertBefore(el, loadout);
         else bar.appendChild(el);
     }
 
-    paintSwitch(el, active);
+    paintSwitch(el, type, side);
     return el;
 }
 
@@ -112,8 +214,4 @@ export async function mountAccountModeToggleForSession(supabase, session, option
         side: options.side,
         host: options.host,
     });
-}
-
-export function homeForToggleAccount(accountType) {
-    return homeUrlForUserData({ accountType });
 }

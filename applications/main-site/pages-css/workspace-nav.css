@@ -366,29 +366,48 @@
 .wd-nav > button.is-hidden { display: none; }
 
 .account-mode-toggle {
+    position: relative;
     margin-left: auto;
     flex: 0 0 auto;
+    z-index: 6;
 }
 
 .account-mode-switch {
     appearance: none;
     margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     padding: 8px 12px;
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.22);
-    background: rgba(0, 0, 0, 0.2);
-    color: rgba(255, 255, 255, 0.92);
+    background: rgba(0, 0, 0, 0.22);
+    color: rgba(255, 255, 255, 0.95);
     font: inherit;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 800;
     line-height: 1.2;
     cursor: pointer;
     white-space: nowrap;
 }
 
+.account-mode-switch-caret {
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+    margin-top: -3px;
+}
+
+.account-mode-toggle.is-open .account-mode-switch-caret {
+    transform: rotate(-135deg);
+    margin-top: 2px;
+}
+
 .account-mode-switch:hover {
-    background: rgba(0, 0, 0, 0.32);
-    border-color: rgba(255, 255, 255, 0.34);
+    background: rgba(0, 0, 0, 0.34);
+    border-color: rgba(255, 255, 255, 0.36);
 }
 
 .account-mode-switch:focus-visible {
@@ -396,7 +415,60 @@
     outline-offset: 2px;
 }
 
-.account-mode-toggle + .wd-loadout-menu {
+.account-mode-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 148px;
+    padding: 6px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background:
+        linear-gradient(
+            180deg,
+            color-mix(in srgb, var(--alysum-ui-panel, #111827) 88%, white),
+            var(--alysum-ui-panel, #111827)
+        );
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.account-mode-menu[hidden] {
+    display: none;
+}
+
+.account-mode-menu button {
+    appearance: none;
+    display: block;
+    width: 100%;
+    margin: 0 0 4px;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: var(--alysum-ui-raised, #2a2a2a);
+    color: var(--text, #fff);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.2;
+    text-align: left;
+    cursor: pointer;
+}
+
+.account-mode-menu button:last-child {
+    margin-bottom: 0;
+}
+
+.account-mode-menu button:hover {
+    background: color-mix(in srgb, var(--alysum-ui-raised, #2a2a2a) 82%, white);
+}
+
+.account-mode-menu button[aria-current="true"] {
+    border-color: color-mix(in srgb, var(--purple-bright, #9333ea) 55%, transparent);
+    background: color-mix(in srgb, var(--purple, #6d28d9) 28%, transparent);
+}
+
+.account-mode-toggle + .wd-loadout-menu,
+.account-mode-toggle + #notification-bell {
     margin-left: 8px;
 }
 
@@ -407,6 +479,14 @@
 }
 
 .account-mode-toggle ~ .wd-loadout-menu {
+    margin-left: 8px;
+}
+
+#notification-bell {
+    flex: 0 0 auto;
+}
+
+.account-mode-toggle ~ #notification-bell {
     margin-left: 8px;
 }
 
