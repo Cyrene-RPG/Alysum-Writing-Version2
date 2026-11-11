@@ -20,17 +20,30 @@ export async function openReaderData() {
 export function continueCandidates(state, booksById) {
     const positions = state.read("read-position") || {};
     const shelves = state.read("shelves") || {};
+    const seen = new Set();
     const rows = [];
     for (const [bookId, pos] of Object.entries(positions)) {
         if (!pos || typeof pos !== "object") continue;
         if (["want", "finished", "dnf", "removed"].includes(shelves[bookId])) continue;
         const book = booksById.get(bookId);
         if (!book) continue;
+        seen.add(bookId);
         rows.push({
             book,
             chapterId: String(pos.chapterId || ""),
             progress: Math.max(0, Math.min(100, Number(pos.progress) || 0)),
             updatedAt: pos.updatedAt || pos.at || null,
+        });
+    }
+    for (const [bookId, shelf] of Object.entries(shelves)) {
+        if (shelf !== "reading" || seen.has(bookId)) continue;
+        const book = booksById.get(bookId);
+        if (!book) continue;
+        rows.push({
+            book,
+            chapterId: "",
+            progress: 0,
+            updatedAt: null,
         });
     }
     rows.sort((a, b) => Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0));

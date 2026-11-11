@@ -2,7 +2,6 @@
 
 /* Clean SF-style glyphs: outline idle, solid when aria-current. */
 const ICONS = {
-    library: `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="reader-glyph-shape" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M3.75 8.25A2.25 2.25 0 0 1 6 6h4.1c.4 0 .78.16 1.06.44L12.5 7.9c.14.14.32.22.52.22H18a2.25 2.25 0 0 1 2.25 2.25v7.35A2.25 2.25 0 0 1 18 19.95H6a2.25 2.25 0 0 1-2.25-2.25V8.25Z"/></svg>`,
     discover: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="reader-glyph-ring" cx="12" cy="12" r="8.15" fill="none" stroke="currentColor" stroke-width="1.6"/><path class="reader-glyph-shape" fill="currentColor" stroke="none" d="m15.55 8.2-2.35 6.15a.7.7 0 0 1-.4.4L6.65 17.1l2.35-6.15a.7.7 0 0 1 .4-.4L15.55 8.2Z"/><circle cx="12" cy="12" r="1.15" fill="var(--alysum-ui-chrome, #0b1220)" stroke="none"/></svg>`,
     reader: `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="reader-glyph-shape" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 6.4c-1.55-1.05-3.55-1.65-5.7-1.65H4.4v12.9h1.95c2.05 0 3.95.55 5.65 1.55 1.7-1 3.6-1.55 5.65-1.55h1.95V4.75h-1.9c-2.15 0-4.15.6-5.7 1.65Z"/><path class="reader-glyph-shape" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M12 6.4v12.55"/></svg>`,
     updates: `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="reader-glyph-shape" fill="currentColor" stroke="none" d="M12 2.4 13.1 5.7 16.4 6.8 13.1 7.9 12 11.2 10.9 7.9 7.6 6.8 10.9 5.7Z"/><path class="reader-glyph-shape" fill="currentColor" stroke="none" d="m6.4 12 .7 2.15L9.25 15l-2.15.7L6.4 17.85l-.7-2.15L3.55 15l2.15-.85Z"/><path class="reader-glyph-shape" fill="currentColor" stroke="none" d="m16.7 13.2.55 1.7 1.7.55-1.7.55-.55 1.7-.55-1.7-1.7-.55 1.7-.55Z"/></svg>`,
@@ -12,15 +11,13 @@ export function readerNavActiveFromLocation() {
     const path = location.pathname || "";
     const view = new URLSearchParams(location.search).get("view") || "";
     if (path === "/reader" || path === "/reader/") return "home";
-    if (path.startsWith("/reader/shelf") || (path === "/library" && view === "mine")) {
-        return "shelf";
-    }
     if (
         path.startsWith("/reader/discover") ||
         path === "/library" ||
         path === "/library/" ||
         view === "discover" ||
-        view === "browse"
+        view === "browse" ||
+        view === "mine"
     ) {
         return "discover";
     }
@@ -30,9 +27,8 @@ export function readerNavActiveFromLocation() {
 
 export function readerNavHtml(active) {
     const items = [
-        { id: "shelf", href: "/library?view=mine", label: "My Library", icon: "library" },
-        { id: "discover", href: "/library?view=discover", label: "Discover", icon: "discover" },
         { id: "home", href: "/reader", label: "Reader", icon: "reader" },
+        { id: "discover", href: "/library?view=discover", label: "Discover", icon: "discover" },
         { id: "updates", href: "/updates", label: "What’s New", icon: "updates" },
     ];
     const link = (item) => {

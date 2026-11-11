@@ -34,6 +34,7 @@ async function boot() {
         const byId = bookMap(catalog);
         const continues = continueCandidates(reading.state, byId);
         const primary = continues[0] || null;
+        const rest = continues.slice(1);
         const shelves = reading.state.read("shelves") || {};
         const readIds = [
             ...Object.keys(reading.state.read("read-position") || {}),
@@ -43,7 +44,7 @@ async function boot() {
         ];
         const tonight = readingRecommendations(catalog, {
             readIds,
-            exclude: primary ? [primary.book.id] : [],
+            exclude: continues.map((row) => row.book.id),
         }).items;
 
         let html = "";
@@ -59,6 +60,20 @@ async function boot() {
             </a>`;
         } else {
             html += `<div class="reader-empty">Nothing in progress yet. Discover a story and it will wait for you here.</div>`;
+        }
+
+        if (rest.length) {
+            html += `<h2 class="reader-section-title">Also reading</h2>`;
+            const cards = rest
+                .map((row, index) =>
+                    bookCardHtml(row.book, {
+                        href: readHref(row.book.id, row.chapterId),
+                        meta: `${Math.round(row.progress)}% · ${row.book.author || ""}`,
+                        index,
+                    })
+                )
+                .join("");
+            html += bookGridHtml(cards);
         }
 
         html += `<h2 class="reader-section-title">Tonight</h2>`;

@@ -1,5 +1,5 @@
 # Reader
 
-Dedicated reading shell for Alysum: Continue home at `/reader`, plus the real Library hub.
+Dedicated reading shell for Alysum.
 
-My Library / Discover open the writer Library (`/library`) so the catalog, filters, and cards are identical. Reader mode swaps the Library page’s workspace nav for the Reader icon bar.
+Icon bar: **Reader** (all in-progress books) · **Discover** (real `/library` hub) · **What’s New**. Reader mode swaps the Library page’s workspace nav for that icon bar.
