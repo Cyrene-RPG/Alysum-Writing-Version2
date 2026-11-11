@@ -365,50 +365,33 @@
 .wd-nav > a.is-hidden,
 .wd-nav > button.is-hidden { display: none; }
 
-.account-mode-nav-switch {
-    border-color: color-mix(in srgb, var(--pink, #ec4899) 55%, transparent) !important;
-    background: color-mix(in srgb, var(--purple, #6d28d9) 28%, transparent) !important;
-    color: #fff !important;
-    font-weight: 800 !important;
-}
-
 .account-mode-toggle {
     margin-left: auto;
     flex: 0 0 auto;
-    display: inline-flex;
-    padding: 3px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    background: rgba(0, 0, 0, 0.28);
-    gap: 2px;
 }
 
-.account-mode-toggle button {
+.account-mode-switch {
     appearance: none;
     margin: 0;
-    padding: 7px 12px;
-    border: none;
+    padding: 8px 12px;
     border-radius: 999px;
-    background: transparent;
-    color: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(0, 0, 0, 0.2);
+    color: rgba(255, 255, 255, 0.92);
     font: inherit;
     font-size: 12px;
-    font-weight: 800;
+    font-weight: 700;
     line-height: 1.2;
     cursor: pointer;
+    white-space: nowrap;
 }
 
-.account-mode-toggle button[aria-pressed="true"] {
-    color: #fff;
-    background: linear-gradient(
-        135deg,
-        var(--purple-dark, #5b21b6),
-        var(--purple, #6d28d9) 55%,
-        var(--pink, #ec4899)
-    );
+.account-mode-switch:hover {
+    background: rgba(0, 0, 0, 0.32);
+    border-color: rgba(255, 255, 255, 0.34);
 }
 
-.account-mode-toggle button:focus-visible {
+.account-mode-switch:focus-visible {
     outline: 2px solid rgba(255, 255, 255, 0.7);
     outline-offset: 2px;
 }
