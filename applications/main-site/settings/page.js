@@ -20,6 +20,7 @@ import { permanentHandleFromUserData } from "@alysum/account/profile-display.js"
 import { fillWelcomeBar } from "/js/welcome-bar.js?v=2";
 import { AUTHOR_BIO_MAX_LENGTH } from "@alysum/library/author-profile.js";
 import { normalizeAccountType, homeUrlForUserData } from "@alysum/account/mode.js";
+import { mountAccountModeToggle } from "@alysum/account/mode-toggle.js";
 
 function showLoadError(message) {
     if (!els.loadingPanel) return;
@@ -87,6 +88,12 @@ function fillSettingsFromRow(user, row) {
     state.settingsHomeUrl = homeUrlForUserData({ ...data, accountType: acct });
     const typeSelect = document.getElementById("settingsAccountType");
     if (typeSelect) typeSelect.value = acct;
+    void mountAccountModeToggle({
+        supabase,
+        accountType: acct,
+        side: "studio",
+        userId: state.settingsUserId,
+    });
     return data;
 }
 

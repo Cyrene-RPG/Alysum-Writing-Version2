@@ -7,6 +7,7 @@ import { peekWorkspaceProfile, loadWorkspaceProfile } from "/core/account/worksp
 import { wireLogoutButtons } from "@alysum/authentication/logout.js";
 import { openRoadmap } from "@alysum/authentication/open-roadmap.js";
 import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/appearance-loadout-menu.js?v=8";
+import { mountAccountModeToggleForSession } from "@alysum/account/mode-toggle.js";
 
 function closeWelcomePfpMenu() {
     const menu = document.getElementById("welcomePfpMenu");
@@ -82,6 +83,7 @@ async function refreshProfile() {
     if (generation !== profileGeneration) return;
     const preview = peekWorkspaceProfile(session);
     setWelcomeAvatar(preview.imageUrl, preview.name);
+    void mountAccountModeToggleForSession(supabase, session, { side: "reader" });
     if (session.mode !== "cloud") return;
     void loadWorkspaceProfile(supabase, session).then((profile) => {
         if (generation === profileGeneration) setWelcomeAvatar(profile.imageUrl, profile.name);

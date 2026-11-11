@@ -365,10 +365,59 @@
 .wd-nav > a.is-hidden,
 .wd-nav > button.is-hidden { display: none; }
 
+.account-mode-toggle {
+    margin-left: auto;
+    flex: 0 0 auto;
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(0, 0, 0, 0.28);
+    gap: 2px;
+}
+
+.account-mode-toggle button {
+    appearance: none;
+    margin: 0;
+    padding: 7px 12px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.78);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.2;
+    cursor: pointer;
+}
+
+.account-mode-toggle button[aria-pressed="true"] {
+    color: #fff;
+    background: linear-gradient(
+        135deg,
+        var(--purple-dark, #5b21b6),
+        var(--purple, #6d28d9) 55%,
+        var(--pink, #ec4899)
+    );
+}
+
+.account-mode-toggle button:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.7);
+    outline-offset: 2px;
+}
+
+.account-mode-toggle + .wd-loadout-menu {
+    margin-left: 8px;
+}
+
 .wd-loadout-menu {
     position: relative;
     margin-left: auto;
     flex: 0 0 auto;
+}
+
+.account-mode-toggle ~ .wd-loadout-menu {
+    margin-left: 8px;
 }
 
 .wd-loadout-btn {

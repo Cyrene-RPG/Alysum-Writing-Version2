@@ -1,4 +1,4 @@
-import { supabase as notificationSupabase } from "/core/authentication/client.js";
+import { supabase } from "/core/authentication/client.js";
 import { createNotificationService } from "/core/notifications/service.js";
 import { mountNotificationBell } from "/site-appearance/js-runtime/notification-bell.js";
 /**
@@ -7,6 +7,8 @@ import { mountNotificationBell } from "/site-appearance/js-runtime/notification-
 import { wireLogoutButtons } from "@alysum/authentication/logout.js";
 import { openRoadmap } from "@alysum/authentication/open-roadmap.js";
 import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/appearance-loadout-menu.js?v=8";
+import { resolveStudioSession } from "/core/desktop/studio-session.js";
+import { mountAccountModeToggleForSession } from "@alysum/account/mode-toggle.js";
 
 function closeWelcomePfpMenu() {
     const menu = document.getElementById("welcomePfpMenu");
@@ -97,7 +99,7 @@ export function initWorkspaceShell({ lead, accent, title, subtitle, name, imageU
     wireLogoutButtons(document);
     wirePfpMenu();
     initAppearanceLoadoutMenu({ openRoadmap });
-    mountNotificationBell({ service: createNotificationService(notificationSupabase) });
+    mountNotificationBell({ service: createNotificationService(supabase) });
     if (lead != null || accent != null || title != null || subtitle != null) {
         setWelcomeCopy({
             lead: lead ?? "",
@@ -106,4 +108,7 @@ export function initWorkspaceShell({ lead, accent, title, subtitle, name, imageU
         });
     }
     if (name || imageUrl) setWelcomeAvatar(imageUrl, name);
+    void resolveStudioSession(supabase)
+        .then((session) => mountAccountModeToggleForSession(supabase, session, { side: "studio" }))
+        .catch(() => {});
 }
