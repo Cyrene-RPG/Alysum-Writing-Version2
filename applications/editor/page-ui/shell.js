@@ -109,4 +109,7 @@ export function initWorkspaceShell({ lead, accent, title, subtitle, name, imageU
         });
     }
     if (name || imageUrl) setWelcomeAvatar(imageUrl, name);
+    import("/js/writer-chrome.js")
+        .then((mod) => mod.paintWriterNav?.())
+        .catch(() => {});
 }

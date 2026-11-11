@@ -5,6 +5,7 @@
 import { getUiMode, isReaderPath, READER_ROUTES, setUiMode } from "@alysum/account/mode.js";
 import { wireLogoutButtons } from "@alysum/authentication/logout.js";
 import { paintReaderNav, readerAccountMenuHtml } from "/applications/reader/page-ui/chrome.js";
+import { paintWriterNav } from "/js/writer-chrome.js";
 
 export function isReaderUiMode() {
     return getUiMode() === "library" || isReaderPath();
@@ -112,6 +113,8 @@ export function applyModeChrome(options = {}) {
     if (readerMode) {
         ensureReaderStyles();
         paintReaderNav(options.active || undefined);
+    } else {
+        paintWriterNav();
     }
     retargetHomeLinks(readerMode);
     return readerMode;
