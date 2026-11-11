@@ -814,8 +814,8 @@ BEGIN
 
   RETURN jsonb_build_object(
     'totalUsers', (SELECT COUNT(*) FROM public.users),
-    'authors', (SELECT COUNT(*) FROM public.users WHERE account_type IN ('author', 'both')),
-    'readers', (SELECT COUNT(*) FROM public.users WHERE account_type IN ('reader', 'both')),
+    'authors', (SELECT COUNT(*) FROM public.users WHERE public.account_has_writer(account_type)),
+    'readers', (SELECT COUNT(*) FROM public.users WHERE public.account_has_reader(account_type)),
     'onlineNow', (
       SELECT COUNT(*) FROM public.users
       WHERE last_seen_at >= now() - interval '5 minutes'

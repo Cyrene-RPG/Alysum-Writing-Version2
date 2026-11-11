@@ -49,6 +49,33 @@ export function accountSupportsModeToggle(accountType) {
     return t === ACCOUNT_BOTH || t === ACCOUNT_ALL;
 }
 
+/** Matches SQL public.account_has_writer */
+export function accountHasWriter(accountType) {
+    const t = normalizeAccountType(accountType);
+    return (
+        t === ACCOUNT_AUTHOR ||
+        t === ACCOUNT_WRITER_ARTIST ||
+        t === ACCOUNT_BOTH ||
+        t === ACCOUNT_ALL
+    );
+}
+
+/** Matches SQL public.account_has_reader */
+export function accountHasReader(accountType) {
+    const t = normalizeAccountType(accountType);
+    return t === ACCOUNT_READER || t === ACCOUNT_BOTH || t === ACCOUNT_ALL;
+}
+
+/** Matches SQL public.account_has_artist */
+export function accountHasArtist(accountType) {
+    const t = normalizeAccountType(accountType);
+    return (
+        t === ACCOUNT_ARTIST ||
+        t === ACCOUNT_WRITER_ARTIST ||
+        t === ACCOUNT_ALL
+    );
+}
+
 /** Studio / writer-side home (not reader-only). */
 export function accountUsesWriterHome(accountType) {
     const t = normalizeAccountType(accountType);

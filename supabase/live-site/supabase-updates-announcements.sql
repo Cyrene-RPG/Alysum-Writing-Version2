@@ -53,7 +53,7 @@ BEGIN
     IF auth.uid() IS NULL THEN RETURN false; END IF;
     IF NOT EXISTS (
         SELECT 1 FROM public.users
-        WHERE id = auth.uid() AND account_type IN ('author', 'both')
+        WHERE id = auth.uid() AND public.account_has_writer(account_type)
     ) THEN RETURN false; END IF;
     IF to_regclass('public.author_moderation_status') IS NOT NULL THEN
         IF EXISTS (

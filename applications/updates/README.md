@@ -8,7 +8,7 @@ Public changelog and author announcements. This phase publishes posts; notificat
 2. Deploy the matching application changes.
 3. Visit `/updates` for the public changelog and `/write-update` to manage your own drafts and posts.
 
-Author posts require an existing `public.users.account_type` of `author` or `both`. If the existing moderation status table is present, suspended, terminated, and publishing-revoked accounts cannot publish author updates.
+Author posts require writer access on `public.users.account_type` (`author`, `writer_artist`, `both`, or `all` via `account_has_writer`). If the existing moderation status table is present, suspended, terminated, and publishing-revoked accounts cannot publish author updates.
 
 Site changelogs require an existing `public.moderation_staff` entry with role `admin`. Missing staff configuration denies site publishing; the migration does not create staff or grant anyone a new role.
 

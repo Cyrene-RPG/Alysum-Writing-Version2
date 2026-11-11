@@ -52,7 +52,7 @@ BEGIN
         RETURN QUERY SELECT f.follower_id::text,
             COALESCE(NULLIF(u.display_name,''),NULLIF(u.username,''),'Reader'),
             COALESCE(u.username,''),COALESCE(u.profile_image_url,''),
-            CASE WHEN u.account_type IN ('author','both') THEN f.follower_id ELSE NULL END,
+            CASE WHEN public.account_has_writer(u.account_type) THEN f.follower_id ELSE NULL END,
             NULL::text,f.created_at,true
         FROM public.author_follows f LEFT JOIN public.users u ON u.id=f.follower_id
         WHERE f.author_id=auth.uid() AND f.follower_id::text>COALESCE(p_after_id,'')
