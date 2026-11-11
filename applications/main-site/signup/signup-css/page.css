@@ -1,6 +1,8 @@
 :root {
     --auth-ink: var(--text, #f8fafc);
     --auth-muted: var(--muted, #9ca3af);
+    --auth-label: #e9d5ff;
+    --auth-link: #c4b5fd;
     --auth-border: color-mix(in srgb, var(--purple, #7c3aed) 22%, transparent);
     --auth-card: var(--alysum-ui-panel, #111827);
     --auth-gold: var(--alysum-display-mid, var(--gold, #f5d489));
@@ -136,7 +138,7 @@ h2 {
     margin: 12px 0 7px;
     font-size: 12px;
     font-weight: 800;
-    color: #4c1d95;
+    color: var(--auth-label);
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
@@ -189,7 +191,7 @@ button:active { transform: translateY(0) scale(0.99); }
 }
 
 a {
-    color: var(--purple, #6d28d9);
+    color: var(--auth-link);
     text-decoration: none;
     font-weight: 700;
 }
@@ -207,7 +209,7 @@ a:hover {
 }
 
 .support-footnote a {
-    color: var(--purple, #6d28d9);
+    color: var(--auth-link);
     font-weight: 600;
     text-decoration: none;
 }
@@ -262,7 +264,7 @@ a:hover {
 }
 
 #confirm-email-address {
-    color: #4c1d95;
+    color: var(--auth-label);
     word-break: break-all;
 }
 
@@ -280,7 +282,7 @@ button:disabled {
     margin: 16px 0 8px;
     font-size: 12px;
     font-weight: 800;
-    color: #4c1d95;
+    color: var(--auth-label);
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
@@ -320,7 +322,7 @@ button:disabled {
     margin: 8px 0 0;
     font-size: 12px;
     line-height: 1.4;
-    color: #6b21a8;
+    color: var(--auth-muted);
 }
 
 .auth-divider {
@@ -328,7 +330,7 @@ button:disabled {
     align-items: center;
     gap: 12px;
     margin: 18px 0 14px;
-    color: #64748b;
+    color: var(--auth-muted);
     font-size: 13px;
     font-weight: 600;
 }
@@ -338,7 +340,7 @@ button:disabled {
     content: "";
     flex: 1;
     height: 1px;
-    background: #e2e8f0;
+    background: rgba(255, 255, 255, 0.16);
 }
 
 .btn-oauth {
@@ -358,7 +360,7 @@ button:disabled {
     margin: 18px auto 0;
     max-width: 330px;
     text-align: center;
-    color: #64748b;
+    color: var(--auth-muted);
     font-size: 12px;
     line-height: 1.45;
 }
