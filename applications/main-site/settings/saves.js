@@ -6,7 +6,7 @@ import { setAvatarPreview } from "/js/settings/appearance.js?v=18";
 import { updateAuthorBioCount, readSupportLinkDraft } from "/js/settings/author-page.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { updateProfileRow } from "@alysum/synchronization-engine/local-adapter.js";
-import { ACCOUNT_AUTHOR, ACCOUNT_READER, ACCOUNT_BOTH, homeUrlForUserData } from "@alysum/account/mode.js";
+import { isValidAccountType, homeUrlForUserData } from "@alysum/account/mode.js";
 import {
     DEFAULT_WORD_GOAL_MODE,
     WEEKDAY_FULL,
@@ -530,9 +530,9 @@ export function wireSettingsSaves() {
     els.saveAccountTypeBtn?.addEventListener("click", async () => {
         hideMsg(els.accountTypeMsg);
 
-        const picked = document.querySelector('input[name="settingsAccountType"]:checked');
-        const v = picked ? picked.value : "";
-        if (v !== ACCOUNT_AUTHOR && v !== ACCOUNT_READER && v !== ACCOUNT_BOTH) {
+        const select = document.getElementById("settingsAccountType");
+        const v = select?.value || "";
+        if (!isValidAccountType(v)) {
             showMsg(els.accountTypeMsg, "Pick one option.", false);
             return;
         }

@@ -364,19 +364,16 @@
         <section class="profile-box profile-account-focus-box" id="account-focus" aria-labelledby="accountFocusTitle">
             <h3 class="profile-box-title" id="accountFocusTitle">Account focus</h3>
             <div class="account-focus-body">
-            <div id="accountTypeGroup" role="radiogroup" aria-label="Account focus">
-                <label class="account-type-row">
-                    <input type="radio" name="settingsAccountType" value="author" />
-                    <span class="account-type-card">Author</span>
-                </label>
-                <label class="account-type-row">
-                    <input type="radio" name="settingsAccountType" value="reader" />
-                    <span class="account-type-card">Reader</span>
-                </label>
-                <label class="account-type-row">
-                    <input type="radio" name="settingsAccountType" value="both" />
-                    <span class="account-type-card">Both</span>
-                </label>
+            <div id="accountTypeGroup" class="account-type-select-wrap">
+                <label class="account-type-select-label" for="settingsAccountType">Account path</label>
+                <select id="settingsAccountType" name="settingsAccountType" class="account-type-select" aria-label="Account focus">
+                    <option value="reader">Reader</option>
+                    <option value="author">Writer</option>
+                    <option value="artist">Artist</option>
+                    <option value="writer_artist">Writer / Artist</option>
+                    <option value="both">Writer / Reader</option>
+                    <option value="all">All</option>
+                </select>
             </div>
             <div class="account-focus-actions">
                 <button type="button" class="btn btn-primary" id="saveAccountTypeBtn">Save account focus</button>

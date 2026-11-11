@@ -85,9 +85,8 @@ function fillSettingsFromRow(user, row) {
 
     const acct = normalizeAccountType(data.accountType);
     state.settingsHomeUrl = homeUrlForUserData({ ...data, accountType: acct });
-    document.querySelectorAll('input[name="settingsAccountType"]').forEach((r) => {
-        r.checked = r.value === acct;
-    });
+    const typeSelect = document.getElementById("settingsAccountType");
+    if (typeSelect) typeSelect.value = acct;
     return data;
 }
 

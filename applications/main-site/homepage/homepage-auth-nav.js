@@ -1,6 +1,6 @@
 import {
-    ACCOUNT_AUTHOR,
     ACCOUNT_READER,
+    accountUsesWriterHome,
     homeUrlForUserData,
     getUiMode,
     normalizeAccountType,
@@ -18,7 +18,7 @@ function userProfileFromRow(row) {
 function primaryCtaLabel(accountType) {
     const t = normalizeAccountType(accountType);
     if (t === ACCOUNT_READER) return "Open reading profile";
-    if (t === ACCOUNT_AUTHOR) return "Open Studio";
+    if (accountUsesWriterHome(t)) return "Open Studio";
     return getUiMode() === "library" ? "Open reading profile" : "Open Studio";
 }
 

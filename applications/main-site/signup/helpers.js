@@ -1,5 +1,10 @@
 import { els } from "/js/signup/elements.js";
-import { ACCOUNT_AUTHOR, ACCOUNT_BOTH, ACCOUNT_READER, setUiMode } from "@alysum/account/mode.js";
+import {
+    ACCOUNT_BOTH,
+    ACCOUNT_READER,
+    isValidAccountType,
+    setUiMode,
+} from "@alysum/account/mode.js";
 import {
     persistAuthReturnNext,
     resolveAuthReturnNext,
@@ -7,6 +12,8 @@ import {
     isCollabRoomReturnUrl,
     SIGNUP_RETURN_NEXT_KEY,
 } from "@alysum/authentication/redirect.js";
+
+export { isValidAccountType };
 
 export const SIGNUP_ACCOUNT_TYPE_KEY = "alysum-signup-account-type";
 export const SIGNUP_PENDING_EMAIL_KEY = "alysum-signup-pending-email";
@@ -21,16 +28,8 @@ export function setOAuthButtonsDisabled(disabled) {
 }
 
 export function pickedAccountType() {
-    const typeInput = document.querySelector('input[name="accountType"]:checked');
-    return typeInput ? typeInput.value : ACCOUNT_BOTH;
-}
-
-export function isValidAccountType(accountType) {
-    return (
-        accountType === ACCOUNT_AUTHOR ||
-        accountType === ACCOUNT_READER ||
-        accountType === ACCOUNT_BOTH
-    );
+    const select = document.getElementById("accountTypeSelect");
+    return select?.value || ACCOUNT_BOTH;
 }
 
 export function oauthUsernameFromUser(user) {
@@ -75,8 +74,8 @@ export function applySignupReturnContext() {
     if (isBetaRoomReturnUrl(safe)) {
         banner?.classList.add("visible");
         if (heading) heading.textContent = "Create account to open beta room";
-        const readerRadio = document.querySelector('input[name="accountType"][value="reader"]');
-        if (readerRadio) readerRadio.checked = true;
+        const typeSelect = document.getElementById("accountTypeSelect");
+        if (typeSelect) typeSelect.value = ACCOUNT_READER;
         return;
     }
 

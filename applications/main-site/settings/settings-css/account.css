@@ -89,77 +89,59 @@
         0 0 0 3px color-mix(in srgb, var(--purple-bright) 24%, transparent);
 }
 
-#accountTypeGroup {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+#accountTypeGroup.account-type-select-wrap {
+    display: flex;
+    flex-direction: column;
     gap: 8px;
     width: 100%;
-    align-items: stretch;
+    max-width: 28rem;
+    margin: 0 auto;
 }
 
-@media (max-width: 719px) {
-    #accountTypeGroup {
-        grid-template-columns: 1fr;
-    }
+.account-type-select-label {
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgba(248, 250, 252, 0.72);
 }
 
-.account-type-row {
-    position: relative;
-    display: flex;
-    margin: 0;
-    padding: 0;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    height: 100%;
-    min-width: 0;
-}
-
-.account-type-row:focus-within .account-type-card {
-    outline: 2px solid color-mix(in srgb, var(--purple-bright) 70%, transparent);
-    outline-offset: 3px;
-}
-
-.account-type-card {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
+#accountTypeGroup .account-type-select {
+    display: block;
     width: 100%;
-    min-height: 2.5rem;
-    padding: 8px 10px;
+    margin: 0;
+    padding: 12px 40px 12px 14px;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.04);
-    text-align: center;
-    font-size: 0.95rem;
-    font-weight: 900;
-    letter-spacing: 0.02em;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06)
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f8fafc' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")
+        no-repeat right 14px center;
     color: #f8fafc;
+    font-size: 0.98rem;
+    font-weight: 750;
+    line-height: 1.3;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
     transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
-.account-type-row:hover .account-type-card {
-    border-color: rgba(255, 255, 255, 0.22);
-    background: rgba(255, 255, 255, 0.07);
+#accountTypeGroup .account-type-select:hover {
+    border-color: rgba(255, 255, 255, 0.28);
+    background-color: rgba(255, 255, 255, 0.09);
 }
 
-.account-type-row input {
-    position: absolute;
-    opacity: 0;
-    width: 1px;
-    height: 1px;
-    pointer-events: none;
-}
-
-.account-type-row:has(input:checked) .account-type-card {
+#accountTypeGroup .account-type-select:focus {
+    outline: none;
     border-color: color-mix(in srgb, var(--purple-bright) 55%, transparent);
-    background:
-        linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
-        color-mix(in srgb, var(--theme-accent-soft-bg) 80%, transparent);
     box-shadow:
         0 0 0 1px color-mix(in srgb, var(--pink) 35%, transparent),
-        0 12px 36px rgba(0, 0, 0, 0.32);
+        0 0 0 3px color-mix(in srgb, var(--purple-bright) 24%, transparent);
+}
+
+#accountTypeGroup .account-type-select option {
+    color: #0f172a;
+    background: #fff;
 }
 
 .account-focus-actions {

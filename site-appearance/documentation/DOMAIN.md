@@ -35,7 +35,7 @@ A snapshot of a book.
 Account plus studio stats.
 
 - `id`, `username`, `display_name`
-- `account_type` — `author` | `reader` | `both`
+- `account_type` — `reader` | `author` (Writer) | `artist` | `writer_artist` | `both` (Writer / Reader) | `all`
 - `daily_word_goal`, `writing_day_totals`, `streak`
 - `word_goal_mode` — `track` (UI: Writer Goals) | `pace` (Maintain your pace). Legacy `goal` normalizes to `track`.
 - `daily_writing_enabled` — master on/off; off still records `writing_day_totals`, just hides the tracker

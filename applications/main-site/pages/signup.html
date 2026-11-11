@@ -92,33 +92,16 @@
     </div>
     <p class="auth-subtitle">Choose your path, then continue with email, Google, or Discord.</p>
 
-    <span class="account-type-label" id="accountTypeLabel">How will you use Alysum?</span>
-
-    <div class="account-options" role="radiogroup" aria-labelledby="accountTypeLabel">
-        <label class="account-option">
-            <input type="radio" name="accountType" value="author" checked />
-            <span class="account-option-text">
-                <strong>Author</strong>
-                <span>Write in Studio, publish, and track your projects.</span>
-            </span>
-        </label>
-
-        <label class="account-option">
-            <input type="radio" name="accountType" value="reader" />
-            <span class="account-option-text">
-                <strong>Reader</strong>
-                <span>Start on your Reading home, then browse the Library and leave feedback.</span>
-            </span>
-        </label>
-
-        <label class="account-option">
-            <input type="radio" name="accountType" value="both" />
-            <span class="account-option-text">
-                <strong>Both</strong>
-                <span>Switch any time between Studio and Reading from the top bar.</span>
-            </span>
-        </label>
-    </div>
+    <label class="account-type-label" for="accountTypeSelect">How will you use Alysum?</label>
+    <select id="accountTypeSelect" name="accountType" class="account-type-select" aria-describedby="accountTypeHint">
+        <option value="reader">Reader</option>
+        <option value="author" selected>Writer</option>
+        <option value="artist">Artist</option>
+        <option value="writer_artist">Writer / Artist</option>
+        <option value="both">Writer / Reader</option>
+        <option value="all">All</option>
+    </select>
+    <p class="account-type-hint" id="accountTypeHint">Pick one path for now — you can change this later in Settings.</p>
 
     <button type="button" id="google-btn" class="btn-oauth" aria-label="Sign up with Google">
         Continue with Google

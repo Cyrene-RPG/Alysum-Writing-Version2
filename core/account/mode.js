@@ -1,13 +1,32 @@
 /**
- * Account intent: author workspace, reader-focused, or both (toggle + legacy default).
- * Firestore field: users/{uid}.accountType — "author" | "reader" | "both"
- * Missing/unknown values are treated as "both" for existing users.
+ * Account intent for Studio, Reading, Artist, or combinations.
+ * DB field: users/{uid}.account_type
+ * Canonical values: "reader" | "author" | "artist" | "writer_artist" | "both" | "all"
+ * Legacy: missing/unknown → "both". "author" is the Writer path (kept for existing SQL gates).
  */
 export const UI_MODE_STORAGE_KEY = "alysum-ui-mode";
 
+/** Writer / Studio path (stored as author for legacy SQL + settings). */
 export const ACCOUNT_AUTHOR = "author";
 export const ACCOUNT_READER = "reader";
+/** Writer + Reader (toggle). */
 export const ACCOUNT_BOTH = "both";
+export const ACCOUNT_ARTIST = "artist";
+export const ACCOUNT_WRITER_ARTIST = "writer_artist";
+/** Writer + Reader + Artist. */
+export const ACCOUNT_ALL = "all";
+
+/** Signup / settings choices in display order. */
+export const ACCOUNT_TYPE_OPTIONS = [
+    { value: ACCOUNT_READER, label: "Reader" },
+    { value: ACCOUNT_AUTHOR, label: "Writer" },
+    { value: ACCOUNT_ARTIST, label: "Artist" },
+    { value: ACCOUNT_WRITER_ARTIST, label: "Writer / Artist" },
+    { value: ACCOUNT_BOTH, label: "Writer / Reader" },
+    { value: ACCOUNT_ALL, label: "All" },
+];
+
+const VALID_ACCOUNT_TYPES = new Set(ACCOUNT_TYPE_OPTIONS.map((o) => o.value));
 
 /** Logged-in reader hub (profile + shortcuts). */
 export const READER_HOME_URL = "settings.html";
@@ -15,16 +34,29 @@ export const READER_HOME_URL = "settings.html";
 /** Logged-in writer hub (books, stats, prompts). */
 export const WRITER_HOME_URL = "settings.html";
 
+export function isValidAccountType(raw) {
+    return VALID_ACCOUNT_TYPES.has(raw);
+}
+
 export function normalizeAccountType(raw) {
-    if (raw === ACCOUNT_AUTHOR || raw === ACCOUNT_READER || raw === ACCOUNT_BOTH) {
-        return raw;
-    }
+    if (isValidAccountType(raw)) return raw;
     return ACCOUNT_BOTH;
 }
 
-/** Both (explicit) and legacy accounts without accountType can switch Studio ↔ Library. */
+/** Writer / Reader and All can switch Studio ↔ Library. */
 export function accountSupportsModeToggle(accountType) {
-    return normalizeAccountType(accountType) === ACCOUNT_BOTH;
+    const t = normalizeAccountType(accountType);
+    return t === ACCOUNT_BOTH || t === ACCOUNT_ALL;
+}
+
+/** Studio / writer-side home (not reader-only). */
+export function accountUsesWriterHome(accountType) {
+    const t = normalizeAccountType(accountType);
+    return (
+        t === ACCOUNT_AUTHOR ||
+        t === ACCOUNT_ARTIST ||
+        t === ACCOUNT_WRITER_ARTIST
+    );
 }
 
 export function getUiMode() {
@@ -47,7 +79,7 @@ export function setUiMode(mode) {
 export function homeUrlForUserData(data) {
     const t = normalizeAccountType(data && (data.accountType ?? data.account_type));
     if (t === ACCOUNT_READER) return READER_HOME_URL;
-    if (t === ACCOUNT_AUTHOR) return WRITER_HOME_URL;
+    if (accountUsesWriterHome(t)) return WRITER_HOME_URL;
     /* "library" in session = reading side → profile hub, not the catalog page. */
     return getUiMode() === "library" ? READER_HOME_URL : WRITER_HOME_URL;
 }
