@@ -1,8 +1,8 @@
 :root {
     --auth-ink: var(--text, #f8fafc);
     --auth-muted: var(--muted, #9ca3af);
-    --auth-label: #e9d5ff;
-    --auth-link: #c4b5fd;
+    --auth-label: #f5d489;
+    --auth-link: #f8fafc;
     --auth-border: color-mix(in srgb, var(--purple, #7c3aed) 22%, transparent);
     --auth-card: var(--alysum-ui-panel, #111827);
     --auth-gold: var(--alysum-display-mid, var(--gold, #f5d489));
@@ -138,7 +138,7 @@ h2 {
     margin: 12px 0 7px;
     font-size: 12px;
     font-weight: 800;
-    color: var(--auth-label);
+    color: var(--auth-label) !important;
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
@@ -190,8 +190,10 @@ button:active { transform: translateY(0) scale(0.99); }
     color: var(--auth-muted);
 }
 
+.card a,
+.auth-shell a,
 a {
-    color: var(--auth-link);
+    color: var(--auth-link) !important;
     text-decoration: none;
     font-weight: 700;
 }
@@ -209,7 +211,7 @@ a:hover {
 }
 
 .support-footnote a {
-    color: var(--auth-link);
+    color: var(--auth-link) !important;
     font-weight: 600;
     text-decoration: none;
 }
@@ -282,7 +284,7 @@ button:disabled {
     margin: 16px 0 8px;
     font-size: 12px;
     font-weight: 800;
-    color: var(--auth-label);
+    color: var(--auth-label) !important;
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
