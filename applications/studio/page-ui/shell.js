@@ -58,6 +58,7 @@ export function setWelcomeCopy(leadOrOpts, accent, subtitle) {
         titleEl.replaceChildren();
         if (opts.lead) titleEl.append(String(opts.lead));
         if (opts.accent) {
+            if (opts.lead) titleEl.append(document.createElement("wbr"));
             const nameEl = document.createElement("span");
             nameEl.className = "wd-name";
             nameEl.textContent = String(opts.accent);

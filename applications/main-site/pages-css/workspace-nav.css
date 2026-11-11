@@ -943,56 +943,69 @@ button.fh-has-new-badge .fh-target-new,
         box-sizing: border-box;
     }
 
+    /* Greeting header: title keeps the full line; tools sit beside/under without crushing it. */
     .wd-welcome-bar {
         min-height: 0;
         padding: 12px 14px;
         align-items: stretch;
     }
     .wd-welcome-inner {
-        gap: 10px 12px;
-        align-items: center;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        column-gap: 12px;
+        row-gap: 8px;
+        align-items: start;
+    }
+    .wd-pfp-menu {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+        align-self: start;
     }
     .wd-pfp-btn { width: 52px; height: 52px; }
     .wd-pfp { width: 44px; height: 44px; }
     .wd-welcome-copy {
-        flex: 1 1 0;
+        grid-column: 2;
+        grid-row: 1;
         min-width: 0;
     }
     .wd-welcome-title {
-        font-size: clamp(18px, 5vw, 22px);
-        line-height: 1.28;
-        padding-right: 2px;
+        font-size: clamp(18px, 5.2vw, 22px);
+        line-height: 1.3;
     }
     .wd-welcome-sub {
         margin-top: 6px;
         font-size: 12px;
-        line-height: 1.4;
+        line-height: 1.45;
         font-weight: 600;
     }
     .wd-welcome-inner > .account-mode-toggle {
+        grid-column: 2;
+        grid-row: 2;
         margin-left: 0;
-        flex: 0 0 auto;
+        justify-self: start;
         align-self: center;
     }
-    .wd-welcome-inner > .notification-bell,
+    .wd-welcome-inner > #notification-bell,
     .wd-welcome-inner > .wd-loadout-menu {
+        grid-column: 3;
+        grid-row: 1;
         margin-left: 0 !important;
-        flex: 0 0 auto;
-        align-self: center;
+        justify-self: end;
+        align-self: start;
+    }
+    .wd-welcome-inner > .account-mode-toggle ~ #notification-bell,
+    .wd-welcome-inner > .account-mode-toggle ~ .wd-loadout-menu {
+        margin-left: 0 !important;
+    }
+    /* If both bell and loadout exist, stack them in the trailing column. */
+    .wd-welcome-inner > .wd-loadout-menu:has(+ #notification-bell),
+    .wd-welcome-inner > #notification-bell:has(+ .wd-loadout-menu) {
+        grid-row: 1;
     }
     .wd-welcome-bar .account-mode-switch {
-        max-width: 92px;
-        padding: 7px 10px;
-        font-size: 11px;
+        padding: 7px 11px;
+        font-size: 12px;
         gap: 6px;
-    }
-    .wd-welcome-bar .account-mode-switch [data-mode-current] {
-        display: inline-block;
-        max-width: 58px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        vertical-align: bottom;
     }
 
     .wd-nav > a,

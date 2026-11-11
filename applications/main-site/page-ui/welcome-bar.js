@@ -85,6 +85,8 @@ export function fillWelcomeBar(data = {}, options = {}) {
     if (title) {
         title.replaceChildren();
         title.append("Welcome back, ");
+        // Soft break so long display names don't crush the greeting on mobile.
+        title.append(document.createElement("wbr"));
         const nameEl = document.createElement("span");
         nameEl.className = "wd-name";
         nameEl.textContent = name;
