@@ -28,8 +28,8 @@ export const ACCOUNT_TYPE_OPTIONS = [
 
 const VALID_ACCOUNT_TYPES = new Set(ACCOUNT_TYPE_OPTIONS.map((o) => o.value));
 
-/** Logged-in reader hub (profile + shortcuts). */
-export const READER_HOME_URL = "settings.html";
+/** Logged-in reader hub (Continue + shelf). */
+export const READER_HOME_URL = "/reader";
 
 /** Logged-in writer hub (books, stats, prompts). */
 export const WRITER_HOME_URL = "settings.html";

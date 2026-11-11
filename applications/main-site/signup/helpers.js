@@ -2,6 +2,7 @@ import { els } from "/js/signup/elements.js";
 import {
     ACCOUNT_BOTH,
     ACCOUNT_READER,
+    homeUrlForUserData,
     isValidAccountType,
     setUiMode,
 } from "@alysum/account/mode.js";
@@ -50,11 +51,18 @@ export function oauthUsernameFromUser(user) {
 }
 
 export function redirectAfterSignup() {
+    const accountType = (() => {
+        try {
+            return sessionStorage.getItem(SIGNUP_ACCOUNT_TYPE_KEY) || ACCOUNT_BOTH;
+        } catch {
+            return ACCOUNT_BOTH;
+        }
+    })();
     clearSignupFlowState();
-    setUiMode("studio");
+    setUiMode(accountType === ACCOUNT_READER ? "library" : "studio");
     const params = new URLSearchParams(window.location.search);
     const safe = resolveAuthReturnNext(params, SIGNUP_RETURN_NEXT_KEY);
-    window.location.href = safe || "settings.html";
+    window.location.href = safe || homeUrlForUserData({ accountType });
 }
 
 export function applySignupReturnContext() {

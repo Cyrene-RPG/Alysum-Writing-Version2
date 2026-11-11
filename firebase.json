@@ -84,6 +84,22 @@
         "destination": "/applications/notifications/pages/inbox.html"
       },
       {
+        "source": "/reader",
+        "destination": "/applications/reader/pages/home.html"
+      },
+      {
+        "source": "/reader/discover",
+        "destination": "/applications/reader/pages/discover.html"
+      },
+      {
+        "source": "/reader/shelf",
+        "destination": "/applications/reader/pages/shelf.html"
+      },
+      {
+        "source": "/reader/profile",
+        "destination": "/applications/reader/pages/profile.html"
+      },
+      {
         "source": "/updates",
         "destination": "/applications/updates/pages/updates.html"
       },
