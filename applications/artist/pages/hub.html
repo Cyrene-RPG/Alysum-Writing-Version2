@@ -3,15 +3,13 @@
 <head>
     <meta charset="utf-8">
     <script type="importmap">
-    {
-      "imports": {
+    { "imports": {
         "@alysum/site-appearance/": "/site-appearance/",
         "@alysum/authentication/": "/core/authentication/",
         "@alysum/account/": "/core/account/",
         "@alysum/desktop/": "/core/desktop/",
         "@alysum/artist/": "/core/artist/"
-      }
-    }
+    } }
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/site-appearance/css-styles/theme.css">
@@ -42,45 +40,70 @@
                 </span>
             </button>
             <div class="wd-pfp-dropdown" id="welcomePfpDropdown" role="menu" hidden>
+                <a role="menuitem" href="/artist" data-close-pfp-menu>Characters</a>
                 <a role="menuitem" href="/settings" data-close-pfp-menu>Settings</a>
-                <a role="menuitem" href="/overview" data-close-pfp-menu>Profile</a>
-                <button type="button" role="menuitem" class="settings-nav-logout" data-logout-btn data-close-pfp-menu>Log out</button>
+                <button type="button" role="menuitem" data-logout-btn data-close-pfp-menu>Log out</button>
             </div>
         </div>
         <div class="wd-welcome-copy">
             <h1 class="wd-welcome-title" id="welcomeTitle">Artist</h1>
-            <p class="wd-welcome-sub is-hidden" id="welcomeSubtitle"></p>
         </div>
-        <div id="account-mode-toggle-root" class="wd-mode-toggle"></div>
+        <div id="account-mode-toggle-root"></div>
     </div>
 </header>
-<main id="main" class="artist-page">
-    <div class="artist-heading">
-        <div>
-            <p class="artist-kicker">Artist mode</p>
-            <h1 class="lib-display-title">My characters</h1>
-            <p class="artist-muted">Public art requires Glaze or Nightshade exports before upload (coming next). Provenance and off-site trades ship in phase 3a.</p>
-        </div>
-        <a href="/settings#account-focus">Account focus</a>
+<nav class="wd-nav-wrap ui-bar" aria-label="Artist">
+    <div class="wd-nav">
+        <a href="/artist" class="is-active">Characters</a>
+        <a href="/artist-gallery">Gallery</a>
+        <a href="/studio">Studio</a>
+        <a href="/library">Library</a>
     </div>
-    <p id="artist-status" role="status" aria-live="polite">Checking sign-in…</p>
-    <p id="artist-sign-in" class="artist-note" hidden><a href="/login?next=%2Fartist">Sign in</a> to use Artist mode.</p>
-    <p id="artist-no-access" class="artist-note" hidden>Your account does not include Artist access. Change account focus in <a href="/settings#account-focus">Settings</a>.</p>
-    <section id="artist-onboarding" class="artist-onboarding" hidden aria-label="Artist focus">
-        <h2 class="lib-display-title">How will you use Artist mode?</h2>
-        <p class="artist-muted">This tailors your hub. You can change it later in Settings.</p>
-        <div class="artist-focus-grid" id="artist-focus-grid"></div>
+</nav>
+<main id="main" class="artist-wrap">
+    <p id="artist-gate" class="artist-status">Loading…</p>
+    <section id="artist-focus" hidden>
+        <p class="artist-kicker">Start here</p>
+        <div class="artist-head"><h1>How will you use Artist?</h1></div>
+        <div class="artist-focus" id="artist-focus-grid"></div>
     </section>
-    <section id="artist-hub" hidden aria-label="Character roster">
-        <div class="artist-toolbar">
-            <p id="artist-focus-label" class="artist-muted"></p>
-            <button type="button" id="artist-new-character">New character</button>
+    <section id="artist-hub" hidden>
+        <p class="artist-kicker" id="artist-focus-label">Roster</p>
+        <div class="artist-head">
+            <h1>Your characters</h1>
+            <span class="artist-count" id="artist-count">0</span>
         </div>
-        <div id="artist-character-list"></div>
-        <p id="artist-empty" class="artist-empty" hidden>No characters yet. Create one to start your roster.</p>
+        <div class="artist-shelf" id="artist-shelf"></div>
+        <p class="artist-status" id="artist-status" role="status"></p>
+        <div class="artist-stats" id="artist-stats"></div>
+        <section>
+            <p class="artist-kicker">Public page</p>
+            <div class="artist-head"><h1>About you</h1><a class="artist-link" id="artist-public-link" href="/artist-profile">View</a></div>
+            <label class="artist-field">Short bio
+                <textarea id="artist-bio" maxlength="2000" placeholder="What you draw, species you design, commission status."></textarea>
+            </label>
+            <div class="artist-actions"><button type="button" class="artist-primary" id="artist-save-bio">Save bio</button></div>
+        </section>
     </section>
 </main>
+<dialog class="artist-dialog" id="artist-create">
+    <form id="artist-create-form">
+        <h2>New character</h2>
+        <label class="artist-field">Name<input name="name" required maxlength="120" autocomplete="off"></label>
+        <label class="artist-field">Kind
+            <select name="kind">
+                <option value="oc">Original character</option>
+                <option value="adoptable">Adoptable</option>
+                <option value="cast">Story cast</option>
+                <option value="sona">Persona / sona</option>
+            </select>
+        </label>
+        <div class="artist-actions">
+            <button type="button" id="artist-create-cancel">Cancel</button>
+            <button type="submit">Create</button>
+        </div>
+    </form>
+</dialog>
 <script type="module" src="/js/artist/shell.js"></script>
-<script type="module" src="/js/artist/bootstrap.js"></script>
+<script type="module" src="/js/artist/hub.js"></script>
 </body>
 </html>

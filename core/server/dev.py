@@ -86,6 +86,10 @@ PAGES = {
     "/statistics-spec": "applications/main-site/pages/statistics-spec.html",
     "/roadmap": "applications/main-site/pages/roadmap-handoff.html",
     "/artist": "applications/artist/pages/hub.html",
+    "/artist-gallery": "applications/artist/pages/gallery.html",
+    "/artist-character": "applications/artist/pages/character.html",
+    "/artist-profile": "applications/artist/pages/profile.html",
+    "/character": "applications/artist/pages/public-character.html",
 }
 
 

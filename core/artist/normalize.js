@@ -23,6 +23,8 @@ export function normalizeCharacterFromRow(row) {
         tradePolicy: row.trade_policy,
         termsText: row.terms_text,
         visibility: row.visibility,
+        summary: row.summary || "",
+        portraitUrl: row.portrait_url || "",
         fields: row.fields && typeof row.fields === "object" ? row.fields : {},
         folderId: row.folder_id || null,
         sortKey: Number(row.sort_key) || 0,

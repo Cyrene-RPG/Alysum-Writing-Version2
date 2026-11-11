@@ -5,7 +5,8 @@ BEGIN;
 
 ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS artist_focus text,
-  ADD COLUMN IF NOT EXISTS artist_hub_ready boolean NOT NULL DEFAULT false;
+  ADD COLUMN IF NOT EXISTS artist_hub_ready boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS artist_bio text NOT NULL DEFAULT '';
 
 COMMENT ON COLUMN public.users.artist_focus IS
   'oc_adoptables | writer_artist | both — how Artist hub is tailored.';
@@ -33,6 +34,8 @@ CREATE TABLE IF NOT EXISTS public.artist_characters (
   terms_text text NOT NULL DEFAULT '' CHECK (char_length(terms_text) <= 8000),
   visibility text NOT NULL DEFAULT 'private'
     CHECK (visibility IN ('private', 'unlisted', 'public')),
+  summary text NOT NULL DEFAULT '',
+  portrait_url text NOT NULL DEFAULT '',
   fields jsonb NOT NULL DEFAULT '{}'::jsonb,
   folder_id text,
   sort_key integer NOT NULL DEFAULT 0,
@@ -52,6 +55,7 @@ CREATE TABLE IF NOT EXISTS public.artist_artworks (
   character_id text,
   storage_path text NOT NULL DEFAULT '',
   caption text NOT NULL DEFAULT '' CHECK (char_length(caption) <= 2000),
+  public_url text NOT NULL DEFAULT '',
   visibility text NOT NULL DEFAULT 'private'
     CHECK (visibility IN ('private', 'unlisted', 'public')),
   protection_declared text
@@ -115,5 +119,38 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.artist_characters TO authenticate
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.artist_artworks TO authenticated;
 GRANT SELECT ON public.artist_characters TO anon;
 GRANT SELECT ON public.artist_artworks TO anon;
+
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'artist-media',
+  'artist-media',
+  true,
+  12582912,
+  ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/gif']::text[]
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = true,
+  file_size_limit = 12582912;
+
+DROP POLICY IF EXISTS artist_media_public_read ON storage.objects;
+CREATE POLICY artist_media_public_read ON storage.objects
+  FOR SELECT TO anon, authenticated
+  USING (bucket_id = 'artist-media');
+
+DROP POLICY IF EXISTS artist_media_insert_own ON storage.objects;
+CREATE POLICY artist_media_insert_own ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'artist-media'
+    AND (storage.foldername(name))[1] = (auth.uid())::text
+  );
+
+DROP POLICY IF EXISTS artist_media_delete_own ON storage.objects;
+CREATE POLICY artist_media_delete_own ON storage.objects
+  FOR DELETE TO authenticated
+  USING (
+    bucket_id = 'artist-media'
+    AND (storage.foldername(name))[1] = (auth.uid())::text
+  );
 
 COMMIT;

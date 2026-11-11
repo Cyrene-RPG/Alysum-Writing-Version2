@@ -182,6 +182,22 @@
         "destination": "/applications/artist/pages/hub.html"
       },
       {
+        "source": "/artist-gallery",
+        "destination": "/applications/artist/pages/gallery.html"
+      },
+      {
+        "source": "/artist-character",
+        "destination": "/applications/artist/pages/character.html"
+      },
+      {
+        "source": "/artist-profile",
+        "destination": "/applications/artist/pages/profile.html"
+      },
+      {
+        "source": "/character",
+        "destination": "/applications/artist/pages/public-character.html"
+      },
+      {
         "source": "/js/artist/bootstrap.js",
         "destination": "/applications/artist/page-ui/bootstrap.js"
       },

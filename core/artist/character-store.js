@@ -44,6 +44,8 @@ export async function createCharacter(supabase, ownerId, { displayName, kind = "
         trade_policy: "none",
         terms_text: "",
         visibility: "private",
+        summary: "",
+        portrait_url: "",
         updated_at: now,
     };
     const { data, error } = await supabase.from("artist_characters").insert(row).select("*").single();
@@ -73,7 +75,7 @@ export async function fetchArtistHubProfile(supabase, userId) {
     if (!supabase || !id) return { artistFocus: null, artistHubReady: false };
     const { data, error } = await supabase
         .from("users")
-        .select("artist_focus, artist_hub_ready, account_type")
+        .select("artist_focus, artist_hub_ready, account_type, username, display_name, profile_image_url, artist_bio")
         .eq("id", id)
         .maybeSingle();
     if (error) {
@@ -86,7 +88,75 @@ export async function fetchArtistHubProfile(supabase, userId) {
         artistFocus: data?.artist_focus ?? null,
         artistHubReady: Boolean(data?.artist_hub_ready),
         accountType: data?.account_type ?? null,
+        username: data?.username ?? "",
+        displayName: data?.display_name ?? "",
+        imageUrl: data?.profile_image_url ?? "",
+        artistBio: data?.artist_bio ?? "",
     };
+}
+
+export async function saveArtistBio(supabase, userId, bio) {
+    const id = String(userId || "").trim();
+    const text = String(bio ?? "").trim().slice(0, 2000);
+    const { error } = await supabase.from("users").update({ artist_bio: text }).eq("id", id);
+    if (error) throw error;
+}
+
+export async function getCharacter(supabase, ownerId, characterId) {
+    const { data, error } = await supabase
+        .from("artist_characters")
+        .select("*")
+        .eq("owner_id", ownerId)
+        .eq("id", characterId)
+        .maybeSingle();
+    if (error) throw error;
+    return normalizeCharacterFromRow(data);
+}
+
+export async function updateCharacter(supabase, ownerId, characterId, patch) {
+    const row = { updated_at: new Date().toISOString() };
+    if (patch.displayName != null) {
+        const name = String(patch.displayName).trim();
+        if (!name) throw new Error("Enter a character name.");
+        row.display_name = name;
+        row.slug = slugifyCharacterName(name);
+    }
+    if (patch.kind != null) row.kind = patch.kind;
+    if (patch.tradePolicy != null) row.trade_policy = patch.tradePolicy;
+    if (patch.termsText != null) row.terms_text = String(patch.termsText).slice(0, 8000);
+    if (patch.visibility != null) row.visibility = patch.visibility;
+    if (patch.summary != null) row.summary = String(patch.summary).slice(0, 500);
+    if (patch.portraitUrl != null) row.portrait_url = String(patch.portraitUrl);
+    if (patch.fields != null) row.fields = patch.fields;
+    const { data, error } = await supabase
+        .from("artist_characters")
+        .update(row)
+        .eq("owner_id", ownerId)
+        .eq("id", characterId)
+        .select("*")
+        .single();
+    if (error) throw error;
+    return normalizeCharacterFromRow(data);
+}
+
+export async function deleteCharacter(supabase, ownerId, characterId) {
+    const { error } = await supabase
+        .from("artist_characters")
+        .delete()
+        .eq("owner_id", ownerId)
+        .eq("id", characterId);
+    if (error) throw error;
+}
+
+export async function listPublicCharacters(supabase, ownerId) {
+    const { data, error } = await supabase
+        .from("artist_characters")
+        .select("*")
+        .eq("owner_id", ownerId)
+        .eq("visibility", "public")
+        .order("updated_at", { ascending: false });
+    if (error) throw error;
+    return (data || []).map(normalizeCharacterFromRow).filter(Boolean);
 }
 
 export async function saveArtistFocus(supabase, userId, focus) {
