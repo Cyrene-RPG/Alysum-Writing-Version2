@@ -7,6 +7,7 @@ import {
     bookHref,
     escapeHtml,
     coverStyle,
+    bookCardHtml,
 } from "./data.js";
 import { paintReaderNav } from "./chrome.js";
 
@@ -61,14 +62,11 @@ async function boot() {
 
         html += `<h2 class="reader-section-title">Tonight</h2>`;
         if (tonight.length) {
-            html += `<ul class="reader-list">`;
+            html += `<div class="reader-book-grid">`;
             for (const book of tonight.slice(0, 6)) {
-                html += `<li><a href="${bookHref(book.id)}">
-                    <div class="reader-cover"${coverStyle(book)}></div>
-                    <div><strong>${escapeHtml(book.title)}</strong><span>${escapeHtml(book.author)}</span></div>
-                </a></li>`;
+                html += bookCardHtml(book, { href: bookHref(book.id) });
             }
-            html += `</ul>`;
+            html += `</div>`;
         } else {
             html += `<div class="reader-empty">Fresh picks will show here once the catalog loads stories for you.</div>`;
         }

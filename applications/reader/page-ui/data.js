@@ -62,10 +62,27 @@ export function escapeHtml(value) {
         .replace(/"/g, "&quot;");
 }
 
-export function coverStyle(book) {
+export function coverUrl(book) {
     const url = String(book?.coverUrl || "").trim();
     if (!url || url.startsWith("/applications/library/design/hub-covers/")) {
         return "";
     }
-    return ` style="background-image:url('${escapeHtml(url)}')"`;
+    return url;
+}
+
+export function coverStyle(book) {
+    const url = coverUrl(book);
+    return url ? ` style="background-image:url('${escapeHtml(url)}')"` : "";
+}
+
+/** Studio-style cover tile used across Reader shelves and Discover. */
+export function bookCardHtml(book, { href, meta = "" } = {}) {
+    const url = coverUrl(book);
+    const style = url ? ` style="background-image:url('${escapeHtml(url)}')"` : "";
+    const title = escapeHtml(book?.title || "Untitled");
+    const line = escapeHtml(meta || book?.author || "");
+    return `<a class="reader-book${url ? " has-cover" : ""}" href="${href || bookHref(book?.id)}"${style}>
+        <strong class="reader-book-title">${title}</strong>
+        <span class="reader-book-meta">${line}</span>
+    </a>`;
 }

@@ -1,5 +1,5 @@
 import { filterHubBooks } from "@alysum/library/hub.js";
-import { openReaderData, bookHref, escapeHtml, coverStyle } from "./data.js";
+import { openReaderData, bookHref, escapeHtml, bookCardHtml } from "./data.js";
 import { paintReaderNav } from "./chrome.js";
 
 const statusEl = document.getElementById("reader-status");
@@ -31,7 +31,8 @@ function paint() {
         )
         .slice(0, 12);
 
-    let html = `<form class="reader-search" id="discover-form">
+    let html = `<p class="reader-page-note">Browse the public catalog — search, moods, and new releases.</p>`;
+    html += `<form class="reader-search" id="discover-form">
         <input id="discover-q" type="search" placeholder="Search stories, authors, tags" value="${escapeHtml(query)}" />
         <button type="submit">Search</button>
     </form>`;
@@ -43,24 +44,22 @@ function paint() {
 
     if (featured) {
         html += `<a class="reader-feature" href="${bookHref(featured.id)}">
-            <small>Featured story</small>
+            <small>Featured from the catalog</small>
             <strong>${escapeHtml(featured.title)}</strong>
             <span>${escapeHtml(featured.summary || featured.author || "Open the book page.")}</span>
         </a>`;
     }
 
-    html += `<h2 class="reader-section-title">Fresh chapters</h2>`;
+    html += `<h2 class="reader-section-title">Fresh from the catalog</h2>`;
     if (fresh.length) {
-        html += `<ul class="reader-list">`;
+        html += `<div class="reader-book-grid">`;
         for (const book of fresh) {
             const when = book.lastReleaseAt || book.publishedAt;
             const label = when ? new Date(when).toLocaleDateString() : "";
-            html += `<li><a href="${bookHref(book.id)}">
-                <div class="reader-cover"${coverStyle(book)}></div>
-                <div><strong>${escapeHtml(book.title)}</strong><span>${escapeHtml(book.author)}${label ? ` · ${escapeHtml(label)}` : ""}</span></div>
-            </a></li>`;
+            const meta = [book.author, label].filter(Boolean).join(" · ");
+            html += bookCardHtml(book, { href: bookHref(book.id), meta });
         }
-        html += `</ul>`;
+        html += `</div>`;
     } else {
         html += `<div class="reader-empty">No matching stories yet. Try another search.</div>`;
     }

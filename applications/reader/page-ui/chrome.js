@@ -9,7 +9,7 @@ const ICONS = {
 
 export function readerNavHtml(active) {
     const items = [
-        { id: "shelf", href: "/reader/shelf", label: "Library", icon: "library" },
+        { id: "shelf", href: "/reader/shelf", label: "My Library", icon: "library" },
         { id: "discover", href: "/reader/discover", label: "Discover", icon: "discover" },
         { id: "home", href: "/reader", label: "Reader", icon: "reader" },
         { id: "updates", href: "/updates", label: "What’s New", icon: "updates" },
