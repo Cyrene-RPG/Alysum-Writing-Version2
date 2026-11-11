@@ -16,10 +16,11 @@ export function readerNavHtml(active) {
         const current = item.id === active ? ' aria-current="page"' : "";
         return `<a href="${item.href}"${current}><span class="reader-icon-nav-icon">${ICONS[item.icon]}</span><span class="reader-icon-nav-label">${item.label}</span></a>`;
     };
-    return `<nav class="reader-icon-nav" aria-label="Reader">${items.map(link).join("")}</nav>`;
+    return `<nav class="reader-icon-nav" aria-label="Reader sections">${items.map(link).join("")}</nav>`;
 }
 
 export function paintReaderNav(active) {
+    const page = active || document.querySelector("[data-reader-page]")?.getAttribute("data-reader-page") || "home";
     const host = document.getElementById("reader-icons");
-    if (host) host.innerHTML = readerNavHtml(active);
+    if (host) host.innerHTML = readerNavHtml(page);
 }
