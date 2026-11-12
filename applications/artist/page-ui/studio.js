@@ -228,6 +228,46 @@ export async function mountDrawApp(root, env) {
     let selectDraft = null;
     let transformDrag = null;
     let colorDrag = null;
+    let paintQueue = [];
+    let paintRaf = 0;
+    let viewRaf = 0;
+    let cursorRaf = 0;
+    let pendingCursor = null;
+
+    function scheduleViewRender() {
+        if (viewRaf) return;
+        viewRaf = requestAnimationFrame(() => {
+            viewRaf = 0;
+            painter.render();
+        });
+    }
+
+    function flushPaintQueue() {
+        if (paintRaf) {
+            cancelAnimationFrame(paintRaf);
+            paintRaf = 0;
+        }
+        if (!paintQueue.length) return;
+        const batch = paintQueue;
+        paintQueue = [];
+        if (quickLocked) {
+            const last = batch[batch.length - 1];
+            if (last) painter.updateQuickShape(last.point);
+        } else {
+            for (const sample of batch) painter.extendStroke(sample.point, sample.pressure);
+        }
+        painter.render();
+        armHold();
+    }
+
+    function queuePaintSample(point, pressure) {
+        paintQueue.push({ point, pressure });
+        if (paintRaf) return;
+        paintRaf = requestAnimationFrame(() => {
+            paintRaf = 0;
+            flushPaintQueue();
+        });
+    }
 
     function toastMessage(text) {
         toast.hidden = !text;
@@ -930,15 +970,24 @@ export async function mountDrawApp(root, env) {
     function placeCursor(event) {
         if (!state.showCursor || !["paint", "smudge", "erase", "shape"].includes(state.tool)) {
             cursor.hidden = true;
+            pendingCursor = null;
             return;
         }
-        const point = localPoint(event);
-        const radius = Math.max(2, activeSettings().size * painter.view.zoom);
-        cursor.hidden = false;
-        cursor.style.width = `${radius * 2}px`;
-        cursor.style.height = `${radius * 2}px`;
-        cursor.style.left = `${point.x - radius}px`;
-        cursor.style.top = `${point.y - radius}px`;
+        pendingCursor = event;
+        if (cursorRaf) return;
+        cursorRaf = requestAnimationFrame(() => {
+            cursorRaf = 0;
+            const source = pendingCursor;
+            pendingCursor = null;
+            if (!source) return;
+            const point = localPoint(source);
+            const radius = Math.max(2, activeSettings().size * painter.view.zoom);
+            cursor.hidden = false;
+            cursor.style.width = `${radius * 2}px`;
+            cursor.style.height = `${radius * 2}px`;
+            cursor.style.left = `${point.x - radius}px`;
+            cursor.style.top = `${point.y - radius}px`;
+        });
     }
 
     function showLoupe(docPoint, client) {
@@ -955,6 +1004,8 @@ export async function mountDrawApp(root, env) {
             if (!painter.stroking || eyedrop) return;
             if (reach < 14) {
                 const spot = origin;
+                paintQueue = [];
+                if (paintRaf) { cancelAnimationFrame(paintRaf); paintRaf = 0; }
                 painter.cancelStroke();
                 eyedrop = true;
                 setColor(painter.pick(spot.x, spot.y));
@@ -1013,6 +1064,7 @@ export async function mountDrawApp(root, env) {
         }
         if (transformDrag && pointers.size === 0) transformDrag = null;
         if (painter.stroking && pointers.size === 0) {
+            flushPaintQueue();
             painter.commitStroke();
             quickLocked = false;
             rememberColor();
@@ -1033,7 +1085,10 @@ export async function mountDrawApp(root, env) {
         try { viewport.setPointerCapture?.(event.pointerId); } catch { /* Synthetic events have no capture. */ }
         pointers.set(event.pointerId, { type: event.pointerType, x: event.clientX, y: event.clientY, ox: event.clientX, oy: event.clientY });
         if (pointers.size >= 2) {
-            if (painter.stroking) painter.commitStroke();
+            if (painter.stroking) {
+                flushPaintQueue();
+                painter.commitStroke();
+            }
             clearTimeout(holdTimer);
             quickLocked = false;
             const all = [...pointers.values()];
@@ -1085,6 +1140,7 @@ export async function mountDrawApp(root, env) {
             quickLocked = true;
             const brush = liveBrush();
             const settings = activeSettings();
+            paintQueue = [];
             painter.beginShape({
                 tool: "paint",
                 brush,
@@ -1100,6 +1156,7 @@ export async function mountDrawApp(root, env) {
         quickLocked = false;
         const brush = liveBrush();
         const settings = activeSettings();
+        paintQueue = [];
         painter.beginStroke({
             tool: state.tool === "erase" ? "erase" : state.tool === "smudge" ? "smudge" : "paint",
             brush,
@@ -1133,13 +1190,13 @@ export async function mountDrawApp(root, env) {
             painter.view.rotation = rotation;
             painter.view.panX = pan.panX;
             painter.view.panY = pan.panY;
-            painter.render();
+            scheduleViewRender();
             return;
         }
         if (panDrag) {
             painter.view.panX = panDrag.panX + (event.clientX - panDrag.x);
             painter.view.panY = panDrag.panY + (event.clientY - panDrag.y);
-            painter.render();
+            scheduleViewRender();
             return;
         }
         const docPoint = painter.screenToDoc(localPoint(event).x, localPoint(event).y);
@@ -1151,7 +1208,7 @@ export async function mountDrawApp(root, env) {
         if (selectDraft) {
             if (selectDraft.mode === "freehand") selectDraft.points.push(docPoint);
             painter.setDraft(selectionShape(docPoint));
-            painter.render();
+            scheduleViewRender();
             return;
         }
         if (transformDrag && painter.transforming) {
@@ -1159,22 +1216,19 @@ export async function mountDrawApp(root, env) {
                 dx: transformDrag.dx + (docPoint.x - transformDrag.x),
                 dy: transformDrag.dy + (docPoint.y - transformDrag.y),
             });
-            painter.render();
+            scheduleViewRender();
             return;
         }
         if (!painter.stroking) return;
         reach = Math.max(reach, Math.hypot(docPoint.x - origin.x, docPoint.y - origin.y));
         if (quickLocked) {
-            painter.updateQuickShape(docPoint);
-            painter.render();
+            queuePaintSample(docPoint, 1);
             return;
         }
         const samples = pointerSamples(event);
         for (const sample of samples) {
-            painter.extendStroke(painter.screenToDoc(localPoint(sample).x, localPoint(sample).y), pressureOf(sample));
+            queuePaintSample(painter.screenToDoc(localPoint(sample).x, localPoint(sample).y), pressureOf(sample));
         }
-        painter.render();
-        armHold();
     });
 
     viewport.addEventListener("pointerup", (event) => endPointer(event));
@@ -1195,7 +1249,7 @@ export async function mountDrawApp(root, env) {
             painter.view.panX -= event.deltaX;
             painter.view.panY -= event.deltaY;
         }
-        painter.render();
+        scheduleViewRender();
     }, { passive: false });
 
     function endPointer(event) {

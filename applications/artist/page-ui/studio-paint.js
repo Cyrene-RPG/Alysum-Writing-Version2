@@ -22,8 +22,11 @@ export function createPainter(viewCanvas) {
     const strokeCanvas = document.createElement("canvas");
     const flat = document.createElement("canvas");
     const scratch = document.createElement("canvas");
+    const clipScratch = document.createElement("canvas");
     const preview = document.createElement("canvas");
     const veil = document.createElement("canvas");
+    const strokeUnder = document.createElement("canvas");
+    const strokeOver = document.createElement("canvas");
     const noise = makeNoise();
     let doc = null;
     let dpr = 1;
@@ -33,6 +36,7 @@ export function createPainter(viewCanvas) {
     let selection = null;
     let draft = null;
     let stroke = null;
+    let strokeStack = null;
     let pending = null;
     let adjustBase = null;
     let transform = null;
@@ -40,6 +44,32 @@ export function createPainter(viewCanvas) {
     const redo = [];
     const view = { zoom: 1, panX: 40, panY: 40, rotation: 0 };
     const tips = new Map();
+    const tipOrder = [];
+    const TIP_CACHE_LIMIT = 72;
+    const MAX_STAMP = 512;
+
+    function ensureBuffer(canvas, width, height, growOnly = false) {
+        const w = Math.max(1, Math.ceil(width));
+        const h = Math.max(1, Math.ceil(height));
+        if (growOnly) {
+            if (canvas.width < w) canvas.width = w;
+            if (canvas.height < h) canvas.height = h;
+            return;
+        }
+        if (canvas.width !== w) canvas.width = w;
+        if (canvas.height !== h) canvas.height = h;
+    }
+
+    function ensureDocBuffers() {
+        if (!doc) return;
+        ensureBuffer(strokeCanvas, doc.width, doc.height);
+        ensureBuffer(flat, doc.width, doc.height);
+        ensureBuffer(preview, doc.width, doc.height);
+        ensureBuffer(strokeUnder, doc.width, doc.height);
+        ensureBuffer(strokeOver, doc.width, doc.height);
+        ensureBuffer(clipScratch, doc.width, doc.height);
+        ensureBuffer(scratch, Math.min(MAX_STAMP, Math.max(64, Math.ceil(Math.max(doc.width, doc.height) * 0.25))), Math.min(MAX_STAMP, Math.max(64, Math.ceil(Math.max(doc.width, doc.height) * 0.25))), true);
+    }
 
     function limit() {
         return doc ? undoLimitFor(doc.width, doc.height) : 12;
@@ -75,12 +105,7 @@ export function createPainter(viewCanvas) {
         const replacing = !doc || doc.id !== next.id || doc.width !== next.width || doc.height !== next.height;
         doc = next;
         if (replacing) layers.clear();
-        strokeCanvas.width = doc.width;
-        strokeCanvas.height = doc.height;
-        flat.width = doc.width;
-        flat.height = doc.height;
-        preview.width = doc.width;
-        preview.height = doc.height;
+        ensureDocBuffers();
         for (const layer of doc.layers) layerCanvas(layer.id);
         for (const id of [...layers.keys()]) {
             if (!doc.layers.some((layer) => layer.id === id)) layers.delete(id);
@@ -88,6 +113,7 @@ export function createPainter(viewCanvas) {
         flatDirty = true;
         selection = null;
         stroke = null;
+        strokeStack = null;
         transform = null;
         undo.length = 0;
         redo.length = 0;
@@ -171,15 +197,24 @@ export function createPainter(viewCanvas) {
     }
 
     function tip(shape, diameter, hardness) {
-        const d = Math.max(2, diameter);
-        const key = `${shape}:${d}:${hardness}`;
+        const d = Math.max(2, Math.ceil(Math.max(2, diameter) / 2) * 2);
+        const hard = Math.round(Math.max(0, Math.min(1, hardness)) * 20) / 20;
+        const key = `${shape}:${d}:${hard}`;
         let canvas = tips.get(key);
-        if (canvas) return canvas;
+        if (canvas) {
+            const at = tipOrder.indexOf(key);
+            if (at >= 0) {
+                tipOrder.splice(at, 1);
+                tipOrder.push(key);
+            }
+            return canvas;
+        }
         canvas = document.createElement("canvas");
         canvas.width = d;
         canvas.height = d;
         const ctx = canvas.getContext("2d");
         const r = d / 2;
+        const soft = shape === "charcoal" ? Math.min(hard, 0.45) : hard;
         if (shape === "spray") {
             ctx.fillStyle = "#fff";
             const dots = 10 + Math.floor(d / 3);
@@ -191,7 +226,6 @@ export function createPainter(viewCanvas) {
                 ctx.fillRect(r + Math.cos(a) * dist, r + Math.sin(a) * dist, s, s);
             }
         } else if (shape === "pencil" || shape === "charcoal") {
-            const soft = shape === "charcoal" ? Math.min(hardness, 0.45) : hardness;
             const g = ctx.createRadialGradient(r, r, Math.max(0, soft * r * 0.8), r, r, r);
             g.addColorStop(0, "rgba(255,255,255,1)");
             g.addColorStop(1, "rgba(255,255,255,0)");
@@ -212,7 +246,7 @@ export function createPainter(viewCanvas) {
             }
             ctx.globalCompositeOperation = "source-over";
         } else {
-            const g = ctx.createRadialGradient(r, r, Math.max(0, hardness * r * 0.92), r, r, r);
+            const g = ctx.createRadialGradient(r, r, Math.max(0, hard * r * 0.92), r, r, r);
             g.addColorStop(0, "rgba(255,255,255,1)");
             g.addColorStop(1, "rgba(255,255,255,0)");
             ctx.fillStyle = g;
@@ -221,14 +255,21 @@ export function createPainter(viewCanvas) {
             ctx.fill();
         }
         tips.set(key, canvas);
+        tipOrder.push(key);
+        while (tipOrder.length > TIP_CACHE_LIMIT) {
+            const old = tipOrder.shift();
+            tips.delete(old);
+        }
         return canvas;
     }
 
     function stamp(target, brush, x, y, radius, color, alpha, angle) {
-        const d = Math.max(2, Math.ceil(radius * 2));
-        scratch.width = d;
-        scratch.height = d;
+        const d = Math.max(2, Math.min(MAX_STAMP, Math.ceil(radius * 2)));
+        ensureBuffer(scratch, d, d, true);
         const ctx = scratch.getContext("2d");
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = "source-over";
         ctx.clearRect(0, 0, d, d);
         ctx.save();
         ctx.translate(d / 2, d / 2);
@@ -248,19 +289,21 @@ export function createPainter(viewCanvas) {
         ctx.fillRect(0, 0, d, d);
         target.save();
         target.globalAlpha = alpha;
-        target.drawImage(scratch, x - radius, y - radius, radius * 2, radius * 2);
+        target.drawImage(scratch, 0, 0, d, d, x - radius, y - radius, radius * 2, radius * 2);
         target.restore();
     }
 
     function smudge(x0, y0, x1, y1, radius, strength) {
         const canvas = layerCanvas(doc.activeLayerId);
         const r = Math.max(1, Math.ceil(radius));
-        const d = r * 2;
+        const d = Math.min(MAX_STAMP, r * 2);
         const sx = Math.floor(x0 - r);
         const sy = Math.floor(y0 - r);
-        scratch.width = d;
-        scratch.height = d;
+        ensureBuffer(scratch, d, d, true);
         const sample = scratch.getContext("2d");
+        sample.setTransform(1, 0, 0, 1, 0, 0);
+        sample.globalAlpha = 1;
+        sample.globalCompositeOperation = "source-over";
         sample.clearRect(0, 0, d, d);
         sample.drawImage(canvas, sx, sy, d, d, 0, 0, d, d);
         sample.globalCompositeOperation = "destination-in";
@@ -269,7 +312,7 @@ export function createPainter(viewCanvas) {
         const ctx = canvas.getContext("2d");
         ctx.save();
         ctx.globalAlpha = strength;
-        ctx.drawImage(scratch, x1 - r, y1 - r, d, d);
+        ctx.drawImage(scratch, 0, 0, d, d, x1 - r, y1 - r, d, d);
         ctx.restore();
     }
 
@@ -300,6 +343,68 @@ export function createPainter(viewCanvas) {
         stroke.prev = point;
     }
 
+    function rebuildStrokeStack() {
+        if (!doc || !stroke) {
+            strokeStack = null;
+            return;
+        }
+        ensureDocBuffers();
+        const activeId = doc.activeLayerId;
+        const uctx = strokeUnder.getContext("2d");
+        const octx = strokeOver.getContext("2d");
+        uctx.setTransform(1, 0, 0, 1, 0, 0);
+        octx.setTransform(1, 0, 0, 1, 0, 0);
+        uctx.globalAlpha = 1;
+        octx.globalAlpha = 1;
+        uctx.globalCompositeOperation = "source-over";
+        octx.globalCompositeOperation = "source-over";
+        uctx.clearRect(0, 0, doc.width, doc.height);
+        octx.clearRect(0, 0, doc.width, doc.height);
+        if (doc.background !== "transparent") {
+            uctx.fillStyle = doc.background;
+            uctx.fillRect(0, 0, doc.width, doc.height);
+        }
+        let clipBase = null;
+        let activeClipBase = null;
+        let passed = false;
+        let layerMeta = null;
+        for (const layer of doc.layers) {
+            if (!layer.visible || layer.opacity <= 0) continue;
+            const canvas = layerCanvas(layer.id);
+            if (!layer.clipping) clipBase = canvas;
+            if (layer.id === activeId) {
+                layerMeta = layer;
+                activeClipBase = layer.clipping ? clipBase : null;
+                passed = true;
+                continue;
+            }
+            const target = passed ? octx : uctx;
+            if (layer.clipping) {
+                if (!clipBase) continue;
+                const sctx = clipScratch.getContext("2d");
+                sctx.setTransform(1, 0, 0, 1, 0, 0);
+                sctx.globalAlpha = 1;
+                sctx.globalCompositeOperation = "source-over";
+                sctx.clearRect(0, 0, doc.width, doc.height);
+                sctx.drawImage(canvas, 0, 0);
+                sctx.globalCompositeOperation = "destination-in";
+                sctx.drawImage(clipBase, 0, 0);
+                target.save();
+                target.globalAlpha = layer.opacity;
+                target.globalCompositeOperation = layer.blend || "source-over";
+                target.drawImage(clipScratch, 0, 0);
+                target.restore();
+                continue;
+            }
+            target.save();
+            target.globalAlpha = layer.opacity;
+            target.globalCompositeOperation = layer.blend || "source-over";
+            target.drawImage(canvas, 0, 0);
+            target.restore();
+        }
+        strokeStack = { clipBase: activeClipBase, layer: layerMeta || activeLayer(doc) };
+    }
+
     function beginStroke(settings) {
         if (!doc) return;
         cancelAdjust();
@@ -317,6 +422,8 @@ export function createPainter(viewCanvas) {
             prev: null,
             quick: null,
         };
+        rebuildStrokeStack();
+        flatDirty = true;
     }
 
     function extendStroke(point, pressure = 1) {
@@ -329,14 +436,14 @@ export function createPainter(viewCanvas) {
         if (!stroke.last) {
             stampAll(smoothed, pressure);
             stroke.last = smoothed;
-            if (stroke.direct) flatDirty = true;
+            flatDirty = true;
             return;
         }
         const walked = collectStamps(stroke.last.x, stroke.last.y, smoothed.x, smoothed.y, spacing, stroke.carry);
         stroke.carry = walked.carry;
         stroke.last = { x: walked.x, y: walked.y };
         for (const stampPoint of walked.points) stampAll(stampPoint, pressure);
-        if (stroke.direct) flatDirty = true;
+        flatDirty = true;
     }
 
     function catchUp(pressure = 1) {
@@ -356,7 +463,7 @@ export function createPainter(viewCanvas) {
         const samples = pointsForShape(shape, spacing);
         for (const point of samples) stampAll(point, pressure);
         stroke.quick = shape;
-        if (stroke.direct) flatDirty = true;
+        flatDirty = true;
     }
 
     function tryQuickShape() {
@@ -484,9 +591,10 @@ export function createPainter(viewCanvas) {
         } else {
             constrainDirectStroke();
             commitMark();
-            flatDirty = true;
         }
         stroke = null;
+        strokeStack = null;
+        flatDirty = true;
     }
 
     function cancelStroke() {
@@ -494,6 +602,7 @@ export function createPainter(viewCanvas) {
         if (stroke.direct) cancelMark();
         strokeCanvas.getContext("2d").clearRect(0, 0, strokeCanvas.width, strokeCanvas.height);
         stroke = null;
+        strokeStack = null;
         flatDirty = true;
     }
 
@@ -765,8 +874,48 @@ export function createPainter(viewCanvas) {
         ctx.restore();
     }
 
-    function composite() {
+    function compositeStrokeFast() {
+        if (!stroke || !strokeStack) return false;
+        const layer = strokeStack.layer;
+        if (!layer || !layer.visible || layer.opacity <= 0) return false;
         const ctx = flat.getContext("2d");
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = "source-over";
+        ctx.clearRect(0, 0, doc.width, doc.height);
+        ctx.drawImage(strokeUnder, 0, 0);
+        let source = stroke.direct ? layerCanvas(doc.activeLayerId) : activePreview(layerCanvas(doc.activeLayerId));
+        if (layer.clipping) {
+            if (!strokeStack.clipBase) return false;
+            const sctx = clipScratch.getContext("2d");
+            sctx.setTransform(1, 0, 0, 1, 0, 0);
+            sctx.globalAlpha = 1;
+            sctx.globalCompositeOperation = "source-over";
+            sctx.clearRect(0, 0, doc.width, doc.height);
+            sctx.drawImage(source, 0, 0);
+            sctx.globalCompositeOperation = "destination-in";
+            sctx.drawImage(strokeStack.clipBase, 0, 0);
+            source = clipScratch;
+        }
+        ctx.save();
+        ctx.globalAlpha = layer.opacity;
+        ctx.globalCompositeOperation = layer.blend || "source-over";
+        if (transform && layer.id === doc.activeLayerId) drawLayerTransformed(ctx, source);
+        else ctx.drawImage(source, 0, 0);
+        ctx.restore();
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = "source-over";
+        ctx.drawImage(strokeOver, 0, 0);
+        flatDirty = false;
+        return true;
+    }
+
+    function composite() {
+        if (stroke && strokeStack && !transform && compositeStrokeFast()) return;
+        const ctx = flat.getContext("2d");
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = "source-over";
         ctx.clearRect(0, 0, doc.width, doc.height);
         if (doc.background !== "transparent") {
             ctx.fillStyle = doc.background;
@@ -780,15 +929,15 @@ export function createPainter(viewCanvas) {
             let source = stroke && !stroke.direct && layer.id === doc.activeLayerId ? activePreview(canvas) : canvas;
             if (layer.clipping) {
                 if (!clipBase) continue;
-                scratch.width = doc.width;
-                scratch.height = doc.height;
-                const sctx = scratch.getContext("2d");
+                const sctx = clipScratch.getContext("2d");
+                sctx.setTransform(1, 0, 0, 1, 0, 0);
+                sctx.globalAlpha = 1;
                 sctx.globalCompositeOperation = "source-over";
                 sctx.clearRect(0, 0, doc.width, doc.height);
                 sctx.drawImage(source, 0, 0);
                 sctx.globalCompositeOperation = "destination-in";
                 sctx.drawImage(clipBase, 0, 0);
-                source = scratch;
+                source = clipScratch;
             }
             ctx.save();
             ctx.globalAlpha = layer.opacity;
@@ -801,9 +950,9 @@ export function createPainter(viewCanvas) {
     }
 
     function activePreview(canvas) {
-        if (preview.width !== doc.width) preview.width = doc.width;
-        if (preview.height !== doc.height) preview.height = doc.height;
+        ensureBuffer(preview, doc.width, doc.height);
         const ctx = preview.getContext("2d");
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.globalCompositeOperation = "source-over";
         ctx.globalAlpha = 1;
         ctx.clearRect(0, 0, doc.width, doc.height);
@@ -819,7 +968,6 @@ export function createPainter(viewCanvas) {
 
     function render() {
         if (!doc) return;
-        if (stroke && !stroke.direct) flatDirty = true;
         if (flatDirty) composite();
         const ctx = viewCanvas.getContext("2d");
         const w = cssW;
@@ -835,7 +983,7 @@ export function createPainter(viewCanvas) {
         ctx.translate(-cx, -cy);
         ctx.translate(view.panX, view.panY);
         ctx.scale(view.zoom, view.zoom);
-        drawChecker(ctx, doc.width, doc.height);
+        if (doc.background === "transparent") drawChecker(ctx, doc.width, doc.height);
         ctx.drawImage(flat, 0, 0);
         if (selection?.shape) {
             ctx.save();
