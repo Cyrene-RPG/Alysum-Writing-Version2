@@ -45,26 +45,37 @@ export const PAPER_COLORS = [
 export const BRUSHES = [
     { id: "6b-pencil", name: "6B Pencil", category: "Sketching", shape: "pencil", spacing: 0.07, hardness: 0.82, grain: 0.62, scatter: 0.05, streamline: 0.4, pressureSize: true, pressureOpacity: true, buildUp: false, defaultSize: 7, defaultOpacity: 0.9 },
     { id: "hb-pencil", name: "HB Pencil", category: "Sketching", shape: "pencil", spacing: 0.08, hardness: 0.9, grain: 0.35, scatter: 0.02, streamline: 0.45, pressureSize: true, pressureOpacity: true, buildUp: false, defaultSize: 4, defaultOpacity: 0.85 },
+    { id: "soft-pencil", name: "Soft Pencil", category: "Sketching", shape: "pencil", spacing: 0.08, hardness: 0.55, grain: 0.7, scatter: 0.08, streamline: 0.35, pressureSize: true, pressureOpacity: true, buildUp: false, defaultSize: 10, defaultOpacity: 0.7 },
     { id: "technical-pencil", name: "Technical Pencil", category: "Sketching", shape: "round", spacing: 0.05, hardness: 1, grain: 0, scatter: 0, streamline: 0.7, pressureSize: false, pressureOpacity: true, buildUp: false, defaultSize: 2, defaultOpacity: 1 },
     { id: "studio-pen", name: "Studio Pen", category: "Inking", shape: "round", spacing: 0.04, hardness: 0.98, grain: 0, scatter: 0, streamline: 0.55, pressureSize: true, pressureOpacity: false, buildUp: false, defaultSize: 8, defaultOpacity: 1 },
     { id: "gel-pen", name: "Gel Pen", category: "Inking", shape: "round", spacing: 0.05, hardness: 0.92, grain: 0.08, scatter: 0, streamline: 0.35, pressureSize: true, pressureOpacity: false, buildUp: false, defaultSize: 6, defaultOpacity: 1 },
+    { id: "fineliner", name: "Fineliner", category: "Inking", shape: "round", spacing: 0.03, hardness: 1, grain: 0, scatter: 0, streamline: 0.65, pressureSize: false, pressureOpacity: false, buildUp: false, defaultSize: 2.5, defaultOpacity: 1 },
+    { id: "brush-pen", name: "Brush Pen", category: "Inking", shape: "flat", spacing: 0.05, hardness: 0.88, grain: 0.05, scatter: 0, streamline: 0.45, pressureSize: true, pressureOpacity: false, buildUp: false, defaultSize: 16, defaultOpacity: 1, angleFollow: true },
+    { id: "calligraphy", name: "Calligraphy", category: "Inking", shape: "flat", spacing: 0.05, hardness: 0.95, grain: 0, scatter: 0, streamline: 0.5, pressureSize: true, pressureOpacity: false, buildUp: false, defaultSize: 22, defaultOpacity: 1, angleFollow: true },
     { id: "dry-ink", name: "Dry Ink", category: "Inking", shape: "pencil", spacing: 0.1, hardness: 0.7, grain: 0.75, scatter: 0.08, streamline: 0.25, pressureSize: true, pressureOpacity: true, buildUp: false, defaultSize: 12, defaultOpacity: 0.9 },
     { id: "marker", name: "Marker", category: "Inking", shape: "flat", spacing: 0.06, hardness: 0.75, grain: 0.12, scatter: 0, streamline: 0.5, pressureSize: false, pressureOpacity: false, buildUp: false, defaultSize: 28, defaultOpacity: 0.75, angleFollow: true },
     { id: "round-brush", name: "Round Brush", category: "Painting", shape: "round", spacing: 0.08, hardness: 0.72, grain: 0.05, scatter: 0, streamline: 0.3, pressureSize: true, pressureOpacity: true, buildUp: false, defaultSize: 24, defaultOpacity: 0.9 },
     { id: "flat-brush", name: "Flat Brush", category: "Painting", shape: "flat", spacing: 0.07, hardness: 0.8, grain: 0.04, scatter: 0, streamline: 0.35, pressureSize: true, pressureOpacity: false, buildUp: false, defaultSize: 36, defaultOpacity: 1, angleFollow: true },
     { id: "oil-brush", name: "Oil Brush", category: "Painting", shape: "round", spacing: 0.12, hardness: 0.55, grain: 0.28, scatter: 0.06, streamline: 0.2, pressureSize: true, pressureOpacity: true, buildUp: true, defaultSize: 32, defaultOpacity: 0.55 },
+    { id: "acrylic", name: "Acrylic", category: "Painting", shape: "round", spacing: 0.09, hardness: 0.78, grain: 0.18, scatter: 0.04, streamline: 0.28, pressureSize: true, pressureOpacity: true, buildUp: false, defaultSize: 28, defaultOpacity: 0.95 },
+    { id: "gouache", name: "Gouache", category: "Painting", shape: "round", spacing: 0.08, hardness: 0.7, grain: 0.12, scatter: 0.02, streamline: 0.32, pressureSize: true, pressureOpacity: false, buildUp: false, defaultSize: 30, defaultOpacity: 1 },
+    { id: "watercolor", name: "Watercolor", category: "Painting", shape: "round", spacing: 0.06, hardness: 0.12, grain: 0.2, scatter: 0.05, streamline: 0.18, pressureSize: true, pressureOpacity: true, buildUp: true, defaultSize: 42, defaultOpacity: 0.28 },
     { id: "soft-airbrush", name: "Soft Airbrush", category: "Airbrushing", shape: "round", spacing: 0.04, hardness: 0, grain: 0, scatter: 0, streamline: 0.15, pressureSize: true, pressureOpacity: true, buildUp: true, defaultSize: 80, defaultOpacity: 0.25 },
     { id: "hard-airbrush", name: "Hard Airbrush", category: "Airbrushing", shape: "round", spacing: 0.06, hardness: 0.45, grain: 0, scatter: 0, streamline: 0.2, pressureSize: true, pressureOpacity: true, buildUp: true, defaultSize: 40, defaultOpacity: 0.4 },
     { id: "spraypaint", name: "Spraypaint", category: "Airbrushing", shape: "spray", spacing: 0.18, hardness: 0.2, grain: 0, scatter: 1, streamline: 0.1, pressureSize: true, pressureOpacity: true, buildUp: true, defaultSize: 48, defaultOpacity: 0.55 },
     { id: "vine-charcoal", name: "Vine Charcoal", category: "Charcoal", shape: "charcoal", spacing: 0.09, hardness: 0.4, grain: 0.8, scatter: 0.12, streamline: 0.2, pressureSize: true, pressureOpacity: true, buildUp: false, defaultSize: 18, defaultOpacity: 0.7 },
     { id: "compressed-charcoal", name: "Compressed Charcoal", category: "Charcoal", shape: "charcoal", spacing: 0.08, hardness: 0.65, grain: 0.55, scatter: 0.06, streamline: 0.25, pressureSize: true, pressureOpacity: true, buildUp: true, defaultSize: 22, defaultOpacity: 0.85 },
+    { id: "soft-pastel", name: "Soft Pastel", category: "Textures", shape: "charcoal", spacing: 0.1, hardness: 0.25, grain: 0.85, scatter: 0.18, streamline: 0.15, pressureSize: true, pressureOpacity: true, buildUp: true, defaultSize: 34, defaultOpacity: 0.55 },
     { id: "noise", name: "Noise Brush", category: "Textures", shape: "spray", spacing: 0.15, hardness: 0.3, grain: 0.4, scatter: 1.2, streamline: 0, pressureSize: true, pressureOpacity: true, buildUp: true, defaultSize: 36, defaultOpacity: 0.45 },
+    { id: "hard-eraser", name: "Hard Eraser", category: "Erasing", shape: "round", spacing: 0.04, hardness: 1, grain: 0, scatter: 0, streamline: 0.35, pressureSize: true, pressureOpacity: false, buildUp: false, defaultSize: 28, defaultOpacity: 1 },
+    { id: "soft-eraser", name: "Soft Eraser", category: "Erasing", shape: "round", spacing: 0.05, hardness: 0.08, grain: 0, scatter: 0, streamline: 0.2, pressureSize: true, pressureOpacity: true, buildUp: true, defaultSize: 48, defaultOpacity: 0.55 },
+    { id: "block-eraser", name: "Block Eraser", category: "Erasing", shape: "flat", spacing: 0.05, hardness: 0.95, grain: 0, scatter: 0, streamline: 0.4, pressureSize: false, pressureOpacity: false, buildUp: false, defaultSize: 40, defaultOpacity: 1, angleFollow: true },
 ];
 
 const BLEND_IDS = new Set(BLEND_MODES.map((mode) => mode.id));
 
 export function brushById(id) {
-    return BRUSHES.find((brush) => brush.id === id) || BRUSHES[3];
+    return BRUSHES.find((brush) => brush.id === id) || BRUSHES.find((brush) => brush.id === "studio-pen") || BRUSHES[0];
 }
 
 export function brushCategories() {

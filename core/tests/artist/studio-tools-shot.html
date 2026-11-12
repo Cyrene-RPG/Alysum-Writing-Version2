@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <script type="importmap">{ "imports": { "@alysum/artist/": "/core/artist/" } }</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css">
+    <link rel="stylesheet" href="/applications/artist/artist-css/studio.css">
+    <title>Studio tools shot</title>
+</head>
+<body>
+<div id="draw-app" data-manual="1"></div>
+<script type="module">
+import { mountDrawApp } from "/applications/artist/page-ui/studio.js";
+
+const projects = new Map();
+const pixels = new Map();
+const store = {
+    async list() { return [...projects.values()]; },
+    async load(id) {
+        const doc = projects.get(id);
+        if (!doc) return null;
+        const blobs = new Map();
+        for (const layer of doc.layers) {
+            const blob = pixels.get(`${id}:${layer.id}`);
+            if (blob) blobs.set(layer.id, blob);
+        }
+        return { doc, blobs };
+    },
+    async save(doc, blobs, thumb) {
+        const record = { ...doc, thumb, updatedAt: Date.now() };
+        projects.set(doc.id, record);
+        for (const [layerId, blob] of blobs) pixels.set(`${doc.id}:${layerId}`, blob);
+        return record;
+    },
+    async remove(id) { projects.delete(id); },
+};
+
+localStorage.setItem("alysum-draw-help", "1");
+await mountDrawApp(document.getElementById("draw-app"), {
+    projectId: "",
+    characterId: "",
+    store,
+    upload: async () => "Saved",
+});
+document.querySelector("#draw-notice-dialog")?.close();
+document.querySelector("#draw-new").click();
+document.querySelector("#draw-create").requestSubmit();
+await new Promise((r) => setTimeout(r, 80));
+document.querySelector("#draw-notice-dialog")?.close();
+const mode = new URLSearchParams(location.search).get("mode");
+if (mode === "erase") {
+    document.querySelector('[data-tool="erase"]').click();
+    await new Promise((r) => setTimeout(r, 40));
+} else if (mode === "brushes") {
+    document.querySelector('[data-tool="paint"]').dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+    document.querySelector('[data-tool="paint"]').click();
+    // open brushes by tapping paint tool without drag
+    const paint = document.querySelector('[data-tool="paint"]');
+    paint.dispatchEvent(new PointerEvent("pointerdown", { clientX: 10, clientY: 10, pointerId: 9, bubbles: true }));
+    paint.dispatchEvent(new PointerEvent("pointerup", { clientX: 10, clientY: 10, pointerId: 9, bubbles: true }));
+    await new Promise((r) => setTimeout(r, 40));
+} else if (mode === "fill") {
+    document.querySelector('[data-tool="fill"]').click();
+    await new Promise((r) => setTimeout(r, 40));
+}
+document.body.dataset.ready = "1";
+</script>
+</body>
+</html>

@@ -5,6 +5,7 @@ import {
     collectStamps,
     contentBounds,
     fitQuickShape,
+    hexToRgb,
     invertRgba,
     noiseRgba,
     pointsForShape,
@@ -254,20 +255,21 @@ export function createPainter(viewCanvas) {
     function smudge(x0, y0, x1, y1, radius, strength) {
         const canvas = layerCanvas(doc.activeLayerId);
         const r = Math.max(1, Math.ceil(radius));
+        const d = r * 2;
         const sx = Math.floor(x0 - r);
         const sy = Math.floor(y0 - r);
-        scratch.width = r * 2;
-        scratch.height = r * 2;
+        scratch.width = d;
+        scratch.height = d;
         const sample = scratch.getContext("2d");
-        sample.clearRect(0, 0, r * 2, r * 2);
-        sample.drawImage(canvas, sx, sy, r * 2, r * 2, 0, 0, r * 2, r * 2);
+        sample.clearRect(0, 0, d, d);
+        sample.drawImage(canvas, sx, sy, d, d, 0, 0, d, d);
+        sample.globalCompositeOperation = "destination-in";
+        sample.drawImage(tip("round", d, Math.max(0.05, stroke?.brush?.hardness ?? 0.2)), 0, 0, d, d);
+        sample.globalCompositeOperation = "source-over";
         const ctx = canvas.getContext("2d");
         ctx.save();
-        ctx.beginPath();
-        ctx.arc(x1, y1, r, 0, Math.PI * 2);
-        ctx.clip();
         ctx.globalAlpha = strength;
-        ctx.drawImage(scratch, x1 - r, y1 - r, r * 2, r * 2);
+        ctx.drawImage(scratch, x1 - r, y1 - r, d, d);
         ctx.restore();
     }
 
@@ -279,9 +281,10 @@ export function createPainter(viewCanvas) {
     function stampAll(point, pressure) {
         const brush = stroke.brush;
         const radius = radiusFor(brush, stroke.size, pressure);
-        const alpha = stroke.tool === "erase" || !brush.buildUp
-            ? alphaFor(brush, 1, pressure)
-            : alphaFor(brush, stroke.opacity, pressure);
+        // Soft erase builds up per stamp. Hard erase stamps full mask and uses stroke opacity at bake.
+        const alpha = stroke.tool === "erase"
+            ? (brush.buildUp ? alphaFor(brush, stroke.opacity, pressure) : alphaFor(brush, 1, pressure))
+            : (!brush.buildUp ? alphaFor(brush, 1, pressure) : alphaFor(brush, stroke.opacity, pressure));
         const spots = symmetryPoints(point.x, point.y, doc.width, doc.height, doc.symmetry, doc.symmetryCount);
         const ctx = targetContext();
         const prev = stroke.prev || point;
@@ -289,8 +292,10 @@ export function createPainter(viewCanvas) {
         for (const spot of spots) {
             const jx = (Math.random() - 0.5) * (brush.scatter || 0) * radius * 2;
             const jy = (Math.random() - 0.5) * (brush.scatter || 0) * radius * 2;
-            if (stroke.tool === "smudge") smudge(stroke.prev?.x ?? spot.x, stroke.prev?.y ?? spot.y, spot.x + jx, spot.y + jy, radius, 0.35 + 0.5 * (pressure || 1));
-            else stamp(ctx, brush, spot.x + jx, spot.y + jy, radius, stroke.color, alpha, angle);
+            if (stroke.tool === "smudge") {
+                const strength = Math.max(0.08, Math.min(1, (stroke.opacity || 0.7) * (0.45 + 0.55 * (pressure || 1))));
+                smudge(stroke.prev?.x ?? spot.x, stroke.prev?.y ?? spot.y, spot.x + jx, spot.y + jy, radius, strength);
+            } else stamp(ctx, brush, spot.x + jx, spot.y + jy, radius, stroke.color, alpha, angle);
         }
         stroke.prev = point;
     }
@@ -363,6 +368,19 @@ export function createPainter(viewCanvas) {
         return shape;
     }
 
+    function beginShape(settings, kind, point) {
+        beginStroke(settings);
+        stroke.anchor = { x: point.x, y: point.y };
+        stroke.points = [{ x: point.x, y: point.y }];
+        stroke.quick = kind === "rect"
+            ? { kind: "rect", x: point.x, y: point.y, w: 1, h: 1 }
+            : kind === "ellipse"
+                ? { kind: "ellipse", cx: point.x, cy: point.y, rx: 1, ry: 1 }
+                : { kind: "line", x0: point.x, y0: point.y, x1: point.x, y1: point.y };
+        redrawShape(stroke.quick);
+        return stroke.quick;
+    }
+
     function updateQuickShape(point) {
         if (!stroke?.quick || !stroke.anchor) return null;
         const anchor = stroke.anchor;
@@ -419,7 +437,8 @@ export function createPainter(viewCanvas) {
         const layer = layerCanvas(doc.activeLayerId);
         const ctx = layer.getContext("2d");
         ctx.save();
-        ctx.globalAlpha = stroke.opacity;
+        const softErase = stroke.tool === "erase" && stroke.brush?.buildUp;
+        ctx.globalAlpha = softErase ? 1 : stroke.opacity;
         ctx.globalCompositeOperation = stroke.tool === "erase" ? "destination-out" : "source-over";
         ctx.drawImage(maskedStrokeSource(), 0, 0);
         ctx.restore();
@@ -556,6 +575,59 @@ export function createPainter(viewCanvas) {
         dest.globalCompositeOperation = current?.alphaLock ? "source-atop" : "source-over";
         dest.drawImage(tmp, 0, 0);
         dest.restore();
+        commitMark();
+    }
+
+    function floodFill(x, y, color, tolerance = 28) {
+        if (!doc) return;
+        cancelAdjust();
+        const px = Math.max(0, Math.min(doc.width - 1, Math.floor(x)));
+        const py = Math.max(0, Math.min(doc.height - 1, Math.floor(y)));
+        const layer = layerCanvas(doc.activeLayerId);
+        const ctx = layer.getContext("2d", { willReadFrequently: true });
+        const image = ctx.getImageData(0, 0, doc.width, doc.height);
+        const data = image.data;
+        const start = (py * doc.width + px) * 4;
+        const target = [data[start], data[start + 1], data[start + 2], data[start + 3]];
+        const fillRgb = hexToRgb(color);
+        const fillA = 255;
+        if (
+            Math.abs(target[0] - fillRgb.r) <= 1
+            && Math.abs(target[1] - fillRgb.g) <= 1
+            && Math.abs(target[2] - fillRgb.b) <= 1
+            && Math.abs(target[3] - fillA) <= 1
+        ) return;
+        const tol = Math.max(0, Math.min(255, Number(tolerance) || 0));
+        const matches = (i) => {
+            const dr = Math.abs(data[i] - target[0]);
+            const dg = Math.abs(data[i + 1] - target[1]);
+            const db = Math.abs(data[i + 2] - target[2]);
+            const da = Math.abs(data[i + 3] - target[3]);
+            return Math.max(dr, dg, db, da) <= tol;
+        };
+        const mask = selection?.mask?.getContext("2d").getImageData(0, 0, doc.width, doc.height).data;
+        const locked = Boolean(activeLayer(doc)?.alphaLock);
+        mark();
+        const seen = new Uint8Array(doc.width * doc.height);
+        const stack = [px, py];
+        seen[py * doc.width + px] = 1;
+        while (stack.length) {
+            const cy = stack.pop();
+            const cx = stack.pop();
+            const i = (cy * doc.width + cx) * 4;
+            if (!matches(i)) continue;
+            if (mask && mask[i + 3] < 8) continue;
+            if (locked && data[i + 3] < 8) continue;
+            data[i] = fillRgb.r;
+            data[i + 1] = fillRgb.g;
+            data[i + 2] = fillRgb.b;
+            data[i + 3] = fillA;
+            if (cx > 0 && !seen[cy * doc.width + cx - 1]) { seen[cy * doc.width + cx - 1] = 1; stack.push(cx - 1, cy); }
+            if (cx + 1 < doc.width && !seen[cy * doc.width + cx + 1]) { seen[cy * doc.width + cx + 1] = 1; stack.push(cx + 1, cy); }
+            if (cy > 0 && !seen[(cy - 1) * doc.width + cx]) { seen[(cy - 1) * doc.width + cx] = 1; stack.push(cx, cy - 1); }
+            if (cy + 1 < doc.height && !seen[(cy + 1) * doc.width + cx]) { seen[(cy + 1) * doc.width + cx] = 1; stack.push(cx, cy + 1); }
+        }
+        ctx.putImageData(image, 0, 0);
         commitMark();
     }
 
@@ -736,7 +808,8 @@ export function createPainter(viewCanvas) {
         ctx.globalAlpha = 1;
         ctx.clearRect(0, 0, doc.width, doc.height);
         ctx.drawImage(canvas, 0, 0);
-        ctx.globalAlpha = stroke.opacity;
+        const softErase = stroke.tool === "erase" && stroke.brush?.buildUp;
+        ctx.globalAlpha = softErase ? 1 : stroke.opacity;
         ctx.globalCompositeOperation = stroke.tool === "erase" ? "destination-out" : "source-over";
         ctx.drawImage(maskedStrokeSource(), 0, 0);
         ctx.globalAlpha = 1;
@@ -936,6 +1009,7 @@ export function createPainter(viewCanvas) {
         screenToDoc,
         panFor,
         beginStroke,
+        beginShape,
         extendStroke,
         tryQuickShape,
         updateQuickShape,
@@ -986,6 +1060,7 @@ export function createPainter(viewCanvas) {
             redo.length = 0;
         },
         fill,
+        floodFill,
         clearLayer,
         flip,
         copyPixels,

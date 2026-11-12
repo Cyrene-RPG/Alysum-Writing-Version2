@@ -40,6 +40,9 @@ const ICONS = {
     brush: `<svg viewBox="0 0 24 24"><path d="M14 4l6 6-8 8H6v-6L14 4zM4 20h6"/></svg>`,
     smudge: `<svg viewBox="0 0 24 24"><path d="M8 14c0-4 2-8 4-10 1 3 2 5 2 8 2-2 3-5 3-7 2 3 3 6 3 9a6 6 0 0 1-12 0z"/></svg>`,
     eraser: `<svg viewBox="0 0 24 24"><path d="M4 16l8-8 6 6-6 6H8L4 16zM9 20h11"/></svg>`,
+    fill: `<svg viewBox="0 0 24 24"><path d="M6 14l8-8 4 4-8 8H6v-4zM4 20h16M14 6l2-2 2 2"/></svg>`,
+    dropper: `<svg viewBox="0 0 24 24"><path d="M12 3l3 3-8 8H4v-3l8-8zM3 21h7"/></svg>`,
+    shapes: `<svg viewBox="0 0 24 24"><path d="M5 5h8v8H5zM14 10l5 9H9l5-9z"/></svg>`,
     layers: `<svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5zM3 12l9 5 9-5M3 17l9 5 9-5"/></svg>`,
     undo: `<svg viewBox="0 0 24 24"><path d="M8 8H4v4M4 12a8 8 0 1 0 2.3-5.7L4 8"/></svg>`,
     redo: `<svg viewBox="0 0 24 24"><path d="M16 8h4v4M20 12a8 8 0 1 1-2.3-5.7L20 8"/></svg>`,
@@ -60,7 +63,11 @@ export async function mountDrawApp(root, env) {
     const state = {
         doc: null,
         tool: "paint",
-        brushes: { paint: prefs.paint || "studio-pen", smudge: prefs.smudge || "soft-airbrush", erase: prefs.erase || "hard-airbrush" },
+        brushes: {
+            paint: prefs.paint || "studio-pen",
+            smudge: prefs.smudge || "soft-airbrush",
+            erase: prefs.erase === "hard-airbrush" || !prefs.erase ? "hard-eraser" : prefs.erase,
+        },
         color: prefs.color || "#1c1c1e",
         hsv: rgbToHsv(...Object.values(hexToRgb(prefs.color || "#1c1c1e"))),
         colors: prefs.colors || ["#1c1c1e", "#ffffff", "#ff3b30", "#ff9f0a", "#ffd60a", "#32d74b", "#0a84ff", "#bf5af2"],
@@ -68,6 +75,8 @@ export async function mountDrawApp(root, env) {
         panelSide: "right",
         selectMode: "freehand",
         selectCombine: "replace",
+        shapeKind: prefs.shapeKind || "line",
+        fillTolerance: Number.isFinite(prefs.fillTolerance) ? prefs.fillTolerance : 28,
         quickShape: prefs.quickShape !== false,
         showCursor: prefs.showCursor !== false,
         frames: [],
@@ -105,6 +114,9 @@ export async function mountDrawApp(root, env) {
                     ${railButton("adjust", "wand", "Adjustments")}
                     ${railButton("select", "lasso", "Selection")}
                     ${railButton("transform", "move", "Transform")}
+                    ${railButton("shape", "shapes", "Shapes")}
+                    ${railButton("fill", "fill", "Fill")}
+                    ${railButton("pick", "dropper", "Eyedropper")}
                 </nav>
                 <div class="draw-viewport" id="draw-viewport">
                     <canvas id="draw-canvas"></canvas>
@@ -181,8 +193,8 @@ export async function mountDrawApp(root, env) {
                     <li>Pinch to zoom, twist to rotate, drag with two fingers to move.</li>
                     <li>Tap with two fingers to undo. Tap with three to redo.</li>
                     <li>Hold still on a stroke to snap a line, ellipse, or rectangle.</li>
-                    <li>Hold without moving to pick a color.</li>
-                    <li>Drag the color button onto the canvas to fill.</li>
+                    <li>Use Fill to flood a region, or drag the color button to fill a layer.</li>
+                    <li>Use Eyedropper, or hold without moving, to pick a color.</li>
                     <li>Drag up or down on the brush, smudge, or eraser to change size.</li>
                 </ul>
                 <button type="submit" class="draw-new">Start drawing</button>
@@ -251,6 +263,7 @@ export async function mountDrawApp(root, env) {
         localStorage.setItem("alysum-draw-prefs", JSON.stringify({
             sizes, opacities, color: state.color, colors: state.colors.slice(0, 12),
             paint: state.brushes.paint, smudge: state.brushes.smudge, erase: state.brushes.erase,
+            shapeKind: state.shapeKind, fillTolerance: state.fillTolerance,
             quickShape: state.quickShape, showCursor: state.showCursor,
         }));
     }
@@ -277,7 +290,7 @@ export async function mountDrawApp(root, env) {
         const settings = activeSettings();
         root.querySelector("#draw-size").value = String(Math.round(settings.size));
         root.querySelector("#draw-opacity").value = String(Math.round(settings.opacity * 100));
-        root.querySelector("#draw-sliders").hidden = !["paint", "smudge", "erase"].includes(state.tool);
+        root.querySelector("#draw-sliders").hidden = !["paint", "smudge", "erase", "shape"].includes(state.tool);
         for (const button of root.querySelectorAll(".draw-tool")) {
             const key = button.dataset.tool || button.dataset.panel;
             const on = key === state.tool || (state.panel && key === state.panel && !button.dataset.tool);
@@ -436,6 +449,8 @@ export async function mountDrawApp(root, env) {
         else if (state.panel === "adjust") panel.append(adjustPanel());
         else if (state.panel === "select") panel.append(selectPanel());
         else if (state.panel === "transform") panel.append(transformPanel());
+        else if (state.panel === "shape") panel.append(shapePanel());
+        else if (state.panel === "fill") panel.append(fillPanel());
         refreshChrome();
     }
 
@@ -452,7 +467,9 @@ export async function mountDrawApp(root, env) {
         cats.className = "draw-cats";
         const list = document.createElement("div");
         list.className = "draw-brush-list";
-        let category = brushById(activeBrushId()).category;
+        let category = state.tool === "erase"
+            ? "Erasing"
+            : brushById(activeBrushId()).category;
         const paintList = () => {
             list.replaceChildren();
             for (const brush of BRUSHES.filter((item) => item.category === category)) {
@@ -821,6 +838,50 @@ export async function mountDrawApp(root, env) {
         return wrap;
     }
 
+    function shapePanel() {
+        const wrap = document.createElement("div");
+        wrap.className = "draw-actions";
+        for (const [id, label] of [["line", "Line"], ["rect", "Rectangle"], ["ellipse", "Ellipse"]]) {
+            const button = textButton(label, () => {
+                state.shapeKind = id;
+                state.tool = "shape";
+                savePrefs();
+                renderPanel();
+            });
+            if (state.shapeKind === id) button.classList.add("is-on");
+            wrap.append(button);
+        }
+        const note = document.createElement("p");
+        note.className = "draw-note";
+        note.textContent = "Drag on the canvas to place the shape with the current brush and color.";
+        wrap.append(note);
+        return wrap;
+    }
+
+    function fillPanel() {
+        const wrap = document.createElement("div");
+        wrap.className = "draw-actions";
+        wrap.append(
+            slider("Tolerance", 0, 120, state.fillTolerance, (value) => {
+                state.fillTolerance = value;
+                savePrefs();
+            }),
+            textButton("Fill whole layer", () => {
+                painter.fill(state.color);
+                painter.render();
+                rememberColor();
+                refreshChrome();
+                scheduleSave();
+                toastMessage("Filled the layer.");
+            }),
+        );
+        const note = document.createElement("p");
+        note.className = "draw-note";
+        note.textContent = "Tap the canvas to flood-fill a region. Higher tolerance spills farther into nearby colors.";
+        wrap.append(note);
+        return wrap;
+    }
+
     async function saveToGallery() {
         if (!env.upload) { toastMessage("Sign in to save a copy to My art."); return; }
         toastMessage("Saving to My art…");
@@ -867,7 +928,7 @@ export async function mountDrawApp(root, env) {
     }
 
     function placeCursor(event) {
-        if (!state.showCursor || !["paint", "smudge", "erase"].includes(state.tool)) {
+        if (!state.showCursor || !["paint", "smudge", "erase", "shape"].includes(state.tool)) {
             cursor.hidden = true;
             return;
         }
@@ -1003,11 +1064,35 @@ export async function mountDrawApp(root, env) {
             transformDrag = { x: docPoint.x, y: docPoint.y, dx: current.dx, dy: current.dy };
             return;
         }
-        if (event.altKey) {
+        if (state.tool === "fill") {
+            painter.floodFill(docPoint.x, docPoint.y, state.color, state.fillTolerance);
+            painter.render();
+            rememberColor();
+            refreshChrome();
+            scheduleSave();
+            return;
+        }
+        if (state.tool === "pick" || event.altKey) {
             eyedrop = true;
             origin = docPoint;
             setColor(painter.pick(docPoint.x, docPoint.y));
             showLoupe(docPoint, event);
+            return;
+        }
+        if (state.tool === "shape") {
+            origin = docPoint;
+            reach = 0;
+            quickLocked = true;
+            const brush = liveBrush();
+            const settings = activeSettings();
+            painter.beginShape({
+                tool: "paint",
+                brush,
+                color: state.color,
+                size: settings.size,
+                opacity: settings.opacity,
+            }, state.shapeKind, docPoint);
+            painter.render();
             return;
         }
         origin = docPoint;
@@ -1167,6 +1252,27 @@ export async function mountDrawApp(root, env) {
         painter.beginTransform();
         painter.render();
         renderPanel();
+    });
+    root.querySelector('[data-tool="shape"]').addEventListener("click", () => {
+        state.tool = "shape";
+        state.panel = "shape";
+        state.panelSide = "left";
+        if (painter.transforming) painter.commitTransform();
+        renderPanel();
+    });
+    root.querySelector('[data-tool="fill"]').addEventListener("click", () => {
+        state.tool = "fill";
+        state.panel = "fill";
+        state.panelSide = "left";
+        if (painter.transforming) painter.commitTransform();
+        renderPanel();
+    });
+    root.querySelector('[data-tool="pick"]').addEventListener("click", () => {
+        state.tool = "pick";
+        state.panel = null;
+        if (painter.transforming) painter.commitTransform();
+        renderPanel();
+        toastMessage("Tap the canvas to pick a color.");
     });
     root.querySelector('[data-panel="actions"]').addEventListener("click", () => { state.tool = state.tool; togglePanel("actions", "left"); });
     root.querySelector('[data-panel="adjust"]').addEventListener("click", () => togglePanel("adjust", "left"));
@@ -1502,7 +1608,7 @@ function mountCanvasCreator(root, onCreate) {
 }
 
 function railButton(id, icon, label) {
-    const kind = ["paint", "smudge", "erase", "select", "transform"].includes(id) ? "data-tool" : "data-panel";
+    const kind = ["paint", "smudge", "erase", "select", "transform", "shape", "fill", "pick"].includes(id) ? "data-tool" : "data-panel";
     return `<button type="button" class="draw-tool" ${kind}="${id}" aria-label="${label}">${ICONS[icon]}</button>`;
 }
 

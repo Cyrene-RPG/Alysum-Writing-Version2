@@ -141,6 +141,9 @@ test("canvas setup converts print size and stays inside the pixel limit", () => 
 
 test("studio pen is the default inking brush and large canvases keep a shorter undo stack", () => {
     assert.equal(brushById("missing").name, "Studio Pen");
+    assert.equal(brushById("hard-eraser").category, "Erasing");
+    assert.equal(brushById("hard-eraser").defaultOpacity, 1);
+    assert.equal(brushById("watercolor").category, "Painting");
     assert.equal(undoLimitFor(800, 600), 24);
     assert.equal(undoLimitFor(3840, 2160), 8);
 });

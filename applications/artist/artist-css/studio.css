@@ -226,8 +226,16 @@ button, input, select { font: inherit; color: inherit; }
     display: flex;
     flex-direction: column;
     gap: 6px;
+    max-height: calc(100% - 24px);
+    overflow: auto;
+    padding: 4px;
+    border-radius: 16px;
+    background: rgba(28, 28, 30, 0.72);
+    backdrop-filter: blur(10px);
     transform: translateY(-50%);
+    scrollbar-width: none;
 }
+.draw-rail::-webkit-scrollbar { display: none; }
 .draw-rail-left { left: 8px; }
 .draw-rail-right { right: 8px; }
 .draw-color-btn span {
