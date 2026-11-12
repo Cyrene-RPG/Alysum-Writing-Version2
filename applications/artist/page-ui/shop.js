@@ -1,4 +1,5 @@
 import { supabase } from "/core/authentication/client.js";
+import { resolveStudioSession } from "/core/desktop/studio-session.js";
 import { findUserByHandle, findUserById, publicArtistUrl } from "@alysum/artist/public-profile.js";
 import { loadPublicGallery } from "@alysum/artist/shop.js";
 import { paintOfferGrid } from "./offer-cards.js";
@@ -34,13 +35,17 @@ function paintCommission(listing) {
     document.getElementById("commission-wait").hidden = !waiting;
 }
 
-function paint(user, gallery) {
+function paint(user, gallery, mine) {
     document.title = `${user.displayName} — Gallery — Alysum`;
     const back = document.getElementById("back");
     back.href = publicArtistUrl(user.username);
     back.textContent = user.displayName;
     const hasListings = Boolean(gallery.commission) || gallery.adopt.length > 0 || gallery.buy.length > 0;
-    document.getElementById("empty").hidden = hasListings;
+    const empty = document.getElementById("empty");
+    empty.hidden = hasListings;
+    empty.textContent = mine
+        ? "Nothing is listed yet. Open a character and choose Up for adoption or For sale. Turn commissions on from My characters."
+        : "Nothing is listed for adoption, sale, or commission.";
     document.getElementById("adopt-section").hidden = gallery.adopt.length === 0;
     document.getElementById("buy-section").hidden = gallery.buy.length === 0;
     paintCommission(gallery.commission);
@@ -50,17 +55,37 @@ function paint(user, gallery) {
     status.hidden = true;
 }
 
+async function signedInId() {
+    try {
+        const session = await Promise.race([
+            resolveStudioSession(supabase),
+            new Promise((resolve) => setTimeout(() => resolve(null), 4000)),
+        ]);
+        return session?.user?.id || "";
+    } catch {
+        return "";
+    }
+}
+
 async function boot() {
     const handle = params.get("u") || "";
-    const id = params.get("id") || "";
+    let id = params.get("id") || "";
+    const sessionPromise = signedInId();
+    if (!handle && !id) id = await sessionPromise;
     const user = handle
         ? await findUserByHandle(supabase, handle)
         : await findUserById(supabase, id);
     if (!user) {
-        status.textContent = "Artist not found.";
+        status.textContent = handle || id
+            ? "Artist not found."
+            : "Sign in to open your gallery, or use the link on an artist’s page.";
         return;
     }
-    paint(user, await loadPublicGallery(supabase, user));
+    const [gallery, mineId] = await Promise.all([
+        loadPublicGallery(supabase, user),
+        sessionPromise,
+    ]);
+    paint(user, gallery, Boolean(mineId) && mineId === user.id);
 }
 
 void boot().catch((error) => {

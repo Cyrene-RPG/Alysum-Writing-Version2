@@ -87,7 +87,14 @@ async function refreshProfile() {
     void mountAccountModeToggleForSession(supabase, session, { side: "artist" });
     if (session.mode !== "cloud") return;
     void loadWorkspaceProfile(supabase, session).then((profile) => {
-        if (generation === profileGeneration) setWelcomeAvatar(profile.imageUrl, profile.name);
+        if (generation !== profileGeneration) return;
+        setWelcomeAvatar(profile.imageUrl, profile.name);
+        const handle = String(profile.username || "").trim();
+        if (!handle) return;
+        const href = `/artist-shop?u=${encodeURIComponent(handle)}`;
+        document.querySelectorAll("[data-artist-shop]").forEach((link) => {
+            link.href = href;
+        });
     });
 }
 
