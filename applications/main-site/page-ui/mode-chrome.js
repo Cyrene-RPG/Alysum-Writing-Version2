@@ -7,10 +7,15 @@ import { wireLogoutButtons } from "@alysum/authentication/logout.js";
 import { paintReaderNav, readerAccountMenuHtml } from "/applications/reader/page-ui/chrome.js";
 
 export function isReaderUiMode() {
+    const path = typeof location !== "undefined" ? location.pathname || "" : "";
+    if (path === "/artist" || path.startsWith("/artist-") || path.startsWith("/artist/")) return false;
     return getUiMode() === "library" || isReaderPath();
 }
 
 export function modeToggleSide() {
+    const path = typeof location !== "undefined" ? location.pathname || "" : "";
+    if (path === "/artist" || path.startsWith("/artist-") || path.startsWith("/artist/")) return "artist";
+    if (getUiMode() === "artist") return "artist";
     return isReaderUiMode() ? "reader" : "studio";
 }
 

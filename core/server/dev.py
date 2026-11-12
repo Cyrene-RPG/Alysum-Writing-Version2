@@ -14,6 +14,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 PORT = int(os.environ.get("PORT", "3000"))
+HOST = os.environ.get("HOST", "127.0.0.1").strip() or "127.0.0.1"
 
 TYPES = {
     ".html": "text/html; charset=utf-8",
@@ -84,6 +85,11 @@ PAGES = {
     "/terms-of-service": "applications/main-site/pages/terms-of-service.html",
     "/statistics-spec": "applications/main-site/pages/statistics-spec.html",
     "/roadmap": "applications/main-site/pages/roadmap-handoff.html",
+    "/artist": "applications/artist/pages/hub.html",
+    "/artist-gallery": "applications/artist/pages/gallery.html",
+    "/artist-character": "applications/artist/pages/character.html",
+    "/artist-profile": "applications/artist/pages/profile.html",
+    "/character": "applications/artist/pages/public-character.html",
 }
 
 
@@ -99,6 +105,8 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/main-site/settings" / clean[len("/js/settings/") :]
     if clean.startswith("/js/studio/"):
         return ROOT / "applications/studio/page-ui" / clean[len("/js/studio/") :]
+    if clean.startswith("/js/artist/"):
+        return ROOT / "applications/artist/page-ui" / clean[len("/js/artist/") :]
     if clean.startswith("/js/editor/"):
         return ROOT / "applications/editor/page-ui" / clean[len("/js/editor/") :]
     if clean.startswith("/js/word-wars/"):
@@ -124,6 +132,8 @@ def public_to_file(url_path: str) -> Path:
         return ROOT / "applications/main-site/settings/settings-css" / clean[len("/css/settings/") :]
     if clean.startswith("/css/studio/"):
         return ROOT / "applications/studio/studio-css" / clean[len("/css/studio/") :]
+    if clean.startswith("/css/artist/"):
+        return ROOT / "applications/artist/artist-css" / clean[len("/css/artist/") :]
     if clean.startswith("/css/editor/"):
         return ROOT / "applications/editor/editor-css" / clean[len("/css/editor/") :]
     if clean.startswith("/css/word-wars/"):
@@ -266,6 +276,8 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
+    server = ThreadingHTTPServer((HOST, PORT), Handler)
     print(f"Alysum local preview: http://127.0.0.1:{PORT}/", flush=True)
+    if HOST not in ("127.0.0.1", "::1", "localhost"):
+        print(f"LAN (phone/other devices): http://{HOST}:{PORT}/ — use this PC's IP if HOST is 0.0.0.0", flush=True)
     server.serve_forever()

@@ -10,7 +10,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v2.55.0';
+const SW_VERSION = 'v2.57.0';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -57,7 +57,9 @@ function isWorkspaceHtml(url) {
   // Only the offline-writing surfaces are cache-first. The library and Word Wars
   // are live/collaborative — serving a stale document (and stale page code) makes
   // a deploy show up only on the *second* load, so keep them network-first.
-  return /\/(?:studio|editor)(?:\.html)?$/i.test(url.pathname);
+  // Artist uses this path too: networkFirstHtml awaits navigation preload, and
+  // that promise never settles on Android, so /artist stays hung on "Loading…".
+  return /\/(?:studio|editor|artist|artist-gallery|artist-character|artist-profile|character)(?:\.html)?$/i.test(url.pathname);
 }
 
 self.addEventListener('fetch', (event) => {
@@ -139,9 +141,10 @@ async function networkFirstWorkspaceHtml(event) {
 
 async function networkFirstHtml(event) {
   const cache = await caches.open(SHELL_CACHE);
+  // Same Android hang as Studio: awaiting navigation preload never resolves.
+  if (event.preloadResponse) event.preloadResponse.catch(() => {});
   try {
-    const preload = event.preloadResponse ? await event.preloadResponse : null;
-    const fresh = preload || await fetch(event.request, { cache: 'no-store' });
+    const fresh = await fetch(event.request, { cache: 'no-store' });
     if (fresh && fresh.ok) cache.put(event.request, fresh.clone());
     return fresh;
   } catch (_) {

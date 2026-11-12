@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <script type="importmap">
+    { "imports": {
+        "@alysum/site-appearance/": "/site-appearance/",
+        "@alysum/authentication/": "/core/authentication/",
+        "@alysum/account/": "/core/account/",
+        "@alysum/desktop/": "/core/desktop/",
+        "@alysum/artist/": "/core/artist/"
+    } }
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes-dim/index.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css">
+    <script src="/site-appearance/js-runtime/boot.js"></script>
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=40">
+    <link rel="stylesheet" href="/css/artist/page.css">
+    <title>Character — Alysum</title>
+    <meta name="robots" content="noindex, nofollow">
+</head>
+<body>
+<header class="wd-welcome-bar ui-bar"><div class="wd-welcome-inner">
+    <div class="wd-welcome-copy"><h1 class="wd-welcome-title">Edit character</h1></div>
+    <div id="account-mode-toggle-root"></div>
+</div></header>
+<nav class="wd-nav-wrap ui-bar" aria-label="Artist"><div class="wd-nav">
+    <a href="/artist">Characters</a>
+    <a href="/artist-gallery">Gallery</a>
+    <a href="/studio">Studio</a>
+    <a href="/library">Library</a>
+</div></nav>
+<main class="artist-wrap">
+    <p class="artist-status" id="status">Loading…</p>
+    <form id="form" hidden>
+        <div class="artist-editor">
+            <div>
+                <div class="artist-portrait" id="portrait"><span>No portrait</span></div>
+                <label class="artist-field">Portrait<input type="file" id="portrait-file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
+                <label class="artist-field">Portrait protection
+                    <select id="portrait-protection"><option value="both">Glaze and Nightshade</option><option value="glaze">Glaze</option><option value="nightshade">Nightshade</option></select>
+                </label>
+                <label class="artist-check"><input type="checkbox" id="portrait-ack"> This portrait is a Glaze and/or Nightshade export. Required before a public character can show it.</label>
+            </div>
+            <div>
+                <label class="artist-field">Name<input name="displayName" required maxlength="120"></label>
+                <label class="artist-field">One-line summary<input name="summary" maxlength="500"></label>
+                <label class="artist-field">Kind
+                    <select name="kind">
+                        <option value="oc">Original character</option>
+                        <option value="adoptable">Adoptable</option>
+                        <option value="cast">Story cast</option>
+                        <option value="sona">Persona / sona</option>
+                    </select>
+                </label>
+                <label class="artist-field">Who can see this page
+                    <select name="visibility">
+                        <option value="private">Private — only you</option>
+                        <option value="public">Public on your artist page</option>
+                    </select>
+                </label>
+                <label class="artist-field">Trade policy
+                    <select name="tradePolicy">
+                        <option value="none">Not for trade</option>
+                        <option value="gift">Gift only</option>
+                        <option value="trade">Trade for art or designs</option>
+                        <option value="resell">Resell — payment stays off Alysum</option>
+                    </select>
+                </label>
+                <label class="artist-field">Terms<textarea name="termsText" maxlength="8000" placeholder="Edits allowed, credit, resale cap. Alysum does not take payment."></textarea></label>
+                <label class="artist-field">Overview<textarea name="overview"></textarea></label>
+                <label class="artist-field">Design notes<textarea name="design"></textarea></label>
+                <label class="artist-field">Personality<textarea name="personality"></textarea></label>
+                <label class="artist-field">History<textarea name="history"></textarea></label>
+                <div class="artist-actions">
+                    <button type="button" id="remove">Delete</button>
+                    <a class="artist-link" id="public-link" href="/character" hidden>Public page</a>
+                    <button type="submit" class="artist-primary">Save</button>
+                </div>
+            </div>
+        </div>
+        <p class="artist-kicker">Gallery</p>
+        <h2 class="artist-head" style="margin-top:8px">Images</h2>
+        <p class="artist-status">Public images must be your own Glaze and/or Nightshade export. Alysum does not run protection for you.</p>
+        <label class="artist-field">Add image<input type="file" id="art-file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
+        <label class="artist-field">Caption<input id="art-caption" maxlength="2000"></label>
+        <label class="artist-field">Image visibility
+            <select id="art-visibility"><option value="private">Private</option><option value="public">Public</option></select>
+        </label>
+        <label class="artist-field">Protection on this file
+            <select id="art-protection"><option value="both">Glaze and Nightshade</option><option value="glaze">Glaze</option><option value="nightshade">Nightshade</option></select>
+        </label>
+        <label class="artist-check"><input type="checkbox" id="art-ack"> This upload is a Glaze and/or Nightshade protected export.</label>
+        <div class="artist-actions"><button type="button" id="art-add" class="artist-primary">Upload image</button></div>
+        <div class="artist-grid" id="art-grid"></div>
+    </form>
+</main>
+<script type="module" src="/js/artist/shell.js"></script>
+<script type="module" src="/js/artist/editor.js"></script>
+</body>
+</html>

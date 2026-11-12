@@ -48,6 +48,18 @@ Account plus studio stats.
 
 Lore *about* a story, not chapter prose. Stored by `storage_key` in `encyclopedia_blobs` (histories, geography, cultures, magic, wiki links, city/realm builders).
 
+## Artist character
+
+Private or public roster entry (not Story Bible prose).
+
+- `id` — `chr_…`
+- `slug`, `display_name`, `kind` — `oc` | `adoptable` | `cast` | `sona`
+- `creator_id`, `owner_id`, `trade_policy`, `terms_text`
+- `visibility` — `private` | `unlisted` | `public`
+- `artist_focus` on user — `oc_adoptables` | `writer_artist` | `both`
+
+Public `artist_artworks` require `protection_declared` (`glaze` | `nightshade` | `both`).
+
 ## Not this domain
 
 Plot-studio cards, notes vault, public comments/kudos — those get their own shapes when those apps are rebuilt.

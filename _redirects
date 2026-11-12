@@ -61,6 +61,11 @@
 /js/login-ui.js  /applications/main-site/login/login-ui.js  200
 /js/login-reset.js  /applications/main-site/login/login-reset.js  200
 /studio  /applications/studio/pages/studio  200
+/artist  /applications/artist/pages/hub  200
+/artist-gallery  /applications/artist/pages/gallery  200
+/artist-character  /applications/artist/pages/character  200
+/artist-profile  /applications/artist/pages/profile  200
+/character  /applications/artist/pages/public-character  200
 /audiobook-studio  /applications/studio/pages/audiobook-studio  200
 # Audiobook preview reuses Studio with document-scoped sample data; no live auth or uploads.
 /audiobook-preview  /applications/studio/pages/audiobook-preview  200
@@ -104,6 +109,7 @@
 /js/signup/*  /applications/main-site/signup/:splat  200
 /js/settings/*  /applications/main-site/settings/:splat  200
 /js/studio/*  /applications/studio/page-ui/:splat  200
+/js/artist/*  /applications/artist/page-ui/:splat  200
 /js/editor/*  /applications/editor/page-ui/:splat  200
 /js/word-wars/*  /applications/word-wars/page-ui/:splat  200
 /js/library/*  /applications/library/page-ui/:splat  200
@@ -114,6 +120,7 @@
 /css/signup/*  /applications/main-site/signup/signup-css/:splat  200
 /css/settings/*  /applications/main-site/settings/settings-css/:splat  200
 /css/studio/*  /applications/studio/studio-css/:splat  200
+/css/artist/*  /applications/artist/artist-css/:splat  200
 /css/editor/*  /applications/editor/editor-css/:splat  200
 /css/word-wars/*  /applications/word-wars/word-wars-css/:splat  200
 /css/library/*  /applications/library/library-css/:splat  200

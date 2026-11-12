@@ -436,6 +436,7 @@
     display: none;
 }
 
+.account-mode-menu a,
 .account-mode-menu button {
     appearance: none;
     display: block;
@@ -451,17 +452,21 @@
     font-weight: 800;
     line-height: 1.2;
     text-align: left;
+    text-decoration: none;
     cursor: pointer;
 }
 
+.account-mode-menu a:last-child,
 .account-mode-menu button:last-child {
     margin-bottom: 0;
 }
 
+.account-mode-menu a:hover,
 .account-mode-menu button:hover {
     background: color-mix(in srgb, var(--alysum-ui-raised, #2a2a2a) 82%, white);
 }
 
+.account-mode-menu a[aria-current="true"],
 .account-mode-menu button[aria-current="true"] {
     border-color: color-mix(in srgb, var(--purple-bright, #9333ea) 55%, transparent);
     background: color-mix(in srgb, var(--purple, #6d28d9) 28%, transparent);

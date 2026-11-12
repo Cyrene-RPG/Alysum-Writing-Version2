@@ -29,12 +29,17 @@ async function fetchAccountType(supabase, userId) {
     }
 }
 
+function isArtistPath(path) {
+    return path === "/artist" || path.startsWith("/artist-") || path.startsWith("/artist/");
+}
+
 function currentSide(explicit) {
+    const path = typeof location !== "undefined" ? location.pathname || "" : "";
+    if (isArtistPath(path)) return "artist";
     if (explicit === "reader" || explicit === "studio" || explicit === "artist") {
         return explicit;
     }
     if (typeof location !== "undefined") {
-        const path = location.pathname || "";
         if (isReaderPath(path)) return "reader";
         // Shared catalog/read surfaces follow the stored UI mode so Writer
         // browsing /library does not flip the Switch label by itself.
@@ -49,11 +54,17 @@ function currentSide(explicit) {
             path.startsWith("/inbox") ||
             path.startsWith("/updates")
         ) {
-            return getUiMode() === "library" ? "reader" : "studio";
+            const mode = getUiMode();
+            if (mode === "library") return "reader";
+            if (mode === "artist") return "artist";
+            return "studio";
         }
         if (path.startsWith("/artist")) return "artist";
     }
-    return getUiMode() === "library" ? "reader" : "studio";
+    const mode = getUiMode();
+    if (mode === "library") return "reader";
+    if (mode === "artist") return "artist";
+    return "studio";
 }
 
 function destinationsFor(accountType) {
@@ -78,19 +89,14 @@ function destinationsFor(accountType) {
         items.push({
             id: "artist",
             label: "Artist",
-            href: "/settings#account-focus",
-            mode: null,
-            soon: true,
+            href: "/artist",
+            mode: "artist",
         });
     }
     return items;
 }
 
 function go(item) {
-    if (item.soon) {
-        location.href = item.href;
-        return;
-    }
     if (item.mode) setUiMode(item.mode);
     location.href = item.href;
 }
@@ -132,11 +138,11 @@ function paintSwitch(root, accountType, side) {
             ${items
                 .map(
                     (item) => `
-                <button type="button" role="menuitem" data-mode-id="${item.id}" ${
+                <a role="menuitem" href="${item.href}" data-mode-id="${item.id}" ${
                         item.id === current.id ? 'aria-current="true"' : ""
                     }>
                     ${item.label}${item.soon ? " · soon" : ""}
-                </button>`
+                </a>`
                 )
                 .join("")}
         </div>
@@ -150,14 +156,13 @@ function paintSwitch(root, accountType, side) {
         else closeMenu(root);
     });
 
-    root.querySelectorAll("[data-mode-id]").forEach((btn) => {
-        btn.addEventListener("click", (event) => {
+    root.querySelectorAll("[data-mode-id]").forEach((link) => {
+        link.addEventListener("click", (event) => {
             event.stopPropagation();
-            const id = btn.getAttribute("data-mode-id");
+            const id = link.getAttribute("data-mode-id");
             const item = items.find((entry) => entry.id === id);
+            if (item?.mode) setUiMode(item.mode);
             closeMenu(root);
-            if (!item || item.id === current.id) return;
-            go(item);
         });
     });
 

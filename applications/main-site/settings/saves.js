@@ -7,6 +7,8 @@ import { updateAuthorBioCount, readSupportLinkDraft } from "/js/settings/author-
 import { supabase } from "@alysum/authentication/client.js";
 import { updateProfileRow } from "@alysum/synchronization-engine/local-adapter.js";
 import { isValidAccountType, homeUrlForUserData } from "@alysum/account/mode.js";
+import { mountAccountModeToggle } from "@alysum/account/mode-toggle.js";
+import { modeToggleSide } from "/js/mode-chrome.js";
 import {
     DEFAULT_WORD_GOAL_MODE,
     WEEKDAY_FULL,
@@ -555,6 +557,7 @@ export function wireSettingsSaves() {
             const { error } = await supabase.from("users").update({ account_type: v }).eq("id", user.id);
             if (error) throw error;
             state.settingsHomeUrl = homeUrlForUserData({ accountType: v });
+            void mountAccountModeToggle({ supabase, accountType: v, side: modeToggleSide() });
             showMsg(els.accountTypeMsg, "Saved.", true);
         } catch (e) {
             console.error(e);
