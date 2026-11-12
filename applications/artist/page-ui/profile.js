@@ -1,15 +1,28 @@
 import { supabase } from "/core/authentication/client.js";
+import { resolveStudioSession } from "/core/desktop/studio-session.js";
 import { listPublicCharacters } from "@alysum/artist/character-store.js";
 import { findUserByHandle, findUserById, publicCharacterUrl, publicGalleryUrl } from "@alysum/artist/public-profile.js";
 import { loadPublicGallery } from "@alysum/artist/shop.js";
 import { portraitIsProtected } from "@alysum/artist/offers.js";
 import { paintOfferGrid } from "./offer-cards.js";
-import { paintWelcomePfp } from "./pfp.js";
+import { paintWelcomePfp, useOwnerNav } from "./pfp.js";
 
 const params = new URLSearchParams(location.search);
 const status = document.getElementById("status");
 
-function paint(user, characters, gallery) {
+async function signedInId() {
+    try {
+        const session = await Promise.race([
+            resolveStudioSession(supabase),
+            new Promise((resolve) => setTimeout(() => resolve(null), 4000)),
+        ]);
+        return session?.user?.id || "";
+    } catch {
+        return "";
+    }
+}
+
+function paint(user, characters, gallery, mine) {
     document.title = `${user.displayName} — Alysum`;
     document.getElementById("name").textContent = user.displayName;
     document.getElementById("handle").textContent = user.username ? `@${user.username}` : "";
@@ -20,9 +33,12 @@ function paint(user, characters, gallery) {
     const profileUrl = `/artist-profile?u=${encodeURIComponent(user.username || "")}`;
     document.getElementById("artist-pfp-link").href = profileUrl;
     const profileLink = document.getElementById("profile-link");
-    const shopLink = document.getElementById("shop-link");
     profileLink.href = profileUrl;
-    shopLink.href = publicGalleryUrl(user.username);
+    const galleryUrl = publicGalleryUrl(user.username);
+    document.querySelectorAll("[data-artist-shop]").forEach((link) => {
+        link.href = galleryUrl;
+    });
+    useOwnerNav(mine);
     const preview = [...(gallery?.adopt || []), ...(gallery?.buy || [])].slice(0, 4);
     const listed = document.getElementById("listed");
     listed.hidden = preview.length === 0;
@@ -67,11 +83,12 @@ async function boot() {
         status.textContent = "Artist not found.";
         return;
     }
-    const [characters, gallery] = await Promise.all([
+    const [characters, gallery, mineId] = await Promise.all([
         listPublicCharacters(supabase, user.id),
         loadPublicGallery(supabase, user).catch(() => null),
+        signedInId(),
     ]);
-    paint(user, characters, gallery);
+    paint(user, characters, gallery, Boolean(mineId) && mineId === user.id);
 }
 
 void boot().catch((error) => { status.textContent = error.message || "Could not load this page."; });

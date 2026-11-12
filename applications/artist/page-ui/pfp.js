@@ -1,4 +1,13 @@
 /** Same profile picture the writer and reader welcome bars use. */
+
+export function useOwnerNav(mine) {
+    const visitor = document.getElementById("visitor-nav");
+    const owner = document.getElementById("owner-nav");
+    if (!visitor || !owner) return;
+    visitor.hidden = Boolean(mine);
+    owner.hidden = !mine;
+}
+
 export function paintWelcomePfp(imageUrl, name) {
     const img = document.getElementById("welcomePfpImg");
     const initial = document.getElementById("welcomePfpInitial");

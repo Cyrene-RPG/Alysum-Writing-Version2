@@ -1,9 +1,10 @@
 import { supabase } from "/core/authentication/client.js";
+import { resolveStudioSession } from "/core/desktop/studio-session.js";
 import { listPublicArtworks } from "@alysum/artist/artwork-store.js";
 import { findUserByHandle, getPublicCharacter, publicArtistUrl, publicGalleryUrl } from "@alysum/artist/public-profile.js";
 import { TRADE_POLICIES } from "@alysum/artist/constants.js";
 import { characterListing, offerActionLabel } from "@alysum/artist/offers.js";
-import { paintWelcomePfp } from "./pfp.js";
+import { paintWelcomePfp, useOwnerNav } from "./pfp.js";
 
 const params = new URLSearchParams(location.search);
 const status = document.getElementById("status");
@@ -33,10 +34,16 @@ async function boot() {
     link.href = publicArtistUrl(user.username);
     link.textContent = user.displayName;
     owner.replaceChildren(link);
-    document.getElementById("profile-link").href = publicArtistUrl(user.username);
-    document.getElementById("gallery-link").href = publicGalleryUrl(user.username);
-    document.getElementById("artist-pfp-link").href = publicArtistUrl(user.username);
+    const profileUrl = publicArtistUrl(user.username);
+    const galleryUrl = publicGalleryUrl(user.username);
+    document.getElementById("profile-link").href = profileUrl;
+    document.getElementById("gallery-link").href = galleryUrl;
+    document.getElementById("owner-gallery-link").href = galleryUrl;
+    document.getElementById("artist-pfp-link").href = profileUrl;
     paintWelcomePfp(user.imageUrl, user.displayName);
+    resolveStudioSession(supabase).then((session) => {
+        useOwnerNav(session?.user?.id === user.id);
+    }).catch(() => {});
     document.getElementById("summary").textContent = character.summary || "";
     const fields = character.fields || {};
     document.getElementById("body").textContent =

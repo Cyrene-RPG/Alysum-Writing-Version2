@@ -3,7 +3,7 @@ import { resolveStudioSession } from "/core/desktop/studio-session.js";
 import { findUserByHandle, findUserById, publicArtistUrl } from "@alysum/artist/public-profile.js";
 import { loadPublicGallery } from "@alysum/artist/shop.js";
 import { paintOfferGrid } from "./offer-cards.js";
-import { paintWelcomePfp } from "./pfp.js";
+import { paintWelcomePfp, useOwnerNav } from "./pfp.js";
 
 const params = new URLSearchParams(location.search);
 const status = document.getElementById("status");
@@ -46,8 +46,11 @@ function paint(user, gallery, mine) {
     const profileUrl = publicArtistUrl(user.username);
     back.href = profileUrl;
     document.getElementById("artist-pfp-link").href = profileUrl;
-    const shopTab = document.getElementById("shop-tab");
-    if (shopTab) shopTab.href = `${location.pathname}${location.search}`;
+    const here = `${location.pathname}${location.search}`;
+    document.querySelectorAll("[data-artist-shop]").forEach((link) => {
+        link.href = here;
+    });
+    useOwnerNav(mine);
     const hasListings = Boolean(gallery.commission) || gallery.adopt.length > 0 || gallery.buy.length > 0;
     const empty = document.getElementById("empty");
     empty.hidden = hasListings;

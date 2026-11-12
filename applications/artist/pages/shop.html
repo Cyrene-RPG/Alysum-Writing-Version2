@@ -32,9 +32,14 @@
     </div>
 </header>
 <nav class="wd-nav-wrap ui-bar" aria-label="Artist page">
-    <div class="wd-nav">
+    <div class="wd-nav" id="visitor-nav">
         <a href="/artist-profile" id="back">Profile</a>
-        <a href="/artist-shop" id="shop-tab" class="is-active">Gallery</a>
+        <a href="/artist-shop" data-artist-shop class="is-active">Gallery</a>
+    </div>
+    <div class="wd-nav" id="owner-nav" hidden>
+        <a href="/artist">My characters</a>
+        <a href="/artist-gallery">My art</a>
+        <a href="/artist-shop" data-artist-shop class="is-active">Gallery</a>
     </div>
 </nav>
 <main class="artist-wrap">
