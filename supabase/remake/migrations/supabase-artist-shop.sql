@@ -88,4 +88,6 @@ ALTER TABLE public.artist_artworks
 COMMENT ON COLUMN public.artist_artworks.offer_kind IS
   'none | buy — a protected public image listed for sale. Adoptables stay on the character.';
 
+NOTIFY pgrst, 'reload schema';
+
 COMMIT;
