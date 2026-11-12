@@ -218,6 +218,10 @@
         "destination": "/applications/artist/page-ui/offer-cards.js"
       },
       {
+        "source": "/js/artist/pfp.js",
+        "destination": "/applications/artist/page-ui/pfp.js"
+      },
+      {
         "source": "/css/artist/page.css",
         "destination": "/applications/artist/artist-css/page.css"
       },

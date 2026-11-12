@@ -4,22 +4,10 @@ import { findUserByHandle, findUserById, publicCharacterUrl, publicGalleryUrl } 
 import { loadPublicGallery } from "@alysum/artist/shop.js";
 import { portraitIsProtected } from "@alysum/artist/offers.js";
 import { paintOfferGrid } from "./offer-cards.js";
+import { paintWelcomePfp } from "./pfp.js";
 
 const params = new URLSearchParams(location.search);
 const status = document.getElementById("status");
-
-function paintAvatar(user) {
-    const avatar = document.getElementById("avatar");
-    avatar.replaceChildren();
-    if (user.imageUrl) {
-        const img = document.createElement("img");
-        img.src = user.imageUrl;
-        img.alt = "";
-        avatar.append(img);
-        return;
-    }
-    avatar.textContent = user.displayName.trim().charAt(0).toUpperCase() || "A";
-}
 
 function paint(user, characters, gallery) {
     document.title = `${user.displayName} — Alysum`;
@@ -28,10 +16,12 @@ function paint(user, characters, gallery) {
     const bio = document.getElementById("bio");
     bio.hidden = !user.artistBio;
     bio.textContent = user.artistBio || "";
-    paintAvatar(user);
+    paintWelcomePfp(user.imageUrl, user.displayName);
+    const profileUrl = `/artist-profile?u=${encodeURIComponent(user.username || "")}`;
+    document.getElementById("artist-pfp-link").href = profileUrl;
     const profileLink = document.getElementById("profile-link");
     const shopLink = document.getElementById("shop-link");
-    profileLink.href = `/artist-profile?u=${encodeURIComponent(user.username || "")}`;
+    profileLink.href = profileUrl;
     shopLink.href = publicGalleryUrl(user.username);
     const preview = [...(gallery?.adopt || []), ...(gallery?.buy || [])].slice(0, 4);
     const listed = document.getElementById("listed");

@@ -3,6 +3,7 @@ import { resolveStudioSession } from "/core/desktop/studio-session.js";
 import { findUserByHandle, findUserById, publicArtistUrl } from "@alysum/artist/public-profile.js";
 import { loadPublicGallery } from "@alysum/artist/shop.js";
 import { paintOfferGrid } from "./offer-cards.js";
+import { paintWelcomePfp } from "./pfp.js";
 
 const params = new URLSearchParams(location.search);
 const status = document.getElementById("status");
@@ -35,29 +36,16 @@ function paintCommission(listing) {
     document.getElementById("commission-wait").hidden = !waiting;
 }
 
-function paintAvatar(user) {
-    const avatar = document.getElementById("avatar");
-    if (!avatar) return;
-    avatar.replaceChildren();
-    if (user.imageUrl) {
-        const img = document.createElement("img");
-        img.src = user.imageUrl;
-        img.alt = "";
-        avatar.append(img);
-        return;
-    }
-    avatar.textContent = user.displayName.trim().charAt(0).toUpperCase() || "A";
-}
-
 function paint(user, gallery, mine) {
     document.title = `${user.displayName} — Gallery — Alysum`;
     document.getElementById("name").textContent = user.displayName;
     const handle = document.getElementById("handle");
     handle.textContent = user.username ? `@${user.username}` : "";
-    paintAvatar(user);
+    paintWelcomePfp(user.imageUrl, user.displayName);
     const back = document.getElementById("back");
     const profileUrl = publicArtistUrl(user.username);
     back.href = profileUrl;
+    document.getElementById("artist-pfp-link").href = profileUrl;
     const shopTab = document.getElementById("shop-tab");
     if (shopTab) shopTab.href = `${location.pathname}${location.search}`;
     const hasListings = Boolean(gallery.commission) || gallery.adopt.length > 0 || gallery.buy.length > 0;

@@ -9,6 +9,7 @@ import { openRoadmap } from "@alysum/authentication/open-roadmap.js";
 import { initAppearanceLoadoutMenu } from "@alysum/site-appearance/js-runtime/appearance-loadout-menu.js?v=8";
 import { applyModeChrome, modeToggleSide } from "/js/mode-chrome.js";
 import { mountAccountModeToggleForSession } from "@alysum/account/mode-toggle.js";
+import { paintWelcomePfp } from "./pfp.js";
 
 function closeWelcomePfpMenu() {
     const menu = document.getElementById("welcomePfpMenu");
@@ -49,27 +50,7 @@ function wirePfpMenu() {
 }
 
 function setWelcomeAvatar(imageUrl, name) {
-    const img = document.getElementById("welcomePfpImg");
-    const initial = document.getElementById("welcomePfpInitial");
-    const letter = String(name || "A").trim().charAt(0).toUpperCase() || "A";
-    const url = String(imageUrl || "").trim();
-    if (initial) initial.textContent = letter;
-    if (img && url) {
-        initial?.classList.add("is-hidden");
-        img.onerror = () => {
-            img.removeAttribute("src");
-            img.hidden = true;
-            initial?.classList.remove("is-hidden");
-        };
-        img.hidden = false;
-        img.src = url;
-        return;
-    }
-    if (img) {
-        img.removeAttribute("src");
-        img.hidden = true;
-    }
-    initial?.classList.remove("is-hidden");
+    paintWelcomePfp(imageUrl, name);
 }
 
 wireLogoutButtons(document);

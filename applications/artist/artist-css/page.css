@@ -264,26 +264,9 @@ body {
   gap: 20px;
   margin-bottom: 28px;
 }
-.artist-avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
-  background: color-mix(in srgb, var(--accent) 35%, #111);
+a.wd-pfp-btn {
+  text-decoration: none;
   color: #fff;
-  font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 32px;
-}
-.artist-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 35%;
 }
 .artist-mast-handle {
   margin: 4px 0 0;

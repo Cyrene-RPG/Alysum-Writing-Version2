@@ -3,6 +3,7 @@ import { listPublicArtworks } from "@alysum/artist/artwork-store.js";
 import { findUserByHandle, getPublicCharacter, publicArtistUrl, publicGalleryUrl } from "@alysum/artist/public-profile.js";
 import { TRADE_POLICIES } from "@alysum/artist/constants.js";
 import { characterListing, offerActionLabel } from "@alysum/artist/offers.js";
+import { paintWelcomePfp } from "./pfp.js";
 
 const params = new URLSearchParams(location.search);
 const status = document.getElementById("status");
@@ -34,6 +35,8 @@ async function boot() {
     owner.replaceChildren(link);
     document.getElementById("profile-link").href = publicArtistUrl(user.username);
     document.getElementById("gallery-link").href = publicGalleryUrl(user.username);
+    document.getElementById("artist-pfp-link").href = publicArtistUrl(user.username);
+    paintWelcomePfp(user.imageUrl, user.displayName);
     document.getElementById("summary").textContent = character.summary || "";
     const fields = character.fields || {};
     document.getElementById("body").textContent =
