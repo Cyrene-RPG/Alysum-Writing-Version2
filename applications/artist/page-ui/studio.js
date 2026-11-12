@@ -1283,10 +1283,17 @@ function mountCanvasCreator(root, onCreate) {
 
     function refresh() {
         const size = pixels();
-        const long = Math.max(size.width, size.height);
-        const scale = 280 / long;
-        sheetlet.style.width = `${Math.max(36, Math.round(size.width * scale))}px`;
-        sheetlet.style.height = `${Math.max(36, Math.round(size.height * scale))}px`;
+        const wide = window.innerWidth >= 700;
+        const short = window.innerHeight < 760;
+        const availW = wide
+            ? Math.min(460, Math.max(160, window.innerWidth * 0.34))
+            : Math.min(320, Math.max(120, window.innerWidth - 96));
+        const availH = wide
+            ? Math.min(short ? 300 : 520, Math.max(140, window.innerHeight - 210))
+            : Math.min(190, Math.max(96, window.innerHeight * 0.26));
+        const scale = Math.min(availW / size.width, availH / size.height);
+        sheetlet.style.width = `${Math.max(48, Math.round(size.width * scale))}px`;
+        sheetlet.style.height = `${Math.max(48, Math.round(size.height * scale))}px`;
         sheetlet.style.background = setup.background === "transparent"
             ? "repeating-conic-gradient(#d8d8dc 0% 25%, #f4f4f6 0% 50%) 50% / 18px 18px"
             : setup.background;
@@ -1398,6 +1405,9 @@ function mountCanvasCreator(root, onCreate) {
         onCreate({ width: size.width, height: size.height, background: setup.background, name });
     });
     choosePreset(CANVAS_PRESETS.find((preset) => preset.id === "sketch"));
+    window.addEventListener("resize", () => {
+        if (root.querySelector("#draw-sheet")?.open) refresh();
+    });
 }
 
 function railButton(id, icon, label) {

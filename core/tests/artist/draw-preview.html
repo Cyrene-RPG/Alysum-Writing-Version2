@@ -54,6 +54,27 @@ if (params.get("setup") === "1") {
     document.querySelector("#draw-notice-dialog").close();
     document.querySelector("#draw-new").click();
     document.querySelector("#draw-presets button[data-preset='a4']").click();
+    const dialog = document.querySelector("#draw-sheet");
+    const sheet = document.querySelector("#draw-sheetlet").getBoundingClientRect();
+    const dialogBox = dialog.getBoundingClientRect();
+    const widthBox = document.querySelector("#draw-width-input").getBoundingClientRect();
+    const heightBox = document.querySelector("#draw-height-input").getBoundingClientRect();
+    const scroller = window.innerWidth < 700
+        ? document.querySelector(".draw-create-body")
+        : document.querySelector(".draw-create-settings");
+    const last = document.querySelector("#draw-presets button:last-child");
+    const lastBottom = last.getBoundingClientRect().bottom - scroller.getBoundingClientRect().top + scroller.scrollTop;
+    const report = document.createElement("pre");
+    report.id = "draw-layout";
+    report.textContent = JSON.stringify({
+        view: [window.innerWidth, window.innerHeight],
+        dialogFits: dialogBox.right <= window.innerWidth + 1 && dialogBox.bottom <= window.innerHeight + 1,
+        sheet: [Math.round(sheet.width), Math.round(sheet.height)],
+        inputsClear: widthBox.right <= heightBox.left + 1,
+        lastReachable: lastBottom <= scroller.scrollHeight + 2,
+        columns: getComputedStyle(document.querySelector(".draw-create-body")).gridTemplateColumns.includes(" ") ? "split" : "stack",
+    });
+    document.body.append(report);
 }
 if (params.get("demo") === "1") {
     document.querySelector("#draw-notice-dialog").close();

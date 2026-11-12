@@ -252,9 +252,10 @@ button, input, select { font: inherit; color: inherit; }
 .draw-sheet::backdrop { background: rgba(0, 0, 0, 0.55); }
 .draw-sheet-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .draw-create-sheet {
-    width: calc(100vw - 16px);
-    height: calc(100dvh - 16px);
+    width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right));
+    height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     max-width: none;
+    max-height: calc(100dvh - 16px);
     padding: 0;
     overflow: hidden;
     background: #161618;
@@ -282,7 +283,7 @@ button, input, select { font: inherit; color: inherit; }
 }
 .draw-create-body {
     display: grid;
-    grid-template-columns: minmax(260px, 1fr) minmax(300px, 440px);
+    grid-template-columns: minmax(200px, 1fr) minmax(280px, 460px);
     min-height: 0;
     flex: 1;
 }
@@ -291,7 +292,8 @@ button, input, select { font: inherit; color: inherit; }
     align-content: center;
     justify-items: center;
     gap: 8px;
-    padding: 28px 20px;
+    min-height: 0;
+    padding: 20px;
     background:
         radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.05), transparent 55%),
         #111113;
@@ -303,7 +305,14 @@ button, input, select { font: inherit; color: inherit; }
 #draw-canvas-preview { margin: 8px 0 0; font-size: 20px; font-weight: 650; }
 .draw-create-settings { overflow: auto; padding: 18px 18px 28px; }
 .draw-field-label { margin: 16px 0 8px; color: #aeaeb2; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-.draw-segment, .draw-dims, .draw-bgs { display: flex; flex-wrap: wrap; gap: 8px; }
+.draw-segment, .draw-bgs { display: flex; flex-wrap: wrap; gap: 8px; }
+.draw-segment button { flex: 1 1 88px; }
+.draw-dims {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: end;
+    gap: 8px;
+}
 .draw-segment button, .draw-dims button, .draw-dims label {
     border: 0;
     border-radius: 12px;
@@ -313,8 +322,7 @@ button, input, select { font: inherit; color: inherit; }
     cursor: pointer;
 }
 .draw-segment button.is-on, .draw-presets button.is-on, .draw-bgs button.is-on { outline: 2px solid #0a84ff; background: #1c3d66; }
-.draw-dims { align-items: end; }
-.draw-dims label { display: grid; gap: 4px; font-size: 12px; color: #aeaeb2; cursor: text; flex: 1; }
+.draw-dims label { display: grid; gap: 4px; min-width: 0; font-size: 12px; color: #aeaeb2; cursor: text; }
 .draw-dims input, .draw-create-settings .draw-field input {
     width: 100%;
     min-height: 36px;
@@ -335,7 +343,7 @@ button, input, select { font: inherit; color: inherit; }
     cursor: pointer;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
 }
-.draw-presets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.draw-presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); gap: 8px; }
 .draw-presets button {
     display: grid;
     justify-items: center;
@@ -356,11 +364,23 @@ button, input, select { font: inherit; color: inherit; }
 }
 .draw-presets strong { font-size: 13px; }
 .draw-presets span { color: #8e8e93; font-size: 11px; }
-@media (max-width: 800px) {
-    .draw-create-sheet { width: calc(100vw - 12px); height: calc(100dvh - 12px); }
+@media (max-width: 1099px) and (min-width: 700px) {
+    .draw-create-body { grid-template-columns: minmax(180px, 0.82fr) minmax(300px, 1.2fr); }
+    .draw-create-stage { padding: 16px; }
+    .draw-create-bar h2 { font-size: 24px; }
+}
+@media (max-height: 740px) and (min-width: 700px) {
+    .draw-create-stage { padding: 10px 16px; }
+    .draw-create-settings { padding-top: 12px; }
+    #draw-canvas-preview { margin-top: 4px; font-size: 17px; }
+}
+@media (max-width: 699px) {
+    .draw-create-bar { padding: 10px 12px; }
+    .draw-create-bar h2 { font-size: 22px; }
     .draw-create-body { grid-template-columns: 1fr; overflow: auto; }
-    .draw-create-stage { min-height: 240px; }
-    .draw-presets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .draw-create-stage { padding: 12px 16px 4px; }
+    .draw-create-settings { overflow: visible; padding: 12px 14px calc(28px + env(safe-area-inset-bottom)); }
+    #draw-canvas-preview { font-size: 17px; }
 }
 .draw-help ul { padding-left: 18px; line-height: 1.5; color: #d1d1d6; }
 .draw-notice {
