@@ -138,11 +138,11 @@ function paintSwitch(root, accountType, side) {
             ${items
                 .map(
                     (item) => `
-                <button type="button" role="menuitem" data-mode-id="${item.id}" ${
+                <a role="menuitem" href="${item.href}" data-mode-id="${item.id}" ${
                         item.id === current.id ? 'aria-current="true"' : ""
                     }>
                     ${item.label}${item.soon ? " · soon" : ""}
-                </button>`
+                </a>`
                 )
                 .join("")}
         </div>
@@ -156,16 +156,13 @@ function paintSwitch(root, accountType, side) {
         else closeMenu(root);
     });
 
-    root.querySelectorAll("[data-mode-id]").forEach((btn) => {
-        btn.addEventListener("click", (event) => {
+    root.querySelectorAll("[data-mode-id]").forEach((link) => {
+        link.addEventListener("click", (event) => {
             event.stopPropagation();
-            const id = btn.getAttribute("data-mode-id");
+            const id = link.getAttribute("data-mode-id");
             const item = items.find((entry) => entry.id === id);
+            if (item?.mode) setUiMode(item.mode);
             closeMenu(root);
-            if (!item) return;
-            const nextPath = String(item.href || "").split("?")[0].split("#")[0];
-            if (item.id === current.id && location.pathname === nextPath) return;
-            go(item);
         });
     });
 

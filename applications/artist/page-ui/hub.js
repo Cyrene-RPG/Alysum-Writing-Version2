@@ -115,7 +115,12 @@ function mountFocus(userId) {
 }
 
 async function boot() {
-    const session = await resolveStudioSession(supabase);
+    const session = await Promise.race([
+        resolveStudioSession(supabase),
+        new Promise((_, reject) => {
+            setTimeout(() => reject(new Error("Sign-in check stalled. Reload this page.")), 8000);
+        }),
+    ]);
     if (session.mode !== "cloud" || !session.user?.id) {
         $("artist-gate").textContent = "Sign in to open Artist.";
         if (session.mode === "none") goToLogin("/artist");
@@ -166,4 +171,7 @@ async function boot() {
 }
 
 $("artist-create-cancel").addEventListener("click", () => $("artist-create").close());
-void boot();
+void boot().catch((error) => {
+    $("artist-gate").hidden = false;
+    $("artist-gate").textContent = error.message || "Artist did not open. Reload the page.";
+});
