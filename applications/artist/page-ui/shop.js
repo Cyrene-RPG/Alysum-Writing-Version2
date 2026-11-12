@@ -35,17 +35,37 @@ function paintCommission(listing) {
     document.getElementById("commission-wait").hidden = !waiting;
 }
 
+function paintAvatar(user) {
+    const avatar = document.getElementById("avatar");
+    if (!avatar) return;
+    avatar.replaceChildren();
+    if (user.imageUrl) {
+        const img = document.createElement("img");
+        img.src = user.imageUrl;
+        img.alt = "";
+        avatar.append(img);
+        return;
+    }
+    avatar.textContent = user.displayName.trim().charAt(0).toUpperCase() || "A";
+}
+
 function paint(user, gallery, mine) {
     document.title = `${user.displayName} — Gallery — Alysum`;
+    document.getElementById("name").textContent = user.displayName;
+    const handle = document.getElementById("handle");
+    handle.textContent = user.username ? `@${user.username}` : "";
+    paintAvatar(user);
     const back = document.getElementById("back");
-    back.href = publicArtistUrl(user.username);
-    back.textContent = user.displayName;
+    const profileUrl = publicArtistUrl(user.username);
+    back.href = profileUrl;
+    const shopTab = document.getElementById("shop-tab");
+    if (shopTab) shopTab.href = `${location.pathname}${location.search}`;
     const hasListings = Boolean(gallery.commission) || gallery.adopt.length > 0 || gallery.buy.length > 0;
     const empty = document.getElementById("empty");
     empty.hidden = hasListings;
-    empty.textContent = mine
-        ? "Nothing is listed yet. Open a character and choose Up for adoption or For sale. Turn commissions on from My characters."
-        : "Nothing is listed for adoption, sale, or commission.";
+    document.getElementById("empty-copy").textContent = mine
+        ? "Open a character and choose Up for adoption or For sale. Commissions turn on from My characters."
+        : "This artist has not listed anything for adoption, sale, or commission.";
     document.getElementById("adopt-section").hidden = gallery.adopt.length === 0;
     document.getElementById("buy-section").hidden = gallery.buy.length === 0;
     paintCommission(gallery.commission);

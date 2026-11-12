@@ -10,27 +10,40 @@
     <link rel="stylesheet" href="/site-appearance/css-styles/typography.css">
     <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css">
     <script src="/site-appearance/js-runtime/boot.js"></script>
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=40">
     <link rel="stylesheet" href="/css/artist/page.css">
     <title>Artist — Alysum</title>
 </head>
 <body>
+<header class="wd-welcome-bar ui-bar">
+    <div class="wd-welcome-inner">
+        <div class="artist-avatar" id="avatar" aria-hidden="true">A</div>
+        <div class="wd-welcome-copy">
+            <h1 class="wd-welcome-title" id="name">Artist</h1>
+            <p class="artist-mast-handle" id="handle"></p>
+        </div>
+    </div>
+</header>
+<nav class="wd-nav-wrap ui-bar" aria-label="Artist page">
+    <div class="wd-nav">
+        <a href="/artist-profile" id="profile-link" class="is-active">Profile</a>
+        <a href="/artist-shop" id="shop-link">Gallery</a>
+    </div>
+</nav>
 <main class="artist-wrap">
     <p class="artist-status" id="status">Loading…</p>
     <article id="sheet" hidden>
-        <div class="artist-public">
-            <div class="artist-avatar" id="avatar"></div>
-            <div>
-                <p class="artist-kicker">Artist</p>
-                <h1 id="name"></h1>
-                <p class="artist-status" id="handle"></p>
-                <p class="artist-prose" id="bio"></p>
-            </div>
-        </div>
-        <div class="artist-head"><h2>Gallery</h2><a class="artist-link" id="shop-link" href="/artist-shop">Open</a></div>
-        <p class="artist-status" id="shop-blurb">Adopt, buy, or commission. Payment stays on the artist’s own page.</p>
-        <div class="artist-shelf" id="shop"></div>
-        <div class="artist-head"><h2>Characters</h2></div>
-        <div class="artist-shelf" id="shelf"></div>
+        <p class="artist-prose artist-bio-panel" id="bio" hidden></p>
+        <section id="characters">
+            <p class="artist-kicker">Roster</p>
+            <div class="artist-head"><h2>Characters</h2></div>
+            <div class="artist-shelf" id="shelf"></div>
+        </section>
+        <section id="listed" hidden>
+            <p class="artist-kicker">Gallery</p>
+            <div class="artist-head"><h2>Listed now</h2></div>
+            <div class="artist-shelf" id="shop"></div>
+        </section>
     </article>
 </main>
 <script type="module" src="/js/artist/profile.js"></script>

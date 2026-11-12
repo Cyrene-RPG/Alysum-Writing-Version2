@@ -10,18 +10,34 @@
     <link rel="stylesheet" href="/site-appearance/css-styles/typography.css">
     <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css">
     <script src="/site-appearance/js-runtime/boot.js"></script>
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=40">
     <link rel="stylesheet" href="/css/artist/page.css">
     <title>Gallery — Alysum</title>
 </head>
 <body>
+<header class="wd-welcome-bar ui-bar">
+    <div class="wd-welcome-inner">
+        <div class="artist-avatar" id="avatar" aria-hidden="true">A</div>
+        <div class="wd-welcome-copy">
+            <h1 class="wd-welcome-title" id="name">Gallery</h1>
+            <p class="artist-mast-handle" id="handle"></p>
+        </div>
+    </div>
+</header>
+<nav class="wd-nav-wrap ui-bar" aria-label="Artist page">
+    <div class="wd-nav">
+        <a href="/artist-profile" id="back">Profile</a>
+        <a href="/artist-shop" id="shop-tab" class="is-active">Gallery</a>
+    </div>
+</nav>
 <main class="artist-wrap">
     <p class="artist-status" id="status">Loading…</p>
     <article id="sheet" hidden>
-        <p class="artist-kicker"><a id="back" href="/artist-profile">Artist</a></p>
-        <div class="artist-head"><h1>Gallery</h1></div>
-        <p class="artist-status artist-pay-note">Adopt, buy, or commission. Payment is completed on the artist’s own page. Alysum does not take money.</p>
-        <p class="artist-status" id="empty" hidden>Nothing is listed for adoption, sale, or commission.</p>
-        <section id="commission" hidden>
+        <div class="artist-empty-panel" id="empty" hidden>
+            <h2>Nothing listed</h2>
+            <p id="empty-copy">Nothing is listed for adoption, sale, or commission.</p>
+        </div>
+        <section id="commission" class="artist-panel" hidden>
             <p class="artist-kicker">Commission</p>
             <div class="artist-head"><h2>Open for commissions</h2></div>
             <p class="artist-prose" id="commission-summary"></p>
@@ -29,6 +45,7 @@
             <p class="artist-status" id="commission-slots"></p>
             <p class="artist-status" id="commission-wait" hidden>This artist has not added a request link yet.</p>
             <a class="artist-primary" id="commission-link" hidden>Request a commission</a>
+            <p class="artist-status">Payment is completed on the artist’s own page.</p>
         </section>
         <section id="adopt-section" hidden>
             <p class="artist-kicker">Adopt</p>

@@ -26,16 +26,14 @@ async function boot() {
         return;
     }
     document.title = `${character.displayName} — Alysum`;
+    document.getElementById("name").textContent = character.displayName;
     const owner = document.getElementById("owner");
     const link = document.createElement("a");
     link.href = publicArtistUrl(user.username);
     link.textContent = user.displayName;
-    owner.append("By ", link);
-    const gallery = document.createElement("a");
-    gallery.href = publicGalleryUrl(user.username);
-    gallery.textContent = "Gallery";
-    owner.append(" · ", gallery);
-    document.getElementById("name").textContent = character.displayName;
+    owner.replaceChildren(link);
+    document.getElementById("profile-link").href = publicArtistUrl(user.username);
+    document.getElementById("gallery-link").href = publicGalleryUrl(user.username);
     document.getElementById("summary").textContent = character.summary || "";
     const fields = character.fields || {};
     document.getElementById("body").textContent =

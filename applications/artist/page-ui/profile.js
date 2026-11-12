@@ -8,11 +8,7 @@ import { paintOfferGrid } from "./offer-cards.js";
 const params = new URLSearchParams(location.search);
 const status = document.getElementById("status");
 
-function paint(user, characters, gallery) {
-    document.title = `${user.displayName} — Alysum`;
-    document.getElementById("name").textContent = user.displayName;
-    document.getElementById("handle").textContent = user.username ? `@${user.username}` : "";
-    document.getElementById("bio").textContent = user.artistBio || "";
+function paintAvatar(user) {
     const avatar = document.getElementById("avatar");
     avatar.replaceChildren();
     if (user.imageUrl) {
@@ -20,20 +16,26 @@ function paint(user, characters, gallery) {
         img.src = user.imageUrl;
         img.alt = "";
         avatar.append(img);
-    } else {
-        avatar.textContent = user.displayName.trim().charAt(0).toUpperCase() || "A";
+        return;
     }
+    avatar.textContent = user.displayName.trim().charAt(0).toUpperCase() || "A";
+}
+
+function paint(user, characters, gallery) {
+    document.title = `${user.displayName} — Alysum`;
+    document.getElementById("name").textContent = user.displayName;
+    document.getElementById("handle").textContent = user.username ? `@${user.username}` : "";
+    const bio = document.getElementById("bio");
+    bio.hidden = !user.artistBio;
+    bio.textContent = user.artistBio || "";
+    paintAvatar(user);
+    const profileLink = document.getElementById("profile-link");
     const shopLink = document.getElementById("shop-link");
+    profileLink.href = `/artist-profile?u=${encodeURIComponent(user.username || "")}`;
     shopLink.href = publicGalleryUrl(user.username);
     const preview = [...(gallery?.adopt || []), ...(gallery?.buy || [])].slice(0, 4);
-    const blurb = document.getElementById("shop-blurb");
-    if (gallery?.commission && !preview.length) {
-        blurb.textContent = "Commissions are open. Open the gallery to request one.";
-    } else if (!preview.length) {
-        blurb.textContent = "Nothing listed for adoption, sale, or commission.";
-    } else {
-        blurb.textContent = "Adopt, buy, or commission. Payment stays on the artist’s own page.";
-    }
+    const listed = document.getElementById("listed");
+    listed.hidden = preview.length === 0;
     paintOfferGrid(document.getElementById("shop"), preview);
     const shelf = document.getElementById("shelf");
     shelf.replaceChildren();
@@ -57,7 +59,7 @@ function paint(user, characters, gallery) {
     }
     if (!characters.length) {
         const empty = document.createElement("p");
-        empty.className = "artist-status";
+        empty.className = "artist-empty-card";
         empty.textContent = "No public characters yet.";
         shelf.append(empty);
     }

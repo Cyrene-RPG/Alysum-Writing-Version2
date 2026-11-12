@@ -10,18 +10,31 @@
     <link rel="stylesheet" href="/site-appearance/css-styles/typography.css">
     <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css">
     <script src="/site-appearance/js-runtime/boot.js"></script>
+    <link rel="stylesheet" href="/css/workspace-nav.css?v=40">
     <link rel="stylesheet" href="/css/artist/page.css">
     <title>Character — Alysum</title>
 </head>
 <body>
+<header class="wd-welcome-bar ui-bar">
+    <div class="wd-welcome-inner">
+        <div class="wd-welcome-copy">
+            <h1 class="wd-welcome-title" id="name">Character</h1>
+            <p class="artist-mast-handle" id="owner"></p>
+        </div>
+    </div>
+</header>
+<nav class="wd-nav-wrap ui-bar" aria-label="Artist page">
+    <div class="wd-nav">
+        <a href="/artist-profile" id="profile-link">Profile</a>
+        <a href="/artist-shop" id="gallery-link">Gallery</a>
+    </div>
+</nav>
 <main class="artist-wrap">
     <p class="artist-status" id="status">Loading…</p>
     <article id="sheet" hidden>
-        <p class="artist-kicker" id="owner"></p>
         <div class="artist-editor">
             <div class="artist-portrait" id="portrait"></div>
             <div>
-                <h1 id="name"></h1>
                 <p class="artist-status" id="summary"></p>
                 <p class="artist-prose" id="body"></p>
                 <p class="artist-status" id="trade"></p>

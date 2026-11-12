@@ -265,17 +265,74 @@ body {
   margin-bottom: 28px;
 }
 .artist-avatar {
-  width: 120px;
-  height: 120px;
-  border-radius: 16px;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
   overflow: hidden;
   display: grid;
   place-items: center;
-  background: color-mix(in srgb, var(--accent) 25%, #111);
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  background: color-mix(in srgb, var(--accent) 35%, #111);
+  color: #fff;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 48px;
+  font-size: 32px;
 }
-.artist-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.artist-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+}
+.artist-mast-handle {
+  margin: 4px 0 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 14px;
+  font-weight: 600;
+}
+.artist-mast-handle a { color: inherit; text-decoration: none; }
+.artist-bio-panel,
+.artist-panel {
+  margin-top: 8px;
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: color-mix(in srgb, var(--alysum-ui-panel, #111827) 88%, black);
+}
+.artist-empty-card {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1.5px dashed var(--border, rgba(255, 255, 255, 0.2));
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.45;
+}
+.artist-empty-panel {
+  margin-top: 12px;
+  padding: 42px 22px;
+  text-align: center;
+  border-radius: 16px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background:
+    radial-gradient(circle at top, color-mix(in srgb, var(--accent) 32%, transparent), transparent 58%),
+    color-mix(in srgb, var(--alysum-ui-panel, #111827) 92%, black);
+}
+.artist-empty-panel h2 {
+  margin: 0 0 10px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(32px, 5vw, 44px);
+  font-weight: 600;
+}
+.artist-empty-panel p {
+  margin: 0 auto;
+  max-width: 38ch;
+  color: var(--muted);
+  line-height: 1.5;
+}
 .artist-prose { white-space: pre-wrap; line-height: 1.6; color: var(--muted); }
 .artist-check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.45; margin: 8px 0 14px; }
 .artist-pay-note { margin-top: 0; }
@@ -343,4 +400,5 @@ a.artist-primary {
 @media (max-width: 720px) {
   .artist-focus, .artist-editor, .artist-stats, .artist-public { grid-template-columns: 1fr; }
   .artist-stat { border-left: 0; padding-left: 0; }
+  .artist-wrap { width: min(1040px, calc(100% - 24px)); }
 }
