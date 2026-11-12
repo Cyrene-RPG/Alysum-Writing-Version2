@@ -44,3 +44,21 @@ BEGIN
     IF p_ok IS DISTINCT FROM true THEN RAISE EXCEPTION 'Assertion failed: %', p_message; END IF;
 END;
 $$;
+
+-- Same helpers as supabase-account-types.sql. Announcement and connection
+-- gates call these; this disposable database does not run that live migration.
+CREATE OR REPLACE FUNCTION public.account_has_writer(p_type text)
+RETURNS boolean LANGUAGE sql IMMUTABLE AS $$
+  SELECT lower(coalesce(p_type, '')) IN ('author', 'writer_artist', 'both', 'all');
+$$;
+CREATE OR REPLACE FUNCTION public.account_has_reader(p_type text)
+RETURNS boolean LANGUAGE sql IMMUTABLE AS $$
+  SELECT lower(coalesce(p_type, '')) IN ('reader', 'both', 'all');
+$$;
+CREATE OR REPLACE FUNCTION public.account_has_artist(p_type text)
+RETURNS boolean LANGUAGE sql IMMUTABLE AS $$
+  SELECT lower(coalesce(p_type, '')) IN ('artist', 'writer_artist', 'all');
+$$;
+GRANT EXECUTE ON FUNCTION public.account_has_writer(text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.account_has_reader(text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.account_has_artist(text) TO anon, authenticated;
