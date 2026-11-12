@@ -60,6 +60,8 @@ function fill(character) {
         gallery.hidden = false;
         gallery.href = publicGalleryUrl(username);
     }
+    const draw = $("draw-link");
+    if (draw && characterId) draw.href = `/artist-draw?character=${encodeURIComponent(characterId)}`;
 }
 
 function fieldSelect(label, value, options) {

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <script type="importmap">
+    { "imports": { "@alysum/artist/": "/core/artist/" } }
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/applications/artist/artist-css/studio.css">
+    <title>Draw preview</title>
+</head>
+<body>
+<div id="draw-app" data-manual="1"></div>
+<script type="module">
+import { mountDrawApp } from "/applications/artist/page-ui/studio.js";
+import { createPainter } from "/applications/artist/page-ui/studio-paint.js";
+import { brushById, createStudioDocument } from "/core/artist/studio.js";
+
+const projects = new Map();
+const pixels = new Map();
+const store = {
+    async list() { return [...projects.values()]; },
+    async load(id) {
+        const doc = projects.get(id);
+        if (!doc) return null;
+        const blobs = new Map();
+        for (const layer of doc.layers) {
+            const blob = pixels.get(`${id}:${layer.id}`);
+            if (blob) blobs.set(layer.id, blob);
+        }
+        return { doc, blobs };
+    },
+    async save(doc, blobs, thumb) {
+        const record = { ...doc, thumb, updatedAt: Date.now() };
+        projects.set(doc.id, record);
+        for (const [layerId, blob] of blobs) pixels.set(`${doc.id}:${layerId}`, blob);
+        return record;
+    },
+    async remove(id) { projects.delete(id); },
+};
+
+localStorage.setItem("alysum-draw-help", "1");
+const errors = [];
+window.addEventListener("error", (event) => errors.push(String(event.message || event.error)));
+await mountDrawApp(document.getElementById("draw-app"), {
+    projectId: "",
+    characterId: "",
+    store,
+    upload: async () => "Saved to My art as a private image.",
+});
+
+const params = new URLSearchParams(location.search);
+if (params.get("demo") === "1") {
+    document.querySelector("#draw-new").click();
+    document.querySelector("#draw-create").requestSubmit();
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    const size = document.querySelector("#draw-size");
+    size.value = "72";
+    size.dispatchEvent(new Event("input", { bubbles: true }));
+    const viewport = document.querySelector("#draw-viewport");
+    const rect = viewport.getBoundingClientRect();
+    const startX = rect.left + rect.width * 0.38;
+    const startY = rect.top + rect.height * 0.5;
+    const steps = 36;
+    viewport.dispatchEvent(new PointerEvent("pointerdown", { clientX: startX, clientY: startY, pointerId: 1, pointerType: "pen", pressure: 0.7, buttons: 1, bubbles: true }));
+    for (let i = 1; i <= steps; i += 1) {
+        const x = startX + i * 8;
+        const y = startY + Math.sin(i / 3) * 18;
+        viewport.dispatchEvent(new PointerEvent("pointermove", { clientX: x, clientY: y, pointerId: 1, pointerType: "pen", pressure: 0.4 + (i % 5) * 0.1, buttons: 1, bubbles: true }));
+    }
+    viewport.dispatchEvent(new PointerEvent("pointerup", { clientX: startX + steps * 8, clientY: startY, pointerId: 1, pointerType: "pen", pressure: 0, bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const canvas = document.querySelector("#draw-canvas");
+    const ctx = canvas.getContext("2d");
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let ink = 0;
+    for (let i = 0; i < data.length; i += 16) {
+        if (data[i] < 36 && data[i + 3] > 200) ink += 1;
+    }
+    document.querySelector("#draw-cursor").hidden = true;
+    const result = document.createElement("pre");
+    result.id = "draw-result";
+    const probe = document.createElement("canvas");
+    const engine = createPainter(probe);
+    const doc = createStudioDocument({ width: 240, height: 120, background: "#ffffff" });
+    engine.setDocument(doc);
+    engine.resizeView(240, 120);
+    engine.fit();
+    const brush = { ...brushById("studio-pen"), streamline: 0 };
+    engine.beginStroke({ tool: "paint", brush, color: "#111111", size: 24, opacity: 1 });
+    engine.extendStroke({ x: 20, y: 60 }, 1);
+    engine.extendStroke({ x: 200, y: 60 }, 1);
+    engine.commitStroke();
+    engine.render();
+    const probed = probe.getContext("2d").getImageData(0, 0, probe.width, probe.height).data;
+    let engineInk = 0;
+    for (let i = 0; i < probed.length; i += 4) if (probed[i] < 40) engineInk += 1;
+    result.textContent = JSON.stringify({
+        title: document.querySelector("#draw-title")?.textContent || "",
+        stage: document.querySelector("#draw-stage")?.hidden === false,
+        ink,
+        engineInk,
+        errors,
+        width: canvas.width,
+        height: canvas.height,
+    });
+    document.body.append(result);
+}
+</script>
+</body>
+</html>

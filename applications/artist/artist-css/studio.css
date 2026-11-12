@@ -1,0 +1,269 @@
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; background: #000; color: #f2f2f7; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    overflow: hidden;
+}
+button, input, select { font: inherit; color: inherit; }
+.draw-gate {
+    margin: 18vh auto;
+    max-width: 36ch;
+    text-align: center;
+    line-height: 1.5;
+    color: #d1d1d6;
+}
+.draw-gallery, .draw-stage { min-height: 100dvh; }
+.draw-gallery { background: #000; padding: 28px 28px 48px; }
+.draw-gallery-bar, .draw-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+.draw-gallery-bar h1, .draw-sheet h2 {
+    margin: 0;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 40px;
+    font-weight: 600;
+}
+.draw-gallery-bar a, .draw-gallery-btn {
+    color: #0a84ff;
+    background: none;
+    border: 0;
+    font-size: 17px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+.draw-new, .draw-sheet button[type="submit"] {
+    border: 0;
+    border-radius: 999px;
+    background: #0a84ff;
+    color: #fff;
+    min-height: 40px;
+    padding: 8px 16px;
+    font-weight: 650;
+    cursor: pointer;
+}
+.draw-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 22px;
+    margin-top: 28px;
+}
+.draw-card { display: grid; gap: 8px; }
+.draw-card-open {
+    display: grid;
+    align-content: end;
+    min-height: 220px;
+    padding: 12px;
+    border: 0;
+    border-radius: 18px;
+    background: #1c1c1e;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+}
+.draw-card-open img { width: 100%; height: 160px; object-fit: cover; border-radius: 12px; background: #fff; }
+.draw-card-open strong { font-size: 16px; }
+.draw-card-open span, .draw-empty, .draw-note { color: #8e8e93; font-size: 13px; }
+.draw-card-delete {
+    justify-self: start;
+    border: 0;
+    background: none;
+    color: #ff453a;
+    cursor: pointer;
+}
+.draw-empty { grid-column: 1 / -1; max-width: 42ch; line-height: 1.5; }
+.draw-stage { display: grid; grid-template-rows: 52px minmax(0, 1fr); background: #2c2c2e; }
+.draw-top { height: 52px; padding: 0 12px 0 8px; }
+.draw-title {
+    border: 0;
+    background: none;
+    font-size: 16px;
+    font-weight: 650;
+    cursor: pointer;
+}
+.draw-top-actions { display: flex; gap: 4px; }
+.draw-top-actions button, .draw-tool {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+}
+.draw-top-actions button:disabled { opacity: 0.35; }
+.draw-tool svg, .draw-top-actions svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.draw-tool.is-on { background: #3a3a3c; }
+.draw-body { position: relative; min-height: 0; }
+.draw-viewport { position: absolute; inset: 0; touch-action: none; overflow: hidden; }
+.draw-viewport canvas { display: block; width: 100%; height: 100%; }
+.draw-rail {
+    position: absolute;
+    top: 50%;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transform: translateY(-50%);
+}
+.draw-rail-left { left: 8px; }
+.draw-rail-right { right: 8px; }
+.draw-color-btn span {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #1c1c1e;
+    box-shadow: inset 0 0 0 2px #fff;
+}
+.draw-sliders {
+    position: absolute;
+    z-index: 3;
+    right: 60px;
+    top: 50%;
+    display: flex;
+    gap: 4px;
+    transform: translateY(-50%);
+}
+.draw-sliders label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: #d1d1d6;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.draw-sliders input {
+    writing-mode: vertical-lr;
+    direction: rtl;
+    width: 28px;
+    height: 180px;
+    accent-color: #0a84ff;
+}
+.draw-cursor {
+    position: absolute;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+}
+.draw-loupe {
+    position: absolute;
+    width: 112px;
+    height: 112px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+.draw-loupe canvas { width: 112px; height: 112px; }
+.draw-panel {
+    position: absolute;
+    z-index: 4;
+    top: 8px;
+    bottom: 8px;
+    width: min(340px, calc(100vw - 130px));
+    overflow: auto;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(28, 28, 30, 0.94);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+.draw-panel.from-left { left: 60px; }
+.draw-panel.from-right { right: 60px; }
+.draw-brush-library { display: grid; grid-template-columns: 118px 1fr; gap: 8px; }
+.draw-cats, .draw-brush-list, .draw-actions, .draw-layer-ops { display: grid; gap: 6px; align-content: start; }
+.draw-brush-library .draw-field { grid-column: 1 / -1; }
+.draw-cats button, .draw-brush-list button, .draw-actions button, .draw-layer-ops button, .draw-sheet-actions button {
+    min-height: 36px;
+    border: 0;
+    border-radius: 10px;
+    background: #2c2c2e;
+    text-align: left;
+    padding: 8px 10px;
+    cursor: pointer;
+}
+.draw-cats button.is-on, .draw-brush-list button.is-on, .draw-actions button.is-on { background: #0a84ff; }
+.draw-field { display: grid; gap: 6px; margin: 8px 0; font-size: 13px; }
+.draw-field input, .draw-field select, .draw-panel input[type="text"], .draw-panel > div > input {
+    width: 100%;
+    min-height: 36px;
+    border: 0;
+    border-radius: 10px;
+    background: #2c2c2e;
+    padding: 6px 8px;
+}
+.draw-layer-list { display: grid; gap: 6px; margin: 8px 0; }
+.draw-layer {
+    display: grid;
+    grid-template-columns: 28px 44px 1fr;
+    gap: 8px;
+    align-items: center;
+    padding: 6px;
+    border-radius: 12px;
+    background: #2c2c2e;
+    cursor: pointer;
+}
+.draw-layer.is-on { outline: 2px solid #0a84ff; }
+.draw-layer button { border: 0; background: none; color: #fff; cursor: pointer; }
+.draw-layer img { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; background: #fff; }
+.draw-disc { width: min(220px, 100%); height: auto; touch-action: none; cursor: crosshair; }
+.draw-swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.draw-swatches button { width: 28px; height: 28px; border: 0; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); cursor: pointer; }
+.draw-note { line-height: 1.4; }
+.draw-toast {
+    position: absolute;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.78);
+    z-index: 6;
+}
+.draw-timelapse {
+    position: absolute;
+    inset: 52px 70px 16px;
+    z-index: 7;
+    display: grid;
+    place-items: center;
+    background: rgba(0, 0, 0, 0.72);
+}
+.draw-timelapse img { max-width: min(70vw, 640px); max-height: 70vh; background: #fff; border-radius: 12px; }
+.draw-sheet {
+    width: min(520px, calc(100vw - 24px));
+    border: 0;
+    border-radius: 18px;
+    background: #1c1c1e;
+    color: #f2f2f7;
+    padding: 18px;
+}
+.draw-sheet::backdrop { background: rgba(0, 0, 0, 0.55); }
+.draw-presets, .draw-bgs, .draw-custom, .draw-sheet-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.draw-presets button, .draw-bgs button, .draw-custom label {
+    border: 0;
+    border-radius: 12px;
+    background: #2c2c2e;
+    min-height: 40px;
+    padding: 8px 10px;
+    cursor: pointer;
+}
+.draw-presets button.is-on, .draw-bgs button.is-on { outline: 2px solid #0a84ff; }
+.draw-custom label { display: grid; gap: 4px; font-size: 12px; }
+.draw-custom input { width: 100px; min-height: 32px; border: 0; border-radius: 8px; background: #000; padding: 4px 8px; }
+.draw-help ul { padding-left: 18px; line-height: 1.5; color: #d1d1d6; }
+@media (max-width: 720px) {
+    .draw-sliders { display: none !important; }
+    .draw-panel { top: auto; height: min(46dvh, 420px); width: auto; left: 8px; right: 8px; bottom: 8px; }
+}

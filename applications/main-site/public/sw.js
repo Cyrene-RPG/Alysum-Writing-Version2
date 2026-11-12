@@ -10,7 +10,7 @@
  * Bump SW_VERSION when shipping breaking shell changes to force a refresh.
  */
 
-const SW_VERSION = 'v2.64.0';
+const SW_VERSION = 'v2.65.0';
 const SHELL_CACHE = `alysum-shell-${SW_VERSION}`;
 const ASSET_CACHE = `alysum-assets-${SW_VERSION}`;
 
@@ -59,7 +59,7 @@ function isWorkspaceHtml(url) {
   // a deploy show up only on the *second* load, so keep them network-first.
   // Artist uses this path too: networkFirstHtml awaits navigation preload, and
   // that promise never settles on Android, so /artist stays hung on "Loading…".
-  return /\/(?:studio|editor|artist|artist-gallery|artist-character|artist-profile|artist-shop|character)(?:\.html)?$/i.test(url.pathname);
+  return /\/(?:studio|editor|artist|artist-gallery|artist-character|artist-profile|artist-shop|artist-draw|character)(?:\.html)?$/i.test(url.pathname);
 }
 
 self.addEventListener('fetch', (event) => {

@@ -20,7 +20,7 @@ function paint(rows) {
         }
         grid.append(figure);
     }
-    status.textContent = rows.length ? "" : "No images yet. Add them from a character.";
+    status.textContent = rows.length ? "" : "No images yet. Draw one, or add one from a character.";
 }
 
 async function boot() {

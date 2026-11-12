@@ -293,6 +293,10 @@
       "destination": "/applications/artist/pages/shop.html"
     },
     {
+      "source": "/artist-draw",
+      "destination": "/applications/artist/pages/draw.html"
+    },
+    {
       "source": "/character",
       "destination": "/applications/artist/pages/public-character.html"
     },
