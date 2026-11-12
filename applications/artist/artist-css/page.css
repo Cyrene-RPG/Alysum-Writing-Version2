@@ -264,10 +264,6 @@ body {
   gap: 20px;
   margin-bottom: 28px;
 }
-a.wd-pfp-btn {
-  text-decoration: none;
-  color: #fff;
-}
 .artist-mast-handle {
   margin: 4px 0 0;
   color: rgba(255, 255, 255, 0.88);

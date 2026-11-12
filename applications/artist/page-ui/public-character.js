@@ -4,7 +4,7 @@ import { listPublicArtworks } from "@alysum/artist/artwork-store.js";
 import { findUserByHandle, getPublicCharacter, publicArtistUrl, publicGalleryUrl } from "@alysum/artist/public-profile.js";
 import { TRADE_POLICIES } from "@alysum/artist/constants.js";
 import { characterListing, offerActionLabel } from "@alysum/artist/offers.js";
-import { paintWelcomePfp, useOwnerNav } from "./pfp.js";
+import { useOwnerNav } from "./pfp.js";
 
 const params = new URLSearchParams(location.search);
 const status = document.getElementById("status");
@@ -39,8 +39,6 @@ async function boot() {
     document.getElementById("profile-link").href = profileUrl;
     document.getElementById("gallery-link").href = galleryUrl;
     document.getElementById("owner-gallery-link").href = galleryUrl;
-    document.getElementById("artist-pfp-link").href = profileUrl;
-    paintWelcomePfp(user.imageUrl, user.displayName);
     resolveStudioSession(supabase).then((session) => {
         useOwnerNav(session?.user?.id === user.id);
     }).catch(() => {});

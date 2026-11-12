@@ -5,7 +5,7 @@ import { findUserByHandle, findUserById, publicCharacterUrl, publicGalleryUrl } 
 import { loadPublicGallery } from "@alysum/artist/shop.js";
 import { portraitIsProtected } from "@alysum/artist/offers.js";
 import { paintOfferGrid } from "./offer-cards.js";
-import { paintWelcomePfp, useOwnerNav } from "./pfp.js";
+import { useOwnerNav } from "./pfp.js";
 
 const params = new URLSearchParams(location.search);
 const status = document.getElementById("status");
@@ -29,9 +29,7 @@ function paint(user, characters, gallery, mine) {
     const bio = document.getElementById("bio");
     bio.hidden = !user.artistBio;
     bio.textContent = user.artistBio || "";
-    paintWelcomePfp(user.imageUrl, user.displayName);
     const profileUrl = `/artist-profile?u=${encodeURIComponent(user.username || "")}`;
-    document.getElementById("artist-pfp-link").href = profileUrl;
     const profileLink = document.getElementById("profile-link");
     profileLink.href = profileUrl;
     const galleryUrl = publicGalleryUrl(user.username);

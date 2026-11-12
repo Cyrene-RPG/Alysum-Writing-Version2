@@ -3,7 +3,7 @@ import { resolveStudioSession } from "/core/desktop/studio-session.js";
 import { findUserByHandle, findUserById, publicArtistUrl } from "@alysum/artist/public-profile.js";
 import { loadPublicGallery } from "@alysum/artist/shop.js";
 import { paintOfferGrid } from "./offer-cards.js";
-import { paintWelcomePfp, useOwnerNav } from "./pfp.js";
+import { useOwnerNav } from "./pfp.js";
 
 const params = new URLSearchParams(location.search);
 const status = document.getElementById("status");
@@ -41,11 +41,9 @@ function paint(user, gallery, mine) {
     document.getElementById("name").textContent = user.displayName;
     const handle = document.getElementById("handle");
     handle.textContent = user.username ? `@${user.username}` : "";
-    paintWelcomePfp(user.imageUrl, user.displayName);
     const back = document.getElementById("back");
     const profileUrl = publicArtistUrl(user.username);
     back.href = profileUrl;
-    document.getElementById("artist-pfp-link").href = profileUrl;
     const here = `${location.pathname}${location.search}`;
     document.querySelectorAll("[data-artist-shop]").forEach((link) => {
         link.href = here;

@@ -8,13 +8,13 @@ import { paintReaderNav, readerAccountMenuHtml } from "/applications/reader/page
 
 export function isReaderUiMode() {
     const path = typeof location !== "undefined" ? location.pathname || "" : "";
-    if (path === "/artist" || path.startsWith("/artist-") || path.startsWith("/artist/")) return false;
+    if (path === "/artist" || path.startsWith("/artist-") || path.startsWith("/artist/") || path === "/character") return false;
     return getUiMode() === "library" || isReaderPath();
 }
 
 export function modeToggleSide() {
     const path = typeof location !== "undefined" ? location.pathname || "" : "";
-    if (path === "/artist" || path.startsWith("/artist-") || path.startsWith("/artist/")) return "artist";
+    if (path === "/artist" || path.startsWith("/artist-") || path.startsWith("/artist/") || path === "/character") return "artist";
     if (getUiMode() === "artist") return "artist";
     return isReaderUiMode() ? "reader" : "studio";
 }
