@@ -59,20 +59,27 @@ if (params.get("setup") === "1") {
     const dialogBox = dialog.getBoundingClientRect();
     const widthBox = document.querySelector("#draw-width-input").getBoundingClientRect();
     const heightBox = document.querySelector("#draw-height-input").getBoundingClientRect();
-    const scroller = window.innerWidth < 700
-        ? document.querySelector(".draw-create-body")
-        : document.querySelector(".draw-create-settings");
+    const body = document.querySelector(".draw-create-body");
+    const split = getComputedStyle(body).gridTemplateColumns.trim().includes(" ");
+    const scroller = split ? document.querySelector(".draw-create-settings") : body;
     const last = document.querySelector("#draw-presets button:last-child");
     const lastBottom = last.getBoundingClientRect().bottom - scroller.getBoundingClientRect().top + scroller.scrollTop;
+    const stage = document.querySelector(".draw-create-stage").getBoundingClientRect();
     const report = document.createElement("pre");
     report.id = "draw-layout";
     report.textContent = JSON.stringify({
         view: [window.innerWidth, window.innerHeight],
-        dialogFits: dialogBox.right <= window.innerWidth + 1 && dialogBox.bottom <= window.innerHeight + 1,
+        dialogFits: dialogBox.left >= -1 && dialogBox.top >= -1 && dialogBox.right <= window.innerWidth + 1 && dialogBox.bottom <= window.innerHeight + 1,
         sheet: [Math.round(sheet.width), Math.round(sheet.height)],
+        sheetInside: sheet.width >= 24 && sheet.height >= 24 && sheet.top >= dialogBox.top - 1 && sheet.bottom <= dialogBox.bottom + 1 && sheet.left >= dialogBox.left - 1 && sheet.right <= dialogBox.right + 1,
+        stageHoldsSheet: !split || (sheet.bottom <= stage.bottom + 1 && sheet.right <= stage.right + 1),
         inputsClear: widthBox.right <= heightBox.left + 1,
         lastReachable: lastBottom <= scroller.scrollHeight + 2,
-        columns: getComputedStyle(document.querySelector(".draw-create-body")).gridTemplateColumns.includes(" ") ? "split" : "stack",
+        noOverflow: dialog.scrollWidth <= dialog.clientWidth + 2,
+        unitsFit: [...document.querySelectorAll("#draw-units button")].every((button) => button.scrollWidth <= button.clientWidth + 2),
+        headerClear: document.querySelector("#draw-cancel").getBoundingClientRect().right <= document.querySelector(".draw-create-bar h2").getBoundingClientRect().left + 1
+            && document.querySelector(".draw-create-bar h2").getBoundingClientRect().right <= document.querySelector(".draw-create-bar .draw-new").getBoundingClientRect().left + 1,
+        columns: split ? "split" : "stack",
     });
     document.body.append(report);
 }

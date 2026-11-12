@@ -252,9 +252,14 @@ button, input, select { font: inherit; color: inherit; }
 .draw-sheet::backdrop { background: rgba(0, 0, 0, 0.55); }
 .draw-sheet-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .draw-create-sheet {
+    width: calc(100vw - 16px);
     width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right));
+    height: calc(100vh - 16px);
+    height: calc(100svh - 16px);
     height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     max-width: none;
+    max-height: calc(100vh - 16px);
+    max-height: calc(100svh - 16px);
     max-height: calc(100dvh - 16px);
     padding: 0;
     overflow: hidden;
@@ -270,7 +275,7 @@ button, input, select { font: inherit; color: inherit; }
     padding: 14px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
-.draw-create-bar h2 { font-size: 28px; }
+.draw-create-bar h2 { min-width: 0; font-size: clamp(20px, 4vw, 28px); text-align: center; }
 .draw-create-bar .draw-new { justify-self: end; }
 #draw-cancel {
     justify-self: start;
@@ -283,8 +288,9 @@ button, input, select { font: inherit; color: inherit; }
 }
 .draw-create-body {
     display: grid;
-    grid-template-columns: minmax(200px, 1fr) minmax(280px, 460px);
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 480px);
     min-height: 0;
+    min-width: 0;
     flex: 1;
 }
 .draw-create-stage {
@@ -292,21 +298,24 @@ button, input, select { font: inherit; color: inherit; }
     align-content: center;
     justify-items: center;
     gap: 8px;
+    min-width: 0;
     min-height: 0;
     padding: 20px;
+    overflow: hidden;
     background:
         radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.05), transparent 55%),
         #111113;
 }
+.draw-create-stage p { margin: 0; }
 .draw-sheetlet {
     border-radius: 4px;
     box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
-#draw-canvas-preview { margin: 8px 0 0; font-size: 20px; font-weight: 650; }
-.draw-create-settings { overflow: auto; padding: 18px 18px 28px; }
+#draw-canvas-preview { margin: 0; font-size: clamp(16px, 2.4vw, 20px); font-weight: 650; }
+.draw-create-settings { overflow: auto; min-width: 0; min-height: 0; padding: 18px 18px 28px; }
 .draw-field-label { margin: 16px 0 8px; color: #aeaeb2; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
 .draw-segment, .draw-bgs { display: flex; flex-wrap: wrap; gap: 8px; }
-.draw-segment button { flex: 1 1 88px; }
+.draw-segment button { flex: 1 1 0px; min-width: 0; font-size: 14px; line-height: 1.2; }
 .draw-dims {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
@@ -318,7 +327,7 @@ button, input, select { font: inherit; color: inherit; }
     border-radius: 12px;
     background: #2c2c2e;
     min-height: 40px;
-    padding: 8px 10px;
+    padding: 8px 6px;
     cursor: pointer;
 }
 .draw-segment button.is-on, .draw-presets button.is-on, .draw-bgs button.is-on { outline: 2px solid #0a84ff; background: #1c3d66; }
@@ -343,7 +352,7 @@ button, input, select { font: inherit; color: inherit; }
     cursor: pointer;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
 }
-.draw-presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); gap: 8px; }
+.draw-presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 104px), 1fr)); gap: 8px; }
 .draw-presets button {
     display: grid;
     justify-items: center;
@@ -364,23 +373,27 @@ button, input, select { font: inherit; color: inherit; }
 }
 .draw-presets strong { font-size: 13px; }
 .draw-presets span { color: #8e8e93; font-size: 11px; }
-@media (max-width: 1099px) and (min-width: 700px) {
-    .draw-create-body { grid-template-columns: minmax(180px, 0.82fr) minmax(300px, 1.2fr); }
-    .draw-create-stage { padding: 16px; }
-    .draw-create-bar h2 { font-size: 24px; }
+@media (max-width: 1199px) and (min-width: 680px) {
+    .draw-create-body { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.25fr); }
+    .draw-create-stage { padding: 14px; }
 }
-@media (max-height: 740px) and (min-width: 700px) {
-    .draw-create-stage { padding: 10px 16px; }
-    .draw-create-settings { padding-top: 12px; }
-    #draw-canvas-preview { margin-top: 4px; font-size: 17px; }
+@media (max-height: 700px) and (min-width: 680px) {
+    .draw-create-body { grid-template-columns: minmax(120px, 0.7fr) minmax(0, 1.45fr); }
+    .draw-create-stage { padding: 8px 12px; gap: 4px; }
+    .draw-create-settings { padding: 10px 12px 16px; }
+    .draw-presets button { min-height: 72px; }
 }
-@media (max-width: 699px) {
+@media (max-height: 520px) {
+    .draw-create-bar { padding: 8px 10px; }
+    .draw-field-label { margin: 8px 0 6px; }
+    .draw-presets button { min-height: 64px; padding: 6px 4px; }
+    .draw-segment button, .draw-dims button, .draw-dims label { min-height: 36px; padding: 6px 8px; }
+}
+@media (max-width: 679px) {
     .draw-create-bar { padding: 10px 12px; }
-    .draw-create-bar h2 { font-size: 22px; }
     .draw-create-body { grid-template-columns: 1fr; overflow: auto; }
-    .draw-create-stage { padding: 12px 16px 4px; }
+    .draw-create-stage { padding: 12px 16px 4px; overflow: visible; }
     .draw-create-settings { overflow: visible; padding: 12px 14px calc(28px + env(safe-area-inset-bottom)); }
-    #draw-canvas-preview { font-size: 17px; }
 }
 .draw-help ul { padding-left: 18px; line-height: 1.5; color: #d1d1d6; }
 .draw-notice {

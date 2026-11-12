@@ -1281,22 +1281,68 @@ function mountCanvasCreator(root, onCreate) {
         refresh();
     }
 
+    function screenBox() {
+        const view = window.visualViewport;
+        return {
+            width: view?.width || window.innerWidth,
+            height: view?.height || window.innerHeight,
+            top: view?.offsetTop || 0,
+            left: view?.offsetLeft || 0,
+        };
+    }
+
+    function placeDialog() {
+        const dialog = root.querySelector("#draw-sheet");
+        if (!dialog) return;
+        if (!dialog.open) {
+            dialog.style.position = "";
+            dialog.style.margin = "";
+            dialog.style.top = "";
+            dialog.style.left = "";
+            dialog.style.right = "";
+            dialog.style.bottom = "";
+            dialog.style.width = "";
+            dialog.style.height = "";
+            return;
+        }
+        const box = screenBox();
+        const margin = 8;
+        dialog.style.position = "fixed";
+        dialog.style.margin = "0";
+        dialog.style.top = `${Math.round(box.top + margin)}px`;
+        dialog.style.left = `${Math.round(box.left + margin)}px`;
+        dialog.style.right = "auto";
+        dialog.style.bottom = "auto";
+        dialog.style.width = `${Math.max(0, Math.round(box.width - margin * 2))}px`;
+        dialog.style.height = `${Math.max(0, Math.round(box.height - margin * 2))}px`;
+    }
+
+    function previewBudget() {
+        const stage = sheetlet.parentElement;
+        const columns = getComputedStyle(stage.parentElement).gridTemplateColumns.trim().split(/\s+/).filter(Boolean);
+        const sideBySide = columns.length > 1 && stage.clientWidth > 80 && stage.clientHeight > 80;
+        if (sideBySide) {
+            const style = getComputedStyle(stage);
+            const padX = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
+            const padY = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
+            const gap = parseFloat(style.rowGap) || parseFloat(style.gap) || 0;
+            const captions = [...stage.querySelectorAll("p")];
+            const captionHeight = captions.reduce((sum, node) => sum + node.offsetHeight, 0);
+            return {
+                availW: Math.max(24, stage.clientWidth - padX),
+                availH: Math.max(24, stage.clientHeight - padY - captionHeight - gap * captions.length),
+            };
+        }
+        const box = screenBox();
+        const wide = box.width >= 680;
+        return {
+            availW: Math.max(72, Math.min(440, box.width - 64)),
+            availH: Math.max(64, Math.min(wide ? 280 : 220, box.height * (wide ? 0.34 : 0.28))),
+        };
+    }
+
     function refresh() {
         const size = pixels();
-        const wide = window.innerWidth >= 700;
-        const short = window.innerHeight < 760;
-        const availW = wide
-            ? Math.min(460, Math.max(160, window.innerWidth * 0.34))
-            : Math.min(320, Math.max(120, window.innerWidth - 96));
-        const availH = wide
-            ? Math.min(short ? 300 : 520, Math.max(140, window.innerHeight - 210))
-            : Math.min(190, Math.max(96, window.innerHeight * 0.26));
-        const scale = Math.min(availW / size.width, availH / size.height);
-        sheetlet.style.width = `${Math.max(48, Math.round(size.width * scale))}px`;
-        sheetlet.style.height = `${Math.max(48, Math.round(size.height * scale))}px`;
-        sheetlet.style.background = setup.background === "transparent"
-            ? "repeating-conic-gradient(#d8d8dc 0% 25%, #f4f4f6 0% 50%) 50% / 18px 18px"
-            : setup.background;
         const inchesW = measureFromPixels(size.width, "in", setup.dpi);
         const inchesH = measureFromPixels(size.height, "in", setup.dpi);
         preview.textContent = `${size.width} × ${size.height} px`;
@@ -1306,6 +1352,15 @@ function mountCanvasCreator(root, onCreate) {
         memory.textContent = undoLimitFor(size.width, size.height) < 24
             ? `About ${amount} MB for one layer. Undo history is shorter at this size.`
             : `About ${amount} MB for one layer.`;
+        placeDialog();
+        void sheetlet.parentElement?.parentElement?.offsetHeight;
+        const { availW, availH } = previewBudget();
+        const scale = Math.min(availW / size.width, availH / size.height);
+        sheetlet.style.width = `${Math.max(1, Math.round(size.width * scale))}px`;
+        sheetlet.style.height = `${Math.max(1, Math.round(size.height * scale))}px`;
+        sheetlet.style.background = setup.background === "transparent"
+            ? "repeating-conic-gradient(#d8d8dc 0% 25%, #f4f4f6 0% 50%) 50% / 18px 18px"
+            : setup.background;
         for (const button of presets.querySelectorAll("button")) {
             button.classList.toggle("is-on", button.dataset.preset === setup.presetId);
             const page = button.querySelector("i");
@@ -1405,9 +1460,13 @@ function mountCanvasCreator(root, onCreate) {
         onCreate({ width: size.width, height: size.height, background: setup.background, name });
     });
     choosePreset(CANVAS_PRESETS.find((preset) => preset.id === "sketch"));
-    window.addEventListener("resize", () => {
+    const refit = () => {
         if (root.querySelector("#draw-sheet")?.open) refresh();
-    });
+    };
+    window.addEventListener("resize", refit);
+    window.visualViewport?.addEventListener("resize", refit);
+    window.visualViewport?.addEventListener("scroll", refit);
+    root.querySelector("#draw-sheet")?.addEventListener("toggle", refit);
 }
 
 function railButton(id, icon, label) {
