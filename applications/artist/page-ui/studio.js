@@ -187,17 +187,17 @@ export async function mountDrawApp(root, env) {
         </dialog>
         <dialog class="draw-sheet draw-help" id="draw-help">
             <form method="dialog">
-                <h2>Gestures</h2>
+                <h2>Studio controls</h2>
                 <ul>
-                    <li>Draw with one finger, the pencil, or the mouse.</li>
-                    <li>Pinch to zoom, twist to rotate, drag with two fingers to move.</li>
+                    <li>Draw with one finger, a stylus, or the mouse.</li>
+                    <li>Pinch to zoom, twist to rotate, drag with two fingers to pan.</li>
                     <li>Tap with two fingers to undo. Tap with three to redo.</li>
+                    <li>Tap Brush, Smudge, or Eraser to open the brush library. Drag those buttons up or down to resize.</li>
                     <li>Hold still on a stroke to snap a line, ellipse, or rectangle.</li>
-                    <li>Use Fill to flood a region, or drag the color button to fill a layer.</li>
+                    <li>Use Fill to flood a region, or drag the color button onto the canvas to fill a layer.</li>
                     <li>Use Eyedropper, or hold without moving, to pick a color.</li>
-                    <li>Drag up or down on the brush, smudge, or eraser to change size.</li>
                 </ul>
-                <button type="submit" class="draw-new">Start drawing</button>
+                <button type="submit" class="draw-new">Got it</button>
             </form>
         </dialog>`;
 
@@ -442,11 +442,7 @@ export async function mountDrawApp(root, env) {
         state.dirty = false;
         state.frames = [];
         history.replaceState(null, "", `/artist-draw?id=${encodeURIComponent(id)}`);
-        requestAnimationFrame(() => { resize(); painter.fit(); refreshChrome(); });
-        if (!localStorage.getItem("alysum-draw-help")) {
-            localStorage.setItem("alysum-draw-help", "1");
-            help.showModal();
-        }
+        requestAnimationFrame(() => { resize(); painter.fit(); refreshChrome(); showGestureHelp(); });
     }
 
     function openFresh(partial) {
@@ -457,7 +453,12 @@ export async function mountDrawApp(root, env) {
         state.dirty = true;
         state.frames = [];
         history.replaceState(null, "", `/artist-draw?id=${encodeURIComponent(state.doc.id)}`);
-        requestAnimationFrame(() => { resize(); painter.fit(); refreshChrome(); scheduleSave(); });
+        requestAnimationFrame(() => { resize(); painter.fit(); refreshChrome(); scheduleSave(); showGestureHelp(); });
+    }
+
+    function showGestureHelp() {
+        if (noticeDialog.open) noticeDialog.close();
+        if (!help.open) help.showModal();
     }
 
     async function persist() {
@@ -515,8 +516,15 @@ export async function mountDrawApp(root, env) {
             for (const brush of BRUSHES.filter((item) => item.category === category)) {
                 const button = document.createElement("button");
                 button.type = "button";
-                button.className = brush.id === activeBrushId() ? "is-on" : "";
-                button.textContent = brush.name;
+                button.className = `draw-brush-item${brush.id === activeBrushId() ? " is-on" : ""}`;
+                const swatch = document.createElement("img");
+                swatch.alt = "";
+                swatch.width = 40;
+                swatch.height = 40;
+                swatch.src = painter.brushSwatch(brush, state.tool === "erase" ? "#d1d1d6" : state.color);
+                const label = document.createElement("span");
+                label.textContent = brush.name;
+                button.append(swatch, label);
                 button.addEventListener("click", () => {
                     if (state.tool === "erase") state.brushes.erase = brush.id;
                     else if (state.tool === "smudge") state.brushes.smudge = brush.id;
@@ -1357,28 +1365,28 @@ export async function mountDrawApp(root, env) {
     function wireToolDrag(button, tool) {
         let drag = null;
         button.addEventListener("pointerdown", (event) => {
-            drag = { y: event.clientY, size: brushSettings[state.brushes[tool] || activeBrushId()].size, moved: false, pointerId: event.pointerId };
+            const id = tool === "erase" ? state.brushes.erase : tool === "smudge" ? state.brushes.smudge : state.brushes.paint;
+            drag = { y: event.clientY, size: brushSettings[id].size, moved: false, pointerId: event.pointerId, id };
             try { button.setPointerCapture(event.pointerId); } catch { /* Synthetic events have no capture. */ }
-            if (tool === "paint") drag.size = brushSettings[state.brushes.paint].size;
-            if (tool === "smudge") drag.size = brushSettings[state.brushes.smudge].size;
-            if (tool === "erase") drag.size = brushSettings[state.brushes.erase].size;
         });
         button.addEventListener("pointermove", (event) => {
             if (!drag || drag.pointerId !== event.pointerId) return;
             const delta = drag.y - event.clientY;
-            if (Math.abs(delta) < 6) return;
+            if (Math.abs(delta) < 14) return;
             drag.moved = true;
             state.tool = tool;
-            const id = tool === "erase" ? state.brushes.erase : tool === "smudge" ? state.brushes.smudge : state.brushes.paint;
-            brushSettings[id].size = Math.max(1, Math.min(240, drag.size + delta * 0.7));
+            brushSettings[drag.id].size = Math.max(1, Math.min(240, Math.round(drag.size + delta * 0.55)));
             refreshChrome();
+            toastMessage(`${Math.round(brushSettings[drag.id].size)} px`);
         });
         button.addEventListener("pointerup", () => {
             if (!drag) return;
             if (!drag.moved) {
+                const sameTool = state.tool === tool;
+                const brushesOpen = state.panel === "brushes";
                 state.tool = tool;
                 if (painter.transforming) painter.commitTransform();
-                state.panel = state.panel === "brushes" && state.tool === tool ? null : "brushes";
+                state.panel = brushesOpen && sameTool ? null : "brushes";
                 state.panelSide = "right";
                 savePrefs();
                 renderPanel();

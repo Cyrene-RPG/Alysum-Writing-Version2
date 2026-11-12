@@ -215,7 +215,8 @@ button, input, select { font: inherit; color: inherit; }
 }
 .draw-top-actions button:disabled { opacity: 0.35; }
 .draw-tool svg, .draw-top-actions svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.draw-tool.is-on { background: #3a3a3c; }
+.draw-tool.is-on { background: #48484a; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+.draw-tool:active { transform: scale(0.96); }
 .draw-body { position: relative; min-height: 0; }
 .draw-viewport { position: absolute; inset: 0; touch-action: none; overflow: hidden; }
 .draw-viewport canvas { display: block; width: 100%; height: 100%; }
@@ -308,13 +309,32 @@ button, input, select { font: inherit; color: inherit; }
 .draw-cats, .draw-brush-list, .draw-actions, .draw-layer-ops { display: grid; gap: 6px; align-content: start; }
 .draw-brush-library .draw-field { grid-column: 1 / -1; }
 .draw-cats button, .draw-brush-list button, .draw-actions button, .draw-layer-ops button, .draw-sheet-actions button {
-    min-height: 36px;
+    min-height: 40px;
     border: 0;
-    border-radius: 10px;
+    border-radius: 12px;
     background: #2c2c2e;
+    color: #f2f2f7;
     text-align: left;
     padding: 8px 10px;
     cursor: pointer;
+}
+.draw-brush-item {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+}
+.draw-brush-item img {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #1c1c1e;
+    object-fit: contain;
+}
+.draw-brush-item span {
+    font-size: 14px;
+    font-weight: 600;
 }
 .draw-cats button.is-on, .draw-brush-list button.is-on, .draw-actions button.is-on { background: #0a84ff; }
 .draw-field { display: grid; gap: 6px; margin: 8px 0; font-size: 13px; }

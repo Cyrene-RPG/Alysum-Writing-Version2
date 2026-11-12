@@ -40,7 +40,6 @@ const store = {
     async remove(id) { projects.delete(id); },
 };
 
-localStorage.setItem("alysum-draw-help", "1");
 const params = new URLSearchParams(location.search);
 if (params.get("shelf") === "1") {
     const paint = (color, ink) => {
@@ -122,6 +121,9 @@ if (params.get("demo") === "1") {
     document.querySelector("#draw-presets button[data-preset='sketch']").click();
     document.querySelector("#draw-create").requestSubmit();
     await new Promise((resolve) => setTimeout(resolve, 80));
+    const helpOpen = document.querySelector("#draw-help")?.open === true;
+    document.querySelector("#draw-help")?.close();
+    document.querySelector("#draw-notice-dialog")?.close();
     const size = document.querySelector("#draw-size");
     size.value = "72";
     size.dispatchEvent(new Event("input", { bubbles: true }));
@@ -252,6 +254,7 @@ if (params.get("demo") === "1") {
         shaped,
         filled,
         tools: ["fill", "pick", "shape"].every((id) => document.querySelector(`[data-tool="${id}"]`)),
+        helpOpen,
         noticeText,
         setupPreview,
         setupPresets,

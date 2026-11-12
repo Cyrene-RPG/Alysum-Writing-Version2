@@ -36,7 +36,6 @@ const store = {
     async remove(id) { projects.delete(id); },
 };
 
-localStorage.setItem("alysum-draw-help", "1");
 await mountDrawApp(document.getElementById("draw-app"), {
     projectId: "",
     characterId: "",
@@ -47,6 +46,7 @@ document.querySelector("#draw-notice-dialog")?.close();
 document.querySelector("#draw-new").click();
 document.querySelector("#draw-create").requestSubmit();
 await new Promise((r) => setTimeout(r, 80));
+document.querySelector("#draw-help")?.close();
 document.querySelector("#draw-notice-dialog")?.close();
 const mode = new URLSearchParams(location.search).get("mode");
 if (mode === "erase") {
