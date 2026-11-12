@@ -77,10 +77,15 @@ export async function mountDrawApp(root, env) {
 
     root.innerHTML = `
         <section class="draw-gallery" id="draw-gallery">
-            <header class="draw-gallery-bar">
-                <a href="/artist">Characters</a>
-                <h1>Draw</h1>
-                <button type="button" class="draw-new" id="draw-new">New canvas</button>
+            <header class="draw-gallery-head">
+                <div class="draw-gallery-bar">
+                    <a href="/artist">Characters</a>
+                    <button type="button" class="draw-new" id="draw-new">New canvas</button>
+                </div>
+                <div class="draw-gallery-heading">
+                    <p class="draw-kicker">Studio</p>
+                    <h1>Draw</h1>
+                </div>
             </header>
             <div class="draw-cards" id="draw-cards"></div>
         </section>
@@ -309,11 +314,33 @@ export async function mountDrawApp(root, env) {
         cards.replaceChildren();
         let rows = [];
         try { rows = await store.list(); } catch (error) { toastMessage(error.message || "Could not open saved canvases."); }
+        const openNew = () => root.querySelector("#draw-new").click();
         if (!rows.length) {
-            const empty = document.createElement("p");
+            const empty = document.createElement("button");
+            empty.type = "button";
             empty.className = "draw-empty";
-            empty.textContent = "No canvases yet. Create one and it stays on this device until you save a copy to My art.";
+            const page = document.createElement("span");
+            page.className = "draw-paper";
+            page.setAttribute("aria-hidden", "true");
+            const title = document.createElement("strong");
+            title.textContent = "Start a canvas";
+            const note = document.createElement("span");
+            note.textContent = "A blank page, kept on this device until you save a copy to My art.";
+            empty.append(page, title, note);
+            empty.addEventListener("click", openNew);
             cards.append(empty);
+        } else {
+            const create = document.createElement("button");
+            create.type = "button";
+            create.className = "draw-card-new";
+            const page = document.createElement("span");
+            page.className = "draw-paper";
+            page.setAttribute("aria-hidden", "true");
+            const title = document.createElement("strong");
+            title.textContent = "New canvas";
+            create.append(page, title);
+            create.addEventListener("click", openNew);
+            cards.append(create);
         }
         for (const row of rows) {
             const card = document.createElement("article");
@@ -326,6 +353,11 @@ export async function mountDrawApp(root, env) {
                 img.src = row.thumb;
                 img.alt = "";
                 open.append(img);
+            } else {
+                const page = document.createElement("span");
+                page.className = "draw-paper";
+                page.setAttribute("aria-hidden", "true");
+                open.append(page);
             }
             const name = document.createElement("strong");
             name.textContent = row.name || "Untitled Canvas";

@@ -6,6 +6,7 @@
     { "imports": { "@alysum/artist/": "/core/artist/" } }
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css">
     <link rel="stylesheet" href="/applications/artist/artist-css/studio.css">
     <title>Draw preview</title>
 </head>
@@ -40,6 +41,27 @@ const store = {
 };
 
 localStorage.setItem("alysum-draw-help", "1");
+const params = new URLSearchParams(location.search);
+if (params.get("shelf") === "1") {
+    const paint = (color, ink) => {
+        const board = document.createElement("canvas");
+        board.width = 180;
+        board.height = 240;
+        const ctx = board.getContext("2d");
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 180, 240);
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(28, 170);
+        ctx.quadraticCurveTo(90, 30, 150, 120);
+        ctx.stroke();
+        return board.toDataURL("image/png");
+    };
+    projects.set("harbor", { id: "harbor", name: "Harbor study", width: 1600, height: 1200, layers: [], thumb: paint("#f6f1e7", "#1d4e89") });
+    projects.set("market", { id: "market", name: "Night market", width: 1800, height: 2400, layers: [], thumb: paint("#14121c", "#f5d489") });
+    projects.set("study", { id: "study", name: "Figure study", width: 2048, height: 2048, layers: [], thumb: paint("#f3ead7", "#6d28d9") });
+}
 const errors = [];
 window.addEventListener("error", (event) => errors.push(String(event.message || event.error)));
 await mountDrawApp(document.getElementById("draw-app"), {
@@ -49,7 +71,9 @@ await mountDrawApp(document.getElementById("draw-app"), {
     upload: async () => "Saved to My art as a private image.",
 });
 
-const params = new URLSearchParams(location.search);
+if (params.get("gallery") === "1" || params.get("shelf") === "1") {
+    document.querySelector("#draw-notice-dialog").close();
+}
 if (params.get("setup") === "1") {
     document.querySelector("#draw-notice-dialog").close();
     document.querySelector("#draw-new").click();
