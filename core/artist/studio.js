@@ -36,9 +36,8 @@ export const CANVAS_PRESETS = [
 
 export const PAPER_COLORS = [
     { id: "white", name: "White", value: "#ffffff" },
-    { id: "cream", name: "Cream", value: "#f6f1e7" },
-    { id: "paper", name: "Paper", value: "#f3ead7" },
-    { id: "kraft", name: "Kraft", value: "#c4a574" },
+    { id: "cream", name: "Cream", value: "#f4f1ea" },
+    { id: "paper", name: "Paper", value: "#ebe6df" },
     { id: "black", name: "Black", value: "#111111" },
     { id: "clear", name: "Clear", value: "transparent" },
 ];

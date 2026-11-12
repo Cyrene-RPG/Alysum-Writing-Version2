@@ -403,7 +403,7 @@ button, input, select { font: inherit; color: inherit; }
 }
 .draw-create-body {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(260px, 480px);
+    grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1.35fr);
     min-height: 0;
     min-width: 0;
     flex: 1;
@@ -427,54 +427,95 @@ button, input, select { font: inherit; color: inherit; }
     box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 #draw-canvas-preview { margin: 0; font-size: clamp(16px, 2.4vw, 20px); font-weight: 650; }
-.draw-create-settings { overflow: auto; min-width: 0; min-height: 0; padding: 18px 18px 28px; }
-.draw-field-label { margin: 16px 0 8px; color: #aeaeb2; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-.draw-segment, .draw-bgs { display: flex; flex-wrap: wrap; gap: 8px; }
-.draw-segment button { flex: 1 1 0px; min-width: 0; font-size: 14px; line-height: 1.2; }
-.draw-dims {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    align-items: end;
-    gap: 8px;
-}
-.draw-segment button, .draw-dims button, .draw-dims label {
+.draw-create-settings { overflow: auto; min-width: 0; min-height: 0; padding: 18px 22px 32px; }
+.draw-create-settings .draw-field { display: grid; gap: 8px; margin-bottom: 14px; color: #aeaeb2; font-size: 12px; }
+.draw-field-label { margin: 18px 0 10px; color: #aeaeb2; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.draw-segment, .draw-bgs { display: flex; flex-wrap: wrap; gap: 10px; }
+.draw-segment { margin: 0 0 14px; }
+.draw-segment button {
+    flex: 1 1 0px;
+    min-width: 0;
     border: 0;
     border-radius: 12px;
     background: #2c2c2e;
-    min-height: 40px;
-    padding: 8px 6px;
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 15px;
+    line-height: 1.2;
     cursor: pointer;
 }
+.draw-dims {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
+    align-items: end;
+    gap: 12px;
+    margin: 0 0 14px;
+}
+.draw-dim {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #aeaeb2;
+    font-size: 12px;
+    font-weight: 650;
+    cursor: text;
+}
+.draw-dim span { padding-left: 2px; }
 .draw-segment button.is-on, .draw-presets button.is-on, .draw-bgs button.is-on { outline: 2px solid #0a84ff; background: #1c3d66; }
-.draw-dims label { display: grid; gap: 4px; min-width: 0; font-size: 12px; color: #aeaeb2; cursor: text; }
 .draw-dims input, .draw-create-settings .draw-field input {
     width: 100%;
-    min-height: 36px;
+    min-height: 48px;
     border: 0;
-    border-radius: 10px;
-    background: #000;
+    border-radius: 12px;
+    background: #2c2c2e;
     color: #f2f2f7;
-    padding: 6px 8px;
-    font-size: 16px;
+    padding: 12px 14px;
+    font-size: 18px;
+    font-variant-numeric: tabular-nums;
 }
-#draw-flip { align-self: end; color: #0a84ff; font-weight: 700; }
+#draw-flip {
+    width: 44px;
+    height: 48px;
+    padding: 0;
+    border: 0;
+    border-radius: 12px;
+    background: #2c2c2e;
+    color: #0a84ff;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+}
+.draw-bgs {
+    align-items: center;
+    gap: 12px;
+}
 .draw-bgs button, .draw-bgs input[type="color"] {
-    width: 36px;
-    height: 36px;
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    aspect-ratio: 1;
     padding: 0;
     border: 0;
     border-radius: 50%;
     cursor: pointer;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
 }
-.draw-presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 104px), 1fr)); gap: 8px; }
+.draw-bgs input[type="color"] { appearance: none; }
+.draw-presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 132px), 1fr)); gap: 12px; }
 .draw-presets button {
     display: grid;
     justify-items: center;
     align-content: center;
-    gap: 4px;
-    min-height: 88px;
-    padding: 10px 6px;
+    gap: 8px;
+    min-height: 104px;
+    padding: 16px 12px;
     border: 0;
     border-radius: 14px;
     background: #2c2c2e;
@@ -489,26 +530,31 @@ button, input, select { font: inherit; color: inherit; }
 .draw-presets strong { font-size: 13px; }
 .draw-presets span { color: #8e8e93; font-size: 11px; }
 @media (max-width: 1199px) and (min-width: 680px) {
-    .draw-create-body { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.25fr); }
+    .draw-create-body { grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.4fr); }
     .draw-create-stage { padding: 14px; }
 }
 @media (max-height: 700px) and (min-width: 680px) {
-    .draw-create-body { grid-template-columns: minmax(120px, 0.7fr) minmax(0, 1.45fr); }
+    .draw-create-body { grid-template-columns: minmax(140px, 0.62fr) minmax(0, 1.5fr); }
     .draw-create-stage { padding: 8px 12px; gap: 4px; }
-    .draw-create-settings { padding: 10px 12px 16px; }
-    .draw-presets button { min-height: 72px; }
+    .draw-create-settings { padding: 12px 16px 18px; }
+    .draw-presets button { min-height: 80px; }
 }
 @media (max-height: 520px) {
     .draw-create-bar { padding: 8px 10px; }
-    .draw-field-label { margin: 8px 0 6px; }
-    .draw-presets button { min-height: 64px; padding: 6px 4px; }
-    .draw-segment button, .draw-dims button, .draw-dims label { min-height: 36px; padding: 6px 8px; }
+    .draw-field-label { margin: 10px 0 8px; }
+    .draw-presets button { min-height: 72px; padding: 10px 8px; }
+    .draw-segment button { min-height: 40px; padding: 8px 10px; }
+    .draw-dims input { min-height: 42px; }
+    #draw-flip { height: 42px; }
 }
 @media (max-width: 679px) {
     .draw-create-bar { padding: 10px 12px; }
     .draw-create-body { grid-template-columns: 1fr; overflow: auto; }
     .draw-create-stage { padding: 12px 16px 4px; overflow: visible; }
-    .draw-create-settings { overflow: visible; padding: 12px 14px calc(28px + env(safe-area-inset-bottom)); }
+    .draw-create-settings { overflow: visible; padding: 16px 18px calc(28px + env(safe-area-inset-bottom)); }
+    .draw-dims { gap: 14px; grid-template-columns: minmax(0, 1fr) 48px minmax(0, 1fr); }
+    #draw-flip { width: 48px; }
+    .draw-presets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .draw-help ul { padding-left: 18px; line-height: 1.5; color: #d1d1d6; }
 .draw-notice {

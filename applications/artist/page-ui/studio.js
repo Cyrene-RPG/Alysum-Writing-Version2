@@ -158,9 +158,9 @@ export async function mountDrawApp(root, env) {
                         <label class="draw-field">Name<input name="title" id="draw-canvas-name" maxlength="80" value="Untitled Canvas"></label>
                         <div class="draw-segment" id="draw-units" role="group" aria-label="Units"></div>
                         <div class="draw-dims">
-                            <label>Width<input id="draw-width-input" inputmode="decimal"></label>
-                            <button type="button" id="draw-flip" aria-label="Swap width and height">Swap</button>
-                            <label>Height<input id="draw-height-input" inputmode="decimal"></label>
+                            <label class="draw-dim"><span>Width</span><input id="draw-width-input" inputmode="decimal"></label>
+                            <button type="button" id="draw-flip" aria-label="Swap width and height" title="Swap width and height">⇄</button>
+                            <label class="draw-dim"><span>Height</span><input id="draw-height-input" inputmode="decimal"></label>
                         </div>
                         <input type="hidden" name="width" value="1600">
                         <input type="hidden" name="height" value="1200">
