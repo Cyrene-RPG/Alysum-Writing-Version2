@@ -424,6 +424,7 @@ export async function mountDrawApp(root, env) {
         });
         const stream = slider("StreamLine", 0, 100, Math.round(settings.streamline * 100), (value) => {
             activeSettings().streamline = value / 100;
+            savePrefs();
         });
         paintList();
         wrap.append(cats, list, size, opacity, stream);
@@ -434,8 +435,7 @@ export async function mountDrawApp(root, env) {
         const wrap = document.createElement("div");
         const layer = state.doc.layers.find((item) => item.id === state.doc.activeLayerId);
         const opacity = slider("Opacity", 0, 100, Math.round((layer?.opacity ?? 1) * 100), (value) => {
-            state.doc = updateLayer(state.doc, state.doc.activeLayerId, { opacity: value / 100 });
-            painter.invalidate();
+            adopt(updateLayer(state.doc, state.doc.activeLayerId, { opacity: value / 100 }));
             painter.render();
             scheduleSave();
         });
@@ -451,8 +451,7 @@ export async function mountDrawApp(root, env) {
             select.append(option);
         }
         select.addEventListener("change", () => {
-            state.doc = updateLayer(state.doc, state.doc.activeLayerId, { blend: select.value });
-            painter.invalidate();
+            adopt(updateLayer(state.doc, state.doc.activeLayerId, { blend: select.value }));
             painter.render();
             scheduleSave();
         });
@@ -467,8 +466,7 @@ export async function mountDrawApp(root, env) {
             eye.textContent = item.visible ? "●" : "○";
             eye.addEventListener("click", (event) => {
                 event.stopPropagation();
-                state.doc = updateLayer(state.doc, item.id, { visible: !item.visible });
-                painter.invalidate();
+                adopt(updateLayer(state.doc, item.id, { visible: !item.visible }));
                 painter.render();
                 renderPanel();
                 scheduleSave();
@@ -480,7 +478,7 @@ export async function mountDrawApp(root, env) {
             name.textContent = item.name;
             row.append(eye, thumb, name);
             row.addEventListener("click", () => {
-                state.doc = { ...state.doc, activeLayerId: item.id };
+                adopt({ ...state.doc, activeLayerId: item.id });
                 renderPanel();
             });
             list.append(row);
@@ -489,32 +487,27 @@ export async function mountDrawApp(root, env) {
         ops.className = "draw-layer-ops";
         ops.append(
             textButton("Add", () => {
-                state.doc = addLayer(state.doc);
-                painter.setDocument(keepPixels(state.doc));
-                painter.clearHistory();
+                adopt(addLayer(state.doc));
                 renderPanel();
                 scheduleSave();
             }),
             textButton("Up", () => reorder(1)),
             textButton("Down", () => reorder(-1)),
             textButton(layer?.alphaLock ? "Unlock alpha" : "Alpha lock", () => {
-                state.doc = updateLayer(state.doc, state.doc.activeLayerId, { alphaLock: !layer?.alphaLock });
+                adopt(updateLayer(state.doc, state.doc.activeLayerId, { alphaLock: !layer?.alphaLock }));
                 renderPanel();
                 scheduleSave();
             }),
             textButton(layer?.clipping ? "Unclip" : "Clipping mask", () => {
-                state.doc = updateLayer(state.doc, state.doc.activeLayerId, { clipping: !layer?.clipping });
-                painter.invalidate();
+                adopt(updateLayer(state.doc, state.doc.activeLayerId, { clipping: !layer?.clipping }));
                 painter.render();
                 renderPanel();
                 scheduleSave();
             }),
             textButton("Duplicate", () => {
                 const result = duplicateLayer(state.doc, state.doc.activeLayerId);
-                state.doc = result.document;
-                painter.setDocument(keepPixels(state.doc));
+                adopt(result.document);
                 painter.copyPixels(result.sourceId, result.layerId);
-                painter.clearHistory();
                 renderPanel();
                 scheduleSave();
             }),
@@ -522,9 +515,7 @@ export async function mountDrawApp(root, env) {
                 const index = state.doc.layers.findIndex((item) => item.id === state.doc.activeLayerId);
                 if (index <= 0) return;
                 painter.mergeOnto(state.doc.layers[index - 1].id);
-                state.doc = deleteLayer(state.doc, state.doc.activeLayerId);
-                painter.setDocument(keepPixels(state.doc));
-                painter.clearHistory();
+                adopt(deleteLayer(state.doc, state.doc.activeLayerId));
                 renderPanel();
                 scheduleSave();
             }),
@@ -532,14 +523,12 @@ export async function mountDrawApp(root, env) {
             textButton("Rename", () => {
                 const name = window.prompt("Layer name", layer?.name || "Layer");
                 if (!name) return;
-                state.doc = updateLayer(state.doc, state.doc.activeLayerId, { name });
+                adopt(updateLayer(state.doc, state.doc.activeLayerId, { name }));
                 renderPanel();
                 scheduleSave();
             }),
             textButton("Delete", () => {
-                state.doc = deleteLayer(state.doc, state.doc.activeLayerId);
-                painter.setDocument(keepPixels(state.doc));
-                painter.clearHistory();
+                adopt(deleteLayer(state.doc, state.doc.activeLayerId));
                 renderPanel();
                 scheduleSave();
             }),
@@ -550,15 +539,15 @@ export async function mountDrawApp(root, env) {
 
     function reorder(direction) {
         const id = state.doc.activeLayerId;
-        state.doc = moveLayer(state.doc, id, direction);
-        painter.invalidate();
+        adopt(moveLayer(state.doc, id, direction));
         painter.render();
         renderPanel();
         scheduleSave();
     }
 
-    function keepPixels(next) {
-        painter.setDocument(next);
+    function adopt(next) {
+        state.doc = next;
+        painter.syncDocument(next);
         return next;
     }
 
@@ -618,8 +607,7 @@ export async function mountDrawApp(root, env) {
         file.addEventListener("change", async () => {
             const image = file.files?.[0];
             if (!image) return;
-            state.doc = addLayer(state.doc, { name: "Image" });
-            painter.setDocument(keepPixels(state.doc));
+            adopt(addLayer(state.doc, { name: "Image" }));
             await painter.insertImage(image);
             painter.render();
             scheduleSave();
@@ -653,7 +641,7 @@ export async function mountDrawApp(root, env) {
     }
 
     function setSymmetry(mode) {
-        state.doc = { ...state.doc, symmetry: mode };
+        adopt({ ...state.doc, symmetry: mode });
         painter.render();
         scheduleSave();
         renderPanel();
@@ -847,6 +835,22 @@ export async function mountDrawApp(root, env) {
         }, 460);
     }
 
+    function selectionShape(end) {
+        if (!selectDraft || !end) return null;
+        if (selectDraft.mode === "rect" || selectDraft.mode === "ellipse") {
+            const x = Math.min(selectDraft.x, end.x);
+            const y = Math.min(selectDraft.y, end.y);
+            const w = Math.abs(end.x - selectDraft.x);
+            const h = Math.abs(end.y - selectDraft.y);
+            if (w < 1 || h < 1) return null;
+            return selectDraft.mode === "rect"
+                ? { kind: "rect", x, y, w, h }
+                : { kind: "ellipse", cx: x + w / 2, cy: y + h / 2, rx: w / 2, ry: h / 2 };
+        }
+        if (selectDraft.points.length > 1) return { kind: "freehand", points: selectDraft.points.slice() };
+        return null;
+    }
+
     function finishPointers(event) {
         if (eyedrop) {
             eyedrop = false;
@@ -855,6 +859,7 @@ export async function mountDrawApp(root, env) {
             return;
         }
         if (selectDraft && pointers.size === 0) {
+            painter.setDraft(null);
             const end = painter.screenToDoc(localPoint(event).x, localPoint(event).y);
             let shape = null;
             if (selectDraft.mode === "rect" || selectDraft.mode === "ellipse") {
@@ -988,7 +993,8 @@ export async function mountDrawApp(root, env) {
         }
         if (selectDraft) {
             if (selectDraft.mode === "freehand") selectDraft.points.push(docPoint);
-            else painter.render();
+            painter.setDraft(selectionShape(docPoint));
+            painter.render();
             return;
         }
         if (transformDrag && painter.transforming) {
@@ -1057,7 +1063,7 @@ export async function mountDrawApp(root, env) {
     root.querySelector("#draw-title").addEventListener("click", () => {
         const name = window.prompt("Canvas name", state.doc?.name || "Untitled Canvas");
         if (!name || !state.doc) return;
-        state.doc = { ...state.doc, name: name.slice(0, 80) };
+        adopt({ ...state.doc, name: name.slice(0, 80) });
         refreshChrome();
         scheduleSave();
     });
@@ -1096,6 +1102,7 @@ export async function mountDrawApp(root, env) {
     const colorButton = root.querySelector('[data-panel="color"]');
     colorButton.addEventListener("pointerdown", (event) => {
         colorDrag = { x: event.clientX, y: event.clientY, moved: false, pointerId: event.pointerId };
+        try { colorButton.setPointerCapture(event.pointerId); } catch { /* Synthetic events have no capture. */ }
     });
     colorButton.addEventListener("pointermove", (event) => {
         if (!colorDrag || colorDrag.pointerId !== event.pointerId) return;
@@ -1119,6 +1126,7 @@ export async function mountDrawApp(root, env) {
         let drag = null;
         button.addEventListener("pointerdown", (event) => {
             drag = { y: event.clientY, size: brushSettings[state.brushes[tool] || activeBrushId()].size, moved: false, pointerId: event.pointerId };
+            try { button.setPointerCapture(event.pointerId); } catch { /* Synthetic events have no capture. */ }
             if (tool === "paint") drag.size = brushSettings[state.brushes.paint].size;
             if (tool === "smudge") drag.size = brushSettings[state.brushes.smudge].size;
             if (tool === "erase") drag.size = brushSettings[state.brushes.erase].size;

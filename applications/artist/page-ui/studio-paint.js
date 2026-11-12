@@ -22,6 +22,7 @@ export function createPainter(viewCanvas) {
     const flat = document.createElement("canvas");
     const scratch = document.createElement("canvas");
     const preview = document.createElement("canvas");
+    const veil = document.createElement("canvas");
     const noise = makeNoise();
     let doc = null;
     let dpr = 1;
@@ -29,6 +30,7 @@ export function createPainter(viewCanvas) {
     let cssH = 1;
     let flatDirty = true;
     let selection = null;
+    let draft = null;
     let stroke = null;
     let pending = null;
     let adjustBase = null;
@@ -88,6 +90,21 @@ export function createPainter(viewCanvas) {
         transform = null;
         undo.length = 0;
         redo.length = 0;
+    }
+
+    function syncDocument(next) {
+        if (!next) return;
+        const replacing = !doc || doc.id !== next.id || doc.width !== next.width || doc.height !== next.height;
+        if (replacing) {
+            setDocument(next);
+            return;
+        }
+        doc = next;
+        for (const layer of doc.layers) layerCanvas(layer.id);
+        for (const id of [...layers.keys()]) {
+            if (!doc.layers.some((layer) => layer.id === id)) layers.delete(id);
+        }
+        flatDirty = true;
     }
 
     function mark(id = doc.activeLayerId) {
@@ -164,13 +181,35 @@ export function createPainter(viewCanvas) {
         const r = d / 2;
         if (shape === "spray") {
             ctx.fillStyle = "#fff";
-            const dots = 8 + Math.floor(d / 4);
+            const dots = 10 + Math.floor(d / 3);
             for (let i = 0; i < dots; i += 1) {
-                const a = Math.random() * Math.PI * 2;
-                const dist = Math.random() * r;
-                ctx.globalAlpha = 0.35 + Math.random() * 0.65;
-                ctx.fillRect(r + Math.cos(a) * dist, r + Math.sin(a) * dist, 1.6, 1.6);
+                const a = tipHash(i + 1) * Math.PI * 2;
+                const dist = tipHash(i + 17) * r;
+                ctx.globalAlpha = 0.25 + tipHash(i + 5) * 0.75;
+                const s = 1.1 + tipHash(i + 9) * 1.8;
+                ctx.fillRect(r + Math.cos(a) * dist, r + Math.sin(a) * dist, s, s);
             }
+        } else if (shape === "pencil" || shape === "charcoal") {
+            const soft = shape === "charcoal" ? Math.min(hardness, 0.45) : hardness;
+            const g = ctx.createRadialGradient(r, r, Math.max(0, soft * r * 0.8), r, r, r);
+            g.addColorStop(0, "rgba(255,255,255,1)");
+            g.addColorStop(1, "rgba(255,255,255,0)");
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.ellipse(r, r, r, shape === "pencil" ? r * 0.62 : r * 0.9, -0.4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalCompositeOperation = "destination-out";
+            const marks = shape === "pencil" ? 7 : 11;
+            for (let i = 0; i < marks; i += 1) {
+                ctx.strokeStyle = `rgba(0,0,0,${0.18 + tipHash(i + 3) * 0.45})`;
+                ctx.lineWidth = shape === "pencil" ? 0.7 : 1.4;
+                ctx.beginPath();
+                const y = r * 0.3 + tipHash(i + 11) * r * 1.2;
+                ctx.moveTo(r * 0.15, y);
+                ctx.lineTo(r * 1.8, y + (tipHash(i + 13) - 0.5) * r);
+                ctx.stroke();
+            }
+            ctx.globalCompositeOperation = "source-over";
         } else {
             const g = ctx.createRadialGradient(r, r, Math.max(0, hardness * r * 0.92), r, r, r);
             g.addColorStop(0, "rgba(255,255,255,1)");
@@ -240,7 +279,9 @@ export function createPainter(viewCanvas) {
     function stampAll(point, pressure) {
         const brush = stroke.brush;
         const radius = radiusFor(brush, stroke.size, pressure);
-        const alpha = stroke.tool === "erase" ? alphaFor(brush, stroke.opacity, pressure) : (brush.buildUp ? alphaFor(brush, stroke.opacity, pressure) : 1);
+        const alpha = stroke.tool === "erase" || !brush.buildUp
+            ? alphaFor(brush, 1, pressure)
+            : alphaFor(brush, stroke.opacity, pressure);
         const spots = symmetryPoints(point.x, point.y, doc.width, doc.height, doc.symmetry, doc.symmetryCount);
         const ctx = targetContext();
         const prev = stroke.prev || point;
@@ -258,7 +299,7 @@ export function createPainter(viewCanvas) {
         if (!doc) return;
         cancelAdjust();
         const brush = settings.brush;
-        const direct = settings.tool === "smudge" || Boolean(brush.buildUp);
+        const direct = settings.tool === "smudge" || (Boolean(brush.buildUp) && settings.tool !== "erase");
         if (direct) mark();
         strokeCanvas.getContext("2d").clearRect(0, 0, strokeCanvas.width, strokeCanvas.height);
         stroke = {
@@ -348,30 +389,70 @@ export function createPainter(viewCanvas) {
         return shape;
     }
 
+    function maskedStrokeSource() {
+        const layer = activeLayer(doc);
+        const lockAlpha = Boolean(layer?.alphaLock) && stroke?.tool !== "erase";
+        if (!selection && !lockAlpha) return strokeCanvas;
+        if (veil.width !== doc.width || veil.height !== doc.height) {
+            veil.width = doc.width;
+            veil.height = doc.height;
+        }
+        const ctx = veil.getContext("2d");
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = "source-over";
+        ctx.clearRect(0, 0, doc.width, doc.height);
+        ctx.drawImage(strokeCanvas, 0, 0);
+        if (selection) {
+            ctx.globalCompositeOperation = "destination-in";
+            ctx.drawImage(selection.mask, 0, 0);
+        }
+        if (lockAlpha) {
+            ctx.globalCompositeOperation = "destination-in";
+            ctx.drawImage(layerCanvas(doc.activeLayerId), 0, 0);
+        }
+        ctx.globalCompositeOperation = "source-over";
+        return veil;
+    }
+
     function bakeStroke() {
         const layer = layerCanvas(doc.activeLayerId);
         const ctx = layer.getContext("2d");
-        const opacity = stroke.opacity;
-        const tmp = document.createElement("canvas");
-        tmp.width = doc.width;
-        tmp.height = doc.height;
-        const tctx = tmp.getContext("2d");
-        tctx.drawImage(strokeCanvas, 0, 0);
-        if (selection) {
-            tctx.globalCompositeOperation = "destination-in";
-            tctx.drawImage(selection.mask, 0, 0);
-        }
-        const current = activeLayer(doc);
-        if (current?.alphaLock && stroke.tool !== "erase") {
-            tctx.globalCompositeOperation = "destination-in";
-            tctx.drawImage(layer, 0, 0);
-        }
         ctx.save();
-        ctx.globalAlpha = opacity;
+        ctx.globalAlpha = stroke.opacity;
         ctx.globalCompositeOperation = stroke.tool === "erase" ? "destination-out" : "source-over";
-        ctx.drawImage(tmp, 0, 0);
+        ctx.drawImage(maskedStrokeSource(), 0, 0);
         ctx.restore();
         strokeCanvas.getContext("2d").clearRect(0, 0, strokeCanvas.width, strokeCanvas.height);
+    }
+
+    function constrainDirectStroke() {
+        if (!pending || !stroke) return;
+        const layerMeta = activeLayer(doc);
+        const lockAlpha = Boolean(layerMeta?.alphaLock) && stroke.tool !== "erase";
+        if (!selection && !lockAlpha) return;
+        const current = cloneCanvas(layerCanvas(doc.activeLayerId));
+        const canvas = layerCanvas(doc.activeLayerId);
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = "source-over";
+        ctx.clearRect(0, 0, doc.width, doc.height);
+        ctx.drawImage(pending.before, 0, 0);
+        const masked = document.createElement("canvas");
+        masked.width = doc.width;
+        masked.height = doc.height;
+        const mctx = masked.getContext("2d");
+        mctx.drawImage(current, 0, 0);
+        if (selection) {
+            mctx.globalCompositeOperation = "destination-in";
+            mctx.drawImage(selection.mask, 0, 0);
+        }
+        if (lockAlpha) {
+            mctx.globalCompositeOperation = "destination-in";
+            mctx.drawImage(pending.before, 0, 0);
+        }
+        ctx.drawImage(masked, 0, 0);
     }
 
     function commitStroke() {
@@ -382,6 +463,7 @@ export function createPainter(viewCanvas) {
             bakeStroke();
             commitMark();
         } else {
+            constrainDirectStroke();
             commitMark();
             flatDirty = true;
         }
@@ -656,7 +738,7 @@ export function createPainter(viewCanvas) {
         ctx.drawImage(canvas, 0, 0);
         ctx.globalAlpha = stroke.opacity;
         ctx.globalCompositeOperation = stroke.tool === "erase" ? "destination-out" : "source-over";
-        ctx.drawImage(strokeCanvas, 0, 0);
+        ctx.drawImage(maskedStrokeSource(), 0, 0);
         ctx.globalAlpha = 1;
         ctx.globalCompositeOperation = "source-over";
         return preview;
@@ -688,6 +770,14 @@ export function createPainter(viewCanvas) {
             ctx.lineWidth = 1 / view.zoom;
             ctx.setLineDash([6 / view.zoom, 5 / view.zoom]);
             ctx.stroke(shapePath(selection.shape));
+            ctx.restore();
+        }
+        if (draft) {
+            ctx.save();
+            ctx.strokeStyle = "rgba(10,132,255,0.95)";
+            ctx.lineWidth = 1 / view.zoom;
+            ctx.setLineDash([6 / view.zoom, 5 / view.zoom]);
+            ctx.stroke(shapePath(draft));
             ctx.restore();
         }
         if (transform) {
@@ -837,6 +927,8 @@ export function createPainter(viewCanvas) {
     return {
         view,
         setDocument,
+        syncDocument,
+        setDraft(shape) { draft = shape; },
         get document() { return doc; },
         resizeView,
         fit,
@@ -930,6 +1022,11 @@ export function createPainter(viewCanvas) {
         loadLayerBlob,
         invalidate() { flatDirty = true; },
     };
+}
+
+function tipHash(n) {
+    const x = Math.sin(n * 127.1) * 43758.5453;
+    return x - Math.floor(x);
 }
 
 function makeNoise() {

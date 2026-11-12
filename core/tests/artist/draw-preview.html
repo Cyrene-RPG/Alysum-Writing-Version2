@@ -14,7 +14,7 @@
 <script type="module">
 import { mountDrawApp } from "/applications/artist/page-ui/studio.js";
 import { createPainter } from "/applications/artist/page-ui/studio-paint.js";
-import { brushById, createStudioDocument } from "/core/artist/studio.js";
+import { addLayer, brushById, createStudioDocument } from "/core/artist/studio.js";
 
 const projects = new Map();
 const pixels = new Map();
@@ -95,11 +95,67 @@ if (params.get("demo") === "1") {
     const probed = probe.getContext("2d").getImageData(0, 0, probe.width, probe.height).data;
     let engineInk = 0;
     for (let i = 0; i < probed.length; i += 4) if (probed[i] < 40) engineInk += 1;
+    const darkAt = (x, y) => {
+        const sx = Math.min(probe.width - 1, Math.max(0, Math.round(x * probe.width / 200)));
+        const sy = Math.min(probe.height - 1, Math.max(0, Math.round(y * probe.height / 80)));
+        const pixel = probe.getContext("2d").getImageData(sx, sy, 1, 1).data;
+        return pixel[0] < 80 && pixel[3] > 180;
+    };
+    const lab = createStudioDocument({ width: 200, height: 80, background: "#ffffff" });
+    const pen = { ...brushById("technical-pencil"), streamline: 0, scatter: 0, grain: 0 };
+    engine.setDocument(lab);
+    engine.resizeView(200, 80);
+    engine.view.zoom = 1;
+    engine.view.panX = 0;
+    engine.view.panY = 0;
+    engine.view.rotation = 0;
+    engine.beginStroke({ tool: "paint", brush: pen, color: "#111111", size: 10, opacity: 1 });
+    engine.extendStroke({ x: 20, y: 60 }, 1);
+    engine.extendStroke({ x: 90, y: 60 }, 1);
+    engine.commitStroke();
+    const second = addLayer(lab);
+    engine.syncDocument(second);
+    engine.beginStroke({ tool: "paint", brush: pen, color: "#111111", size: 10, opacity: 1 });
+    engine.extendStroke({ x: 20, y: 16 }, 1);
+    engine.extendStroke({ x: 70, y: 16 }, 1);
+    engine.commitStroke();
+    const hidden = {
+        ...second,
+        layers: second.layers.map((layer) => layer.id === lab.layers[0].id ? { ...layer, visible: false } : layer),
+    };
+    engine.syncDocument(hidden);
+    engine.render();
+    const upperOnly = darkAt(40, 16) && !darkAt(40, 60);
+    engine.syncDocument({ ...hidden, layers: hidden.layers.map((layer) => ({ ...layer, visible: true })), symmetry: "vertical" });
+    engine.beginStroke({ tool: "paint", brush: pen, color: "#111111", size: 8, opacity: 1 });
+    engine.extendStroke({ x: 24, y: 40 }, 1);
+    engine.extendStroke({ x: 36, y: 40 }, 1);
+    engine.commitStroke();
+    engine.render();
+    const mirrored = darkAt(30, 40) && darkAt(170, 40);
+    engine.selectShape({ kind: "rect", x: 0, y: 0, w: 50, h: 80 }, "replace");
+    engine.beginStroke({ tool: "paint", brush: pen, color: "#111111", size: 12, opacity: 1 });
+    engine.extendStroke({ x: 10, y: 28 }, 1);
+    engine.extendStroke({ x: 140, y: 28 }, 1);
+    engine.commitStroke();
+    engine.render();
+    const clipped = darkAt(24, 28) && !darkAt(120, 28);
+    engine.clearSelection();
+    engine.beginStroke({ tool: "erase", brush: { ...brushById("hard-airbrush"), streamline: 0, scatter: 0 }, color: "#ff0000", size: 28, opacity: 1 });
+    engine.extendStroke({ x: 10, y: 16 }, 1);
+    engine.extendStroke({ x: 80, y: 16 }, 1);
+    engine.commitStroke();
+    engine.render();
+    const erased = !darkAt(40, 16);
     result.textContent = JSON.stringify({
         title: document.querySelector("#draw-title")?.textContent || "",
         stage: document.querySelector("#draw-stage")?.hidden === false,
         ink,
         engineInk,
+        upperOnly,
+        mirrored,
+        clipped,
+        erased,
         errors,
         width: canvas.width,
         height: canvas.height,
