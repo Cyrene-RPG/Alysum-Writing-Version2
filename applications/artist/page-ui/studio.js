@@ -116,6 +116,19 @@ export async function mountDrawApp(root, env) {
             <p class="draw-toast" id="draw-toast" hidden></p>
             <div class="draw-timelapse" id="draw-timelapse" hidden><img alt=""></div>
         </section>
+        <button type="button" class="draw-notice" id="draw-notice">
+            <strong>Work in progress</strong>
+            <span>Tap for details</span>
+        </button>
+        <dialog class="draw-sheet" id="draw-notice-dialog">
+            <form method="dialog">
+                <h2>Work in progress</h2>
+                <p class="draw-notice-copy">This is a work in progress. Features may break. It works best on a tablet.</p>
+                <div class="draw-sheet-actions">
+                    <button type="submit" class="draw-new">OK</button>
+                </div>
+            </form>
+        </dialog>
         <dialog class="draw-sheet" id="draw-sheet">
             <form method="dialog" id="draw-create">
                 <h2>New canvas</h2>
@@ -158,6 +171,10 @@ export async function mountDrawApp(root, env) {
     const toast = root.querySelector("#draw-toast");
     const sheet = root.querySelector("#draw-sheet");
     const help = root.querySelector("#draw-help");
+    const noticeDialog = root.querySelector("#draw-notice-dialog");
+    root.querySelector("#draw-notice").addEventListener("click", () => {
+        if (!noticeDialog.open) noticeDialog.showModal();
+    });
     let background = "#ffffff";
     let pointers = new Map();
     let gesture = null;
@@ -1223,6 +1240,10 @@ export async function mountDrawApp(root, env) {
     if (env.projectId) await openProject(env.projectId);
     else await showGallery();
     refreshChrome();
+    if (!noticeDialog.open && !help.open && !sessionStorage.getItem("alysum-draw-notice")) {
+        sessionStorage.setItem("alysum-draw-notice", "1");
+        noticeDialog.showModal();
+    }
 }
 
 function railButton(id, icon, label) {

@@ -51,6 +51,10 @@ await mountDrawApp(document.getElementById("draw-app"), {
 
 const params = new URLSearchParams(location.search);
 if (params.get("demo") === "1") {
+    document.querySelector("#draw-notice-dialog").close();
+    document.querySelector("#draw-notice").click();
+    const noticeText = document.querySelector("#draw-notice-dialog p").textContent;
+    document.querySelector("#draw-notice-dialog").close();
     document.querySelector("#draw-new").click();
     document.querySelector("#draw-create").requestSubmit();
     await new Promise((resolve) => setTimeout(resolve, 80));
@@ -156,6 +160,7 @@ if (params.get("demo") === "1") {
         mirrored,
         clipped,
         erased,
+        noticeText,
         errors,
         width: canvas.width,
         height: canvas.height,

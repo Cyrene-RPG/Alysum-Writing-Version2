@@ -263,6 +263,27 @@ button, input, select { font: inherit; color: inherit; }
 .draw-custom label { display: grid; gap: 4px; font-size: 12px; }
 .draw-custom input { width: 100px; min-height: 32px; border: 0; border-radius: 8px; background: #000; padding: 4px 8px; }
 .draw-help ul { padding-left: 18px; line-height: 1.5; color: #d1d1d6; }
+.draw-notice {
+    position: fixed;
+    z-index: 8;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    width: min(420px, calc(100vw - 24px));
+    display: grid;
+    gap: 2px;
+    padding: 12px 14px;
+    border: 0;
+    border-radius: 16px;
+    background: #1c1c1e;
+    color: #f2f2f7;
+    text-align: left;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+}
+.draw-notice strong { font-size: 15px; }
+.draw-notice span { color: #aeaeb2; font-size: 13px; }
+.draw-notice-copy { margin: 12px 0 0; font-size: 16px; line-height: 1.5; }
 @media (max-width: 720px) {
     .draw-sliders { display: none !important; }
     .draw-panel { top: auto; height: min(46dvh, 420px); width: auto; left: 8px; right: 8px; bottom: 8px; }
