@@ -6,6 +6,7 @@ const ICONS = {
     discover: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="reader-glyph-ring" cx="12" cy="12" r="8.15" fill="none" stroke="currentColor" stroke-width="1.6"/><path class="reader-glyph-shape" fill="currentColor" stroke="none" d="m15.55 8.2-2.35 6.15a.7.7 0 0 1-.4.4L6.65 17.1l2.35-6.15a.7.7 0 0 1 .4-.4L15.55 8.2Z"/><circle cx="12" cy="12" r="1.15" fill="var(--alysum-ui-chrome, #0b1220)" stroke="none"/></svg>`,
     reader: `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="reader-glyph-shape" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 6.4c-1.55-1.05-3.55-1.65-5.7-1.65H4.4v12.9h1.95c2.05 0 3.95.55 5.65 1.55 1.7-1 3.6-1.55 5.65-1.55h1.95V4.75h-1.9c-2.15 0-4.15.6-5.7 1.65Z"/><path class="reader-glyph-shape" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M12 6.4v12.55"/></svg>`,
     updates: `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="reader-glyph-shape" fill="currentColor" stroke="none" d="M12 2.4 13.1 5.7 16.4 6.8 13.1 7.9 12 11.2 10.9 7.9 7.6 6.8 10.9 5.7Z"/><path class="reader-glyph-shape" fill="currentColor" stroke="none" d="m6.4 12 .7 2.15L9.25 15l-2.15.7L6.4 17.85l-.7-2.15L3.55 15l2.15-.85Z"/><path class="reader-glyph-shape" fill="currentColor" stroke="none" d="m16.7 13.2.55 1.7 1.7.55-1.7.55-.55 1.7-.55-1.7-1.7-.55 1.7-.55Z"/></svg>`,
+    artists: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="reader-glyph-shape" cx="12" cy="8.2" r="3" fill="currentColor" stroke="none"/><path class="reader-glyph-shape" fill="currentColor" stroke="none" d="M6.4 18.8c.6-3 2.8-4.6 5.6-4.6s5 1.6 5.6 4.6c.15.8-.4 1.4-1.2 1.4H7.6c-.8 0-1.35-.6-1.2-1.4Z"/></svg>`,
 };
 
 export function readerNavActiveFromLocation() {
@@ -23,6 +24,7 @@ export function readerNavActiveFromLocation() {
     ) {
         return "discover";
     }
+    if (path === "/artists" || path.startsWith("/artists/")) return "artists";
     if (path.startsWith("/updates") || path.startsWith("/reader/updates")) return "updates";
     // Account pages keep Reader toolbar without pretending a tab is current.
     if (
@@ -44,6 +46,7 @@ export function readerNavHtml(active) {
     const items = [
         { id: "home", href: READER_ROUTES.home, label: "Reader", icon: "reader" },
         { id: "discover", href: READER_ROUTES.discover, label: "Discover", icon: "discover" },
+        { id: "artists", href: "/artists", label: "Artists", icon: "artists" },
         { id: "updates", href: READER_ROUTES.updates, label: "What’s New", icon: "updates" },
     ];
     const link = (item) => {

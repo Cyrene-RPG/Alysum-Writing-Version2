@@ -35,7 +35,7 @@ function ensureReaderStyles() {
     const link = document.createElement("link");
     link.id = "reader-mode-chrome-styles";
     link.rel = "stylesheet";
-    link.href = "/applications/reader/reader-css/page.css?v=reader-nav-13";
+    link.href = "/applications/reader/reader-css/page.css?v=reader-nav-14";
     document.head.appendChild(link);
 }
 

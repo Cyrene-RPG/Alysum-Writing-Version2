@@ -65,7 +65,9 @@ async function refreshProfile() {
     if (generation !== profileGeneration) return;
     const preview = peekWorkspaceProfile(session);
     setWelcomeAvatar(preview.imageUrl, preview.name);
-    void mountAccountModeToggleForSession(supabase, session, { side: "artist" });
+    const path = location.pathname || "";
+    const artistSide = path === "/artist" || path.startsWith("/artist-") || path.startsWith("/artist/") || path === "/character";
+    void mountAccountModeToggleForSession(supabase, session, { side: artistSide ? "artist" : null });
     if (session.mode !== "cloud") return;
     void loadWorkspaceProfile(supabase, session).then((profile) => {
         if (generation !== profileGeneration) return;
@@ -74,6 +76,8 @@ async function refreshProfile() {
         if (!handle) return;
         const href = `/artist-shop?u=${encodeURIComponent(handle)}`;
         document.querySelectorAll("[data-artist-shop]").forEach((link) => {
+            const current = link.getAttribute("href") || "";
+            if (new URL(current, location.origin).searchParams.get("u")) return;
             link.href = href;
         });
     });
