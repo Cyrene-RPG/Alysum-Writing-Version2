@@ -198,6 +198,10 @@
         "destination": "/applications/artist/pages/shop.html"
       },
       {
+        "source": "/artists",
+        "destination": "/applications/artist/pages/directory.html"
+      },
+      {
         "source": "/character",
         "destination": "/applications/artist/pages/public-character.html"
       },
@@ -220,6 +224,10 @@
       {
         "source": "/js/artist/pfp.js",
         "destination": "/applications/artist/page-ui/pfp.js"
+      },
+      {
+        "source": "/js/artist/directory.js",
+        "destination": "/applications/artist/page-ui/directory.js"
       },
       {
         "source": "/css/artist/page.css",
