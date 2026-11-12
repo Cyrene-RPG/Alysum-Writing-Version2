@@ -250,8 +250,61 @@ button, input, select { font: inherit; color: inherit; }
     padding: 18px;
 }
 .draw-sheet::backdrop { background: rgba(0, 0, 0, 0.55); }
-.draw-presets, .draw-bgs, .draw-custom, .draw-sheet-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.draw-presets button, .draw-bgs button, .draw-custom label {
+.draw-sheet-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.draw-create-sheet {
+    width: calc(100vw - 16px);
+    height: calc(100dvh - 16px);
+    max-width: none;
+    padding: 0;
+    overflow: hidden;
+    background: #161618;
+}
+.draw-create-sheet::backdrop { background: rgba(0, 0, 0, 0.88); }
+.draw-create { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.draw-create-bar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.draw-create-bar h2 { font-size: 28px; }
+.draw-create-bar .draw-new { justify-self: end; }
+#draw-cancel {
+    justify-self: start;
+    border: 0;
+    background: none;
+    color: #0a84ff;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.draw-create-body {
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) minmax(300px, 440px);
+    min-height: 0;
+    flex: 1;
+}
+.draw-create-stage {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 8px;
+    padding: 28px 20px;
+    background:
+        radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.05), transparent 55%),
+        #111113;
+}
+.draw-sheetlet {
+    border-radius: 4px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+#draw-canvas-preview { margin: 8px 0 0; font-size: 20px; font-weight: 650; }
+.draw-create-settings { overflow: auto; padding: 18px 18px 28px; }
+.draw-field-label { margin: 16px 0 8px; color: #aeaeb2; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.draw-segment, .draw-dims, .draw-bgs { display: flex; flex-wrap: wrap; gap: 8px; }
+.draw-segment button, .draw-dims button, .draw-dims label {
     border: 0;
     border-radius: 12px;
     background: #2c2c2e;
@@ -259,9 +312,56 @@ button, input, select { font: inherit; color: inherit; }
     padding: 8px 10px;
     cursor: pointer;
 }
-.draw-presets button.is-on, .draw-bgs button.is-on { outline: 2px solid #0a84ff; }
-.draw-custom label { display: grid; gap: 4px; font-size: 12px; }
-.draw-custom input { width: 100px; min-height: 32px; border: 0; border-radius: 8px; background: #000; padding: 4px 8px; }
+.draw-segment button.is-on, .draw-presets button.is-on, .draw-bgs button.is-on { outline: 2px solid #0a84ff; background: #1c3d66; }
+.draw-dims { align-items: end; }
+.draw-dims label { display: grid; gap: 4px; font-size: 12px; color: #aeaeb2; cursor: text; flex: 1; }
+.draw-dims input, .draw-create-settings .draw-field input {
+    width: 100%;
+    min-height: 36px;
+    border: 0;
+    border-radius: 10px;
+    background: #000;
+    color: #f2f2f7;
+    padding: 6px 8px;
+    font-size: 16px;
+}
+#draw-flip { align-self: end; color: #0a84ff; font-weight: 700; }
+.draw-bgs button, .draw-bgs input[type="color"] {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+.draw-presets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.draw-presets button {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 4px;
+    min-height: 88px;
+    padding: 10px 6px;
+    border: 0;
+    border-radius: 14px;
+    background: #2c2c2e;
+    cursor: pointer;
+}
+.draw-presets i {
+    display: block;
+    border-radius: 2px;
+    background: #fff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.28);
+}
+.draw-presets strong { font-size: 13px; }
+.draw-presets span { color: #8e8e93; font-size: 11px; }
+@media (max-width: 800px) {
+    .draw-create-sheet { width: calc(100vw - 12px); height: calc(100dvh - 12px); }
+    .draw-create-body { grid-template-columns: 1fr; overflow: auto; }
+    .draw-create-stage { min-height: 240px; }
+    .draw-presets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .draw-help ul { padding-left: 18px; line-height: 1.5; color: #d1d1d6; }
 .draw-notice {
     position: fixed;

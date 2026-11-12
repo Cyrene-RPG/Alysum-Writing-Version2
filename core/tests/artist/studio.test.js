@@ -6,6 +6,8 @@ import {
     applyStreamline,
     boxBlurRgba,
     brushById,
+    canvasMemoryMb,
+    clampDpi,
     clampEdge,
     collectStamps,
     createStudioDocument,
@@ -14,7 +16,10 @@ import {
     flipRgba,
     hsvToRgb,
     invertRgba,
+    measureFromPixels,
     moveLayer,
+    pixelsFromMeasure,
+    screenCanvasSize,
     pointsForShape,
     rgbToHex,
     rgbToHsv,
@@ -119,6 +124,19 @@ test("quickshape recognizes a line, an ellipse, and a rectangle", () => {
     assert.ok(Math.abs(fittedEllipse.rx - 80) < 2);
     const rect = pointsForShape({ kind: "rect", x: 10, y: 10, w: 90, h: 50 }, 6);
     assert.equal(fitQuickShape(rect).kind, "rect");
+});
+
+test("canvas setup converts print size and stays inside the pixel limit", () => {
+    assert.equal(pixelsFromMeasure(8.5, "in", 300), 2550);
+    assert.equal(pixelsFromMeasure(21, "cm", 300), 2480);
+    assert.equal(clampDpi(12), 36);
+    assert.equal(clampDpi(900), 600);
+    const inches = measureFromPixels(2550, "in", 300);
+    assert.ok(Math.abs(inches - 8.5) < 0.02);
+    const screen = screenCanvasSize(800, 600, 2);
+    assert.equal(screen.width, 1600);
+    assert.equal(screen.height, 1040);
+    assert.ok(canvasMemoryMb(2048, 2048) > 15 && canvasMemoryMb(2048, 2048) < 17);
 });
 
 test("studio pen is the default inking brush and large canvases keep a shorter undo stack", () => {

@@ -28,8 +28,19 @@ export const CANVAS_PRESETS = [
     { id: "square", name: "Square", width: 2048, height: 2048 },
     { id: "portrait", name: "Portrait", width: 1800, height: 2400 },
     { id: "landscape", name: "Landscape", width: 2400, height: 1800 },
-    { id: "comic", name: "Comic page", width: 1488, height: 2100 },
+    { id: "story", name: "Story", width: 1080, height: 1920 },
+    { id: "comic", name: "Comic page", width: 2063, height: 3150 },
+    { id: "a4", name: "A4", width: 2480, height: 3508 },
     { id: "uhd", name: "4K", width: 3840, height: 2160 },
+];
+
+export const PAPER_COLORS = [
+    { id: "white", name: "White", value: "#ffffff" },
+    { id: "cream", name: "Cream", value: "#f6f1e7" },
+    { id: "paper", name: "Paper", value: "#f3ead7" },
+    { id: "kraft", name: "Kraft", value: "#c4a574" },
+    { id: "black", name: "Black", value: "#111111" },
+    { id: "clear", name: "Clear", value: "transparent" },
 ];
 
 export const BRUSHES = [
@@ -69,6 +80,41 @@ export function clampEdge(value, fallback = 1600) {
     const n = Math.round(Number(value));
     if (!Number.isFinite(n)) return fallback;
     return Math.min(MAX_EDGE, Math.max(MIN_EDGE, n));
+}
+
+export function clampDpi(value) {
+    const n = Math.round(Number(value));
+    if (!Number.isFinite(n)) return 300;
+    return Math.min(600, Math.max(36, n));
+}
+
+export function screenCanvasSize(viewportWidth, viewportHeight, pixelRatio = 1) {
+    const ratio = Math.min(2, Math.max(1, Number(pixelRatio) || 1));
+    return {
+        width: clampEdge(Math.round(Number(viewportWidth) * ratio)),
+        height: clampEdge(Math.round((Number(viewportHeight) - 80) * ratio)),
+    };
+}
+
+export function pixelsFromMeasure(value, unit, dpi) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return clampEdge(NaN, MIN_EDGE);
+    const dots = clampDpi(dpi);
+    if (unit === "in") return clampEdge(n * dots);
+    if (unit === "cm") return clampEdge((n / 2.54) * dots);
+    return clampEdge(n);
+}
+
+export function measureFromPixels(pixels, unit, dpi) {
+    const dots = clampDpi(dpi);
+    const edge = clampEdge(pixels);
+    if (unit === "in") return edge / dots;
+    if (unit === "cm") return (edge / dots) * 2.54;
+    return edge;
+}
+
+export function canvasMemoryMb(width, height) {
+    return (clampEdge(width) * clampEdge(height) * 4) / (1024 * 1024);
 }
 
 export function clamp01(value) {

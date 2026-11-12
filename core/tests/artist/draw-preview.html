@@ -50,12 +50,23 @@ await mountDrawApp(document.getElementById("draw-app"), {
 });
 
 const params = new URLSearchParams(location.search);
+if (params.get("setup") === "1") {
+    document.querySelector("#draw-notice-dialog").close();
+    document.querySelector("#draw-new").click();
+    document.querySelector("#draw-presets button[data-preset='a4']").click();
+}
 if (params.get("demo") === "1") {
     document.querySelector("#draw-notice-dialog").close();
     document.querySelector("#draw-notice").click();
     const noticeText = document.querySelector("#draw-notice-dialog p").textContent;
     document.querySelector("#draw-notice-dialog").close();
     document.querySelector("#draw-new").click();
+    const setupPreview = document.querySelector("#draw-canvas-preview").textContent;
+    const setupPresets = document.querySelectorAll("#draw-presets button").length;
+    const setupSheet = document.querySelector("#draw-sheetlet").getBoundingClientRect();
+    document.querySelector("#draw-presets button[data-preset='portrait']").click();
+    const portraitPreview = document.querySelector("#draw-canvas-preview").textContent;
+    document.querySelector("#draw-presets button[data-preset='sketch']").click();
     document.querySelector("#draw-create").requestSubmit();
     await new Promise((resolve) => setTimeout(resolve, 80));
     const size = document.querySelector("#draw-size");
@@ -161,6 +172,11 @@ if (params.get("demo") === "1") {
         clipped,
         erased,
         noticeText,
+        setupPreview,
+        setupPresets,
+        portraitPreview,
+        sheetWide: Math.round(setupSheet.width),
+        sheetTall: Math.round(setupSheet.height),
         errors,
         width: canvas.width,
         height: canvas.height,
