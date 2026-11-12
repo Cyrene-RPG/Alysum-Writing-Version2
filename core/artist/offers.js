@@ -13,9 +13,7 @@ export function gallerySchemaMissing(error) {
 
 export function rethrowGallery(error) {
     if (gallerySchemaMissing(error)) {
-        throw new Error(
-            "The public gallery is not on this database yet. Run supabase/live-site/supabase-artist.sql in the Supabase SQL editor.",
-        );
+        throw new Error("Could not save that yet.");
     }
     throw error;
 }

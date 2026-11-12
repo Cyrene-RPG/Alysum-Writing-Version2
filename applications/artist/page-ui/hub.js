@@ -94,9 +94,6 @@ async function showHub(userId, profile) {
     $("commission-prices").value = shop.commissionPrices || "";
     $("commission-url").value = shop.commissionUrl || "";
     $("commission-slots").value = shop.commissionSlots == null ? "" : String(shop.commissionSlots);
-    $("artist-shop-note").textContent = shop.ready
-        ? ""
-        : "The public gallery is not on this database yet. Run supabase/live-site/supabase-artist.sql in the Supabase SQL editor.";
     const [characters, artworks] = await Promise.all([
         listMyCharacters(supabase, userId),
         listArtworks(supabase, userId).catch(() => []),
@@ -176,7 +173,6 @@ async function boot() {
             commissionUrl: $("commission-url").value,
             commissionSlots: $("commission-slots").value,
         }).then(() => {
-            $("artist-shop-note").textContent = "";
             $("artist-status").textContent = "Commissions saved.";
         }).catch((error) => {
             $("artist-status").textContent = error.message || "Could not save commissions.";
