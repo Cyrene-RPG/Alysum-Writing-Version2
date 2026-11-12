@@ -1,11 +1,14 @@
 import { supabase } from "/core/authentication/client.js";
 import { listPublicCharacters } from "@alysum/artist/character-store.js";
-import { findUserByHandle, findUserById, publicCharacterUrl } from "@alysum/artist/public-profile.js";
+import { findUserByHandle, findUserById, publicCharacterUrl, publicGalleryUrl } from "@alysum/artist/public-profile.js";
+import { loadPublicGallery } from "@alysum/artist/shop.js";
+import { portraitIsProtected } from "@alysum/artist/offers.js";
+import { paintOfferGrid } from "./offer-cards.js";
 
 const params = new URLSearchParams(location.search);
 const status = document.getElementById("status");
 
-function paint(user, characters) {
+function paint(user, characters, gallery) {
     document.title = `${user.displayName} — Alysum`;
     document.getElementById("name").textContent = user.displayName;
     document.getElementById("handle").textContent = user.username ? `@${user.username}` : "";
@@ -20,13 +23,26 @@ function paint(user, characters) {
     } else {
         avatar.textContent = user.displayName.trim().charAt(0).toUpperCase() || "A";
     }
+    const shopLink = document.getElementById("shop-link");
+    shopLink.href = publicGalleryUrl(user.username);
+    const preview = [...(gallery?.adopt || []), ...(gallery?.buy || [])].slice(0, 4);
+    const blurb = document.getElementById("shop-blurb");
+    if (gallery?.commission && !preview.length) {
+        blurb.textContent = "Commissions are open. Open the gallery to request one.";
+    } else if (!preview.length) {
+        blurb.textContent = "Nothing listed for adoption, sale, or commission.";
+    } else {
+        blurb.textContent = "Adopt, buy, or commission. Payment stays on the artist’s own page.";
+    }
+    paintOfferGrid(document.getElementById("shop"), preview);
     const shelf = document.getElementById("shelf");
     shelf.replaceChildren();
     for (const character of characters) {
         const link = document.createElement("a");
-        link.className = "artist-card" + (character.portraitUrl ? " has-art" : "");
+        const showArt = Boolean(character.portraitUrl) && portraitIsProtected(character);
+        link.className = "artist-card" + (showArt ? " has-art" : "");
         link.href = publicCharacterUrl(user.username, character.slug);
-        if (character.portraitUrl) {
+        if (showArt) {
             const img = document.createElement("img");
             img.src = character.portraitUrl;
             img.alt = "";
@@ -59,8 +75,11 @@ async function boot() {
         status.textContent = "Artist not found.";
         return;
     }
-    const characters = await listPublicCharacters(supabase, user.id);
-    paint(user, characters);
+    const [characters, gallery] = await Promise.all([
+        listPublicCharacters(supabase, user.id),
+        loadPublicGallery(supabase, user).catch(() => null),
+    ]);
+    paint(user, characters, gallery);
 }
 
 void boot().catch((error) => { status.textContent = error.message || "Could not load this page."; });

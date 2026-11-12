@@ -89,6 +89,7 @@ PAGES = {
     "/artist-gallery": "applications/artist/pages/gallery.html",
     "/artist-character": "applications/artist/pages/character.html",
     "/artist-profile": "applications/artist/pages/profile.html",
+    "/artist-shop": "applications/artist/pages/shop.html",
     "/character": "applications/artist/pages/public-character.html",
 }
 

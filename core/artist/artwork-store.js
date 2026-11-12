@@ -1,3 +1,5 @@
+import { offerPatch, rethrowGallery } from "./offers.js";
+
 function mapArtwork(row) {
     if (!row) return null;
     return {
@@ -9,6 +11,10 @@ function mapArtwork(row) {
         caption: row.caption || "",
         visibility: row.visibility,
         protectionDeclared: row.protection_declared || null,
+        offerKind: row.offer_kind || "none",
+        offerStatus: row.offer_status || "available",
+        priceLabel: row.price_label || "",
+        checkoutUrl: row.checkout_url || "",
         createdAt: row.created_at,
     };
 }
@@ -50,9 +56,32 @@ export async function addArtwork(supabase, ownerId, input) {
         visibility,
         protection_declared: protection,
         updated_at: new Date().toISOString(),
+        ...offerPatch(input, { allowAdopt: false }),
     };
     const { data, error } = await supabase.from("artist_artworks").insert(row).select("*").single();
-    if (error) throw error;
+    if (error) rethrowGallery(error);
+    return mapArtwork(data);
+}
+
+export async function updateArtwork(supabase, ownerId, artworkId, input) {
+    const row = {
+        updated_at: new Date().toISOString(),
+        ...offerPatch(input, { allowAdopt: false }),
+    };
+    if (input.caption != null) row.caption = String(input.caption).slice(0, 2000);
+    if (input.visibility != null) row.visibility = input.visibility;
+    if (input.protectionDeclared != null) row.protection_declared = input.protectionDeclared;
+    if (row.visibility === "public" && input.protectionDeclared === null) {
+        throw new Error("Public images must be a Glaze and/or Nightshade export. Check the protection box first.");
+    }
+    const { data, error } = await supabase
+        .from("artist_artworks")
+        .update(row)
+        .eq("owner_id", ownerId)
+        .eq("id", artworkId)
+        .select("*")
+        .single();
+    if (error) rethrowGallery(error);
     return mapArtwork(data);
 }
 

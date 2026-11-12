@@ -70,6 +70,23 @@
                     </select>
                 </label>
                 <label class="artist-field">Terms<textarea name="termsText" maxlength="8000" placeholder="Edits allowed, credit, resale cap. Alysum does not take payment."></textarea></label>
+                <label class="artist-field">List on your public gallery
+                    <select name="offerKind">
+                        <option value="none">Not listed</option>
+                        <option value="adopt">Up for adoption</option>
+                        <option value="buy">For sale</option>
+                    </select>
+                </label>
+                <label class="artist-field">Listing status
+                    <select name="offerStatus">
+                        <option value="available">Available</option>
+                        <option value="pending">On hold</option>
+                        <option value="closed">Taken — hide from the gallery</option>
+                    </select>
+                </label>
+                <label class="artist-field">Price<input name="priceLabel" maxlength="80" placeholder="40 USD, or offers"></label>
+                <label class="artist-field">Payment link<input name="checkoutUrl" maxlength="500" placeholder="https://ko-fi.com/…" inputmode="url"></label>
+                <p class="artist-status">People pay on that link. Alysum does not take money. The portrait appears on the gallery only after you confirm a Glaze or Nightshade export, and only if this character is public.</p>
                 <label class="artist-field">Overview<textarea name="overview"></textarea></label>
                 <label class="artist-field">Design notes<textarea name="design"></textarea></label>
                 <label class="artist-field">Personality<textarea name="personality"></textarea></label>
@@ -77,6 +94,7 @@
                 <div class="artist-actions">
                     <button type="button" id="remove">Delete</button>
                     <a class="artist-link" id="public-link" href="/character" hidden>Public page</a>
+                    <a class="artist-link" id="gallery-link" href="/artist-shop" hidden>Public gallery</a>
                     <button type="submit" class="artist-primary">Save</button>
                 </div>
             </div>
@@ -93,8 +111,16 @@
             <select id="art-protection"><option value="both">Glaze and Nightshade</option><option value="glaze">Glaze</option><option value="nightshade">Nightshade</option></select>
         </label>
         <label class="artist-check"><input type="checkbox" id="art-ack"> This upload is a Glaze and/or Nightshade protected export.</label>
+        <label class="artist-field">List this image
+            <select id="art-offer"><option value="none">Not for sale</option><option value="buy">For sale on your gallery</option></select>
+        </label>
+        <label class="artist-field">Sale status
+            <select id="art-status"><option value="available">Available</option><option value="pending">On hold</option><option value="closed">Taken — hide from the gallery</option></select>
+        </label>
+        <label class="artist-field">Price<input id="art-price" maxlength="80" placeholder="25 USD"></label>
+        <label class="artist-field">Payment link<input id="art-url" maxlength="500" placeholder="https://" inputmode="url"></label>
         <div class="artist-actions"><button type="button" id="art-add" class="artist-primary">Upload image</button></div>
-        <div class="artist-grid" id="art-grid"></div>
+        <div class="artist-manage" id="art-grid"></div>
     </form>
 </main>
 <script type="module" src="/js/artist/shell.js"></script>

@@ -82,6 +82,20 @@
             </label>
             <div class="artist-actions"><button type="button" class="artist-primary" id="artist-save-bio">Save bio</button></div>
         </section>
+        <section>
+            <p class="artist-kicker">Public gallery</p>
+            <div class="artist-head"><h1>Commissions</h1><a class="artist-link" id="artist-shop-link" href="/artist-shop">View gallery</a></div>
+            <p class="artist-status">People pay on your Ko-fi, VGen, or other page. Alysum does not take payment. Characters and images join this gallery only when you list them.</p>
+            <p class="artist-status" id="artist-shop-note"></p>
+            <label class="artist-check"><input type="checkbox" id="commission-open"> Open for commissions</label>
+            <label class="artist-field">What you take
+                <textarea id="commission-summary" maxlength="2000" placeholder="Busts, full bodies, species you will and will not draw."></textarea>
+            </label>
+            <label class="artist-field">Prices<input id="commission-prices" maxlength="500" placeholder="Bust 25 USD, full body 70 USD"></label>
+            <label class="artist-field">Open slots<input id="commission-slots" inputmode="numeric" maxlength="2" placeholder="Blank if you do not count slots"></label>
+            <label class="artist-field">Request link<input id="commission-url" maxlength="500" placeholder="https://ko-fi.com/…" inputmode="url"></label>
+            <div class="artist-actions"><button type="button" class="artist-primary" id="artist-save-shop">Save commissions</button></div>
+        </section>
     </section>
 </main>
 <dialog class="artist-dialog" id="artist-create">

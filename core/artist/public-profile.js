@@ -53,6 +53,12 @@ export function publicArtistUrl(username) {
     return `/artist-profile?u=${encodeURIComponent(handle)}`;
 }
 
+export function publicGalleryUrl(username) {
+    const handle = String(username || "").trim();
+    if (!handle) return "/artist-shop";
+    return `/artist-shop?u=${encodeURIComponent(handle)}`;
+}
+
 export async function getPublicCharacter(supabase, ownerId, slug) {
     const { data, error } = await supabase
         .from("artist_characters")

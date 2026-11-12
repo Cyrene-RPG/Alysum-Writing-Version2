@@ -289,6 +289,10 @@
       "destination": "/applications/artist/pages/profile.html"
     },
     {
+      "source": "/artist-shop",
+      "destination": "/applications/artist/pages/shop.html"
+    },
+    {
       "source": "/character",
       "destination": "/applications/artist/pages/public-character.html"
     },

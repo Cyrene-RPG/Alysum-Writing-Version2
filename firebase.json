@@ -194,6 +194,10 @@
         "destination": "/applications/artist/pages/profile.html"
       },
       {
+        "source": "/artist-shop",
+        "destination": "/applications/artist/pages/shop.html"
+      },
+      {
         "source": "/character",
         "destination": "/applications/artist/pages/public-character.html"
       },
@@ -204,6 +208,14 @@
       {
         "source": "/js/artist/shell.js",
         "destination": "/applications/artist/page-ui/shell.js"
+      },
+      {
+        "source": "/js/artist/shop.js",
+        "destination": "/applications/artist/page-ui/shop.js"
+      },
+      {
+        "source": "/js/artist/offer-cards.js",
+        "destination": "/applications/artist/page-ui/offer-cards.js"
       },
       {
         "source": "/css/artist/page.css",

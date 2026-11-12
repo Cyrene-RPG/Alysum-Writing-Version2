@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <script type="importmap">{ "imports": { "@alysum/artist/": "/core/artist/", "@alysum/authentication/": "/core/authentication/" } }</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/site-appearance/css-styles/theme.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes-dim/index.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/typography.css">
+    <link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css">
+    <script src="/site-appearance/js-runtime/boot.js"></script>
+    <link rel="stylesheet" href="/css/artist/page.css">
+    <title>Gallery — Alysum</title>
+</head>
+<body>
+<main class="artist-wrap">
+    <p class="artist-status" id="status">Loading…</p>
+    <article id="sheet" hidden>
+        <p class="artist-kicker"><a id="back" href="/artist-profile">Artist</a></p>
+        <div class="artist-head"><h1>Gallery</h1></div>
+        <p class="artist-status artist-pay-note">Adopt, buy, or commission. Payment is completed on the artist’s own page. Alysum does not take money.</p>
+        <p class="artist-status" id="empty" hidden>Nothing is listed for adoption, sale, or commission.</p>
+        <section id="commission" hidden>
+            <p class="artist-kicker">Commission</p>
+            <div class="artist-head"><h2>Open for commissions</h2></div>
+            <p class="artist-prose" id="commission-summary"></p>
+            <p class="artist-status" id="commission-prices"></p>
+            <p class="artist-status" id="commission-slots"></p>
+            <p class="artist-status" id="commission-wait" hidden>This artist has not added a request link yet.</p>
+            <a class="artist-primary" id="commission-link" hidden>Request a commission</a>
+        </section>
+        <section id="adopt-section" hidden>
+            <p class="artist-kicker">Adopt</p>
+            <div class="artist-head"><h2>Up for adoption</h2></div>
+            <div class="artist-shelf" id="adopt"></div>
+        </section>
+        <section id="buy-section" hidden>
+            <p class="artist-kicker">Buy</p>
+            <div class="artist-head"><h2>For sale</h2></div>
+            <div class="artist-shelf" id="buy"></div>
+        </section>
+    </article>
+</main>
+<script type="module" src="/js/artist/shop.js"></script>
+</body>
+</html>

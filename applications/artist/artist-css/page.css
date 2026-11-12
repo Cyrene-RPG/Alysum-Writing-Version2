@@ -39,12 +39,14 @@ body {
   gap: 12px;
   margin: 8px 0 16px;
 }
-.artist-head h1 {
+.artist-head h1,
+.artist-head h2 {
   margin: 0;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: clamp(28px, 4vw, 40px);
   font-weight: 600;
 }
+.artist-head h1 { font-size: clamp(28px, 4vw, 40px); }
+.artist-head h2 { font-size: clamp(24px, 3vw, 32px); }
 .artist-count {
   border: 1px solid var(--border, rgba(255, 255, 255, 0.14));
   border-radius: 999px;
@@ -276,6 +278,68 @@ body {
 .artist-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .artist-prose { white-space: pre-wrap; line-height: 1.6; color: var(--muted); }
 .artist-check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.45; margin: 8px 0 14px; }
+.artist-pay-note { margin-top: 0; }
+a.artist-primary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  text-decoration: none;
+}
+.artist-offer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  height: auto;
+  min-height: 0;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: color-mix(in srgb, var(--alysum-ui-panel, #111827) 88%, black);
+  color: var(--text);
+}
+.artist-offer img {
+  position: static;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.artist-offer h2 {
+  margin: 0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 24px;
+  font-weight: 600;
+  text-shadow: none;
+}
+.artist-offer h2 a { color: inherit; text-decoration: none; }
+.artist-offer p { position: static; margin: 0; color: var(--muted); font-size: 13px; }
+.artist-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.artist-manage {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.artist-listing-edit {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+}
+.artist-listing-edit .artist-shot { margin: 0 0 10px; }
+.artist-kicker a { color: inherit; }
 @media (max-width: 720px) {
   .artist-focus, .artist-editor, .artist-stats, .artist-public { grid-template-columns: 1fr; }
   .artist-stat { border-left: 0; padding-left: 0; }

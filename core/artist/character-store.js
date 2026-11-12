@@ -1,4 +1,5 @@
 import { normalizeCharacterFromRow } from "./normalize.js";
+import { offerPatch, rethrowGallery } from "./offers.js";
 import { newCharacterId, slugifyCharacterName } from "./slug.js";
 
 function missingTableError(error) {
@@ -128,6 +129,7 @@ export async function updateCharacter(supabase, ownerId, characterId, patch) {
     if (patch.summary != null) row.summary = String(patch.summary).slice(0, 500);
     if (patch.portraitUrl != null) row.portrait_url = String(patch.portraitUrl);
     if (patch.fields != null) row.fields = patch.fields;
+    Object.assign(row, offerPatch(patch));
     const { data, error } = await supabase
         .from("artist_characters")
         .update(row)
@@ -135,7 +137,7 @@ export async function updateCharacter(supabase, ownerId, characterId, patch) {
         .eq("id", characterId)
         .select("*")
         .single();
-    if (error) throw error;
+    if (error) rethrowGallery(error);
     return normalizeCharacterFromRow(data);
 }
 

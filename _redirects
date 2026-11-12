@@ -65,6 +65,7 @@
 /artist-gallery  /applications/artist/pages/gallery  200
 /artist-character  /applications/artist/pages/character  200
 /artist-profile  /applications/artist/pages/profile  200
+/artist-shop  /applications/artist/pages/shop  200
 /character  /applications/artist/pages/public-character  200
 /audiobook-studio  /applications/studio/pages/audiobook-studio  200
 # Audiobook preview reuses Studio with document-scoped sample data; no live auth or uploads.

@@ -12,7 +12,8 @@ import {
     saveArtistFocus,
 } from "@alysum/artist/character-store.js";
 import { listArtworks } from "@alysum/artist/artwork-store.js";
-import { publicArtistUrl } from "@alysum/artist/public-profile.js";
+import { publicArtistUrl, publicGalleryUrl } from "@alysum/artist/public-profile.js";
+import { fetchCommissionSettings, saveCommissionSettings } from "@alysum/artist/shop.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -33,7 +34,12 @@ function card(character) {
     const title = document.createElement("h2");
     title.textContent = character.displayName;
     const meta = document.createElement("p");
-    meta.textContent = `${kindLabel(character.kind)} · ${character.visibility}`;
+    const offer = character.offerKind === "adopt"
+        ? "Up for adoption"
+        : character.offerKind === "buy"
+            ? "For sale"
+            : "";
+    meta.textContent = [kindLabel(character.kind), character.visibility, offer].filter(Boolean).join(" · ");
     link.append(title, meta);
     return link;
 }
@@ -78,7 +84,19 @@ async function showHub(userId, profile) {
     const focus = ARTIST_FOCUS_OPTIONS.find((item) => item.id === profile.artistFocus);
     $("artist-focus-label").textContent = focus ? focus.title : "Roster";
     $("artist-bio").value = profile.artistBio || "";
-    if (profile.username) $("artist-public-link").href = publicArtistUrl(profile.username);
+    if (profile.username) {
+        $("artist-public-link").href = publicArtistUrl(profile.username);
+        $("artist-shop-link").href = publicGalleryUrl(profile.username);
+    }
+    const shop = await fetchCommissionSettings(supabase, userId);
+    $("commission-open").checked = shop.commissionOpen;
+    $("commission-summary").value = shop.commissionSummary || "";
+    $("commission-prices").value = shop.commissionPrices || "";
+    $("commission-url").value = shop.commissionUrl || "";
+    $("commission-slots").value = shop.commissionSlots == null ? "" : String(shop.commissionSlots);
+    $("artist-shop-note").textContent = shop.ready
+        ? ""
+        : "The public gallery is not on this database yet. Run supabase/live-site/supabase-artist.sql in the Supabase SQL editor.";
     const [characters, artworks] = await Promise.all([
         listMyCharacters(supabase, userId),
         listArtworks(supabase, userId).catch(() => []),
@@ -149,6 +167,21 @@ async function boot() {
         $("artist-gate").textContent = error.message || "Could not load characters.";
     }
     $("artist-change-focus").onclick = () => mountFocus(userId);
+    $("artist-save-shop").onclick = () => {
+        $("artist-status").textContent = "Saving commissions…";
+        void saveCommissionSettings(supabase, userId, {
+            commissionOpen: $("commission-open").checked,
+            commissionSummary: $("commission-summary").value,
+            commissionPrices: $("commission-prices").value,
+            commissionUrl: $("commission-url").value,
+            commissionSlots: $("commission-slots").value,
+        }).then(() => {
+            $("artist-shop-note").textContent = "";
+            $("artist-status").textContent = "Commissions saved.";
+        }).catch((error) => {
+            $("artist-status").textContent = error.message || "Could not save commissions.";
+        });
+    };
     $("artist-save-bio").onclick = () => {
         $("artist-status").textContent = "Saving bio…";
         void saveArtistBio(supabase, userId, $("artist-bio").value)

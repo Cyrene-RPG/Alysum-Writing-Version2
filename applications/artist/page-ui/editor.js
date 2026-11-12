@@ -2,9 +2,10 @@ import { supabase } from "/core/authentication/client.js";
 import { resolveStudioSession } from "/core/desktop/studio-session.js";
 import { goToLogin } from "/core/desktop/app.js";
 import { deleteCharacter, fetchArtistHubProfile, getCharacter, updateCharacter } from "@alysum/artist/character-store.js";
-import { addArtwork, deleteArtwork, listArtworks } from "@alysum/artist/artwork-store.js";
+import { addArtwork, deleteArtwork, listArtworks, updateArtwork } from "@alysum/artist/artwork-store.js";
 import { uploadArtistImage } from "@alysum/artist/media.js";
-import { publicCharacterUrl } from "@alysum/artist/public-profile.js";
+import { requireCheckoutUrl } from "@alysum/artist/offers.js";
+import { publicCharacterUrl, publicGalleryUrl } from "@alysum/artist/public-profile.js";
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -38,6 +39,10 @@ function fill(character) {
     form.visibility.value = character.visibility;
     form.tradePolicy.value = character.tradePolicy;
     form.termsText.value = character.termsText || "";
+    form.offerKind.value = character.offerKind || "none";
+    form.offerStatus.value = character.offerStatus || "available";
+    form.priceLabel.value = character.priceLabel || "";
+    form.checkoutUrl.value = character.checkoutUrl || "";
     form.overview.value = fieldText(character, "overview");
     form.design.value = fieldText(character, "design");
     form.personality.value = fieldText(character, "personality");
@@ -50,12 +55,46 @@ function fill(character) {
     } else {
         link.hidden = true;
     }
+    const gallery = $("gallery-link");
+    if (username) {
+        gallery.hidden = false;
+        gallery.href = publicGalleryUrl(username);
+    }
+}
+
+function fieldSelect(label, value, options) {
+    const wrap = document.createElement("label");
+    wrap.className = "artist-field";
+    wrap.append(label);
+    const select = document.createElement("select");
+    for (const option of options) {
+        const node = document.createElement("option");
+        node.value = option.id;
+        node.textContent = option.label;
+        node.selected = option.id === value;
+        select.append(node);
+    }
+    wrap.append(select);
+    return { wrap, select };
+}
+
+function fieldInput(label, value, max) {
+    const wrap = document.createElement("label");
+    wrap.className = "artist-field";
+    wrap.append(label);
+    const input = document.createElement("input");
+    input.value = value || "";
+    input.maxLength = max;
+    wrap.append(input);
+    return { wrap, input };
 }
 
 function paintArt(rows) {
     const grid = $("art-grid");
     grid.replaceChildren();
     for (const art of rows) {
+        const card = document.createElement("article");
+        card.className = "artist-listing-edit";
         const figure = document.createElement("figure");
         figure.className = "artist-shot";
         if (art.publicUrl) {
@@ -64,14 +103,48 @@ function paintArt(rows) {
             img.alt = art.caption || "";
             figure.append(img);
         }
-        const button = document.createElement("button");
-        button.type = "button";
-        button.textContent = "Remove";
-        button.addEventListener("click", () => {
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.textContent = "Remove";
+        remove.addEventListener("click", () => {
             void deleteArtwork(supabase, userId, art.id).then(() => refreshArt());
         });
-        figure.append(button);
-        grid.append(figure);
+        figure.append(remove);
+        const caption = document.createElement("p");
+        caption.className = "artist-status";
+        caption.textContent = art.caption || (art.visibility === "public" ? "Public image" : "Private image");
+        const offer = fieldSelect("List this image", art.offerKind || "none", [
+            { id: "none", label: "Not for sale" },
+            { id: "buy", label: "For sale on your gallery" },
+        ]);
+        const listingStatus = fieldSelect("Sale status", art.offerStatus || "available", [
+            { id: "available", label: "Available" },
+            { id: "pending", label: "On hold" },
+            { id: "closed", label: "Taken — hide from the gallery" },
+        ]);
+        const price = fieldInput("Price", art.priceLabel, 80);
+        const link = fieldInput("Payment link", art.checkoutUrl, 500);
+        const save = document.createElement("button");
+        save.type = "button";
+        save.className = "artist-primary";
+        save.textContent = "Save listing";
+        save.addEventListener("click", () => {
+            $("status").textContent = "Saving listing…";
+            void updateArtwork(supabase, userId, art.id, {
+                offerKind: offer.select.value,
+                offerStatus: listingStatus.select.value,
+                priceLabel: price.input.value,
+                checkoutUrl: link.input.value,
+            }).then(() => {
+                $("status").textContent = art.visibility === "public" && art.protectionDeclared
+                    ? "Listing saved."
+                    : "Listing saved. It stays off the public gallery until this image is public and marked as a Glaze or Nightshade export.";
+            }).catch((error) => {
+                $("status").textContent = error.message || "Could not save that listing.";
+            });
+        });
+        card.append(figure, caption, offer.wrap, listingStatus.wrap, price.wrap, link.wrap, save);
+        grid.append(card);
     }
 }
 
@@ -116,6 +189,10 @@ async function boot() {
             visibility: form.visibility.value,
             tradePolicy: form.tradePolicy.value,
             termsText: form.termsText.value,
+            offerKind: form.offerKind.value,
+            offerStatus: form.offerStatus.value,
+            priceLabel: form.priceLabel.value,
+            checkoutUrl: form.checkoutUrl.value,
             fields: {
                 ...(record?.fields || {}),
                 overview: form.overview.value,
@@ -166,6 +243,12 @@ async function boot() {
             $("status").textContent = "Public images need the Glaze / Nightshade confirmation.";
             return;
         }
+        try {
+            requireCheckoutUrl($("art-url").value);
+        } catch (error) {
+            $("status").textContent = error.message;
+            return;
+        }
         $("status").textContent = "Uploading…";
         void uploadArtistImage(supabase, userId, file)
             .then((uploaded) => addArtwork(supabase, userId, {
@@ -175,11 +258,18 @@ async function boot() {
                 caption: $("art-caption").value,
                 visibility,
                 protectionDeclared: visibility === "public" || acknowledged ? $("art-protection").value : null,
+                offerKind: $("art-offer").value,
+                offerStatus: $("art-status").value,
+                priceLabel: $("art-price").value,
+                checkoutUrl: $("art-url").value,
             }))
             .then(() => {
                 $("art-file").value = "";
                 $("art-caption").value = "";
                 $("art-ack").checked = false;
+                $("art-offer").value = "none";
+                $("art-price").value = "";
+                $("art-url").value = "";
                 $("status").textContent = "Image added.";
                 return refreshArt();
             })

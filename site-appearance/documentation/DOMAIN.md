@@ -56,9 +56,13 @@ Private or public roster entry (not Story Bible prose).
 - `slug`, `display_name`, `kind` — `oc` | `adoptable` | `cast` | `sona`
 - `creator_id`, `owner_id`, `trade_policy`, `terms_text`
 - `visibility` — `private` | `unlisted` | `public`
+- `offer_kind` — `none` | `adopt` | `buy` (opt-in on the public gallery)
+- `offer_status` — `available` | `pending` | `closed`
+- `price_label`, `checkout_url` — display price and an off-platform payment link
 - `artist_focus` on user — `oc_adoptables` | `writer_artist` | `both`
+- user `commission_open`, `commission_summary`, `commission_prices`, `commission_url`, `commission_slots`
 
-Public `artist_artworks` require `protection_declared` (`glaze` | `nightshade` | `both`).
+Public `artist_artworks` require `protection_declared` (`glaze` | `nightshade` | `both`). A public gallery image is shown only when that declaration is set. Alysum does not charge for adopts, sales, or commissions.
 
 ## Not this domain
 

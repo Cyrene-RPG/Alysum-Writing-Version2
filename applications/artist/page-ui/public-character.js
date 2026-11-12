@@ -1,7 +1,8 @@
 import { supabase } from "/core/authentication/client.js";
 import { listPublicArtworks } from "@alysum/artist/artwork-store.js";
-import { findUserByHandle, getPublicCharacter, publicArtistUrl } from "@alysum/artist/public-profile.js";
+import { findUserByHandle, getPublicCharacter, publicArtistUrl, publicGalleryUrl } from "@alysum/artist/public-profile.js";
 import { TRADE_POLICIES } from "@alysum/artist/constants.js";
+import { characterListing, offerActionLabel } from "@alysum/artist/offers.js";
 
 const params = new URLSearchParams(location.search);
 const status = document.getElementById("status");
@@ -30,6 +31,10 @@ async function boot() {
     link.href = publicArtistUrl(user.username);
     link.textContent = user.displayName;
     owner.append("By ", link);
+    const gallery = document.createElement("a");
+    gallery.href = publicGalleryUrl(user.username);
+    gallery.textContent = "Gallery";
+    owner.append(" · ", gallery);
     document.getElementById("name").textContent = character.displayName;
     document.getElementById("summary").textContent = character.summary || "";
     const fields = character.fields || {};
@@ -41,6 +46,32 @@ async function boot() {
         (character.termsText ? `Terms\n${character.termsText}` : "");
     const policy = TRADE_POLICIES.find((item) => item.id === character.tradePolicy);
     document.getElementById("trade").textContent = policy ? policy.label : "";
+    const offer = document.getElementById("offer");
+    offer.replaceChildren();
+    const listing = characterListing(character);
+    if (listing) {
+        const line = document.createElement("p");
+        line.className = "artist-status";
+        const bits = [offerActionLabel(listing.type)];
+        if (listing.priceLabel) bits.push(listing.priceLabel);
+        bits.push(listing.status === "pending" ? "On hold" : "Available");
+        line.textContent = bits.join(" · ");
+        offer.append(line);
+        if (listing.status === "available" && listing.checkoutUrl) {
+            const action = document.createElement("a");
+            action.className = "artist-primary";
+            action.href = listing.checkoutUrl;
+            action.target = "_blank";
+            action.rel = "noopener noreferrer";
+            action.referrerPolicy = "no-referrer";
+            action.textContent = offerActionLabel(listing.type);
+            offer.append(action);
+            const note = document.createElement("p");
+            note.className = "artist-status";
+            note.textContent = "Payment is completed on the artist’s page. Alysum does not take money.";
+            offer.append(note);
+        }
+    }
     const portrait = document.getElementById("portrait");
     if (character.portraitUrl && character.fields?.portraitProtection) {
         const img = document.createElement("img");
