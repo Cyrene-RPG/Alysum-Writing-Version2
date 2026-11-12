@@ -9,6 +9,6 @@ test('invalid webhook token cannot register purchases',async()=>{
 });
 test('valid order forwards amount and items to server-side RPC',async()=>{
  let body;
- const response=await handleKofiPayment(post({verification_token:'12345678-1234-1234-1234-123456789abc',type:'Shop Order',kofi_transaction_id:'tx',email:'buyer@example.com',currency:'USD',amount:'5.00',shop_items:[{direct_link_code:'chapter-1',quantity:1}]}),env,{fetcher:async(_url,options)=>{if(String(_url).includes('kofi_author_accounts'))return Response.json([{owner_id:'11111111-1111-4111-8111-111111111111'}]);if(String(_url).includes('register_kofi_order')){body=JSON.parse(options.body);return new Response('true',{status:200});}return new Response(null,{status:201});}});
+ const response=await handleKofiPayment(post({verification_token:'12345678-1234-1234-1234-123456789abc',type:'Shop Order',kofi_transaction_id:'tx',email:'buyer@example.com',currency:'USD',amount:'5.00',shop_items:[{direct_link_code:'chapter-1',quantity:1}]}),env,{fetcher:async(_url,options)=>{if(String(_url).includes('kofi_author_accounts'))return Response.json([{owner_id:'11111111-1111-4111-8111-111111111111'}]);body=JSON.parse(options.body);return new Response('true',{status:200});}});
  assert.equal(response.status,200);assert.equal(body.p_total,'5.00');assert.equal(body.p_items[0].product_id,'chapter-1');
 });

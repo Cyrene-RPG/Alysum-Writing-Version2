@@ -22,9 +22,9 @@ test('author can save Ko-fi URL as inactive mapping',async()=>{
  const res=await handleKofiAdmin(request({productUrl:'https://ko-fi.com/s/1034cbe6ff',passId:pass,enabled:false}),env,f);
  assert.equal(res.status,200);assert.deepEqual(f.writes[0],{product_id:'1034cbe6ff',pass_id:pass,enabled:false});
 });
-test('connected author can activate their own Ko-fi mapping',async()=>{
+test('author cannot enable unverified sales',async()=>{
  const f=fake();const res=await handleKofiAdmin(request({productId:'1034cbe6ff',passId:pass,enabled:true}),env,f);
- assert.equal(res.status,200);assert.deepEqual(f.writes[0],{product_id:'1034cbe6ff',pass_id:pass,enabled:true});
+ assert.equal(res.status,409);assert.equal(f.writes.length,0);
 });
 test('mapping requires connected account',async()=>{
  const f=fake({connected:false});const res=await handleKofiAdmin(request({productId:'1034cbe6ff',passId:pass,enabled:false}),env,f);
