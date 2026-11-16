@@ -18,7 +18,8 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
             <form class="quote-controls" id="quote-form">
                 <button type="button" id="quote-select-in-wip" class="quote-button quote-select-in-wip">Select text in WIP</button><label for="quote-excerpt">Selected text<textarea id="quote-excerpt" maxlength="${MAX_EXCERPT_CHARACTERS}" rows="7" required placeholder="Select text in your WIP first, or paste an excerpt here."></textarea></label>
                 <p id="quote-count" class="quote-hint"></p>
-                <div class="quote-option-row" id="quote-image-options"><label for="quote-style">Style<select id="quote-style"><option value="alysum">Alysum</option><option value="paper">Paper</option><option value="rose">Rose</option></select></label><label for="quote-format">Size<select id="quote-format"><option value="portrait">Portrait · 4:5</option><option value="square">Square · 1:1</option><option value="story">Story · 9:16</option></select></label></div>
+                <div class="quote-option-row" id="quote-image-options"><label for="quote-style">Paper<select id="quote-style"><option value="alysum">Alysum</option><option value="paper">Paper</option><option value="rose">Rose</option><option value="midnight">Midnight</option><option value="fog">Fog</option><option value="moss">Moss</option><option value="ink">Ink</option><option value="parchment">Parchment</option><option value="dusk">Dusk</option><option value="slate">Slate</option></select></label><label for="quote-format">Size<select id="quote-format"><option value="portrait">Portrait · 4:5</option><option value="square">Square · 1:1</option><option value="story">Story · 9:16</option><option value="largePortrait">Large portrait · 4:5</option><option value="largeSquare">Large square · 1:1</option><option value="largeStory">Large story · 9:16</option><option value="landscape">Landscape · 16:9</option></select></label></div>
+                <div id="quote-background-option" class="quote-background-option" hidden><label for="quote-background">Background image <span>(optional)</span><input id="quote-background" type="file" accept="image/jpeg,image/png,image/webp,image/gif"></label><p id="quote-background-name" class="quote-hint" hidden></p><button type="button" id="quote-background-clear" class="quote-button" hidden>Remove background</button></div>
                 <label for="quote-title">Book title <span>(optional)</span><input id="quote-title" maxlength="80" autocomplete="off"></label>
                 <label for="quote-author">Author <span>(optional)</span><input id="quote-author" maxlength="80" autocomplete="off"></label>
                 <label id="quote-brand-option" class="quote-check" for="quote-brand"><input type="checkbox" id="quote-brand" checked> Include Alysum mark</label>
@@ -82,6 +83,41 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
     let generation = 0;
     let renderTimer = 0;
     let fontPromise = null;
+    let backgroundImage = null;
+    let backgroundObjectUrl = "";
+    const MAX_BACKGROUND_BYTES = 8 * 1024 * 1024;
+
+    function clearBackgroundImage() {
+        if (backgroundObjectUrl) URL.revokeObjectURL(backgroundObjectUrl);
+        backgroundObjectUrl = "";
+        backgroundImage = null;
+        const input = find("quote-background");
+        if (input) input.value = "";
+        find("quote-background-name").hidden = true;
+        find("quote-background-name").textContent = "";
+        find("quote-background-clear").hidden = true;
+    }
+
+    function loadBackgroundImage(sourceFile) {
+        return new Promise((resolve, reject) => {
+            if (!sourceFile || !String(sourceFile.type || "").startsWith("image/")) {
+                reject(new Error("Choose a JPEG, PNG, WebP, or GIF image."));
+                return;
+            }
+            if (sourceFile.size > MAX_BACKGROUND_BYTES) {
+                reject(new Error("Background images must be 8 MB or smaller."));
+                return;
+            }
+            const url = URL.createObjectURL(sourceFile);
+            const image = new Image();
+            image.onload = () => resolve({ image, url });
+            image.onerror = () => {
+                URL.revokeObjectURL(url);
+                reject(new Error("Could not read that image. Try another file."));
+            };
+            image.src = url;
+        });
+    }
 
     function readSelection() {
         const selection = window.getSelection();
@@ -117,6 +153,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         betaPicker.close();
         const image = mode === "image";
         find("quote-image-options").hidden = !image;
+        find("quote-background-option").hidden = !image;
         find("quote-brand-option").hidden = !image;
         find("quote-link-manager").hidden = image;
         find("quote-create-link").hidden = image;
@@ -188,6 +225,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         status.textContent = "Rendering…";
         try {
             const data = normalizeSnippetCard({ excerpt: excerpt.value, title: title.value, author: author.value, style: find("quote-style").value, format: find("quote-format").value, showBrand: find("quote-brand").checked });
+            data.backgroundImage = backgroundImage;
             await waitForFont();
             if (request !== generation || !dialog.open) return;
             const dimensions = CARD_FORMATS[data.format];
@@ -238,6 +276,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         capturedText = "";
         if (!selected.trim() && !getBook()?.sections?.body?.length) { showSelectionBar(); return; }
         selectionBar.hidden = true;
+        clearBackgroundImage();
         form.reset();
         title.value = String(getBook()?.title || "").slice(0, 80);
         author.value = String(getAuthor() || "").slice(0, 80);
@@ -255,11 +294,35 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         capturedText = "";
         clearTimeout(renderTimer);
         clearImage();
+        clearBackgroundImage();
         form.reset();
         canvas.width = 1;
         canvas.height = 1;
         if (selectAfterClose) { selectAfterClose = false; showSelectionBar(); }
         else button.focus({ preventScroll: true });
+    });
+    find("quote-background").addEventListener("change", async () => {
+        const source = find("quote-background").files?.[0];
+        if (!source) return;
+        errorEl.hidden = true;
+        try {
+            const loaded = await loadBackgroundImage(source);
+            if (backgroundObjectUrl) URL.revokeObjectURL(backgroundObjectUrl);
+            backgroundObjectUrl = loaded.url;
+            backgroundImage = loaded.image;
+            find("quote-background-name").textContent = source.name;
+            find("quote-background-name").hidden = false;
+            find("quote-background-clear").hidden = false;
+            queueRender();
+        } catch (error) {
+            clearBackgroundImage();
+            showError(error);
+            queueRender();
+        }
+    });
+    find("quote-background-clear").addEventListener("click", () => {
+        clearBackgroundImage();
+        queueRender();
     });
     for (const tab of dialog.querySelectorAll("[data-share-mode]")) tab.addEventListener("click", () => setMode(tab.dataset.shareMode));
     find("quote-create-link").addEventListener("click", async () => {

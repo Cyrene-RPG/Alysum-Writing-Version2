@@ -3,6 +3,13 @@ export const SNIPPET_PALETTES = Object.freeze({
     alysum: { background: "#191526", wash: "#312243", text: "#f5eedf", muted: "#c2b6c8", accent: "#cfb579", border: "#665374" },
     paper: { background: "#f5efe2", wash: "#ede3d0", text: "#332c30", muted: "#74645e", accent: "#8d6946", border: "#cfbfa5" },
     rose: { background: "#f2e5e6", wash: "#e4ced8", text: "#402d3c", muted: "#816776", accent: "#965b78", border: "#cfafb9" },
+    midnight: { background: "#0d1524", wash: "#1a2740", text: "#e8eef8", muted: "#9aabc4", accent: "#7a9ec8", border: "#3a4d6a" },
+    fog: { background: "#e8eaef", wash: "#d5dae3", text: "#2a303c", muted: "#6a7384", accent: "#5a6b84", border: "#b8c0ce" },
+    moss: { background: "#1a2218", wash: "#2a3526", text: "#e8efe0", muted: "#a0b098", accent: "#8aab6e", border: "#4a5a42" },
+    ink: { background: "#0c0c0e", wash: "#1a1a20", text: "#f2f0ea", muted: "#a8a49a", accent: "#c4b48a", border: "#3a3840" },
+    parchment: { background: "#f0e6d0", wash: "#e4d4b4", text: "#3a3020", muted: "#7a6a50", accent: "#9a7040", border: "#c8b890" },
+    dusk: { background: "#241820", wash: "#3a2432", text: "#f5e8e0", muted: "#c0a098", accent: "#d09070", border: "#5a4048" },
+    slate: { background: "#1e2834", wash: "#2c3a4c", text: "#e6edf4", muted: "#9aabbc", accent: "#7a9ab0", border: "#4a5c70" },
 });
 const SERIF = '"Cormorant Garamond", Georgia, serif';
 const SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
@@ -10,6 +17,46 @@ const SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 function splitCharacters(text) {
     if (typeof Intl.Segmenter === "function") return Array.from(new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(text), (item) => item.segment);
     return Array.from(text);
+}
+
+function paletteLuminance(hex) {
+    const value = String(hex || "#000000").replace("#", "");
+    const raw = value.length === 3 ? value.split("").map((c) => c + c).join("") : value;
+    const r = Number.parseInt(raw.slice(0, 2), 16) / 255;
+    const g = Number.parseInt(raw.slice(2, 4), 16) / 255;
+    const b = Number.parseInt(raw.slice(4, 6), 16) / 255;
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function drawCoverImage(context, image, width, height) {
+    const sourceWidth = image.naturalWidth || image.width;
+    const sourceHeight = image.naturalHeight || image.height;
+    if (!sourceWidth || !sourceHeight) return;
+    const scale = Math.max(width / sourceWidth, height / sourceHeight);
+    const drawWidth = sourceWidth * scale;
+    const drawHeight = sourceHeight * scale;
+    context.drawImage(image, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight);
+}
+
+function paintCardSurface(context, palette, width, height, backgroundImage = null) {
+    context.fillStyle = palette.background;
+    context.fillRect(0, 0, width, height);
+    if (backgroundImage) {
+        drawCoverImage(context, backgroundImage, width, height);
+        const dark = paletteLuminance(palette.background) < 0.45;
+        context.fillStyle = dark ? "rgba(8, 10, 16, 0.58)" : "rgba(248, 244, 236, 0.62)";
+        context.fillRect(0, 0, width, height);
+        context.globalAlpha = dark ? 0.42 : 0.38;
+        context.fillStyle = palette.wash;
+        context.fillRect(0, 0, width, height);
+        context.globalAlpha = 1;
+        return;
+    }
+    const wash = context.createLinearGradient(0, 0, width, height);
+    wash.addColorStop(0, palette.wash);
+    wash.addColorStop(.7, palette.background);
+    context.fillStyle = wash;
+    context.fillRect(0, 0, width, height);
 }
 
 export function wrapCardText(context, text, maxWidth) {
@@ -90,13 +137,7 @@ export function drawSnippetCard(canvas, data, dimensions, page = null) {
         : fitCardText(context, data.excerpt, textWidth, availableHeight, { maximum: data.excerpt.length < 100 ? 82 : 62, minimum: page ? 44 : 26 });
     const titleFit = data.title ? fitCardText(context, data.title, textWidth, 70, { maximum: 36, minimum: 20, spacing: 1.1 }) : null;
     const authorFit = data.author ? fitCardText(context, data.author, textWidth, 44, { maximum: 25, minimum: 18, spacing: 1.1 }) : null;
-    context.fillStyle = palette.background;
-    context.fillRect(0, 0, width, height);
-    const wash = context.createLinearGradient(0, 0, width, height);
-    wash.addColorStop(0, palette.wash);
-    wash.addColorStop(.7, palette.background);
-    context.fillStyle = wash;
-    context.fillRect(0, 0, width, height);
+    paintCardSurface(context, palette, width, height, data.backgroundImage || null);
     context.strokeStyle = palette.border;
     context.lineWidth = 1.3;
     context.strokeRect(38, 38, width - 76, height - 76);

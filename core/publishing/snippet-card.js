@@ -1,7 +1,17 @@
 /** Only the text and attribution explicitly confirmed for an exported image. */
 export const MAX_CARD_CHARACTERS = 30000;
-export const CARD_FORMATS = Object.freeze({ portrait: { width: 1080, height: 1350 }, square: { width: 1080, height: 1080 }, story: { width: 1080, height: 1920 } });
-export const CARD_STYLES = Object.freeze(["alysum", "paper", "rose"]);
+export const CARD_FORMATS = Object.freeze({
+    portrait: { width: 1080, height: 1350 },
+    square: { width: 1080, height: 1080 },
+    story: { width: 1080, height: 1920 },
+    largePortrait: { width: 1620, height: 2025 },
+    largeSquare: { width: 1620, height: 1620 },
+    largeStory: { width: 1440, height: 2560 },
+    landscape: { width: 1920, height: 1080 },
+});
+export const CARD_STYLES = Object.freeze([
+    "alysum", "paper", "rose", "midnight", "fog", "moss", "ink", "parchment", "dusk", "slate",
+]);
 
 export function normalizeSnippetCard(value) {
     if (!value || typeof value !== "object") throw new Error("Add an excerpt to create a card.");

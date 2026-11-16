@@ -13,6 +13,21 @@
 .quote-controls textarea { resize: vertical; min-height: 150px; }
 .quote-controls textarea::placeholder { color: var(--muted); }
 .quote-option-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.quote-background-option { margin: 0 0 16px; }
+.quote-background-option .quote-hint { margin: 8px 0 0; }
+.quote-background-option .quote-button { margin-top: 10px; min-height: 36px; padding: 8px 12px; }
+.quote-background-option input[type=file] {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin-top: 7px;
+    padding: 10px 12px;
+    font: 14px/1.5 var(--font-sans, sans-serif);
+    background: color-mix(in srgb, var(--bg, #0b1220) 65%, transparent);
+    color: var(--text);
+    border: 1px solid var(--quote-border);
+    border-radius: var(--glass-radius, 8px);
+}
 .quote-controls label.quote-check { display: flex; align-items: center; gap: 8px; font-weight: 400; }
 .quote-check input { accent-color: var(--accent, #7c3aed); width: 16px; height: 16px; margin: 0; }
 .quote-hint { color: var(--muted); font: 12px/1.6 var(--font-sans, sans-serif); margin: 0 0 16px; }

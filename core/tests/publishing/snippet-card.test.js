@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizeSnippetCard, cardFileName, CARD_FORMATS, MAX_CARD_CHARACTERS } from "../../publishing/snippet-card.js";
-import { wrapCardText, fitCardText, layoutSnippetPages } from "../../../site-appearance/js-runtime/snippet-card.js";
+import { normalizeSnippetCard, cardFileName, CARD_FORMATS, CARD_STYLES, MAX_CARD_CHARACTERS } from "../../publishing/snippet-card.js";
+import { wrapCardText, fitCardText, layoutSnippetPages, SNIPPET_PALETTES } from "../../../site-appearance/js-runtime/snippet-card.js";
 const context = { font: "", measureText(value) { return { width: Array.from(value).length * (Number(this.font.match(/(\d+)px/)?.[1]) || 20) * .55 }; } };
 
 test("a card contains only the selected excerpt and confirmed image options", () => {
@@ -20,8 +20,18 @@ test("formats have high resolution starting dimensions and unknown styles fall b
     assert.deepEqual(CARD_FORMATS.portrait, { width: 1080, height: 1350 });
     assert.deepEqual(CARD_FORMATS.square, { width: 1080, height: 1080 });
     assert.deepEqual(CARD_FORMATS.story, { width: 1080, height: 1920 });
+    assert.deepEqual(CARD_FORMATS.largePortrait, { width: 1620, height: 2025 });
+    assert.deepEqual(CARD_FORMATS.largeSquare, { width: 1620, height: 1620 });
+    assert.deepEqual(CARD_FORMATS.largeStory, { width: 1440, height: 2560 });
+    assert.deepEqual(CARD_FORMATS.landscape, { width: 1920, height: 1080 });
     const data = normalizeSnippetCard({ excerpt: "hello", format: "__proto__", style: "unknown", showBrand: false });
     assert.equal(data.format, "portrait"); assert.equal(data.style, "alysum"); assert.equal(data.showBrand, false);
+    for (const style of ["midnight", "fog", "moss", "ink", "parchment", "dusk", "slate"]) {
+        assert.equal(normalizeSnippetCard({ excerpt: "hello", style }).style, style);
+    }
+    for (const style of CARD_STYLES) {
+        assert.ok(SNIPPET_PALETTES[style], `missing palette for ${style}`);
+    }
 });
 
 test("wrapping preserves paragraph breaks and every character of long words", () => {
