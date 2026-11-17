@@ -26,18 +26,29 @@ export function mountStudioBetaReads(anchor, supabase, session) {
     api.list().then(({ reads = [] }) => {
         if (!section.isConnected) return;
         if (!reads.length) {
-            list.innerHTML = `<p class="studio-book-meta">No beta copies yet. Create one from the editor's Share → Beta Read tab.</p>`;
+            list.innerHTML = `<p class="studio-book-meta">No beta copies yet. Create one from the editor’s <strong>Beta Read</strong> button.</p>`;
             return;
         }
-        list.innerHTML = reads.map(read => `<a class="studio-book studio-shared-book"
-            href="/beta-reads">
+        list.innerHTML = reads.map(read => {
+            const chapters = Number(read.chapterCount || read.chapter_count || 0);
+            const pending = Number(read.pendingFeedbackCount || read.pending_feedback_count || 0);
+            const detail = read.status === "closed"
+                ? "Link closed · Feedback preserved"
+                : [
+                    "Active · Private feedback copy",
+                    chapters ? `${chapters} chapter${chapters === 1 ? "" : "s"}` : null,
+                    pending ? `${pending} pending` : null,
+                ].filter(Boolean).join(" · ");
+            return `<a class="studio-book studio-shared-book"
+            href="/beta-read-document?id=${encodeURIComponent(read.id)}">
             <span class="studio-coeditor-badge">${read.status === "closed" ? "Archived" : "Beta Read"}</span>
             <div class="studio-shared-copy">
                 <h3 class="studio-book-title">${esc(read.title || "Untitled book")}</h3>
-                <p class="studio-book-meta">By ${esc(read.author_username)}</p>
-                <p class="studio-book-meta">${read.status === "closed" ? "Link closed · Feedback preserved" : "Active · Private feedback copy"}</p>
+                <p class="studio-book-meta">By ${esc(read.author_username || read.authorUsername || "")}</p>
+                <p class="studio-book-meta">${esc(detail)}</p>
             </div>
-        </a>`).join("");
+        </a>`;
+        }).join("");
     }).catch(error => {
         if (section.isConnected) {
             list.replaceChildren();

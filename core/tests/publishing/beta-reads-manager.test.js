@@ -25,7 +25,10 @@ test("Beta Reads manager sends unsigned visitors to login and uses pretty Studio
     assert.match(script, /reviewSuggestion/);
     assert.equal(script.includes("Sign in to manage beta reads."), false);
     assert.match(shelf, /href="\/beta-reads"/);
+    assert.match(shelf, /beta-read-document\?id=/);
+    assert.match(shelf, /Beta Read<\/strong> button/);
     assert.match(documentPage, /href="\/beta-reads"/);
+    assert.match(script, /Beta Read button/);
     assert.match(documentScript, /requireStudioSession/);
     assert.match(redirects, /^\/beta-reads\s+\/applications\/studio\/pages\/beta-reads\s+200$/m);
     assert.match(redirects, /^\/beta-read-document\s+\/applications\/studio\/pages\/beta-read-document\s+200$/m);

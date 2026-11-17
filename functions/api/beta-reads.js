@@ -125,8 +125,52 @@ export async function onRequest({ request, env }) {
                 return json({ id: saved.id, url: `${request.headers.get("x-forwarded-proto") || "https"}://${request.headers.get("host") || "alysumwriting.com"}/beta-read/${token}` });
             }
             if (action === "list") {
-                const reads = await rows(env, "snippet_beta_reads", { owner_id: `eq.${user.id}`, select: "id,title,author_username,status,created_at,closed_at", order: "created_at.desc" });
-                return json({ reads });
+                const reads = await rows(env, "snippet_beta_reads", {
+                    owner_id: `eq.${user.id}`,
+                    select: "id,title,author_username,status,created_at,closed_at,source_book_id",
+                    order: "created_at.desc",
+                });
+                if (!reads.length) return json({ reads: [] });
+                const ids = reads.map((read) => read.id).filter(Boolean);
+                const chapterRows = ids.length
+                    ? await rows(env, "snippet_beta_chapters", {
+                        beta_read_id: `in.(${ids.join(",")})`,
+                        select: "id,beta_read_id",
+                    })
+                    : [];
+                const chapterCount = new Map();
+                for (const row of chapterRows) {
+                    chapterCount.set(row.beta_read_id, (chapterCount.get(row.beta_read_id) || 0) + 1);
+                }
+                const openThreads = ids.length
+                    ? await rows(env, "snippet_beta_threads", {
+                        beta_read_id: `in.(${ids.join(",")})`,
+                        resolved_at: "is.null",
+                        select: "id,beta_read_id",
+                    })
+                    : [];
+                const pendingSuggestions = ids.length
+                    ? await optionalRows(env, "snippet_beta_suggestions", {
+                        beta_read_id: `in.(${ids.join(",")})`,
+                        status: "eq.pending",
+                        select: "id,beta_read_id",
+                    })
+                    : [];
+                const pendingCount = new Map();
+                for (const row of openThreads) {
+                    pendingCount.set(row.beta_read_id, (pendingCount.get(row.beta_read_id) || 0) + 1);
+                }
+                for (const row of pendingSuggestions) {
+                    pendingCount.set(row.beta_read_id, (pendingCount.get(row.beta_read_id) || 0) + 1);
+                }
+                return json({
+                    reads: reads.map((read) => ({
+                        ...read,
+                        sourceBookId: read.source_book_id,
+                        chapterCount: chapterCount.get(read.id) || 0,
+                        pendingFeedbackCount: pendingCount.get(read.id) || 0,
+                    })),
+                });
             }
             const read = await ownerRead(env, body.id, user.id);
             if (!read) return fail("Beta read not found.", 404);
