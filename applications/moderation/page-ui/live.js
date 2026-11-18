@@ -108,9 +108,9 @@ async function load(more=false){
  }
  if(state.view==='dashboard'){const data=await call('dashboard');if(token!==state.epoch)return;$('#md-screen').innerHTML=title('Dashboard','Live reports, user activity, author replies, and appeals.')+
  '<div class="md-metrics">'+[['openReports','Open book reports','reports'],['unassigned','Unassigned reports','reports'],['newUsers','New users today','users'],['authorReplies','User replies','conversations'],['pendingAppeals','Pending appeals','appeals'],['users','All accounts','users']].map(([k,l,v])=>'<button class="md-metric" data-live="nav" data-id="'+v+'"><span>'+l+'</span><strong>'+Number(data[k]||0)+'</strong><small>Open '+v+'</small></button>').join('')+'</div><section class="md-panel"><h2>Your staff workspace</h2><p class="md-muted">Reports do not automatically remove books. Case notes stay private; contact users through Conversations. Activity metrics begin when this tracking is installed.</p></section>';return;}
- if(state.view==='security'){const [staff,ips]=await Promise.all([call('staff'),call('ips')]);if(token!==state.epoch)return;state.rows=ips.items;$('#md-screen').innerHTML=title('Staff & Security','Admin-only access. Changes are audited. Temporary IP blocks take a few seconds to update.',button('Add IP block','ip-add')+button('Manage staff','staff-edit'))+
+ if(state.view==='security'){const [staff,ips]=await Promise.all([call('staff'),call('ips')]);if(token!==state.epoch)return;state.rows=ips.items;$('#md-screen').innerHTML=title('Staff & Security','Admin-only access. Changes are audited. IP blocks take a few seconds to update.',button('Add IP block','ip-add')+button('Manage staff','staff-edit'))+
  table(['Staff member','Role'],staff.items.map(u=>[esc(u.name)+'<small>'+esc(u.id)+'</small>',badge(u.role)]))+
- table(['IP address','Reason','Expiry','State',''],ips.items.map(r=>[esc(r.address),esc(r.reason),date(r.expires_at),badge(r.revoked_at?'revoked':new Date(r.expires_at)>new Date()?'active':'expired'),!r.revoked_at?button('Remove block','ip-remove',r.id):'']))+
+ table(['IP address','Reason','Expiry','State',''],ips.items.map(r=>[esc(r.address),esc(r.reason),r.expires_at?date(r.expires_at):'Permanent',badge(r.revoked_at?'revoked':(!r.expires_at||new Date(r.expires_at)>new Date())?'active':'expired'),!r.revoked_at?button('Remove block','ip-remove',r.id):'']))+
  '<p class="md-muted md-small">A shared IP is not proof of account ownership. These blocks apply to Cloudflare website traffic; they do not replace account restrictions. A database outage does not take the public site offline.</p>';return;}
  const action=state.view;const payload={...state.filters,offset:more?state.rows.length:0};if(action==='conversations'&&!payload.status)payload.status='open';
  const data=await call(action,payload);if(token!==state.epoch)return;
@@ -191,11 +191,14 @@ async function action(name,id){
  if(name==='sanction')return sanctionForm(id);if(name==='revoke')return modal('Reverse an account action',formShell('mc-revoke-form',field('mc-explanation','Reason the user will receive'),'Reverse action','data-sanction="'+esc(id)+'"'));
  if(name==='book')return bookForm(id);if(name==='appeal')return appealForm(id);
  if(name==='staff-edit')return modal('Manage staff access',formShell('mc-staff-form',field('mc-staff-id','Existing account ID','text')+select('mc-staff-role','Staff access',[['moderator','Moderator'],['admin','Admin'],['none','Remove access']])+field('mc-explanation','Reason for the access change')+'<div class="md-callout">You cannot change your own role. A change immediately invalidates the affected user’s moderation sessions.</div>','Update staff access'));
- if(name==='ip-add')return modal('Temporary IP block',formShell('mc-ip-form',field('mc-ip','Single IPv4 or IPv6 address','text')+select('mc-ip-hours','Block duration',[['1','1 hour'],['24','24 hours'],['168','7 days']])+field('mc-explanation','Reason for blocking this connection')+'<div class="md-callout amber">Shared IP addresses may affect unrelated users. This blocks the website connection and automatically expires.</div>','Add temporary block'));
+ if(name==='ip-add')return modal('IP block',formShell('mc-ip-form',field('mc-ip','Single IPv4 or IPv6 address','text')+select('mc-ip-hours','Block duration',[['1','1 hour'],['24','24 hours'],['168','7 days'],['0','Permanent']])+field('mc-explanation','Reason for blocking this connection')+'<div class="md-callout amber">Shared IP addresses may affect unrelated users. This blocks the website connection. Temporary blocks expire automatically; permanent blocks stay until an admin removes them.</div><label id="mc-confirm-ip-wrap" hidden><input id="mc-confirm-ip" type="checkbox"> I have reviewed the impact and intend a permanent IP block.</label>','Add IP block'));
  if(name==='ip-remove')return modal('Remove IP block',formShell('mc-ip-remove-form',field('mc-explanation','Reason for removing this block'),'Remove block','data-rule="'+esc(id)+'"'));
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-live]');if(!b)return;state.lastAction=Date.now();void action(b.dataset.live,b.dataset.id).catch(showError);});
-document.addEventListener('change',e=>{if(e.target.id==='mc-template')applyOfficialTemplate();});
+document.addEventListener('change',e=>{
+ if(e.target.id==='mc-template')applyOfficialTemplate();
+ if(e.target.id==='mc-ip-hours'){const wrap=$('#mc-confirm-ip-wrap'),box=$('#mc-confirm-ip');if(wrap&&box){const permanent=e.target.value==='0';wrap.hidden=!permanent;box.required=permanent;if(!permanent)box.checked=false;}}
+});
 document.addEventListener('input',e=>{if(e.target.id==='mc-message')refreshOfficialMessageHint();});
 document.addEventListener('submit',async e=>{
  const f=e.target;if(!f.id.startsWith('mc-'))return;e.preventDefault();if(state.busy)return;state.busy=true;const token=state.epoch;const buttons=[...f.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);const issue=f.querySelector('[data-form-error]');if(issue)issue.textContent='';
@@ -224,7 +227,11 @@ document.addEventListener('submit',async e=>{
  if(f.id==='mc-book-form'){method='book_visibility';payload={bookId:f.dataset.book,visibility:$('#mc-visibility').value,body:text()};}
  if(f.id==='mc-appeal-form'){method='appeal_decision';payload={id:state.selected.data.id,version:state.selected.data.version,decision:$('#mc-decision').value,body:text()};}
  if(f.id==='mc-staff-form'){method='set_staff';payload={userId:$('#mc-staff-id').value.trim(),role:$('#mc-staff-role').value,body:text()};}
- if(f.id==='mc-ip-form'){method='ip_add';payload={address:$('#mc-ip').value.trim(),hours:Number($('#mc-ip-hours').value),body:text()};}
+ if(f.id==='mc-ip-form'){
+  const hours=Number($('#mc-ip-hours').value);
+  if(hours===0&&!$('#mc-confirm-ip')?.checked)throw Error('Confirm that you intend a permanent IP block.');
+  method='ip_add';payload={address:$('#mc-ip').value.trim(),hours,body:text()};
+ }
  if(f.id==='mc-ip-remove-form'){method='ip_remove';payload={id:f.dataset.rule,body:text()};}
  if(!method)return;
  const result=await call(method,payload,f.dataset.requestId);if(token!==state.epoch)return;

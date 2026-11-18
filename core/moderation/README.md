@@ -20,7 +20,9 @@ Staff-only case notes stay in v2 report events. Official conversations use separ
 Audit rows cannot be edited or deleted through browser-facing permissions. Staff changes invalidate target leases. Existing non-staff roles are not granted anything by this migration.
 
 ## Network controls
-Admin-only, expiring, single-address IP blocks are enforced by functions/_middleware.js on Cloudflare website traffic. The address comes from trusted Cloudflare metadata, never form/request JSON. Decisions cache for at most five seconds. Database outages fail open for public availability; account restrictions remain database-enforced. This does not block direct access to Supabase or replace upstream DDoS/rate-limiting defenses. Challenge/rate-limit buttons are not offered without real enforcement.
+Admin-only, single-address IP blocks (temporary or permanent) are enforced by functions/_middleware.js on Cloudflare website traffic. Temporary blocks expire after 1 hour, 24 hours, or 7 days; permanent blocks use a null expiry until an admin removes them. The address comes from trusted Cloudflare metadata, never form/request JSON. Decisions cache for at most five seconds. Database outages fail open for public availability; account restrictions remain database-enforced. This does not block direct access to Supabase or replace upstream DDoS/rate-limiting defenses. Challenge/rate-limit buttons are not offered without real enforcement.
+
+For existing installs that already ran the Center chain, also run `supabase/live-site/supabase-moderation-permanent-ip-blocks.sql` so permanent blocks are accepted and enforced.
 
 ## Rollout
 No production migration or staff action is executed by source changes. Run the SQL in the live editor, then publish the frontend. Test with a staff account, a normal account and a separate non-staff browser. Never use sample rows to test live bans.

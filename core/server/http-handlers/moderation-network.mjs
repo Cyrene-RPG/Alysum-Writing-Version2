@@ -11,6 +11,6 @@ export async function enforceModerationNetwork(context,{fetchImpl=fetch,now=Date
  if(result.ok){const value=await result.json();if(typeof value==='boolean'){blocked=value;cache.set(key,{blocked,until:now()+5000});if(cache.size>5000)cache.delete(cache.keys().next().value);}}
  }catch{/* A database outage must not take the public site offline. Account sanctions are enforced separately in PostgreSQL. */}
  }
- if(blocked)return new Response('This connection is temporarily restricted. Please try again later.',{status:403,headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store'}});
+ if(blocked)return new Response('This connection is restricted.',{status:403,headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store'}});
  return context.next();
 }

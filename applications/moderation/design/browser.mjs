@@ -78,7 +78,7 @@ await page.getByRole('button',{name:'Confirm visibility change',exact:true}).cli
 await screen.locator('[data-id="ALY-1042"][data-action="case"],[data-id="b1"][data-action="book"]').click();await page.getByRole('button',{name:'Restore visibility',exact:true}).click();await page.locator('#md-book-reason').fill('Warning corrections confirmed. The listing is restored.');await page.getByRole('button',{name:'Confirm visibility change',exact:true}).click();
 await nav('Appeals').click();await page.getByRole('button',{name:'Review appeal',exact:true}).click();await page.locator('#md-appeal-decision').selectOption('reverse');await page.locator('#md-appeal-note').fill('The suspension has been reversed following a separate review.');await page.getByRole('button',{name:'Save appeal decision',exact:true}).click();assert.match(await screen.textContent(),/Granted/);
 await nav('Audit Log').click();assert.match(await screen.textContent(),/Case updated/);assert.match(await screen.textContent(),/Appeal Granted/);
-await nav('Staff & Security').click();await page.getByRole('button',{name:'Add temporary rule',exact:true}).click();
+await nav('Staff & Security').click();await page.getByRole('button',{name:'Add IP block',exact:true}).click();
 await page.getByRole('button',{name:'Simulate successful verification',exact:true}).click();
 await page.locator('#md-ip').fill('192.0.2.44');await page.locator('#md-ip-reason').fill('Repeated sample automated submissions from this address.');await page.getByRole('button',{name:'Add sample rule',exact:true}).click();
 assert.match(await screen.textContent(),/192.0.2.44/);await page.getByRole('button',{name:'Remove rule',exact:true}).click();assert.ok(!(await screen.textContent()).includes('192.0.2.44'));

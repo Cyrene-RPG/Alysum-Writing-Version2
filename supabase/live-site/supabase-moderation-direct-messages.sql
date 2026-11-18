@@ -325,11 +325,12 @@ BEGIN
  PERFORM public.mc_log('Staff role: '||choice,target::text,jsonb_build_object('reason',txt));
  result:=jsonb_build_object('id',target,'role',choice);
  ELSIF p_action='ip_add' THEN
- duration:=coalesce((p_payload->>'hours')::integer,24); IF duration NOT BETWEEN 1 AND 168 THEN RAISE EXCEPTION 'Network blocks must expire within 1 hour to 7 days.'; END IF;
+ duration:=coalesce((p_payload->>'hours')::integer,24);
+ IF duration<>0 AND duration NOT BETWEEN 1 AND 168 THEN RAISE EXCEPTION 'Choose a temporary duration (1 hour to 7 days) or a permanent block.'; END IF;
  IF masklen((p_payload->>'address')::inet)<>(CASE WHEN family((p_payload->>'address')::inet)=4 THEN 32 ELSE 128 END) THEN RAISE EXCEPTION 'Enter a single address, not a network range.'; END IF;
  IF length(txt)>1000 THEN RAISE EXCEPTION 'Keep the reason to 1,000 characters.'; END IF;
- INSERT INTO public.mc_ip_blocks(address,reason,expires_at,created_by) VALUES((p_payload->>'address')::inet,txt,clock_timestamp()+make_interval(hours=>duration),uid) RETURNING id INTO rid;
- PERFORM public.mc_log('Temporary IP block added',rid::text,jsonb_build_object('expiresHours',duration));
+ INSERT INTO public.mc_ip_blocks(address,reason,expires_at,created_by) VALUES((p_payload->>'address')::inet,txt,CASE WHEN duration=0 THEN NULL ELSE clock_timestamp()+make_interval(hours=>duration) END,uid) RETURNING id INTO rid;
+ PERFORM public.mc_log(CASE WHEN duration=0 THEN 'Permanent IP block added' ELSE 'Temporary IP block added' END,rid::text,jsonb_build_object('expiresHours',duration,'permanent',duration=0));
  result:=jsonb_build_object('id',rid);
  ELSIF p_action='ip_remove' THEN
  rid:=(p_payload->>'id')::uuid; UPDATE public.mc_ip_blocks SET revoked_at=clock_timestamp() WHERE id=rid;

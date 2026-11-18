@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS public.mc_audit(id bigint GENERATED ALWAYS AS IDENTIT
 CREATE TABLE IF NOT EXISTS public.mc_requests(user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,request_id uuid NOT NULL,result jsonb NOT NULL,PRIMARY KEY(user_id,request_id));
 CREATE TABLE IF NOT EXISTS public.mc_case_meta(report_id uuid PRIMARY KEY REFERENCES public.book_reports_v2(id),assigned_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,follow_up_at date,phase text CHECK(phase IN ('new','under_review','awaiting_changes','resolved','dismissed')));
 CREATE TABLE IF NOT EXISTS public.mc_book_visibility(book_id text PRIMARY KEY,visibility text NOT NULL CHECK(visibility IN ('visible','hidden','removed')),reason text NOT NULL,updated_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,updated_at timestamptz NOT NULL DEFAULT clock_timestamp());
-CREATE TABLE IF NOT EXISTS public.mc_ip_blocks(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),address inet NOT NULL,reason text NOT NULL CHECK(length(reason) BETWEEN 10 AND 1000),expires_at timestamptz NOT NULL,revoked_at timestamptz,created_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,created_at timestamptz NOT NULL DEFAULT clock_timestamp());
+CREATE TABLE IF NOT EXISTS public.mc_ip_blocks(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),address inet NOT NULL,reason text NOT NULL CHECK(length(reason) BETWEEN 10 AND 1000),expires_at timestamptz,revoked_at timestamptz,created_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,created_at timestamptz NOT NULL DEFAULT clock_timestamp());
+ALTER TABLE public.mc_ip_blocks ALTER COLUMN expires_at DROP NOT NULL;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_seen_at timestamptz;
 ALTER TABLE public.inbox_notifications ADD COLUMN IF NOT EXISTS moderation_thread_id uuid REFERENCES public.mc_threads(id) ON DELETE SET NULL;
 DO $$
@@ -429,11 +430,12 @@ BEGIN
  PERFORM public.mc_log('Staff role: '||choice,target::text,jsonb_build_object('reason',txt));
  result:=jsonb_build_object('id',target,'role',choice);
  ELSIF p_action='ip_add' THEN
- duration:=coalesce((p_payload->>'hours')::integer,24); IF duration NOT BETWEEN 1 AND 168 THEN RAISE EXCEPTION 'Network blocks must expire within 1 hour to 7 days.'; END IF;
+ duration:=coalesce((p_payload->>'hours')::integer,24);
+ IF duration<>0 AND duration NOT BETWEEN 1 AND 168 THEN RAISE EXCEPTION 'Choose a temporary duration (1 hour to 7 days) or a permanent block.'; END IF;
  IF masklen((p_payload->>'address')::inet)<>(CASE WHEN family((p_payload->>'address')::inet)=4 THEN 32 ELSE 128 END) THEN RAISE EXCEPTION 'Enter a single address, not a network range.'; END IF;
  IF length(txt)>1000 THEN RAISE EXCEPTION 'Keep the reason to 1,000 characters.'; END IF;
- INSERT INTO public.mc_ip_blocks(address,reason,expires_at,created_by) VALUES((p_payload->>'address')::inet,txt,clock_timestamp()+make_interval(hours=>duration),uid) RETURNING id INTO rid;
- PERFORM public.mc_log('Temporary IP block added',rid::text,jsonb_build_object('expiresHours',duration));
+ INSERT INTO public.mc_ip_blocks(address,reason,expires_at,created_by) VALUES((p_payload->>'address')::inet,txt,CASE WHEN duration=0 THEN NULL ELSE clock_timestamp()+make_interval(hours=>duration) END,uid) RETURNING id INTO rid;
+ PERFORM public.mc_log(CASE WHEN duration=0 THEN 'Permanent IP block added' ELSE 'Temporary IP block added' END,rid::text,jsonb_build_object('expiresHours',duration,'permanent',duration=0));
  result:=jsonb_build_object('id',rid);
  ELSIF p_action='ip_remove' THEN
  rid:=(p_payload->>'id')::uuid; UPDATE public.mc_ip_blocks SET revoked_at=clock_timestamp() WHERE id=rid;
@@ -447,7 +449,7 @@ END $$;
 
 CREATE OR REPLACE FUNCTION public.mc_network_blocked(p_address inet)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,public AS $$
- SELECT EXISTS(SELECT 1 FROM public.mc_ip_blocks WHERE address=p_address AND revoked_at IS NULL AND expires_at>clock_timestamp())
+ SELECT EXISTS(SELECT 1 FROM public.mc_ip_blocks WHERE address=p_address AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>clock_timestamp()))
 $$;
 
 
