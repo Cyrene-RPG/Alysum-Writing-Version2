@@ -110,7 +110,7 @@ SELECT public.mc_call('ip_add','{"requestId":"50000000-0000-0000-0000-0000000000
 SELECT public.report_test_assert(public.mc_network_blocked('192.0.2.44'),'IP rule enforceable at edge');
 SELECT public.mc_call('ip_add','{"requestId":"50000000-0000-0000-0000-000000000004","address":"192.0.2.55","hours":0,"body":"Permanent disposable integration test connection only."}');
 SELECT public.report_test_assert(public.mc_network_blocked('192.0.2.55'),'Permanent IP rule enforceable at edge');
-SELECT public.report_test_assert((SELECT item->>'expires_at' IS NULL FROM jsonb_array_elements(public.mc_call('ips')->'items') item WHERE item->>'address'='192.0.2.55' LIMIT 1),'Permanent IP blocks store a null expiry');
+SELECT public.report_test_assert((SELECT item->>'expires_at' IS NULL FROM jsonb_array_elements(public.mc_call('ips')->'items') item WHERE (item->>'address')::inet='192.0.2.55'::inet LIMIT 1),'Permanent IP blocks store a null expiry');
 SELECT public.report_expect_error($q$SELECT public.mc_call('ip_add','{"requestId":"50000000-0000-0000-0000-000000000002","address":"2001:db8::/32","hours":1,"body":"Networks are not accepted by single-address controls."}')$q$,'single address');
 SELECT public.mc_call('set_staff','{"requestId":"50000000-0000-0000-0000-000000000003","userId":"00000000-0000-0000-0000-000000000002","role":"none","body":"Revoking staff access invalidates the active staff lease."}');
 RESET ROLE;
