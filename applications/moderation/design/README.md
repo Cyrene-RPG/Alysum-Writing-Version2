@@ -4,7 +4,7 @@ Open /moderation-preview. The Profile entry button demonstrates the proposed pri
 
 All accounts, cases, conversations, restrictions, appeals, network addresses and activity counts are invented. Actions update memory only and reset on reload. This preview imports no Supabase client, performs no backend calls and requires no SQL. The permission controls illustrate the planned experience; they are not a production authentication or authorization implementation.
 
-Screens: Dashboard, Reports (book/comment), Users (all/new/active), Books, Conversations, Appeals, Audit Log, and admin-only Staff & Security. The preview supports case assignment, follow-up dates, private case notes, conflict hand-off, account warnings/restrictions/suspensions/bans/restoration, separate book visibility actions, editable message templates, user inbox/reply previews, appeals, and temporary or permanent sample IP blocks.
+Screens: Dashboard, Reports (book/comment), Users (all/new/active), Books, Conversations, Appeals, Audit Log, and admin-only Staff & Security. The preview supports case assignment, follow-up dates, private case notes, conflict hand-off, account warnings/restrictions/suspensions/bans/restoration, separate book visibility actions, editable message templates, user inbox/reply previews, appeals, and temporary sample network rules.
 
 Shared Alysum fonts, appearance boot and surface tokens are reused. The existing report flow, staff report queue, production pages, identity system and database are unchanged.
 
