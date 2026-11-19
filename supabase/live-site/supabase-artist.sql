@@ -1,5 +1,8 @@
--- Artist tables, focus, and image bucket. Additive. Safe to re-run on the live project.
+-- Artist tables, focus, image bucket, and public-gallery columns.
+-- Additive. Safe to re-run on the live project.
 -- Does not alter books or existing rows except adding nullable/default artist columns.
+-- Gallery columns commit before storage setup, so a storage-policy error cannot roll them back.
+-- The last result grid should show commission_columns_ready and character_offer_columns_ready as true.
 
 BEGIN;
 
@@ -120,39 +123,6 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.artist_artworks TO authenticated;
 GRANT SELECT ON public.artist_characters TO anon;
 GRANT SELECT ON public.artist_artworks TO anon;
 
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES (
-  'artist-media',
-  'artist-media',
-  true,
-  12582912,
-  ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/gif']::text[]
-)
-ON CONFLICT (id) DO UPDATE SET
-  public = true,
-  file_size_limit = 12582912;
-
-DROP POLICY IF EXISTS artist_media_public_read ON storage.objects;
-CREATE POLICY artist_media_public_read ON storage.objects
-  FOR SELECT TO anon, authenticated
-  USING (bucket_id = 'artist-media');
-
-DROP POLICY IF EXISTS artist_media_insert_own ON storage.objects;
-CREATE POLICY artist_media_insert_own ON storage.objects
-  FOR INSERT TO authenticated
-  WITH CHECK (
-    bucket_id = 'artist-media'
-    AND (storage.foldername(name))[1] = (auth.uid())::text
-  );
-
-DROP POLICY IF EXISTS artist_media_delete_own ON storage.objects;
-CREATE POLICY artist_media_delete_own ON storage.objects
-  FOR DELETE TO authenticated
-  USING (
-    bucket_id = 'artist-media'
-    AND (storage.foldername(name))[1] = (auth.uid())::text
-  );
-
 -- Public gallery: adopt, buy, and commissions. Payment links stay off Alysum.
 ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS commission_open boolean NOT NULL DEFAULT false,
@@ -179,9 +149,9 @@ ALTER TABLE public.users
   CHECK (commission_slots IS NULL OR (commission_slots >= 0 AND commission_slots <= 99));
 
 COMMENT ON COLUMN public.users.commission_open IS
-  'When true, this artist’s public gallery shows that commissions are open. Payment stays off Alysum.';
+  'When true, this artist public gallery shows that commissions are open. Payment stays off Alysum.';
 COMMENT ON COLUMN public.users.commission_url IS
-  'Off-platform commission request link (Ko-fi, VGen, or the artist’s own page).';
+  'Off-platform commission request link (Ko-fi, VGen, or the artist own page).';
 
 ALTER TABLE public.artist_characters
   ADD COLUMN IF NOT EXISTS offer_kind text NOT NULL DEFAULT 'none',
@@ -239,4 +209,88 @@ ALTER TABLE public.artist_artworks
 COMMENT ON COLUMN public.artist_artworks.offer_kind IS
   'none | buy — a protected public image listed for sale. Adoptables stay on the character.';
 
+NOTIFY pgrst, 'reload schema';
+
 COMMIT;
+
+-- Storage is its own step. A permissions error here must not undo the columns above.
+DO $artist_media$
+BEGIN
+  INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+  VALUES (
+    'artist-media',
+    'artist-media',
+    true,
+    12582912,
+    ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/gif']::text[]
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    public = true,
+    file_size_limit = 12582912;
+EXCEPTION
+  WHEN OTHERS THEN
+    RAISE NOTICE 'artist-media bucket was not changed (%). Create a public bucket named artist-media in Storage if image upload fails.', SQLERRM;
+END
+$artist_media$;
+
+DO $artist_media_policies$
+BEGIN
+  BEGIN
+    DROP POLICY IF EXISTS artist_media_public_read ON storage.objects;
+    CREATE POLICY artist_media_public_read ON storage.objects
+      FOR SELECT TO anon, authenticated
+      USING (bucket_id = 'artist-media');
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE NOTICE 'artist-media read policy was not changed (%).', SQLERRM;
+  END;
+
+  BEGIN
+    DROP POLICY IF EXISTS artist_media_insert_own ON storage.objects;
+    CREATE POLICY artist_media_insert_own ON storage.objects
+      FOR INSERT TO authenticated
+      WITH CHECK (
+        bucket_id = 'artist-media'
+        AND (storage.foldername(name))[1] = (auth.uid())::text
+      );
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE NOTICE 'artist-media insert policy was not changed (%).', SQLERRM;
+  END;
+
+  BEGIN
+    DROP POLICY IF EXISTS artist_media_delete_own ON storage.objects;
+    CREATE POLICY artist_media_delete_own ON storage.objects
+      FOR DELETE TO authenticated
+      USING (
+        bucket_id = 'artist-media'
+        AND (storage.foldername(name))[1] = (auth.uid())::text
+      );
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE NOTICE 'artist-media delete policy was not changed (%).', SQLERRM;
+  END;
+END
+$artist_media_policies$;
+
+SELECT
+  (
+    SELECT count(*)
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'users'
+      AND column_name IN (
+        'commission_open',
+        'commission_summary',
+        'commission_prices',
+        'commission_url',
+        'commission_slots'
+      )
+  ) = 5 AS commission_columns_ready,
+  (
+    SELECT count(*)
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'artist_characters'
+      AND column_name IN ('offer_kind', 'offer_status', 'price_label', 'checkout_url')
+  ) = 4 AS character_offer_columns_ready;
