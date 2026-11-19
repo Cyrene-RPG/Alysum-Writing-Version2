@@ -85,6 +85,36 @@ test('a book read back from an unsynced device copy is saved even when it alread
     assert.equal(unsavedWriting(USER).length,0);
 });
 
+test('signed-in restore saves on top of the server copy, not an older device copy', async () => {
+    keepWriting(USER,race('<p>Words from a closed tab.</p>'));
+    // The server moved on (version 7) while this device still holds version 3.
+    let server={...book(),_cloudUpdated:7};server.sections.body[0].content='<p>Edited on another device.</p>';
+    const device={...book(),_pending:true,_baseUpdated:3};
+    const booksApi={
+        getBook:async()=>structuredClone(device),
+        readOnlineBook:async()=>structuredClone(server),
+        // The site's rule: a save only lands on the version it was made on top of.
+        updateBook:async(id,patch,options={})=>{
+            if(options.expectedUpdated!==server._cloudUpdated)return{_synced:false,_pending:true,_syncCode:'BOOK_CONFLICT'};
+            server={...server,...patch,_cloudUpdated:server._cloudUpdated+1};return{...server,_synced:true};
+        },
+    };
+    const restored=await restoreUnsavedWriting({userId:USER,booksApi});
+    assert.deepEqual(restored,[{bookTitle:'Low Tide',words:5,isNewChapter:false}]);
+    assert.equal(chapterIn(server.sections,'war').content,'<p>Words from a closed tab.</p>');
+    assert.equal(chapterIn(server.sections,'ch1').content,'<p>Edited on another device.</p>','the other device keeps its edit');
+    assert.equal(unsavedWriting(USER).length,0);
+});
+
+test('restore waits when the server copy can not be read', async () => {
+    keepWriting(USER,race('<p>Still only here.</p>'));
+    let saves=0;
+    const booksApi={getBook:async()=>book(),readOnlineBook:async()=>{throw new Error('offline');},updateBook:async()=>{saves+=1;return{_synced:true};}};
+    assert.deepEqual(await restoreUnsavedWriting({userId:USER,booksApi}),[]);
+    assert.equal(saves,0);
+    assert.equal(unsavedWriting(USER).length,1,'kept for the next try');
+});
+
 test('drafts and backups are labelled under their main book', () => {
     const books=[{id:'draft',title:'Low Tide',draft_parent_id:'main',draft_label:'Second pass'},{id:'main',title:'Low Tide'},{id:'other',title:'Saltwater'}];
     assert.deepEqual(bookChoices(books),[{id:'main',label:'Low Tide'},{id:'draft',label:'Low Tide · Second pass'},{id:'other',label:'Saltwater'}]);

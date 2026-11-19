@@ -103,6 +103,8 @@ body[data-view="race"] .ww-race {
 .ww-sb-exit { flex: 0 0 auto; flex-direction: row; align-items: center; justify-content: center; gap: 8px; border-right: 0; margin-left: auto; }
 .ww-ticker { flex: none; display: flex; align-items: center; gap: 10px; min-height: 20px; font-size: 14px; }
 .ww-ticker time { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ww-ticker #tickerText { flex: 1; min-width: 0; }
+.ww-track-toggle { flex: none; white-space: nowrap; }
 .ww-race-prompt { flex: none; display: grid; gap: 4px; }
 .ww-race-prompt .ww-prompt-full { font-size: 14.5px; }
 .ww-prompt-panel { display: grid; gap: 10px; }
@@ -240,16 +242,55 @@ body[data-view="race"] .ww-race {
 .ww-float.is-mine svg { fill: var(--ww-gold); }
 
 .is-compact .ww-lane {
-    grid-template-columns: 2.2rem 10rem minmax(0, 1fr) 5.6rem;
+    grid-template-columns: 2.2rem 10rem minmax(0, 1fr) 9.5rem;
     grid-template-areas: "pos who run nums";
-    padding-block: 5px;
+    padding-block: 4px;
 }
+/* Words and pace share a line, so a racer's row leaves more of the screen for writing. */
+.is-compact .ww-nums { display: flex; align-items: baseline; justify-content: flex-end; gap: 8px; }
+.is-compact .ww-nums strong { display: inline; }
 .is-compact .ww-run { gap: 2px; }
 .is-compact .ww-state { min-height: 12px; font-size: 9.5px; line-height: 12px; }
 .is-compact .ww-av { width: 28px; height: 28px; font-size: 17px; }
 .is-compact .ww-pos,
 .is-compact .ww-nums strong { font-size: 24px; }
 .is-compact .ww-name small { display: none; }
+
+/* The track rolled up to one line (the racer's "Hide track"). */
+.ww-mini-track {
+    flex: none;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+}
+.ww-mini {
+    flex: 1 1 0;
+    min-width: 9.5rem;
+    max-width: 24rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 14px 5px 10px;
+    border: 1px solid var(--ww-line);
+    border-radius: 999px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 28%, var(--ww-panel)) calc(var(--p, 0) * 1%), var(--ww-panel) 0);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.ww-mini b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.ww-mini .ww-dot { flex: none; margin: 0; }
+.ww-mini-pos { flex: none; min-width: 1ch; font-family: var(--ww-display); font-size: 18px; line-height: 1; color: var(--muted); }
+.ww-mini-words { flex: none; font-weight: 800; }
+.ww-mini.is-lead .ww-mini-pos { color: var(--ww-gold); }
+.ww-mini.is-you { border-color: color-mix(in srgb, var(--text) 50%, var(--ww-line)); }
+.ww-mini.is-done { border-color: var(--ww-gold); }
+.ww-mini.is-out { opacity: 0.5; }
+.ww-racer.is-track-min .ww-track-panel,
+.ww-racer:not(.is-track-min) .ww-mini-track { display: none; }
 
 /* ---------- Race: racer layout ---------- */
 .ww-racer { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
@@ -593,6 +634,7 @@ body[data-view="race"] .ww-race {
         grid-template-areas: "pos who nums" "run run run" "acts acts acts";
     }
     .is-compact .ww-lane { grid-template-areas: "pos who nums" "run run run"; }
+    .ww-mini { min-width: 6.5rem; gap: 6px; padding: 4px 10px 4px 8px; }
     .ww-acts { justify-content: flex-end; }
     .ww-sb { flex-basis: 33%; }
     .ww-sb-val { font-size: 24px; }

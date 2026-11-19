@@ -48,7 +48,7 @@ import { createRaceCaller } from "@alysum/community/word-war-calls.js";
 import { restoreUnsavedWriting } from "@alysum/community/word-war-backup.js";
 import { bookChoices } from "@alysum/community/word-war-books.js";
 import { initWorkspaceShell } from "/js/studio/shell.js";
-import { createTrack, heartIcon } from "/js/word-wars/track.js";
+import { createMiniTrack, createTrack, heartIcon } from "/js/word-wars/track.js";
 import { WRITE_IN_NEW, mountWaitingRoom } from "/js/word-wars/waiting.js";
 import { createPromptView } from "/js/word-wars/prompt-picker.js";
 import { mountWriter } from "/js/word-wars/writer.js";
@@ -70,6 +70,10 @@ const MAX_CALLS = 40;
 const HUB = "/word-wars-lobby";
 // The book picked on the hub (lobby.js keeps it here too).
 const BOOK_KEY = "alysum:word-wars:book";
+// "full" or "mini": whether this racer keeps the track open or rolled up.
+const TRACK_KEY = "alysum:word-wars:track";
+// Shorter screens start with the track rolled up, so the page is mostly for writing.
+const ROOMY_HEIGHT_PX = 820;
 
 const $ = (id) => document.getElementById(id);
 const raceUrl = (id) => `/word-wars?race=${encodeURIComponent(id)}`;
@@ -104,6 +108,22 @@ function readSession(key, fallback) {
         return sessionStorage.getItem(key) || fallback;
     } catch {
         return fallback;
+    }
+}
+
+function readTrackChoice() {
+    try {
+        return localStorage.getItem(TRACK_KEY) || "";
+    } catch {
+        return "";
+    }
+}
+
+function writeTrackChoice(choice) {
+    try {
+        localStorage.setItem(TRACK_KEY, choice);
+    } catch {
+        /* only a convenience */
     }
 }
 
@@ -189,6 +209,7 @@ function runRace({ raceId, uid, booksApi, books, first, restored = [] }) {
         leaveArmedAt: 0,
         endArmedAt: 0,
         isEnding: false,
+        isTrackMini: (readTrackChoice() || (window.innerHeight < ROOMY_HEIGHT_PX ? "mini" : "full")) === "mini",
         resultsKey: "",
         pickKey: null,
         countText: "",
@@ -387,6 +408,7 @@ function runRace({ raceId, uid, booksApi, books, first, restored = [] }) {
     const resultsPrompt = createPromptView($("resPrompt"), $("resPromptToggle"), { freeText: "Free write" });
 
     const racerTrack = createTrack($("racerTrack"), { myId: uid });
+    const miniTrack = createMiniTrack($("miniTrack"), { myId: uid });
     const spectatorTrack = createTrack($("spectatorTrack"), {
         isSpectator: true,
         myId: uid,
@@ -465,8 +487,10 @@ function runRace({ raceId, uid, booksApi, books, first, restored = [] }) {
         if (!mine?.bookId) return null;
         writerLoading = (async () => {
             try {
-                let book = bookCache.get(mine.bookId);
-                if (!book) book = await booksApi.getBook(mine.bookId);
+                // Read the book again: the copy from the waiting room may be minutes old,
+                // and writing on top of an old chapter would undo what was added since.
+                let book = await booksApi.getBook(mine.bookId).catch(() => null);
+                if (!book) book = bookCache.get(mine.bookId);
                 if (!book) {
                     hasWriterFailed = true;
                     toast("Your book could not be opened, so you're watching this one.");
@@ -490,8 +514,11 @@ function runRace({ raceId, uid, booksApi, books, first, restored = [] }) {
                     },
                 });
                 if (writer.createdChapterId) writeSession(RACE_CHAPTER_KEY, writer.createdChapterId);
+                // A start count on the server means this page is picking the race back up
+                // (a reload, a tab the phone put to sleep): carry on from the server's count.
                 const start = me()?.startWords;
-                mineCount = writer.beginCount(start ?? writer.bookWords(), countFrom(), clock.now());
+                const resumeAt = start != null ? me().words : null;
+                mineCount = writer.beginCount(start ?? writer.bookWords(), countFrom(), clock.now(), resumeAt);
                 writer.setEditable(S.status === "running");
                 if (S.status === "running") writer.focus();
                 void sendReport(true);
@@ -557,7 +584,7 @@ function runRace({ raceId, uid, booksApi, books, first, restored = [] }) {
                 });
             }
             if (writer && res.startWords != null && writer.startWords !== res.startWords) {
-                mineCount = writer.beginCount(res.startWords, countFrom(), clock.now());
+                mineCount = writer.beginCount(res.startWords, countFrom(), clock.now(), mineCount?.counted ?? res.words);
             }
         } catch {
             /* try again on the next tick */
@@ -1005,10 +1032,17 @@ function runRace({ raceId, uid, booksApi, books, first, restored = [] }) {
         const track = asRacer ? racerTrack : spectatorTrack;
         // No finish line in chill mode: the bars are scaled so the leader sits about four-fifths along.
         const most = list.reduce((max, r) => Math.max(max, r.userId === uid && mineCount ? mineCount.counted : r.words), 0);
+        const scaleWords = isChill(S.race) ? Math.max(100, Math.ceil((most * 1.25) / 50) * 50) : S.race.targetWords;
+        if (asRacer) {
+            $("racerLayout").classList.toggle("is-track-min", S.isTrackMini);
+            $("trackToggle").textContent = S.isTrackMini ? "Show track" : "Hide track";
+            $("trackToggle").setAttribute("aria-expanded", String(!S.isTrackMini));
+            miniTrack.sync(list, { racers, scaleWords, mine: mineCount });
+        }
         track.sync(list, {
             racers,
             targetWords: S.race.targetWords,
-            scaleWords: isChill(S.race) ? Math.max(100, Math.ceil((most * 1.25) / 50) * 50) : S.race.targetWords,
+            scaleWords,
             isChill: isChill(S.race),
             startsAt: S.race.startsAt,
             status: S.status,
@@ -1177,6 +1211,12 @@ function runRace({ raceId, uid, booksApi, books, first, restored = [] }) {
     }
     $("dropInBtn").addEventListener("click", () => {
         void dropIn();
+    });
+
+    $("trackToggle").addEventListener("click", () => {
+        S.isTrackMini = !S.isTrackMini;
+        writeTrackChoice(S.isTrackMini ? "mini" : "full");
+        tick();
     });
 
     $("endBtn").addEventListener("click", async () => {

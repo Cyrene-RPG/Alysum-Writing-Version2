@@ -8,13 +8,14 @@
  */
 
 import { supabase } from "../authentication/client.js";
+import { SPEED_LIMIT_WPM } from "./word-war-count.js";
+
+export { SPEED_BURST_WORDS, SPEED_LIMIT_WPM, createRaceCounter } from "./word-war-count.js";
 
 export const TARGET_CHOICES = [100, 250, 500, 1000];
 /** Chill session lengths in minutes; null is no limit. */
 export const CHILL_LENGTH_CHOICES = [10, 15, 30, 45, 60, 90, 120, 180, null];
 export const CHILL_DEFAULT_MIN = 30;
-export const SPEED_LIMIT_WPM = 150;
-export const SPEED_BURST_WORDS = 20;
 export const CLOSE_AFTER_FIRST_MS = 2 * 60_000;
 export const MAX_RACE_MS = 2 * 60 * 60_000;
 export const MAX_CHILL_MS = 6 * 60 * 60_000;
@@ -422,58 +423,6 @@ export function standings(race, racers, nowMs) {
 export function averageWpm(words, fromMs, toMs) {
     const minutes = (toMs - fromMs) / 60_000;
     return minutes > 0 ? Math.round(words / minutes) : 0;
-}
-
-// ---------------------------------------------------------------------------
-// The racer's own count
-// ---------------------------------------------------------------------------
-
-/**
- * Counts the way the server does: words the book gained since the start, minus
- * pasted words, never below zero, and rising no faster than the speed limit.
- * The allowance starts at zero when the race starts and grows 2.5 words a
- * second (a pause banks up to 20), so no one can average over 150 wpm.
- * `raw` is what gets sent to the server; `counted` is what the server will
- * accept, so the racer sees the right number straight away. Times are server
- * time (see createServerClock).
- */
-export function createRaceCounter({ startWords = 0, pastedWords = 0, targetWords = 250, startsAtMs = null } = {}) {
-    let start = toCount(startWords);
-    let pasted = toCount(pastedWords);
-    let counted = 0;
-    let budget = 0;
-    let lastAt = startsAtMs;
-    let isOverLimit = false;
-    let raw = 0;
-
-    return {
-        get startWords() { return start; },
-        get pastedWords() { return pasted; },
-        addPasted(words) {
-            if (words > 0) pasted += Math.round(words);
-        },
-        /** Call on every edit and on a timer, so a capped count can catch up. */
-        update(bookWords, nowMs) {
-            raw = Math.max(0, Math.min(targetWords, Math.round(bookWords) - start - pasted));
-            if (lastAt != null && nowMs > lastAt) {
-                budget = Math.min(SPEED_BURST_WORDS, budget + (SPEED_LIMIT_WPM / 60) * ((nowMs - lastAt) / 1000));
-            }
-            lastAt = lastAt == null ? nowMs : Math.max(lastAt, nowMs);
-            if (raw <= counted) {
-                counted = raw;
-                isOverLimit = false;
-            } else {
-                const add = Math.min(raw - counted, Math.floor(budget));
-                counted += add;
-                budget -= add;
-                isOverLimit = raw > counted;
-            }
-            return { raw, counted, isOverLimit };
-        },
-        get state() {
-            return { raw, counted, isOverLimit };
-        },
-    };
 }
 
 // ---------------------------------------------------------------------------

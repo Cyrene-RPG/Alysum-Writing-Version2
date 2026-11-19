@@ -149,12 +149,23 @@ export function mergeWrittenChapters(theirSections, mySections, chapterIds) {
     return next;
 }
 
-/** When the book was last saved on the server (epoch ms), or null if that can't be read. */
-export async function readBookSavedAt(supabase, bookId) {
-    const { data, error } = await supabase.from("books").select("updated").eq("id", bookId).maybeSingle();
-    if (error || !data) return null;
-    const savedAt = Number(data.updated);
-    return Number.isFinite(savedAt) ? savedAt : null;
+/**
+ * The book to put words back into. For a signed-in writer that is the server's
+ * copy, read fresh, with the version a save has to be made on top of (the site
+ * refuses a save made on top of an older version). A device copy that never
+ * reached the server is no substitute: saving on top of it would be refused.
+ */
+async function openForRestore(booksApi, bookId) {
+    try {
+        if (booksApi.readOnlineBook) {
+            const book = await booksApi.readOnlineBook(bookId);
+            return book?.sections ? { book, expectedUpdated: book._cloudUpdated } : null;
+        }
+        const book = await booksApi.getBook(bookId);
+        return book?.sections ? { book, expectedUpdated: null } : null;
+    } catch {
+        return null;
+    }
 }
 
 /**
@@ -170,13 +181,9 @@ export async function restoreUnsavedWriting({ userId, booksApi }) {
     }
     const restored = [];
     for (const [bookId, entries] of byBook) {
-        let book = null;
-        try {
-            book = await booksApi.getBook(bookId);
-        } catch {
-            book = null;
-        }
-        if (!book?.sections) continue;
+        const opened = await openForRestore(booksApi, bookId);
+        if (!opened) continue;
+        const { book, expectedUpdated } = opened;
         let sections = book.sections;
         const changes = [];
         for (const entry of entries) {
@@ -190,7 +197,11 @@ export async function restoreUnsavedWriting({ userId, booksApi }) {
             const next = withUpdatedWords({ ...book, sections });
             let saved = null;
             try {
-                saved = await booksApi.updateBook(bookId, { title: next.title, sections: next.sections, words: next.words });
+                saved = await booksApi.updateBook(
+                    bookId,
+                    { title: next.title, sections: next.sections, words: next.words },
+                    expectedUpdated == null ? undefined : { expectedUpdated },
+                );
             } catch {
                 saved = null;
             }

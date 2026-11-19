@@ -53,6 +53,64 @@ export function avatarEl(racer, color) {
     return el;
 }
 
+/**
+ * The track rolled up to one line for a racer who wants the room for writing:
+ * each writer's place, name and words in race order, with their progress as a
+ * tint behind them.
+ */
+export function createMiniTrack(listEl, { myId = "" } = {}) {
+    const chips = new Map();
+    let order = "";
+
+    function buildChip(racer, color) {
+        const isMe = racer.userId === myId;
+        const li = document.createElement("li");
+        li.className = `ww-mini${isMe ? " is-you" : ""}`;
+        li.style.setProperty("--c", isMe ? "var(--text)" : color);
+        const pos = document.createElement("span");
+        pos.className = "ww-mini-pos";
+        const dot = document.createElement("span");
+        dot.className = "ww-dot";
+        const name = document.createElement("b");
+        name.textContent = isMe ? "You" : racer.displayName;
+        const words = document.createElement("span");
+        words.className = "ww-mini-words";
+        li.append(pos, dot, name, words);
+        return { li, pos, words };
+    }
+
+    /** list: standings(); scaleWords: the word count at the end of the bar; mine: the racer's own live count. */
+    function sync(list, { racers, scaleWords, mine }) {
+        const ids = new Set(list.map((r) => r.userId));
+        for (const [id, refs] of chips) {
+            if (!ids.has(id)) {
+                refs.li.remove();
+                chips.delete(id);
+            }
+        }
+        for (const r of list) {
+            if (!chips.has(r.userId)) chips.set(r.userId, buildChip(r, colorFor(racers, r.userId)));
+        }
+        const nextOrder = list.map((r) => r.userId).join("|");
+        if (nextOrder !== order) {
+            order = nextOrder;
+            list.forEach((r) => listEl.append(chips.get(r.userId).li));
+        }
+        for (const r of list) {
+            const refs = chips.get(r.userId);
+            const words = r.userId === myId && mine && r.finishedAt == null ? mine.counted : r.words;
+            refs.li.style.setProperty("--p", Math.min(100, (words / scaleWords) * 100).toFixed(2));
+            setText(refs.pos, words > 0 || r.place ? String(r.pos) : "–");
+            setText(refs.words, words.toLocaleString());
+            refs.li.classList.toggle("is-lead", r.pos === 1 && words > 0);
+            refs.li.classList.toggle("is-done", r.place != null);
+            refs.li.classList.toggle("is-out", r.hasLeft || r.isGone);
+        }
+    }
+
+    return { sync };
+}
+
 /** Colors follow join order, so a writer keeps theirs from lobby to results. */
 export function colorFor(racers, userId) {
     const ordered = [...racers].sort((a, b) => a.joinedAt - b.joinedAt);

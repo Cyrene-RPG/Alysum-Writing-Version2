@@ -4,6 +4,9 @@
  * on this device until the book has it (word-war-backup.js), a failed save is
  * retried, and if the book was saved somewhere else meanwhile, the chapters
  * written here are merged into that copy instead of overwriting it.
+ *
+ * The race count only moves with words typed here: pasted words, and words
+ * that arrive from another device in a merge, are kept out of it.
  */
 import {
     addBodyChapter,
@@ -17,12 +20,7 @@ import { recordTypedWords } from "@alysum/account/writing-stats.js";
 import { countedWordDelta, isPasteLikeInput } from "@alysum/statistics/typed-input.js";
 import { reviewSentencesForXp, recordPastedRegion } from "@alysum/statistics/sentence-review.js";
 import { createRaceCounter, pageTextFromHtml } from "@alysum/community/word-war-race.js";
-import {
-    keepWriting,
-    markSaved,
-    mergeWrittenChapters,
-    readBookSavedAt,
-} from "@alysum/community/word-war-backup.js";
+import { keepWriting, markSaved, mergeWrittenChapters } from "@alysum/community/word-war-backup.js";
 import { createAutosave } from "/js/editor/autosave.js";
 import { mountDocument } from "/js/editor/document.js";
 import { mountToolbar } from "/js/editor/toolbar.js";
@@ -33,9 +31,16 @@ function pastedKey(raceId) {
     return `alysum:word-wars:pasted:${raceId}`;
 }
 
+/**
+ * Words in the book that weren't typed in this race (pasted, or merged in from
+ * another device; below zero if such words left). Kept on the device, so coming
+ * back in a new tab doesn't add them to the count. Races from before this was
+ * kept on the device still have it in the tab's own storage.
+ */
 function readPasted(raceId) {
     try {
-        return Math.max(0, Number(sessionStorage.getItem(pastedKey(raceId))) || 0);
+        const kept = localStorage.getItem(pastedKey(raceId)) ?? sessionStorage.getItem(pastedKey(raceId));
+        return Math.round(Number(kept) || 0);
     } catch {
         return 0;
     }
@@ -43,7 +48,7 @@ function readPasted(raceId) {
 
 function writePasted(raceId, words) {
     try {
-        sessionStorage.setItem(pastedKey(raceId), String(words));
+        localStorage.setItem(pastedKey(raceId), String(words));
     } catch {
         /* the count still works for this visit */
     }
@@ -62,42 +67,55 @@ export function mountWriter({
     let current = withUpdatedWords(book);
     let counter = null;
     let pasted = readPasted(raceId);
-    // When the server last saved this book, as far as this page knows.
-    let knownSavedAt = Number(book.updated) || 0;
     // Chapters written in during this race: the only ones this page puts into a newer copy.
     const touched = new Set();
 
     const chapters = () => listBodyChapters(current.sections).filter((ch) => ch && ch.kind !== "folder");
     let selectedId = chapters()[chapters().length - 1]?.id || "";
 
-    async function saveBook() {
-        let savedAt = null;
-        try {
-            savedAt = await readBookSavedAt(supabase, current.id);
-        } catch {
-            savedAt = null;
+    /**
+     * The book was saved somewhere else since this page read it (Studio in
+     * another tab or on another device). Take that copy and put the chapters
+     * written here back into it. Returns the version to save on top of.
+     */
+    async function takeOnlineCopy() {
+        const online = await booksApi.readOnlineBook(current.id);
+        const wordsBefore = bookWords();
+        current = withUpdatedWords({ ...online, sections: mergeWrittenChapters(online.sections, current.sections, touched) });
+        // Words that came or went in the other chapters weren't typed in this race.
+        const arrived = bookWords() - wordsBefore;
+        if (arrived) {
+            pasted += arrived;
+            writePasted(raceId, pasted);
+            counter?.shift(arrived);
         }
-        if (savedAt != null && savedAt > knownSavedAt) {
-            // Saved elsewhere since (Studio in another tab or device): start from that copy.
-            const fresh = await booksApi.getBook(current.id).catch(() => null);
-            if (fresh?.sections) {
-                current = withUpdatedWords({ ...fresh, sections: mergeWrittenChapters(fresh.sections, current.sections, touched) });
-                paintChapters();
-                // The open chapter wasn't written in here, so show their newer text before any typing.
-                if (!touched.has(selectedId)) editor.setHtml(currentChapter()?.content || "<p><br></p>");
-            }
-        }
+        if (!chapters().some((ch) => ch.id === selectedId)) selectedId = chapters()[0]?.id || "";
+        paintChapters();
+        // The open chapter wasn't written in here, so show their newer text before any typing.
+        if (!touched.has(selectedId)) editor.setHtml(currentChapter()?.content || "<p><br></p>");
+        return online._cloudUpdated;
+    }
+
+    /** expectedUpdated: the server version to save on top of; left out, the one this page last read. */
+    async function sendBook(expectedUpdated) {
         const next = current;
         const saved = await booksApi.updateBook(next.id, {
             title: next.title,
             sections: next.sections,
             words: next.words,
             media_format: next.media_format,
-        });
-        // updateBook keeps a pending copy and resolves even when the server refused it.
+        }, expectedUpdated == null ? undefined : { expectedUpdated });
+        return { saved, sent: next };
+    }
+
+    async function saveBook() {
+        // updateBook keeps a pending copy and resolves even when the server refused the save.
+        let { saved, sent } = await sendBook();
+        if (saved?._syncCode === "BOOK_CONFLICT") {
+            ({ saved, sent } = await sendBook(await takeOnlineCopy()));
+        }
         if (!saved || saved._synced === false) throw new Error(saved?._syncError || "Not saved yet.");
-        knownSavedAt = Number(saved.updated) || Date.now();
-        markSaved(uid, { raceId, bookId: next.id, sections: next.sections });
+        markSaved(uid, { raceId, bookId: sent.id, sections: sent.sections });
     }
 
     const autosave = createAutosave({ delay: 400, save: () => saveBook() });
@@ -262,9 +280,13 @@ export function mountWriter({
                 text: pageTextFromHtml(editor.getHtml()),
             };
         },
-        /** Start counting from the book's word count when the race began. Times are server time. */
-        beginCount(startWords, startsAtMs, nowMs) {
-            counter = createRaceCounter({ startWords, pastedWords: pasted, targetWords, startsAtMs });
+        /**
+         * Start counting from the book's word count when the race began. Times are
+         * server time. countedWords: the count to carry on from when picking the
+         * race back up (what the server already accepted), or null at the start.
+         */
+        beginCount(startWords, startsAtMs, nowMs, countedWords = null) {
+            counter = createRaceCounter({ startWords, pastedWords: pasted, targetWords, startsAtMs, countedWords });
             return counter.update(bookWords(), nowMs);
         },
         get startWords() {
