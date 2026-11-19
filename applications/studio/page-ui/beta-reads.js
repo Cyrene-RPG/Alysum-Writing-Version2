@@ -97,7 +97,16 @@ function paintRead(root, read, api, refreshList) {
     const badge = el("span", read.status === "closed" ? "Archived" : "Beta Read");
     badge.className = "studio-coeditor-badge";
     const title = el("h2", read.title || "Untitled book");
-    const status = el("p", read.status === "closed" ? "Link closed · Feedback preserved" : "Active · Private feedback copy");
+    const chapters = Number(read.chapterCount || read.chapter_count || 0);
+    const pending = Number(read.pendingFeedbackCount || read.pending_feedback_count || 0);
+    const statusText = read.status === "closed"
+        ? "Link closed · Feedback preserved"
+        : [
+            "Active · Private feedback copy",
+            chapters ? `${chapters} chapter${chapters === 1 ? "" : "s"}` : null,
+            pending ? `${pending} pending` : null,
+        ].filter(Boolean).join(" · ");
+    const status = el("p", statusText);
     status.className = "studio-book-meta";
     const by = el("p", "By " + authorName(read));
     by.className = "studio-book-meta";
@@ -186,7 +195,7 @@ async function refresh(root, api) {
         const { reads } = await api.list();
         root.replaceChildren();
         if (!reads.length) {
-            showMessage(root, "No beta reads yet. Create one from the editor's Share → Beta Read tab.");
+            showMessage(root, "No beta reads yet. Create one from the editor’s Beta Read button.");
             return;
         }
         for (const read of reads) paintRead(root, read, api, () => refresh(root, api));

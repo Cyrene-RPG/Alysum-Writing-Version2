@@ -9,9 +9,7 @@ import { mountStoryBible } from "./story-bible.js";
 import { chapterContentChanged } from "/core/writing-engine/draft-revisions.js";
 import { mountDraftSwitcher } from "./draft-switcher.js";
 import { mountDraftRevisions } from "./draft-revisions.js?v=2";
-import { createSnippetDownloadApi } from "/core/publishing/snippet-download.js";
-import { createExcerptApi } from "/core/publishing/excerpts.js";
-import { mountSnippetSharing } from "./snippets.js";
+import { mountEditorSharing } from "./page/editor-sharing.js";
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=14";
@@ -32,8 +30,8 @@ import { initWorkspaceShell, setWelcomeCopy } from "./shell.js?v=13";
 import { loadWorkspaceProfile, peekWorkspaceProfile } from "@alysum/account/workspace-profile.js";
 import { recordTypedWords, getWritingStats } from "@alysum/account/writing-stats.js";
 import { countedWordDelta } from "@alysum/statistics/typed-input.js";
-import { reviewSentencesForXp, recordPastedRegion } from "@alysum/statistics/sentence-review.js";
-import { isProbablyOnline, onReconnect } from "@alysum/synchronization-engine/network.js";
+import { recordPastedRegion } from "@alysum/statistics/sentence-review.js";
+import { isProbablyOnline } from "@alysum/synchronization-engine/network.js";
 import { mountToolbar } from "./toolbar.js?v=9";
 import { bindManuscriptNav } from "./page/manuscript-nav.js?v=1";
 import {
@@ -57,6 +55,11 @@ import { mountTypewriter } from "./page/typewriter.js?v=41";
 import { maybeCreateAutoVersion } from "@alysum/writing-engine/version-api.js";
 import { mountPreviewSession } from "./page/preview-session.js?v=23";
 import { bindPersistHooks } from "./page/persist-hooks.js?v=1";
+import { mountWritingGoalToasts } from "./page/writing-goal-toasts.js";
+import { createSaveStatus } from "./page/save-status.js";
+import { createSentenceReview } from "./page/sentence-review.js";
+import { bindCloudResync } from "./page/cloud-resync.js";
+import { getWriterDom } from "./page/writer-dom.js";
 
 async function boot() {
     initWorkspaceShell({ lead: "Working On ", accent: "…", subtitle: "Loading…" });
@@ -123,81 +126,15 @@ async function boot() {
         imageUrl: profile.imageUrl,
     });
 
-    const loading = document.getElementById("loadingPanel");
-    const shell = document.getElementById("writerShell");
-    const chapterList = document.getElementById("chapterList");
-    const frontList = document.getElementById("frontList");
-    const bodyList = document.getElementById("bodyList");
-    const backList = document.getElementById("backList");
-    const frontEmpty = document.getElementById("frontEmpty");
-    const backEmpty = document.getElementById("backEmpty");
-    const chaptersPane = document.getElementById("chaptersPane");
-    const bookPane = document.getElementById("bookPane");
-    const tabChapters = document.getElementById("tabChapters");
-    const tabBook = document.getElementById("tabBook");
-    const bookTitle = document.getElementById("bookTitle");
-    const chapterTitle = document.getElementById("chapterTitle");
-    const folderView = document.getElementById("folderView");
-    const folderMeta = document.getElementById("folderMeta");
-    const folderList = document.getElementById("folderList");
-    const pageEl = document.getElementById("pageEditor");
-    const toolbarMount = document.getElementById("writerToolbar");
-    const saveStatus = document.getElementById("saveStatus");
-    const saveRecovery = document.getElementById("saveRecovery");
-    const retryEditorSave = document.getElementById("retryEditorSave");
+    const {
+        loading, shell, chapterList, frontList, bodyList, backList, frontEmpty, backEmpty,
+        chaptersPane, bookPane, tabChapters, tabBook, bookTitle, chapterTitle, folderView,
+        folderMeta, folderList, pageEl, toolbarMount, saveStatus, saveRecovery, retryEditorSave,
+        chapterWordsEl, totalWordsEl, treeToggle, railToggle, treeAdd, folderAdd, noteAdd,
+        frontAdd, bodyAdd, backAdd,
+    } = getWriterDom();
     const pendingRecovery = mountPendingRecovery({ api, bookId, anchor: document.getElementById("saveFeedback") });
-    let saveStatusTimer = 0;
-    function setSaveStatus(text, hideAfterMs) {
-        if (!saveStatus) return;
-        clearTimeout(saveStatusTimer);
-        const label = String(text || "").trim();
-        saveStatus.textContent = label;
-        saveStatus.hidden = !label;
-        const feedback = document.getElementById("saveFeedback");
-        if (feedback) feedback.hidden = !label;
-        if (!label && saveRecovery) saveRecovery.hidden = true;
-        if (label && hideAfterMs) {
-            saveStatusTimer = setTimeout(() => {
-                saveStatus.textContent = "";
-                saveStatus.hidden = true;
-            }, hideAfterMs);
-        }
-    }
-    function cloudLooksOffline(saved) {
-        if (session.mode !== "cloud") return false;
-        if (saved && saved._synced === false) return true;
-        return !isProbablyOnline();
-    }
-    function paintOfflineStatus(saved) {
-        if (session.mode !== "cloud") {
-            setSaveStatus("");
-            return;
-        }
-        if (saved?._synced === false && saveRecovery) saveRecovery.hidden = false;
-        if (saved?._cached === false) {
-            setSaveStatus("Not saved online or on this device. Keep this tab open and download a backup before leaving.");
-            return;
-        }
-        if(saved?._synced===false && isProbablyOnline()){
-            setSaveStatus("Not saved online. " + (saved._syncError || "Check your connection and book access.") + (saved._cached === true ? " Your writing is kept on this device." : ""));
-            return;
-        }
-        if (cloudLooksOffline(saved)) {
-            setSaveStatus("Offline — saved on this device");
-            return;
-        }
-        setSaveStatus("");
-    }
-    const chapterWordsEl = document.getElementById("chapterWords");
-    const totalWordsEl = document.getElementById("totalWords");
-    const treeToggle = document.getElementById("treeToggle");
-    const railToggle = document.getElementById("railToggle");
-    const treeAdd = document.getElementById("treeAdd");
-    const folderAdd = document.getElementById("folderAdd");
-    const noteAdd = document.getElementById("noteAdd");
-    const frontAdd = document.getElementById("frontAdd");
-    const bodyAdd = document.getElementById("bodyAdd");
-    const backAdd = document.getElementById("backAdd");
+    const { setSaveStatus, paintOfflineStatus } = createSaveStatus({ saveStatus, saveRecovery, session });
 
     loading?.classList.add("hidden");
     shell?.classList.remove("hidden");
@@ -241,6 +178,21 @@ async function boot() {
         name: profile.name,
         imageUrl: profile.imageUrl,
     });
+    function goalStatsNow() {
+        return getWritingStats(profile || {}, { userId: session.user?.id });
+    }
+    const goalToasts = mountWritingGoalToasts({
+        toastEl: document.getElementById("libToast"),
+        getProfile: () => profile,
+        getUserId: () => session.user?.id,
+    });
+    const dailyGoal = mountEditorDailyGoal({
+        anchor: document.getElementById("editorActionRow"),
+        getStats: goalStatsNow,
+    });
+    mountBreakReminders({ bookId, getWriterName: () => profile.name });
+    mountEditorSound({ actions: document.getElementById("editorActions") });
+    if (bookTitle) bookTitle.value = book.title || "";
     void profilePromise.then((next) => {
         profile = next;
         initWorkspaceShell({
@@ -250,53 +202,9 @@ async function boot() {
             name: profile.name,
             imageUrl: profile.imageUrl,
         });
-        primeGoalMilestones();
+        goalToasts.prime();
         dailyGoal.refresh();
     });
-
-    // Daily Goal (track) mode set to "hidden": no Studio bar, so celebrate each
-    // checkpoint/goal with a toast here as it's crossed while writing.
-    const goalToastEl = document.getElementById("libToast");
-    let lastGoalHit = 0;
-    let goalMilestonesPrimed = false;
-    function goalStatsNow() {
-        return getWritingStats(profile || {}, { userId: session.user?.id });
-    }
-    const dailyGoal = mountEditorDailyGoal({ anchor: document.getElementById("editorActionRow"), getStats: goalStatsNow });
-    mountBreakReminders({ bookId, getWriterName: () => profile.name });
-    mountEditorSound({ actions: document.getElementById("editorActions") });
-    function primeGoalMilestones() {
-        lastGoalHit = goalStatsNow().checkpoint?.hit || 0;
-        goalMilestonesPrimed = true;
-    }
-    function showGoalToast(text) {
-        if (!goalToastEl) return;
-        goalToastEl.textContent = text;
-        goalToastEl.hidden = false;
-        clearTimeout(showGoalToast._t);
-        showGoalToast._t = setTimeout(() => { goalToastEl.hidden = true; }, 2600);
-    }
-    function checkGoalMilestones() {
-        // Cheap pre-check so the hot path skips getWritingStats for everyone else.
-        const mode = profile?.wordGoalMode ?? profile?.word_goal_mode;
-        const hidden = profile?.writingGoalHidden ?? profile?.writing_goal_hidden;
-        if (mode !== "track" || !hidden) return;
-        const s = goalStatsNow();
-        const cp = s.checkpoint;
-        if (!s.enabled || s.mode !== "track" || !s.goalHidden || !cp || !cp.list.length) {
-            lastGoalHit = cp?.hit || 0;
-            return;
-        }
-        if (!goalMilestonesPrimed) { lastGoalHit = cp.hit; goalMilestonesPrimed = true; return; }
-        if (cp.hit > lastGoalHit) {
-            const crossed = cp.list[cp.hit - 1];
-            showGoalToast(cp.next == null
-                ? `🎉 Goal reached — ${s.wordsToday.toLocaleString()} words today`
-                : `🎉 ${crossed.toLocaleString()} words — checkpoint reached`);
-        }
-        lastGoalHit = cp.hit;
-    }
-    if (bookTitle) bookTitle.value = book.title || "";
 
     let bookRev = 0;
     let reviewingSaveConflict = false;
@@ -401,7 +309,7 @@ async function boot() {
             removed: Math.max(0, -wordChange),
         });
         if (wordChange !== 0) dailyGoal.refresh();
-        if (wordChange > 0) checkGoalMilestones();
+        if (wordChange > 0) goalToasts.check();
         book._rev = ++bookRev;
         paintWordCount(chapterWordsEl, totalWordsEl, book, selectedId);
         if (itemKind(currentChapter(book, selectedId)) === "folder") {
@@ -430,6 +338,11 @@ async function boot() {
         return countWordsInHtml(html) === 0;
     }
 
+    const sentenceReview = {
+        scheduleSentenceReview() {},
+        runSentenceReview: async () => {},
+    };
+
     function applyChapterContent(html, event) {
         if (closing || selectedKind() === "folder") return;
         const stored = currentChapter(book, selectedId);
@@ -443,43 +356,23 @@ async function boot() {
             recordPastedRegion(session.user?.id, event.prevHtml, html);
         }
         persist({ ...book, sections: setChapterContent(book.sections, selectedId, html) }, false, { event });
-        scheduleSentenceReview();
+        sentenceReview.scheduleSentenceReview();
         if (findUi?.isOpen?.()) findUi.refresh();
-    }
-
-    // Sentence XP: check what the writer wrote, on idle / save / pagehide.
-    let sentenceReviewTimer = 0;
-    let sentenceReviewBusy = false;
-    function scheduleSentenceReview(delay = 8000) {
-        clearTimeout(sentenceReviewTimer);
-        sentenceReviewTimer = window.setTimeout(() => { void runSentenceReview(); }, delay);
-    }
-    async function runSentenceReview() {
-        if (sentenceReviewBusy || closing) return;
-        sentenceReviewBusy = true;
-        try {
-            const live = { ...currentChapter(book, selectedId), content: editor.getHtml() };
-            const chapters = listBodyChapters(book.sections)
-                .filter((ch) => ch && ch.kind !== "folder")
-                .map((ch) => (ch.id === live.id ? live : ch));
-            await reviewSentencesForXp({
-                chapters,
-                source: "solo",
-                userId: session.user?.id,
-                isLocal: session.mode !== "cloud",
-                supabase,
-            });
-        } catch {
-            /* try again next idle */
-        } finally {
-            sentenceReviewBusy = false;
-        }
     }
 
     const editor = mountDocument({
         pageEl,
         onInput: applyChapterContent,
     });
+    Object.assign(sentenceReview, createSentenceReview({
+        getBook: () => book,
+        getSelectedId: () => selectedId,
+        getClosing: () => closing,
+        editor,
+        session,
+        supabase,
+    }));
+    const { scheduleSentenceReview, runSentenceReview } = sentenceReview;
 
     const typewriterExit = document.getElementById("typewriterExit");
     const typewriter = mountTypewriter({ pageEl, editor, typewriterExit, focusMode: document.getElementById("focusMode") });
@@ -510,11 +403,8 @@ async function boot() {
         }
     });
     typewriter.setToolbarApi(toolbarApi);
-    mountSnippetSharing({
-        button: document.getElementById("share-snippet"),
-        excerptApi: createExcerptApi(supabase, { origin: window.location.origin }),
-        downloadApi: createSnippetDownloadApi(supabase, { origin: window.location.origin, getBook: () => book }),
-        pageEl,
+    mountEditorSharing({
+        supabase,
         getBook: () => book,
         getAuthor: () => profile.name || "",
     });
@@ -680,60 +570,27 @@ async function boot() {
     });
     mountStoryBible({ button: document.getElementById("open-story-bible"), pageEl, supabase, session,
         getBook: () => book, getChapterId: () => selectedId, saveCurrent: saveChapter });
-    // A copy left unsaved from an earlier visit: point at the buttons that fix it, not at the connection.
-    const unsavedOnOpen = "Some writing on this device was not saved online during an earlier visit. Click Retry save. If this message stays, click Review versions, then Save this tab to original.";
-    paintOfflineStatus(book._pending ? { ...book, _synced: false, _cached: true, _syncError: unsavedOnOpen } : undefined);
-    if (openedFromCache && session.mode === "cloud") {
-        void api.getBook(bookId).then((fresh) => {
-            if (!fresh) {
-                // Revalidation came back empty: access to this book is gone
-                // (revoked editor/collab, or deleted). The cache is not an access
-                // grant — leave, unless we're holding unsynced local edits.
-                if (!book._pending && bookRev === 0 && isProbablyOnline()) {
-                    window.location.replace("/studio");
-                }
-                return;
-            }
-            if (book._pending || bookRev > 0) return;
-            if (Number(fresh.updated || 0) <= Number(book.updated || 0)) return;
-            book = withUpdatedWords({
-                ...fresh,
-                sections: cleanSections(fresh.sections),
-                _rev: bookRev,
-            });
-            if (bookTitle) bookTitle.value = book.title || "";
-            const keep = currentChapter(book, selectedId);
-            setSelectedId(keep?.id || fallbackChapterId(book.sections, listBodyChapters(book.sections)[0]?.id || ""));
-            showChapter(selectedId, { rebuildTree: true });
-            setWelcomeCopy({ lead: "Working On ", accent: book.title || "Untitled Book" });
-            writerBackground.refresh();
-        }).catch(() => {});
-    }
-    onReconnect(async () => {
-        if (session.mode !== "cloud" || reviewingSaveConflict) return;
-        if (book._pending || autosave.getStatus() === "error") {
-            await persist(currentBackupSnapshot(), true);
-            return;
-        }
-        if (!api.hasPending?.()) {
-            paintOfflineStatus();
-            return;
-        }
-        setSaveStatus("Uploading…");
-        const result = await api.syncPending();
-        if (result?.failed) {
-            paintOfflineStatus({ _synced: false });
-            return;
-        }
-        setSaveStatus("Saved", 2000);
+    bindCloudResync({
+        openedFromCache,
+        session,
+        api,
+        bookId,
+        getBook: () => book,
+        setBook: (next) => { book = next; },
+        getBookRev: () => bookRev,
+        getSelectedId: () => selectedId,
+        setSelectedId,
+        showChapter,
+        bookTitle,
+        writerBackground,
+        reviewingSaveConflict: () => reviewingSaveConflict,
+        autosave,
+        persist,
+        currentBackupSnapshot,
+        paintOfflineStatus,
+        setSaveStatus,
+        pendingRecovery,
     });
-    if (session.mode === "cloud" && isProbablyOnline()) {
-        void api.syncPending().then((result) => {
-            pendingRecovery.refresh();
-            if (result?.failed && book._pending) paintOfflineStatus({ _synced: false, _cached: true, _syncError: unsavedOnOpen });
-            else if (result?.failed) paintOfflineStatus({ _synced: false });
-        });
-    }
 }
 
 boot().catch((err) => {

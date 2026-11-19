@@ -1,19 +1,16 @@
-import { createBetaReadApi } from "./beta-read-api.js";
-import { supabase as betaReadSupabase } from "@alysum/authentication/client.js";
-import { mountBetaReadPicker } from "./beta-read-picker.js";
 import { requestSnippetDownload, shareSnippet, copyReadingLink } from "/site-appearance/js-runtime/snippet-export.js";
 import { normalizeExcerpt, countExcerptWords, MAX_EXCERPT_CHARACTERS, MAX_EXCERPT_WORDS } from "/core/publishing/excerpts.js";
 import { normalizeSnippetCard, cardFileName, CARD_FORMATS, MAX_CARD_CHARACTERS } from "/core/publishing/snippet-card.js";
 import { layoutSnippetPages, drawSnippetPage } from "/site-appearance/js-runtime/snippet-card.js";
 
-export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () => "", initialExcerpt = "", excerptApi = null, downloadApi = null, betaReadApi = null }) {
+export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () => "", initialExcerpt = "", excerptApi = null, downloadApi = null }) {
     if (!button || !pageEl) return;
     const dialog = document.createElement("dialog");
     dialog.className = "quote-dialog";
     dialog.setAttribute("aria-labelledby", "quote-dialog-title");
     dialog.innerHTML = `
         <div class="quote-dialog-head"><div><p class="quote-label">WIP sharing</p><h2 id="quote-dialog-title">Share an excerpt</h2></div><button type="button" class="quote-close" aria-label="Close card editor">×</button></div>
-        <div class="quote-modes" role="group" aria-label="Sharing format"><button type="button" class="quote-button" data-share-mode="link" aria-pressed="true">Reading link</button><button type="button" class="quote-button" data-share-mode="image" aria-pressed="false">Image card</button><button type="button" class="quote-button" data-share-mode="beta" aria-pressed="false">Beta Read</button></div>
+        <div class="quote-modes" role="group" aria-label="Sharing format"><button type="button" class="quote-button" data-share-mode="link" aria-pressed="true">Reading link</button><button type="button" class="quote-button" data-share-mode="image" aria-pressed="false">Image card</button></div>
         <div class="quote-workspace">
             <form class="quote-controls" id="quote-form">
                 <button type="button" id="quote-select-in-wip" class="quote-button quote-select-in-wip">Select text in WIP</button><label for="quote-excerpt">Selected text<textarea id="quote-excerpt" maxlength="${MAX_EXCERPT_CHARACTERS}" rows="7" required placeholder="Select text in your WIP first, or paste an excerpt here."></textarea></label>
@@ -141,17 +138,13 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
             : Promise.resolve();
         return fontPromise;
     }
-    const betaPicker = mountBetaReadPicker({ host: dialog, getBook, getAuthor, api: betaReadApi || createBetaReadApi(betaReadSupabase) });
     function setMode(nextMode) {
-        mode = nextMode;
+        mode = nextMode === "image" ? "image" : "link";
         pageIndex = 0;
         for (const tab of dialog.querySelectorAll("[data-share-mode]")) tab.setAttribute("aria-pressed", String(tab.dataset.shareMode === mode));
-        const beta = mode === "beta";
-        dialog.querySelector(".quote-workspace").hidden = beta;
-        dialog.querySelector(".quote-dialog-foot").hidden = beta;
-        if (beta) { betaPicker.open(); return; }
-        betaPicker.close();
         const image = mode === "image";
+        dialog.querySelector(".quote-workspace").hidden = false;
+        dialog.querySelector(".quote-dialog-foot").hidden = false;
         find("quote-image-options").hidden = !image;
         find("quote-background-option").hidden = !image;
         find("quote-brand-option").hidden = !image;
