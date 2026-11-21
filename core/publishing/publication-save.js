@@ -60,6 +60,14 @@ export async function readPublicationVersion(api, baseline, ownerId) {
 export async function savePublicationSettings(api, baseline, patch, ownerId) {
     const allowed = new Set(['title', 'publish_meta', 'published_chapter_ids', 'is_published']);
     if (Object.keys(patch).some(key => !allowed.has(key))) throw new Error('Publication settings cannot replace manuscript text.');
-    const expectedUpdated = await readPublicationVersion(api, baseline, ownerId);
-    return api.updateBook(baseline.id, patch, { expectedUpdated });
+    // A timestamp can advance between verification and the conditional write.
+    // Retry only after rechecking the entire publication baseline; never replay
+    // the listing request or overwrite changed manuscript/publication content.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+        const expectedUpdated = await readPublicationVersion(api, baseline, ownerId);
+        const saved = await api.updateBook(baseline.id, patch, { expectedUpdated });
+        if (saved?._syncCode !== 'BOOK_CONFLICT' || attempt === 2) return saved;
+        const currentVersion = await readPublicationVersion(api, baseline, ownerId);
+        if (String(currentVersion) === String(expectedUpdated)) return saved;
+    }
 }
