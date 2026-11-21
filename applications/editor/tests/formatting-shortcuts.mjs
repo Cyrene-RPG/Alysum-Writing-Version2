@@ -3,7 +3,8 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { resolve, extname } from "node:path";
 
-const { chromium } = await import(process.env.PLAYWRIGHT_MODULE_PATH || "playwright");
+const browserName = process.env.EDITOR_BROWSER || "chromium";
+const playwright = await import(process.env.PLAYWRIGHT_MODULE_PATH || "playwright");
 const root = resolve(new URL("../../../", import.meta.url).pathname);
 const fixture = [
 '<!doctype html><html><head><meta charset="utf-8">',
@@ -38,7 +39,7 @@ const server = createServer(async (req, res) => {
     } catch { res.statusCode = 404; res.end(); }
 });
 await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
-const browser = await chromium.launch({ headless: true });
+const browser = await playwright[browserName].launch({ headless: true });
 try {
     const page = await browser.newPage();
     const errors = [];
@@ -129,7 +130,7 @@ try {
         assert.match(await button.getAttribute("title"), /Ctrl\+/);
     }
     assert.deepEqual(errors, []);
-    console.log("PASS formatting shortcuts: Ctrl, Meta, selection, caret, save/reload, undo, Typewriter, scope, modifiers and IME");
+    console.log(browserName + " PASS formatting shortcuts: Ctrl, Meta, selection, caret, save/reload, undo, Typewriter, scope, modifiers and IME");
 } finally {
     await browser.close();
     await new Promise(resolve => server.close(resolve));
