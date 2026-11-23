@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { handleSnippetDownload, MAX_PNG_BYTES } from '../../server/http-handlers/snippet-download.mjs';
 import { createSnippetDownloadApi } from '../../publishing/snippet-download.js';
+import { CARD_FORMATS } from '../../publishing/snippet-card.js';
 const png = Uint8Array.from(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a5ioAAAAASUVORK5CYII=', 'base64'));
 const id = 'a'.repeat(48), origin = 'https://alysumwriting.com';
 function fixture() {
@@ -70,4 +71,15 @@ test('the deployed endpoint accepts any owned WIP and rejects unowned WIPs', asy
    assert.equal(response.status, owned ? 201 : 401);
   }
  } finally { globalThis.fetch = originalFetch; globalThis.caches = originalCaches; }
+});
+
+test('download handler accepts every editor format and rejects unsupported wide cards', async () => {
+ for (const [format, dimensions] of Object.entries({ ...CARD_FORMATS, unsupported: { width: 1920, height: 16000 } })) {
+  const header = png.slice();
+  const view = new DataView(header.buffer);
+  view.setUint32(16, dimensions.width);
+  view.setUint32(20, dimensions.height);
+  const response = await handleSnippetDownload(upload(header), fixture().dependencies);
+  assert.equal(response.status, format === 'unsupported' ? 400 : 201, format);
+ }
 });
