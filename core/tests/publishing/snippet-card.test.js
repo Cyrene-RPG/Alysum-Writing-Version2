@@ -70,7 +70,15 @@ test("long excerpts paginate at readable size with every wrapped line in order",
         const pages = layoutSnippetPages(context, data, dimensions);
         assert.ok(pages.length > 1);
         context.font = '600 44px serif';
-        assert.deepEqual(pages.flatMap(page => page.lines), wrapCardText(context, excerpt, dimensions.width - 176));
+        const rows = pages.flatMap(page => page.styledLines);
+        assert.equal(pages.flatMap(page => page.lines).join(" ").replace(/\s+/g, " "), excerpt.replace(/\s+/g, " "));
+        for (const row of rows) {
+            const text = row.map(run => run.text).join("");
+            if (!text) continue;
+            assert.equal(row[0].text === "", text.startsWith("Paragraph "));
+            if (text.startsWith("Paragraph ")) assert.equal(row[0].width, 44);
+            assert.ok(row.reduce((width, run) => width + run.width, 0) <= dimensions.width - 176);
+        }
         for (const page of pages) {
             assert.equal(page.size, 44);
             assert.ok(page.lines.length * page.lineHeight <= dimensions.height - 200 - 260);
