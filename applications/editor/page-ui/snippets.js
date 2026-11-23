@@ -70,7 +70,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
             <section class="quote-preview" aria-label="Image preview"><div class="quote-preview-surface"><article id="quote-section-preview" hidden><p class="quote-label">Read-only section</p><h3 id="quote-section-title"></h3><p id="quote-section-author" class="quote-hint"></p><div id="quote-section-text"></div></article><canvas id="quote-canvas" role="img" aria-label="Preview of the selected excerpt card" hidden></canvas><p id="quote-placeholder" class="quote-hint">Select or paste an excerpt to preview the card.</p></div><div id="quote-pagination" class="quote-pagination" role="group" aria-label="Card pages" hidden><button type="button" id="quote-previous" class="quote-button">Previous</button><span id="quote-page-number" class="quote-hint" aria-live="polite"></span><button type="button" id="quote-next" class="quote-button">Next</button></div><p id="quote-dimensions" class="quote-hint"></p></section>
         </div>
         <p id="quote-error" class="quote-error" role="alert" hidden></p>
-        <div class="quote-dialog-foot"><p id="quote-status" class="quote-hint" role="status"></p><div class="quote-actions"><button type="button" id="quote-create-link" class="quote-button quote-primary" disabled>Create reading link</button><button type="button" id="quote-save" class="quote-button quote-primary" disabled>Save PNG</button><button type="button" id="quote-share" class="quote-button" disabled hidden>Share image…</button></div></div>`;
+        <div class="quote-dialog-foot"><p id="quote-status" class="quote-hint" role="status"></p><div class="quote-actions"><button type="button" id="quote-create-link" class="quote-button quote-primary" disabled>Create reading link</button><a id="quote-local-save" class="quote-button quote-primary" hidden>Save PNG</a><button type="button" id="quote-save" class="quote-button" disabled hidden>Use alternate download</button><button type="button" id="quote-share" class="quote-button" disabled hidden>Share image…</button></div></div>`;
     document.body.append(dialog);
     const selectionBar = document.createElement("div");
     selectionBar.className = "quote-selection-bar";
@@ -112,6 +112,8 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
     const canvas = find("quote-canvas");
     const errorEl = find("quote-error");
     const save = find("quote-save");
+    const localSave = find("quote-local-save");
+    let localDownloadUrl = "";
     const share = find("quote-share");
     const status = find("quote-status");
     let mode = "link";
@@ -170,6 +172,11 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         return selection.toString();
     }
     function clearImage() {
+        localSave.hidden = true;
+        localSave.removeAttribute("href");
+        save.hidden = true;
+        if (localDownloadUrl) URL.revokeObjectURL(localDownloadUrl);
+        localDownloadUrl = "";
         file = null;
         save.disabled = true;
         share.disabled = true;
@@ -202,7 +209,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         find("quote-link-manager").hidden = image;
         find("quote-create-link").hidden = image;
         find("quote-section-preview").hidden = image;
-        save.hidden = !image;
+        save.hidden = true;
         share.hidden = true;
         canvas.hidden = true;
         find("quote-link-result").hidden = true;
@@ -294,12 +301,16 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
             find("quote-page-number").textContent = `Page ${pageIndex + 1} of ${pageCount}`;
             find("quote-previous").disabled = pageIndex === 0;
             find("quote-next").disabled = pageIndex === pageCount - 1;
-            save.textContent = pageCount > 1 ? `Save page ${pageIndex + 1} PNG` : "Save PNG";
+            localDownloadUrl = URL.createObjectURL(file);
+            localSave.href = localDownloadUrl;
+            localSave.download = file.name;
+            localSave.hidden = false;
+            localSave.textContent = pageCount > 1 ? `Save page ${pageIndex + 1} PNG` : "Save PNG";
             share.textContent = pageCount > 1 ? `Share page ${pageIndex + 1}…` : "Share image…";
             save.disabled = false;
             share.hidden = false;
             share.disabled = false;
-            status.textContent = pageCount > 1 ? `${pageCount} cards. Save or share each page using Previous and Next. Download copies expire after five minutes.` : "Save PNG creates a temporary download copy on Alysum, available for up to five minutes.";
+            status.textContent = pageCount > 1 ? `${pageCount} cards. Save or share each page using Previous and Next.` : "Save PNG downloads this card directly to your device.";
         } catch (error) {
             if (request !== generation || !dialog.open) return;
             canvas.hidden = true;
@@ -405,6 +416,10 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
     form.addEventListener("input", queueRender);
     form.addEventListener("change", queueRender);
     form.addEventListener("submit", (event) => event.preventDefault());
+    localSave.addEventListener("click", () => {
+        save.hidden = false;
+        status.textContent = "If the PNG did not save, choose Use alternate download.";
+    });
     save.addEventListener("click", async () => {
         if (!file || save.disabled) return;
         const saving = file; const opening = generation;
