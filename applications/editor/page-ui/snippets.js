@@ -6,6 +6,34 @@ import { normalizeExcerpt, countExcerptWords, MAX_EXCERPT_CHARACTERS, MAX_EXCERP
 import { normalizeSnippetCard, cardFileName, CARD_FORMATS, MAX_CARD_CHARACTERS } from "/core/publishing/snippet-card.js";
 import { layoutSnippetPages, drawSnippetPage } from "/site-appearance/js-runtime/snippet-card.js";
 
+function captureCardFormatting(range) {
+    let text = "";
+    let mask = "";
+    let lastBlock = null;
+    function append(value, italic = false) {
+        text += value;
+        mask += (italic ? "1" : "0").repeat(value.length);
+    }
+    function visit(node) {
+        if (!range.intersectsNode(node)) return;
+        if (node.nodeType === Node.TEXT_NODE || node.nodeName === "BR") {
+            const block = node.parentElement.closest("p, div, li, blockquote, h1, h2, h3, h4, h5, h6");
+            if (lastBlock && lastBlock !== block) append("\n\n");
+            lastBlock = block;
+            if (node.nodeName === "BR") { append("\n"); return; }
+            const start = node === range.startContainer ? range.startOffset : 0;
+            const end = node === range.endContainer ? range.endOffset : node.length;
+            append(node.data.slice(start, end), /italic|oblique/.test(getComputedStyle(node.parentElement).fontStyle));
+            return;
+        }
+        for (const child of node.childNodes) visit(child);
+    }
+    visit(range.commonAncestorContainer);
+    const start = text.length - text.trimStart().length;
+    const trimmed = text.trim();
+    return trimmed ? { text: trimmed, italicMask: mask.slice(start, start + trimmed.length) } : null;
+}
+
 export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () => "", initialExcerpt = "", excerptApi = null, downloadApi = null, betaReadApi = null }) {
     if (!button || !pageEl) return;
     const dialog = document.createElement("dialog");
@@ -77,6 +105,8 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
     let mode = "link";
     let isCreatingLink = false;
     let capturedText = "";
+    let capturedRange = null;
+    let cardSelection = null;
     let file = null;
     let pageIndex = 0;
     let pageCount = 0;
@@ -123,7 +153,9 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         const selection = window.getSelection();
         if (!selection || !selection.rangeCount || selection.isCollapsed) return "";
         const range = selection.getRangeAt(0);
-        return pageEl.contains(range.startContainer) && pageEl.contains(range.endContainer) ? selection.toString() : "";
+        if (!pageEl.contains(range.startContainer) || !pageEl.contains(range.endContainer)) return "";
+        capturedRange = range.cloneRange();
+        return selection.toString();
     }
     function clearImage() {
         file = null;
@@ -225,6 +257,11 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         status.textContent = "Rendering…";
         try {
             const data = normalizeSnippetCard({ excerpt: excerpt.value, title: title.value, author: author.value, style: find("quote-style").value, format: find("quote-format").value, showBrand: find("quote-brand").checked });
+            if (cardSelection) {
+                const formatted = normalizeSnippetCard({ ...data, excerpt: cardSelection.text });
+                data.excerpt = formatted.excerpt;
+                data.italicMask = cardSelection.italicMask;
+            }
             data.backgroundImage = backgroundImage;
             await waitForFont();
             if (request !== generation || !dialog.open) return;
@@ -272,7 +309,10 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
     }
     button.addEventListener("pointerdown", captureSelection);
     button.addEventListener("click", () => {
-        const selected = readSelection() || capturedText || initialExcerpt;
+        const manuscriptSelection = readSelection() || capturedText;
+        const selected = manuscriptSelection || initialExcerpt;
+        cardSelection = manuscriptSelection && capturedRange ? captureCardFormatting(capturedRange) : null;
+        capturedRange = null;
         capturedText = "";
         if (!selected.trim() && !getBook()?.sections?.body?.length) { showSelectionBar(); return; }
         selectionBar.hidden = true;
@@ -349,6 +389,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
     });
     find("quote-previous").addEventListener("click", () => { if (pageIndex > 0) { pageIndex--; void render(); } });
     find("quote-next").addEventListener("click", () => { if (pageIndex + 1 < pageCount) { pageIndex++; void render(); } });
+    excerpt.addEventListener("input", () => { cardSelection = null; });
     form.addEventListener("input", queueRender);
     form.addEventListener("change", queueRender);
     form.addEventListener("submit", (event) => event.preventDefault());
