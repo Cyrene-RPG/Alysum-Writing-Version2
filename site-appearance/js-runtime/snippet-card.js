@@ -91,6 +91,50 @@ export function fitCardText(context, text, maxWidth, maxHeight, { maximum = 62, 
     throw new Error("This excerpt does not fit at a readable size. Shorten it or choose a taller card.");
 }
 
+function wrapStyledLines(context, data, width, size) {
+    const lines = [];
+    let line = [], used = 0, space = false;
+    function flush() {
+        lines.push(line);
+        line = [];
+        used = 0;
+        space = false;
+    }
+    function run(text, italic) {
+        const font = `${italic ? "italic " : ""}600 ${size}px ${SERIF}`;
+        context.font = font;
+        return { text, font, width: context.measureText(text).width };
+    }
+    function add(part) {
+        line.push(part);
+        used += part.width;
+    }
+    for (const token of data.excerpt.matchAll(/\n|[^\S\n]+|\S+/gu)) {
+        const word = token[0];
+        if (word === "\n") { flush(); continue; }
+        if (!word.trim()) { space = true; continue; }
+        const parts = [];
+        for (const match of data.italicMask.slice(token.index, token.index + word.length).matchAll(/0+|1+/g)) {
+            parts.push(run(word.slice(match.index, match.index + match[0].length), match[0][0] === "1"));
+        }
+        const wordWidth = parts.reduce((sum, part) => sum + part.width, 0);
+        const gap = space && line.length ? run(" ", false) : null;
+        if (line.length && used + (gap?.width || 0) + wordWidth > width) flush();
+        if (gap && line.length) add(gap);
+        space = false;
+        for (const part of parts) {
+            if (wordWidth <= width) { add(part); continue; }
+            for (const character of splitCharacters(part.text)) {
+                const glyph = run(character, part.font.startsWith("italic"));
+                if (line.length && used + glyph.width > width) flush();
+                add(glyph);
+            }
+        }
+    }
+    flush();
+    return lines;
+}
+
 /** Keep shared images at their chosen aspect ratio, without shrinking long excerpts. */
 export function layoutSnippetPages(context, data, dimensions) {
     const size = 44;
@@ -100,10 +144,23 @@ export function layoutSnippetPages(context, data, dimensions) {
     const linesPerPage = Math.floor(availableHeight / lineHeight);
     if (linesPerPage < 1) throw new Error("Choose a larger card size.");
     context.font = `600 ${size}px ${SERIF}`;
-    const lines = wrapCardText(context, data.excerpt, dimensions.width - 176);
+    let styledLines = null;
+    if (data.italicMask?.includes("1")) {
+        const width = dimensions.width - 176;
+        styledLines = wrapStyledLines(context, data, width, size);
+        if (styledLines.length <= linesPerPage) {
+            for (let candidate = data.excerpt.length < 100 ? 82 : 62; candidate > size; candidate--) {
+                const rows = wrapStyledLines(context, data, width, candidate);
+                if (rows.length * candidate * 1.5 <= availableHeight) {
+                    return [{ lines: rows.map(row => row.map(run => run.text).join("")), styledLines: rows, size: candidate, lineHeight: candidate * 1.5 }];
+                }
+            }
+        }
+    }
+    const lines = styledLines ? styledLines.map(row => row.map(run => run.text).join("")) : wrapCardText(context, data.excerpt, dimensions.width - 176);
     const pages = [];
     for (let start = 0; start < lines.length; start += linesPerPage) {
-        pages.push({ lines: lines.slice(start, start + linesPerPage), size, lineHeight });
+        pages.push({ styledLines: styledLines?.slice(start, start + linesPerPage), lines: lines.slice(start, start + linesPerPage), size, lineHeight });
     }
     return pages;
 }
@@ -132,7 +189,7 @@ export function drawSnippetCard(canvas, data, dimensions, page = null) {
     const footerSpace = data.title || data.author ? 260 : 150;
     const top = 200;
     const availableHeight = height - top - footerSpace;
-    const fit = page && page.pageCount > 1
+    const fit = page && (page.styledLines || page.pageCount > 1)
         ? { ...page, height: page.lines.length * page.lineHeight }
         : fitCardText(context, data.excerpt, textWidth, availableHeight, { maximum: data.excerpt.length < 100 ? 82 : 62, minimum: page ? 44 : 26 });
     const titleFit = data.title ? fitCardText(context, data.title, textWidth, 70, { maximum: 36, minimum: 20, spacing: 1.1 }) : null;
@@ -149,7 +206,16 @@ export function drawSnippetCard(canvas, data, dimensions, page = null) {
     context.fillStyle = palette.text;
     context.font = `600 ${fit.size}px ${SERIF}`;
     const quoteTop = page?.pageCount > 1 ? top : top + Math.max(0, (availableHeight - fit.height) / 2);
-    fit.lines.forEach((line, index) => context.fillText(line, padding, quoteTop + index * fit.lineHeight));
+    fit.lines.forEach((line, index) => {
+        const y = quoteTop + index * fit.lineHeight;
+        if (!page?.styledLines) { context.fillText(line, padding, y); return; }
+        let x = padding;
+        for (const run of page.styledLines[index]) {
+            context.font = run.font;
+            context.fillText(run.text, x, y);
+            x += run.width;
+        }
+    });
     let footerTop = height - footerSpace + 32;
     if (titleFit) {
         context.font = `600 ${titleFit.size}px ${SERIF}`;
