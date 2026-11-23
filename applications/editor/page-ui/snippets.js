@@ -14,18 +14,30 @@ function captureCardFormatting(range) {
         text += value;
         mask += (italic ? "1" : "0").repeat(value.length);
     }
+    const blockSelector = "p, div, li, blockquote, h1, h2, h3, h4, h5, h6";
+    function enterBlock(block) {
+        if (lastBlock && lastBlock !== block) append("\n");
+        lastBlock = block;
+    }
     function visit(node) {
         if (!range.intersectsNode(node)) return;
         if (node.nodeType === Node.TEXT_NODE || node.nodeName === "BR") {
-            const block = node.parentElement.closest("p, div, li, blockquote, h1, h2, h3, h4, h5, h6");
-            if (lastBlock && lastBlock !== block) append("\n\n");
-            lastBlock = block;
-            if (node.nodeName === "BR") { append("\n"); return; }
+            const block = node.parentElement.closest(blockSelector);
+            // Ignore whitespace used to indent the HTML between paragraph elements.
+            if (node.nodeType === Node.TEXT_NODE && !node.data.trim() &&
+                (node.previousSibling?.matches?.(blockSelector) || node.nextSibling?.matches?.(blockSelector))) return;
+            enterBlock(block);
+            if (node.nodeName === "BR") {
+                // A lone break gives an empty editor paragraph a caret position.
+                if (block?.childNodes.length !== 1 || node.parentElement !== block) append("\n");
+                return;
+            }
             const start = node === range.startContainer ? range.startOffset : 0;
             const end = node === range.endContainer ? range.endOffset : node.length;
             append(node.data.slice(start, end), /italic|oblique/.test(getComputedStyle(node.parentElement).fontStyle));
             return;
         }
+        if (!node.childNodes.length && node.matches?.(blockSelector)) enterBlock(node);
         for (const child of node.childNodes) visit(child);
     }
     visit(range.commonAncestorContainer);
