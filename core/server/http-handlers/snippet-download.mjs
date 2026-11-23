@@ -1,3 +1,5 @@
+import { CARD_FORMATS } from '../../publishing/snippet-card.js';
+
 export const MAX_PNG_BYTES = 16 * 1024 * 1024;
 const TTL = 300000;
 const tokenPattern = /^[a-f0-9]{48}$/;
@@ -34,7 +36,9 @@ export async function handleSnippetDownload(request, { cache, authorize, now = D
     if (!await authorize(request, bytes)) return json({ error: 'Sign in again to prepare the download.' }, 401);
     const dimensions = new DataView(bytes.buffer);
     const width = dimensions.getUint32(16), height = dimensions.getUint32(20);
-    if (!width || !height || width > 1080 || height > 16000) return json({ error: 'Unsupported image dimensions.' }, 400);
+    const standardSize = Object.values(CARD_FORMATS).some(format => format.width === width && format.height === height);
+    const legacySize = width > 0 && width <= 1080 && height > 0 && height <= 16000;
+    if (!standardSize && !legacySize) return json({ error: 'Unsupported image dimensions.' }, 400);
     const id = token(); const expiresAt = now() + TTL;
     let name = String(request.headers.get('X-File-Name') || 'alysum-card.png').replace(/[^a-zA-Z0-9._-]/g, '-').slice(0, 100);
     if (!name.endsWith('.png')) name += '.png';
