@@ -94,6 +94,7 @@ export function fitCardText(context, text, maxWidth, maxHeight, { maximum = 62, 
 function wrapStyledLines(context, data, width, size) {
     const lines = [];
     let line = [], used = 0, space = false;
+    let paragraphStart = true;
     function flush() {
         lines.push(line);
         line = [];
@@ -111,10 +112,11 @@ function wrapStyledLines(context, data, width, size) {
     }
     for (const token of data.excerpt.matchAll(/\n|[^\S\n]+|\S+/gu)) {
         const word = token[0];
-        if (word === "\n") { flush(); continue; }
+        if (word === "\n") { flush(); paragraphStart = true; continue; }
         if (!word.trim()) { space = true; continue; }
         const parts = [];
-        for (const match of data.italicMask.slice(token.index, token.index + word.length).matchAll(/0+|1+/g)) {
+        if (!data.italicMask) parts.push(run(word, false));
+        else for (const match of data.italicMask.slice(token.index, token.index + word.length).matchAll(/0+|1+/g)) {
             parts.push(run(word.slice(match.index, match.index + match[0].length), match[0][0] === "1"));
         }
         const wordWidth = parts.reduce((sum, part) => sum + part.width, 0);
@@ -122,8 +124,14 @@ function wrapStyledLines(context, data, width, size) {
         if (line.length && used + (gap?.width || 0) + wordWidth > width) flush();
         if (gap && line.length) add(gap);
         space = false;
+        if (paragraphStart) {
+            // Reserve one em in the measured row and in the canvas drawing cursor.
+            add({ text: "", font: parts[0].font, width: size });
+            paragraphStart = false;
+        }
+        const splitWord = used + wordWidth > width;
         for (const part of parts) {
-            if (wordWidth <= width) { add(part); continue; }
+            if (!splitWord) { add(part); continue; }
             for (const character of splitCharacters(part.text)) {
                 const glyph = run(character, part.font.startsWith("italic"));
                 if (line.length && used + glyph.width > width) flush();
@@ -144,23 +152,20 @@ export function layoutSnippetPages(context, data, dimensions) {
     const linesPerPage = Math.floor(availableHeight / lineHeight);
     if (linesPerPage < 1) throw new Error("Choose a larger card size.");
     context.font = `600 ${size}px ${SERIF}`;
-    let styledLines = null;
-    if (data.italicMask?.includes("1")) {
-        const width = dimensions.width - 176;
-        styledLines = wrapStyledLines(context, data, width, size);
-        if (styledLines.length <= linesPerPage) {
-            for (let candidate = data.excerpt.length < 100 ? 82 : 62; candidate > size; candidate--) {
-                const rows = wrapStyledLines(context, data, width, candidate);
-                if (rows.length * candidate * 1.5 <= availableHeight) {
-                    return [{ lines: rows.map(row => row.map(run => run.text).join("")), styledLines: rows, size: candidate, lineHeight: candidate * 1.5 }];
-                }
+    const width = dimensions.width - 176;
+    const styledLines = wrapStyledLines(context, data, width, size);
+    if (styledLines.length <= linesPerPage) {
+        for (let candidate = data.excerpt.length < 100 ? 82 : 62; candidate > size; candidate--) {
+            const rows = wrapStyledLines(context, data, width, candidate);
+            if (rows.length * candidate * 1.5 <= availableHeight) {
+                return [{ lines: rows.map(row => row.map(run => run.text).join("")), styledLines: rows, size: candidate, lineHeight: candidate * 1.5 }];
             }
         }
     }
-    const lines = styledLines ? styledLines.map(row => row.map(run => run.text).join("")) : wrapCardText(context, data.excerpt, dimensions.width - 176);
+    const lines = styledLines.map(row => row.map(run => run.text).join(""));
     const pages = [];
     for (let start = 0; start < lines.length; start += linesPerPage) {
-        pages.push({ styledLines: styledLines?.slice(start, start + linesPerPage), lines: lines.slice(start, start + linesPerPage), size, lineHeight });
+        pages.push({ styledLines: styledLines.slice(start, start + linesPerPage), lines: lines.slice(start, start + linesPerPage), size, lineHeight });
     }
     return pages;
 }
