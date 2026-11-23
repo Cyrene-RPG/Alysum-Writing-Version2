@@ -84,3 +84,14 @@ test("page filenames sort in reading order and short quotes stay on one page", (
     const pages = layoutSnippetPages(context, normalizeSnippetCard({excerpt:"One short quote."}), CARD_FORMATS.portrait);
     assert.equal(pages.length, 1);
 });
+
+test("mixed italic text and blank lines survive wrapping and pagination", () => {
+    const paragraph = "A softly spoken word.";
+    const excerpt = Array(60).fill(paragraph).join("\n\n");
+    const italicMask = Array(60).fill("00" + "1".repeat(6) + "0".repeat(paragraph.length - 8)).join("00");
+    const pages = layoutSnippetPages(context, { excerpt, italicMask }, CARD_FORMATS.square);
+    assert.ok(pages.length > 1);
+    const rows = pages.flatMap(page => page.styledLines);
+    assert.equal(rows.map(row => row.map(run => run.text).join("")).join("\n"), excerpt);
+    assert.deepEqual(rows.flat().filter(run => run.font.startsWith("italic")).map(run => run.text), Array(60).fill("softly"));
+});
