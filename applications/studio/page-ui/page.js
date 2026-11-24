@@ -101,16 +101,16 @@ function renderStats(mount, books, profile, userId) {
     const totalWords = books.reduce((total, book) => total + bookWordCount(book), 0);
     const s = getWritingStats(profile || {}, { userId });
     const stats = [
-        { value: totalWords, label: "Total words" },
-        { value: s.wordsThisMonth, label: "This month" },
-        { value: s.wordsThisWeek, label: "This week" },
-        { value: s.streak, label: "Day streak" },
+        { value: totalWords, label: "Total words", period: "day" },
+        { value: s.wordsThisMonth, label: "This month", period: "month" },
+        { value: s.wordsThisWeek, label: "This week", period: "week" },
+        { value: s.streak, label: "Day streak", period: "day" },
     ];
     mount.innerHTML = stats.map((stat) => `
-        <div class="studio-stat">
+        <a class="studio-stat" href="/applications/studio/pages/writing-history.html?period=${stat.period}" aria-label="${stat.label}, ${Number(stat.value).toLocaleString()}. View writing history">
             <span class="studio-stat-num">${Number(stat.value).toLocaleString()}</span>
             <span class="studio-stat-label">${stat.label}</span>
-        </div>`).join("");
+        </a>`).join("");
 }
 
 function renderGoal(goalMount, labelMount, fillMount, profile, userId) {

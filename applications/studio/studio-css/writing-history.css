@@ -1,0 +1,9 @@
+.history { max-width: 44rem; margin: 0 auto; padding: 2rem 1rem; color: var(--text); }
+.history h1 { font-family: "Cormorant Garamond", Georgia, serif; font-size: clamp(2.25rem, 7vw, 3.5rem); margin: 1.5rem 0 .5rem; }
+.history p { color: var(--muted); line-height: 1.5; }
+.history select, .history button { min-height: 44px; padding: .5rem 1rem; background: var(--alysum-ui-panel); color: var(--text); border: 1px solid var(--border); border-radius: .5rem; font: inherit; }
+.history select { margin-left: .5rem; }
+.history table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-variant-numeric: tabular-nums; }
+.history td, .history th { padding: .7rem .25rem; border-bottom: 1px solid var(--border); text-align: left; }
+.history tr > :last-child { text-align: right; }
+.history a { color: var(--text); }
