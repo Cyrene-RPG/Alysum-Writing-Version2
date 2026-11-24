@@ -1,6 +1,6 @@
 import { mountEditorDailyGoal } from "./daily-goal.js";
 import { mountBreakReminders } from "./break-reminders.js";
-import { mountEditorSound } from "./sound.js";
+import { mountEditorSound } from "./sound.js?v=2";
 import { mountWriterBackground } from "./writer-background.js";
 import { mountForceSyncButton } from "./force-sync.js";
 import { mountSaveConflict } from "./save-conflict.js";
@@ -52,7 +52,7 @@ import {
     cleanSections,
 } from "./page/helpers.js?v=41";
 import { createFolderView } from "./page/folder-view.js?v=41";
-import { mountWriterChrome } from "./page/chrome.js?v=47";
+import { mountWriterChrome } from "./page/chrome.js?v=48";
 import { mountTypewriter } from "./page/typewriter.js?v=41";
 import { maybeCreateAutoVersion } from "@alysum/writing-engine/version-api.js";
 import { mountPreviewSession } from "./page/preview-session.js?v=23";

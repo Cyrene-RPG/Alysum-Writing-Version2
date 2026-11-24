@@ -12,6 +12,7 @@ assert.equal(keyboardIsOpen({innerHeight:480,visualHeight:480,restingHeight:844,
 const root=resolve(new URL('../../../',import.meta.url).pathname);
 const setup=`
 import {mountWriterChrome} from '/applications/editor/page-ui/page/chrome.js';
+import {mountEditorSound} from '/applications/editor/page-ui/sound.js';
 import {mountTypewriter} from '/applications/editor/page-ui/page/typewriter.js';
 import {mountPendingRecovery} from '/applications/editor/page-ui/pending-recovery.js';
 import {mountEditorDailyGoal} from '/applications/editor/page-ui/daily-goal.js';
@@ -28,6 +29,7 @@ for(const id of ['open-story-bible','compare-drafts','share-snippet','break-remi
 const ids=['treeToggle','settingsCollapse','railToggle','tabChapters','tabBook','chaptersPane','bookPane','bookTree','settingsPane','settingsTopbar','writerTabs','bookFootSettings','tabSettings','settingsBackTop','mobileTreeOpen','mobileRailOpen'];
 const args=Object.fromEntries(ids.map(id=>[id,$(id)]));
 window.writerChrome=mountWriterChrome({...args,shell:$('writerShell'),tree:$('chapterTree'),backdrop:$('writerShellBackdrop')});
+mountEditorSound();
 mountTypewriter({pageEl:$('pageEditor'),editor:{focus:()=>$('pageEditor').focus()},typewriterExit:$('typewriterExit')});
 if(new URL(location.href).searchParams.has('recovery'))mountPendingRecovery({api:{listRecoveryCopies:()=>[{key:'test:book:tab',book:{id:'test',updated:1,_localRevision:'one',sections:{}}}]},bookId:'test',anchor:$('saveFeedback')});
 window.goalProfile={wordGoalMode:'track',writingGoal:200};
@@ -51,6 +53,7 @@ const server=createServer(async(req,res)=>{
   let path=new URL(req.url,'http://localhost').pathname;
   if(path==='/fixture')path='/applications/editor/pages/editor.html';
   else if(path==='/manifest.webmanifest')path='/applications/main-site/public/manifest.webmanifest';
+  else if(path.startsWith('/js/editor/'))path=path.replace('/js/editor/','/applications/editor/page-ui/');
   else if(path.startsWith('/css/editor/'))path=path.replace('/css/editor/','/applications/editor/editor-css/');
   else if(path.startsWith('/css/library/'))path=path.replace('/css/library/','/applications/library/library-css/');
   else if(path.startsWith('/css/'))path=path.replace('/css/','/applications/main-site/pages-css/');
@@ -79,7 +82,8 @@ try {
   await page.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
   await page.goto(base+'/fixture'+(legacy?'?legacy=1':''));await page.waitForFunction(()=>window.toolsReady);
   const inDrawer=()=>page.locator('#editorActions').evaluate(node=>node.parentElement.id);
-  assert.equal(await inDrawer(),width<=720?'writerMobileActions':'editorActionRow');
+  assert.equal(await inDrawer(),'writerMobileActions');
+  assert.equal(await page.locator('#editorSound').evaluate(n=>n.parentElement.id),width<=720?'editorActionRow':'writerMobileActions');
   assert.ok(await page.evaluate(()=>document.getElementById('editorActions')===window.originalActions));
   const actionIds=['open-story-bible','compare-drafts','share-snippet','break-reminders'];
   for(const id of actionIds)assert.equal(await page.locator('#'+id).count(),1);
@@ -160,13 +164,25 @@ try {
    await page.locator('#typewriterExit').tap();
    await page.waitForFunction(()=>document.getElementById('editorActions').parentElement.id==='writerMobileActions');
    await page.locator('#mobileRailOpen').tap();await page.setViewportSize({width:1280,height:844});
-   await page.waitForFunction(()=>document.getElementById('editorActions').parentElement.id==='editorActionRow');
+   await page.waitForFunction(()=>!document.getElementById('writerMobileActions').inert);
    assert.equal(await page.locator('#writerShell').evaluate(n=>n.classList.contains('is-rail-drawer-open')),false,'resize clears stale drawer state');
-   assert.equal(await page.locator('#writerRail .writer-rail-title').textContent(),'Listing look');
+   assert.equal(await page.locator('#writerRail .writer-rail-title').textContent(),'Editor tools');
    await page.setViewportSize({width,height:844});await page.waitForFunction(()=>document.getElementById('editorActions').parentElement.id==='writerMobileActions');
   }else{
-   assert.equal(await page.locator('#open-story-bible').isVisible(),true,'desktop keeps the original action row');
+   assert.equal(await page.locator('#open-story-bible').isVisible(),true,'desktop sidebar shows editor actions');
+   await page.locator('#editorSound').click();
+   assert.equal(await page.locator('#editorSoundPanel').isVisible(),true);
+   await page.keyboard.press('Escape');
+   await page.evaluate(()=>window.writerChrome.setPreviewMode(true));
    assert.equal(await page.locator('#writerMobileActions').isVisible(),false);
+   assert.equal(await page.locator('#writerRail .writer-rail-title').textContent(),'Listing look');
+   await page.evaluate(()=>window.writerChrome.setPreviewMode(false));
+   await page.locator('#railToggle').click();
+   assert.equal(await page.locator('#writerMobileActions').isVisible(),false);
+   await page.locator('#railToggle').click();
+   await page.locator('#share-snippet').click();
+   assert.equal(await page.locator('#railToggle').getAttribute('aria-expanded'),'true');
+   assert.deepEqual(await page.evaluate(()=>window.actionCalls),['share-snippet']);
    await page.evaluate(()=>window.writerChrome.syncKeyboardViewport({visualHeight:400}));
    assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('is-editor-keyboard')),false,'desktop ignores a short visual viewport');
    assert.equal(await page.locator('#open-story-bible').isVisible(),true);

@@ -16,6 +16,8 @@ export function mountEditorSound({
     const store = storage || root.defaultView?.localStorage;
     if (!root.getElementById('editorSoundPanel') && !actions) return { destroy() {} };
 
+    const phone = root.defaultView.matchMedia('(max-width: 720px)');
+    const sidebar = root.getElementById('writerMobileActions');
     const button = ensureButton();
     const panel = ensurePanel();
     const controls = ensureControls();
@@ -49,7 +51,7 @@ export function mountEditorSound({
         try { store?.setItem(SOUND_STORAGE_KEY, JSON.stringify(prefs)); } catch { /* ignore quota */ }
     }
     function placeOnBar(node) {
-        const row = root.getElementById('editorActionRow');
+        const row = (!phone.matches && sidebar) || root.getElementById('editorActionRow');
         if (row) {
             if (node.parentNode !== row) row.append(node);
             return;
@@ -347,6 +349,11 @@ export function mountEditorSound({
         lastChrome = flags;
         placeControls();
     }
+    function syncSoundLayout() {
+        placeOnBar(button);
+        placeControls();
+    }
+    phone.addEventListener('change', syncSoundLayout);
     const classWatch = new MutationObserver(syncChrome);
     classWatch.observe(root.documentElement, { attributes: true, attributeFilter: ['class'] });
     paint();
@@ -355,6 +362,7 @@ export function mountEditorSound({
     return {
         getPrefs: () => ({ ...prefs }),
         destroy() {
+            phone.removeEventListener('change', syncSoundLayout);
             classWatch.disconnect();
             root.removeEventListener('pointerdown', onPointerDown);
             root.removeEventListener('keydown', onKey);
