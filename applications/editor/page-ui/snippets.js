@@ -2,7 +2,7 @@ import { createBetaReadApi } from "./beta-read-api.js";
 import { supabase as betaReadSupabase } from "@alysum/authentication/client.js";
 import { mountBetaReadPicker } from "./beta-read-picker.js";
 import { requestSnippetDownload, shareSnippet, copyReadingLink } from "/site-appearance/js-runtime/snippet-export.js";
-import { normalizeExcerpt, countExcerptWords, MAX_EXCERPT_CHARACTERS, MAX_EXCERPT_WORDS } from "/core/publishing/excerpts.js";
+import { normalizeExcerpt, countExcerptWords, excerptPages, EXCERPT_PAGE_BREAK, MAX_EXCERPT_CHARACTERS, MAX_EXCERPT_WORDS } from "/core/publishing/excerpts.js";
 import { normalizeSnippetCard, cardFileName, CARD_FORMATS, MAX_CARD_CHARACTERS } from "/core/publishing/snippet-card.js";
 import { layoutSnippetPages, drawSnippetPage } from "/site-appearance/js-runtime/snippet-card.js";
 
@@ -67,7 +67,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = ()
                 <div id="quote-link-result" hidden><label for="quote-reading-url">Reading link<input id="quote-reading-url" readonly spellcheck="false"></label><div class="quote-actions"><button type="button" class="quote-button" id="quote-copy-link">Copy link</button><a class="quote-button" id="quote-open-link" target="_blank" rel="noopener noreferrer">Open section</a></div></div>
                 <details id="quote-link-manager"><summary>Your reading links</summary><div id="quote-link-list"></div></details>
             </form>
-            <section class="quote-preview" aria-label="Image preview"><div class="quote-preview-surface"><article id="quote-section-preview" hidden><p class="quote-label">Read-only section</p><h3 id="quote-section-title"></h3><p id="quote-section-author" class="quote-hint"></p><div id="quote-section-text"></div></article><canvas id="quote-canvas" role="img" aria-label="Preview of the selected excerpt card" hidden></canvas><p id="quote-placeholder" class="quote-hint">Select or paste an excerpt to preview the card.</p></div><div id="quote-pagination" class="quote-pagination" role="group" aria-label="Card pages" hidden><button type="button" id="quote-previous" class="quote-button">Previous</button><span id="quote-page-number" class="quote-hint" aria-live="polite"></span><button type="button" id="quote-next" class="quote-button">Next</button></div><p id="quote-dimensions" class="quote-hint"></p></section>
+            <section class="quote-preview" aria-label="Excerpt preview"><div class="quote-preview-surface"><article id="quote-section-preview" hidden><p class="quote-label">Read-only section</p><h3 id="quote-section-title"></h3><p id="quote-section-author" class="quote-hint"></p><div id="quote-section-text"></div></article><canvas id="quote-canvas" role="img" aria-label="Preview of the selected excerpt card" hidden></canvas><p id="quote-placeholder" class="quote-hint">Select or paste an excerpt to preview the card.</p></div><div id="quote-pagination" class="quote-pagination" role="group" aria-label="Preview pages" hidden><button type="button" id="quote-previous" class="quote-button">Previous</button><span id="quote-page-number" class="quote-hint" aria-live="polite"></span><button type="button" id="quote-next" class="quote-button">Next</button></div><p id="quote-dimensions" class="quote-hint"></p></section>
         </div>
         <p id="quote-error" class="quote-error" role="alert" hidden></p>
         <div class="quote-dialog-foot"><p id="quote-status" class="quote-hint" role="status"></p><div class="quote-actions"><button type="button" id="quote-create-link" class="quote-button quote-primary" disabled>Create reading link</button><a id="quote-local-save" class="quote-button quote-primary" hidden>Save PNG</a><button type="button" id="quote-save" class="quote-button" disabled hidden>Use alternate download</button><button type="button" id="quote-share" class="quote-button" disabled hidden>Share image…</button></div></div>`;
@@ -213,9 +213,9 @@ export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = ()
         return fontPromise;
     }
     const betaPicker = mountBetaReadPicker({ host: dialog, getBook, getAuthor, api: betaReadApi || createBetaReadApi(betaReadSupabase) });
-    function setMode(nextMode) {
+    function setMode(nextMode, initialPage = 0) {
         mode = nextMode;
-        pageIndex = 0;
+        pageIndex = initialPage;
         for (const tab of dialog.querySelectorAll("[data-share-mode]")) tab.setAttribute("aria-pressed", String(tab.dataset.shareMode === mode));
         const beta = mode === "beta";
         dialog.querySelector(".quote-workspace").hidden = beta;
@@ -233,7 +233,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = ()
         share.hidden = true;
         canvas.hidden = true;
         find("quote-link-result").hidden = true;
-        find("quote-privacy-note").textContent = image ? "Up to 30,000 characters. Long excerpts split into numbered cards. Save or share each page." : "Anyone with the link can read this saved copy. Draft edits will not change it. Disable the link to stop future access.";
+        find("quote-privacy-note").textContent = image ? "Up to 30,000 characters. Long excerpts split into numbered cards. Save or share each page." : "Each added selection starts a new page. Anyone with the link can read this saved copy. Draft edits will not change it. Disable the link to stop future access.";
         void render();
     }
     function sectionPayload() { return normalizeExcerpt({ title: title.value, author: author.value, excerpt: excerpt.value }); }
@@ -262,6 +262,12 @@ export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = ()
             }
         } catch(error) { list.textContent = error?.message || "Could not load reading links."; }
     }
+    function updatePagination() {
+        find("quote-pagination").hidden = pageCount <= 1;
+        find("quote-page-number").textContent = `Page ${pageIndex + 1} of ${pageCount}`;
+        find("quote-previous").disabled = pageIndex === 0;
+        find("quote-next").disabled = pageIndex === pageCount - 1;
+    }
     async function render() {
         const request = ++generation;
         clearImage();
@@ -284,7 +290,11 @@ export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = ()
                 const data = sectionPayload();
                 find("quote-section-title").textContent = data.title;
                 find("quote-section-author").textContent = data.author ? `by ${data.author}` : "";
-                find("quote-section-text").textContent = data.excerpt;
+                const pages = excerptPages(data.excerpt);
+                pageCount = pages.length;
+                pageIndex = Math.min(pageIndex, pageCount - 1);
+                find("quote-section-text").textContent = pages[pageIndex];
+                updatePagination();
                 find("quote-section-preview").hidden = false;
                 find("quote-placeholder").hidden = true;
                 find("quote-dimensions").textContent = `${data.wordCount.toLocaleString()} words · Read only`;
@@ -318,10 +328,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = ()
             canvas.setAttribute("aria-label", `Excerpt card, page ${pageIndex + 1} of ${pageCount}`);
             find("quote-placeholder").hidden = true;
             find("quote-dimensions").textContent = `${rendered.width} × ${rendered.height} · PNG`;
-            find("quote-pagination").hidden = pageCount <= 1;
-            find("quote-page-number").textContent = `Page ${pageIndex + 1} of ${pageCount}`;
-            find("quote-previous").disabled = pageIndex === 0;
-            find("quote-next").disabled = pageIndex === pageCount - 1;
+            updatePagination();
             localDownloadUrl = URL.createObjectURL(file);
             localSave.href = localDownloadUrl;
             localSave.download = file.name;
@@ -351,13 +358,13 @@ export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = ()
         find("quote-link-result").hidden = true;
         renderTimer = setTimeout(render, 120);
     }
-    function resumeReadingLink() {
+    function resumeReadingLink(targetPage = pageIndex) {
         addingSection = false;
         selectionBar.hidden = true;
         capturedText = "";
         capturedRange = null;
         dialog.showModal();
-        setMode("link");
+        setMode("link", targetPage);
         find("quote-select-in-wip").focus();
     }
     button.addEventListener("pointerdown", captureSelection);
@@ -365,7 +372,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = ()
         const manuscriptSelection = captureSelection();
         if (addingSection) {
             if (!manuscriptSelection.trim()) return;
-            const combined = excerpt.value.trimEnd() + "\n\n" + manuscriptSelection.trim();
+            const combined = excerpt.value.trimEnd() + EXCERPT_PAGE_BREAK + manuscriptSelection.trim();
             try {
                 normalizeExcerpt({ excerpt: combined });
             } catch (error) {
@@ -374,7 +381,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = ()
             }
             excerpt.value = combined;
             cardSelection = null;
-            resumeReadingLink();
+            resumeReadingLink(excerptPages(combined).length - 1);
             return;
         }
         const selected = manuscriptSelection || initialExcerpt;

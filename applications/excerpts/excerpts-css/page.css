@@ -49,3 +49,8 @@ footer { color: var(--muted); font-size: 11px; line-height: 1.7; margin-top: 48p
 }
 #section-notice-continue:hover { background: var(--btn-primary-bg-hover, var(--accent-hover, var(--accent))); }
 @media (max-width: 600px) { #section-notice-continue { width: 100%; } }
+
+#section-pages { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 28px; }
+#section-pages button { min-height: 44px; padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px; color: var(--text); background: var(--alysum-ui-panel); cursor: pointer; }
+#section-pages button:disabled { opacity: .45; cursor: default; }
+#section-page-number { font-size: 13px; color: var(--muted); }

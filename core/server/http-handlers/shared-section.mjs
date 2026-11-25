@@ -1,5 +1,5 @@
 import { excerptWatermark } from '../../publishing/excerpt-watermark.js';
-import { normalizeExcerpt } from '../../publishing/excerpts.js';
+import { normalizeExcerpt, excerptPages } from '../../publishing/excerpts.js';
 
 const SUPABASE_URL = 'https://jrfxgpkpbacajhcwimgz.supabase.co';
 const API_KEY = 'sb_publishable_FnVMe0O37DKb87PCYdg6-g_DbI28pcE';
@@ -35,7 +35,8 @@ export async function readSharedExcerpt(token, fetcher = fetch) {
 
 export function renderSharedSection(section, url) {
     const title = section ? `${section.title}${section.author ? ` by ${section.author}` : ''} — Alysum` : 'Section unavailable — Alysum';
-    const description = section ? firstExcerptSentence(section.excerpt) : 'This reading link is invalid, disabled, or temporarily unavailable.';
+    const pages = section ? excerptPages(section.excerpt) : [];
+    const description = section ? firstExcerptSentence(pages[0]) : 'This reading link is invalid, disabled, or temporarily unavailable.';
     const image = new URL('/Alysum-3.png', url.origin).href;
     const metadata = (attribute, name, content) => `<meta ${attribute}="${name}" content="${escapeHtml(content)}">`;
     const content = section ? `<section id="section-copyright-notice" class="section-copyright-notice" aria-labelledby="section-notice-title">
@@ -53,7 +54,7 @@ export function renderSharedSection(section, url) {
 <button type="button" id="section-notice-continue">I understand — Read excerpt</button>
 <noscript><p>Enable JavaScript to acknowledge this notice and read the excerpt.</p></noscript>
 </section>
-<article id="section-content" hidden><p class="section-label">Shared WIP section</p><h1 id="section-title" tabindex="-1">${escapeHtml(section.title)}</h1>${section.author ? `<p id="section-author">by ${escapeHtml(section.author)}</p>` : ''}<p id="section-meta">${section.wordCount.toLocaleString('en-US')} words · ${Math.max(1, Math.ceil(section.wordCount / 220))} min read</p><div id="section-text" style="--excerpt-watermark: ${escapeHtml(excerptWatermark(section.author))}">${escapeHtml(section.excerpt)}</div><footer>This is a saved excerpt. Other chapters and later draft changes are not included. Title and author are provided by the person sharing it.</footer></article>`
+<article id="section-content" hidden><p class="section-label">Shared WIP section</p><h1 id="section-title" tabindex="-1">${escapeHtml(section.title)}</h1>${section.author ? `<p id="section-author">by ${escapeHtml(section.author)}</p>` : ''}<p id="section-meta">${section.wordCount.toLocaleString('en-US')} words · ${Math.max(1, Math.ceil(section.wordCount / 220))} min read</p><div id="section-text" style="--excerpt-watermark: ${escapeHtml(excerptWatermark(section.author))}">${pages.map((page, index) => `<div data-reading-page${index ? ' hidden' : ''}>${escapeHtml(page)}</div>`).join('')}</div><nav id="section-pages" aria-label="Excerpt pages" hidden><button type="button" id="section-prev">Previous</button><span id="section-page-number" aria-live="polite"></span><button type="button" id="section-next">Next</button></nav><footer>This is a saved excerpt. Other chapters and later draft changes are not included. Title and author are provided by the person sharing it.</footer></article>`
         : '<section id="section-unavailable"><h1>Section unavailable</h1><p>This link is invalid, has been disabled, or could not be loaded. Ask the sender for a new link.</p></section>';
     return `<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -64,8 +65,8 @@ ${metadata('property', 'og:image', image)}${metadata('property', 'og:image:type'
 ${metadata('name', 'twitter:card', 'summary_large_image')}${metadata('name', 'twitter:title', title)}${metadata('name', 'twitter:description', description)}${metadata('name', 'twitter:image', image)}${metadata('name', 'twitter:image:alt', 'Alysum writing studio')}
 <link rel="icon" href="/Alysum-3.png">
 <link rel="stylesheet" href="/site-appearance/css-styles/theme.css"><link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes/index.css"><link rel="stylesheet" href="/site-appearance/css-styles/gradient-themes-dim/index.css"><link rel="stylesheet" href="/site-appearance/css-styles/typography.css"><link rel="stylesheet" href="/site-appearance/css-styles/surface-styles/index.css">
-<script src="/site-appearance/js-runtime/body-background-presets-data.js"></script><script src="/site-appearance/js-runtime/text-ink-data.js"></script><script src="/site-appearance/js-runtime/boot.js"></script><link rel="stylesheet" href="/applications/excerpts/excerpts-css/page.css?v=4">
-<script src="/applications/excerpts/page-ui/reading-controls.js?v=2" defer></script>
+<script src="/site-appearance/js-runtime/body-background-presets-data.js"></script><script src="/site-appearance/js-runtime/text-ink-data.js"></script><script src="/site-appearance/js-runtime/boot.js"></script><link rel="stylesheet" href="/applications/excerpts/excerpts-css/page.css?v=5">
+<script src="/applications/excerpts/page-ui/reading-controls.js?v=3" defer></script>
 </head><body><main class="section-reader"><nav class="section-reader-nav" aria-label="Alysum"><a href="/library">ALYSUM</a><span>Read only</span></nav>${content}</main></body></html>`;
 }
 

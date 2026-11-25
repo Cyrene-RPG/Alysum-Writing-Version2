@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { firstExcerptSentence, handleSharedSection, readSharedExcerpt, renderSharedSection } from '../../server/http-handlers/shared-section.mjs';
 import { onRequest } from '../../../functions/shared-section/[token].js';
-import { createExcerptApi } from '../../publishing/excerpts.js';
+import { createExcerptApi, EXCERPT_PAGE_BREAK } from '../../publishing/excerpts.js';
 
 const token = 'a'.repeat(48);
 const url = `https://alysum.example/shared-section/${token}`;
@@ -105,4 +105,15 @@ test('available excerpts start behind the author copyright and AI-use notice', (
     for (const restriction of ['AI detectors', 'train, fine-tune, test, or evaluate', 'rewrite, continue, imitate, analyze', 'I understand — Read excerpt']) assert.ok(html.includes(restriction));
     assert.ok(!renderSharedSection(null, new URL(url)).includes('section-copyright-notice'));
     assert.match(renderSharedSection({ ...section, author: '' }, new URL(url)), /id="section-notice-author">the author<\/strong>/);
+});
+
+test('only explicitly added sections start new reader pages', () => {
+    const first = 'First paragraph.\n\nSecond paragraph.';
+    const excerpt = [first, 'Next chapter.', 'Final passage.'].join(EXCERPT_PAGE_BREAK);
+    const html = renderSharedSection({ ...section, excerpt }, new URL(url));
+    assert.ok(html.includes(`<div data-reading-page>${first}</div>`));
+    assert.ok(html.includes('<div data-reading-page hidden>Next chapter.</div>'));
+    assert.ok(html.includes('<div data-reading-page hidden>Final passage.</div>'));
+    const legacy = renderSharedSection({ ...section, excerpt: first }, new URL(url));
+    assert.equal((legacy.match(/data-reading-page/g) || []).length, 1);
 });

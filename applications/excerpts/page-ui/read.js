@@ -1,5 +1,6 @@
 import { fetchSharedExcerpt } from "/core/publishing/excerpt-reader.js";
 import { excerptWatermark } from "/core/publishing/excerpt-watermark.js";
+import { excerptPages } from "/core/publishing/excerpts.js";
 let generation = 0;
 async function load() {
     const request = ++generation;
@@ -22,7 +23,13 @@ async function load() {
         document.getElementById("section-author").textContent = section.author ? `by ${section.author}` : "";
         document.getElementById("section-author").hidden = !section.author;
         document.getElementById("section-meta").textContent = `${section.wordCount.toLocaleString()} words · ${Math.max(1, Math.ceil(section.wordCount / 220))} min read`;
-        document.getElementById("section-text").textContent = section.excerpt;
+        document.getElementById("section-text").replaceChildren(...excerptPages(section.excerpt).map((text, index) => {
+            const page = document.createElement("div");
+            page.dataset.readingPage = "";
+            page.hidden = index !== 0;
+            page.textContent = text;
+            return page;
+        }));
         document.getElementById("section-text").style.setProperty("--excerpt-watermark", excerptWatermark(section.author));
         document.title = `${section.title} — Alysum`;
         document.getElementById("section-notice-author").textContent = section.author || "the author";

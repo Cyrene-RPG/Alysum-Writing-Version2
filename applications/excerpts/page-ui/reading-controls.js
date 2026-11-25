@@ -4,13 +4,36 @@
  */
 (() => {
     const content = () => document.getElementById('section-content');
+    const pager = document.getElementById('section-pages');
+    const previous = document.getElementById('section-prev');
+    const next = document.getElementById('section-next');
+    let pages = [];
+    let index = 0;
+    function showPage(target) {
+        if (!pages[target]) return;
+        pages[index].hidden = true;
+        index = target;
+        pages[index].hidden = false;
+        document.getElementById('section-page-number').textContent = `Page ${index + 1} of ${pages.length}`;
+        previous.disabled = index === 0;
+        next.disabled = index === pages.length - 1;
+        document.getElementById('section-title')?.focus();
+        content().scrollIntoView({ block: 'start' });
+    }
+    previous?.addEventListener('click', () => showPage(index - 1));
+    next?.addEventListener('click', () => showPage(index + 1));
     document.getElementById('section-notice-continue')?.addEventListener('click', () => {
         const notice = document.getElementById('section-copyright-notice');
         const article = content();
         if (!notice || notice.hidden || !article) return;
         notice.hidden = true;
         article.hidden = false;
-        document.getElementById('section-title')?.focus();
+        pages = Array.from(article.querySelectorAll('[data-reading-page]'));
+        if (pager) pager.hidden = pages.length <= 1;
+        pages.forEach((page, i) => { page.hidden = i !== 0; });
+        index = 0;
+        if (pages.length && pager) showPage(0);
+        else document.getElementById('section-title')?.focus();
     });
     // Reopening a page from browser history requires the notice again.
     window.addEventListener('pageshow', event => {

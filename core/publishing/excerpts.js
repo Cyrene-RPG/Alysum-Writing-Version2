@@ -1,6 +1,11 @@
 /** Stored snapshots of explicitly selected manuscript text. */
 export const MAX_EXCERPT_WORDS = 500_000;
 export const MAX_EXCERPT_CHARACTERS = 3_000_000;
+// Store an explicit form feed between selections. Blank lines remain paragraphs.
+export const EXCERPT_PAGE_BREAK = "\n\f\n";
+export function excerptPages(text) {
+    return text.split(EXCERPT_PAGE_BREAK).map(page => page.trim()).filter(Boolean);
+}
 export function countExcerptWords(text) { return String(text || "").trim().split(/\s+/u).filter(Boolean).length; }
 export function normalizeExcerpt(value) {
     const excerpt = typeof value?.excerpt === "string" ? value.excerpt.replace(/\r\n?/g, "\n").trim() : "";
