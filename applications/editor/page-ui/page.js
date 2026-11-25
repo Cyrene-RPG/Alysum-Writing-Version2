@@ -11,7 +11,7 @@ import { mountDraftSwitcher } from "./draft-switcher.js";
 import { mountDraftRevisions } from "./draft-revisions.js?v=2";
 import { createSnippetDownloadApi } from "/core/publishing/snippet-download.js";
 import { createExcerptApi } from "/core/publishing/excerpts.js";
-import { mountSnippetSharing } from "./snippets.js?v=3";
+import { mountSnippetSharing } from "./snippets.js?v=4";
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=14";
@@ -510,8 +510,17 @@ async function boot() {
         }
     });
     typewriter.setToolbarApi(toolbarApi);
+    function getManuscriptPages() {
+        const pages = listSearchPages(book.sections);
+        if (selectedKind() === "folder") return pages;
+        const live = editor.getHtml();
+        return pages.map((page) => (
+            page.id === selectedId ? { ...page, content: live } : page
+        ));
+    }
     mountSnippetSharing({
         button: document.getElementById("share-snippet"),
+        getManuscriptPages,
         getChapterId: () => selectedId,
         excerptApi: createExcerptApi(supabase, { origin: window.location.origin }),
         downloadApi: createSnippetDownloadApi(supabase, { origin: window.location.origin, getBook: () => book }),
@@ -531,14 +540,7 @@ async function boot() {
         pageEl,
         host: document.querySelector(".writer-main") || pageEl.parentElement,
         editor,
-        getPages() {
-            const pages = listSearchPages(book.sections);
-            if (selectedKind() === "folder") return pages;
-            const live = editor.getHtml();
-            return pages.map((page) => (
-                page.id === selectedId ? { ...page, content: live } : page
-            ));
-        },
+        getPages: getManuscriptPages,
         getCurrentId: () => selectedId,
         async goToPage(id) {
             if (id === selectedId) return;

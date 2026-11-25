@@ -71,3 +71,34 @@ test('missing schema is reported as unavailable rather than creating a fake loca
 test('newlines and Unicode remain plain text',()=>{
  const excerpt='Hello <script>doNotRun()</script>\n\n你好 👋';assert.equal(normalizeExcerpt({excerpt}).excerpt,excerpt);assert.equal(countExcerptWords('one\n\ntwo'),2);
 });
+
+test('chapter updates target one saved page, including pages from older disabled links', async () => {
+ const calls=[];
+ const api=createExcerptApi({
+   from(table) {
+     assert.equal(table,'wip_excerpts');
+     return {select:()=>({eq:(key,id)=>{
+       assert.deepEqual([key,id],['id','link']);
+       return {single:async()=>({data:{excerpt:'First\n\f\nOld second'}})};
+     }})};
+   },
+   async rpc(name,args){calls.push({name,args});return {data:null};}
+ },{origin:'https://alysum.example'});
+ const pages=await api.managedPages('link');
+ assert.deepEqual(pages[1],{number:2,text:'Old second',source:''});
+ await api.updatePage('link',pages[1],'  Revised passage  ','chapter-7');
+ assert.deepEqual(calls,[{name:'update_wip_excerpt_page',args:{
+   p_id:'link',p_page:2,p_expected:'Old second',p_text:'Revised passage',p_source:'chapter-7'
+ }}]);
+ await assert.rejects(api.updatePage('link',pages[1],'A\n\f\nB','chapter-7'),/one page/);
+ assert.equal(calls.length,1);
+});
+
+test('new selections keep their private source chapter IDs in page order', async () => {
+ let args;
+ const api=createExcerptApi({async rpc(name,data){args=data;return {data:{id:'link',token}};}},{origin:'https://alysum.example'});
+ await api.create('book',{excerpt:'One\n\f\nTwo'},['a','b']);
+ assert.deepEqual(args.p_sources,['a','b']);
+ await api.create('book',{excerpt:'Edited text'},['a','b']);
+ assert.equal('p_sources' in args,false);
+});

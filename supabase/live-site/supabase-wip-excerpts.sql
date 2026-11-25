@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS public.wip_excerpts (
   created_at timestamptz NOT NULL DEFAULT now(),
   revoked_at timestamptz
 );
+ALTER TABLE public.wip_excerpts ADD COLUMN IF NOT EXISTS source_chapters text[] NOT NULL DEFAULT ARRAY[]::text[];
 -- Replace the original checks on existing installations as well as new ones.
 ALTER TABLE public.wip_excerpts
   DROP CONSTRAINT IF EXISTS wip_excerpts_excerpt_check,
@@ -48,6 +49,53 @@ BEGIN
   VALUES(p_book_id, auth.uid(), coalesce(nullif(btrim(p_title),''),'Untitled section'), coalesce(btrim(p_author),''), v_text, v_words) RETURNING * INTO v_row;
   RETURN jsonb_build_object('id',v_row.id,'token',v_row.token,'title',v_row.title,'author',v_row.author,'word_count',v_row.word_count,'created_at',v_row.created_at,'revoked_at',v_row.revoked_at);
 END; $$;
+
+-- Keep the original four-argument RPC available to cached editors.
+CREATE OR REPLACE FUNCTION public.create_wip_excerpt(p_book_id text, p_title text, p_author text, p_excerpt text, p_sources text[])
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE saved jsonb;
+BEGIN
+  IF cardinality(p_sources) IS DISTINCT FROM cardinality(string_to_array(p_excerpt, E'\n\f\n')) THEN
+    RAISE EXCEPTION 'Chapter references do not match the shared pages';
+  END IF;
+  saved := public.create_wip_excerpt(p_book_id, p_title, p_author, p_excerpt);
+  UPDATE public.wip_excerpts SET source_chapters = p_sources
+    WHERE id = (saved->>'id')::uuid AND owner_id = auth.uid();
+  RETURN saved;
+END; $$;
+
+CREATE OR REPLACE FUNCTION public.update_wip_excerpt_page(p_id uuid, p_page integer, p_expected text, p_text text, p_source text)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  parts text[];
+  updated_text text;
+  words integer;
+BEGIN
+  SELECT string_to_array(excerpt, E'\n\f\n') INTO parts FROM public.wip_excerpts
+    WHERE id = p_id AND owner_id = auth.uid() FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Reading link unavailable'; END IF;
+  IF p_page IS NULL OR p_page NOT BETWEEN 1 AND cardinality(parts)
+     OR parts[p_page] IS DISTINCT FROM p_expected THEN
+    RAISE EXCEPTION 'This page changed. Reopen Update chapters and try again.';
+  END IF;
+  IF p_text IS NULL OR p_text !~ '\S' OR strpos(p_text, E'\n\f\n') > 0 THEN
+    RAISE EXCEPTION 'Choose text for one page';
+  END IF;
+  parts[p_page] := p_text;
+  updated_text := array_to_string(parts, E'\n\f\n');
+  IF char_length(updated_text) > 3000000 THEN RAISE EXCEPTION 'Reading links allow up to 3,000,000 characters'; END IF;
+  words := cardinality(regexp_split_to_array(updated_text, '\s+'));
+  IF words > 500000 THEN RAISE EXCEPTION 'Reading links allow up to 500,000 words'; END IF;
+  -- Keep one-based positions even for old links with no references.
+  UPDATE public.wip_excerpts SET excerpt = updated_text, word_count = words,
+    source_chapters = ARRAY(SELECT CASE WHEN n = p_page THEN p_source ELSE source_chapters[n] END
+                            FROM generate_series(1, cardinality(parts)) AS n ORDER BY n)
+    WHERE id = p_id AND owner_id = auth.uid();
+END; $$;
+REVOKE ALL ON FUNCTION public.create_wip_excerpt(text,text,text,text,text[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_wip_excerpt(text,text,text,text,text[]) TO authenticated;
+REVOKE ALL ON FUNCTION public.update_wip_excerpt_page(uuid,integer,text,text,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.update_wip_excerpt_page(uuid,integer,text,text,text) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.list_wip_excerpts(p_book_id text)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$

@@ -119,3 +119,8 @@
 .quote-pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 14px; }
 .quote-pagination .quote-hint { margin: 0; white-space: nowrap; }
 .quote-pagination .quote-button { min-height: 44px; }
+
+.quote-managed-link > button + button { margin-inline-start: 8px; }
+.quote-update { margin-top: 12px; }
+.quote-update details { margin-bottom: 12px; }
+.quote-update [data-saved] { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 12rem; overflow-y: auto; }

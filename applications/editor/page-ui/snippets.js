@@ -1,3 +1,4 @@
+import { mountExcerptUpdate } from "./excerpt-update.js";
 import { createBetaReadApi } from "./beta-read-api.js";
 import { supabase as betaReadSupabase } from "@alysum/authentication/client.js";
 import { mountBetaReadPicker } from "./beta-read-picker.js";
@@ -46,7 +47,7 @@ function captureCardFormatting(range) {
     return trimmed ? { text: trimmed, italicMask: mask.slice(start, start + trimmed.length) } : null;
 }
 
-export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = () => null, getAuthor = () => "", initialExcerpt = "", excerptApi = null, downloadApi = null, betaReadApi = null }) {
+export function mountSnippetSharing({ button, pageEl, getBook, getManuscriptPages = () => [], getChapterId = () => null, getAuthor = () => "", initialExcerpt = "", excerptApi = null, downloadApi = null, betaReadApi = null }) {
     if (!button || !pageEl) return;
     const dialog = document.createElement("dialog");
     dialog.className = "quote-dialog";
@@ -82,6 +83,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = ()
     let selectAfterClose = false;
     let addingSection = false;
     let capturedChapter = null;
+    let sources = [];
     function selectionPrompt() {
         return addingSection
             ? "Open any chapter, highlight the passage you want, then choose Add selection."
@@ -275,6 +277,10 @@ export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = ()
                     }
                 });
                 row.append(toggle);
+                mountExcerptUpdate(row, { item, excerptApi, getManuscriptPages, showError, onSaved: async () => {
+                    await loadLinks();
+                    status.textContent = "Page updated on the original reading link.";
+                } });
                 list.append(row);
             }
         } catch(error) { list.textContent = error?.message || "Could not load reading links."; }
@@ -396,6 +402,9 @@ export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = ()
                 selectionNotice.textContent = error.message + " Highlight a shorter passage or cancel to return.";
                 return;
             }
+            const previousCount = excerpt.value.trimEnd().split(EXCERPT_PAGE_BREAK).length;
+            if (sources.length !== previousCount) sources = Array(previousCount).fill(null);
+            sources.push(getChapterId());
             excerpt.value = combined;
             cardSelection = null;
             resumeReadingLink(excerptPages(combined).length - 1);
@@ -412,6 +421,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = ()
         title.value = String(getBook()?.title || "").slice(0, 80);
         author.value = String(getAuthor() || "").slice(0, 80);
         excerpt.value = selected;
+        sources = [manuscriptSelection ? capturedChapter : null];
         find("quote-placeholder").textContent = "Select or paste an excerpt to preview the card.";
         dialog.showModal();
         setMode("link");
@@ -467,7 +477,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = ()
         const opening = generation;
         try {
             const data = sectionPayload();
-            const result = await excerptApi.create(String(getBook()?.id || ""), data);
+            const result = await excerptApi.create(String(getBook()?.id || ""), data, sources);
             if (!dialog.open || opening !== generation) return;
             find("quote-reading-url").value = result.url;
             find("quote-open-link").href = result.url;
@@ -484,7 +494,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = ()
     });
     find("quote-previous").addEventListener("click", () => { if (pageIndex > 0) { pageIndex--; void render(); } });
     find("quote-next").addEventListener("click", () => { if (pageIndex + 1 < pageCount) { pageIndex++; void render(); } });
-    excerpt.addEventListener("input", () => { cardSelection = null; });
+    excerpt.addEventListener("input", () => { cardSelection = null; sources = []; });
     form.addEventListener("input", queueRender);
     form.addEventListener("change", queueRender);
     form.addEventListener("submit", (event) => event.preventDefault());

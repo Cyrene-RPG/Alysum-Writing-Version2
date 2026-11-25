@@ -37,11 +37,25 @@ export function createExcerptApi(supabase, { origin }) {
         return data;
     }
     return {
-        async create(bookId, value) {
+        async create(bookId, value, sources = []) {
             const data = normalizeExcerpt(value);
-            return mapShare(await rpc("create_wip_excerpt", { p_book_id: bookId, p_title: data.title, p_author: data.author, p_excerpt: data.excerpt }), origin);
+            const args = { p_book_id: bookId, p_title: data.title, p_author: data.author, p_excerpt: data.excerpt };
+            if (sources.some(Boolean) && sources.length === data.excerpt.split(EXCERPT_PAGE_BREAK).length) args.p_sources = sources;
+            return mapShare(await rpc("create_wip_excerpt", args), origin);
         },
         async list(bookId) { return (await rpc("list_wip_excerpts", { p_book_id: bookId }) || []).map((row) => mapShare(row, origin)); },
+        async managedPages(id) {
+            const { data, error } = await supabase.from("wip_excerpts").select("excerpt,source_chapters").eq("id", id).single();
+            if (error) throw readableError(error);
+            return data.excerpt.split(EXCERPT_PAGE_BREAK).map((text, index) => ({
+                number: index + 1, text, source: data.source_chapters?.[index] || ""
+            })).filter(page => page.text.trim());
+        },
+        async updatePage(id, page, text, source) {
+            const replacement = normalizeExcerpt({ excerpt: text }).excerpt;
+            if (replacement.includes(EXCERPT_PAGE_BREAK)) throw new Error("Choose text for one page.");
+            await rpc("update_wip_excerpt_page", { p_id: id, p_page: page.number, p_expected: page.text, p_text: replacement, p_source: source });
+        },
         async revoke(id) {
             const result = await rpc("revoke_wip_excerpt", { p_id: id });
             if (!result) throw new Error("This link could not be disabled.");
