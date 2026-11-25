@@ -46,6 +46,10 @@ export function createExcerptApi(supabase, { origin }) {
             const result = await rpc("revoke_wip_excerpt", { p_id: id });
             if (!result) throw new Error("This link could not be disabled.");
         },
+        async restore(id) {
+            const result = await rpc("restore_wip_excerpt", { p_id: id });
+            if (!result) throw new Error("This link could not be re-enabled.");
+        },
         async read(token) {
             if (!/^[a-f0-9]{48}$/.test(token)) return null;
             const data = await rpc("get_wip_excerpt", { p_token: token });

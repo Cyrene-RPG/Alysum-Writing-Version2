@@ -54,7 +54,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $
  SELECT coalesce(jsonb_agg(to_jsonb(items)), '[]'::jsonb) FROM (
    SELECT id,token,title,author,word_count,created_at,revoked_at FROM public.wip_excerpts
    WHERE owner_id = auth.uid() AND book_id = p_book_id
-   ORDER BY (revoked_at IS NULL) DESC, created_at DESC LIMIT 100
+   ORDER BY (revoked_at IS NULL) DESC, created_at DESC
  ) items;
 $$;
 
@@ -70,6 +70,28 @@ BEGIN
  UPDATE public.wip_excerpts SET revoked_at = coalesce(revoked_at,now()) WHERE id = p_id AND owner_id = auth.uid();
  RETURN FOUND;
 END; $$;
+
+CREATE OR REPLACE FUNCTION public.restore_wip_excerpt(p_id uuid)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_owner uuid := auth.uid();
+  v_revoked_at timestamptz;
+BEGIN
+  IF v_owner IS NULL THEN RETURN false; END IF;
+  -- Use the same lock as link creation so both operations share the active cap.
+  PERFORM pg_advisory_xact_lock(hashtextextended(v_owner::text, 0));
+  SELECT revoked_at INTO v_revoked_at FROM public.wip_excerpts
+    WHERE id = p_id AND owner_id = v_owner FOR UPDATE;
+  IF NOT FOUND THEN RETURN false; END IF;
+  IF v_revoked_at IS NULL THEN RETURN true; END IF;
+  IF (SELECT count(*) FROM public.wip_excerpts WHERE owner_id = v_owner AND revoked_at IS NULL) >= 100 THEN
+    RAISE EXCEPTION 'Disable another reading link before re-enabling this one';
+  END IF;
+  UPDATE public.wip_excerpts SET revoked_at = NULL WHERE id = p_id AND owner_id = v_owner;
+  RETURN FOUND;
+END; $$;
+REVOKE ALL ON FUNCTION public.restore_wip_excerpt(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.restore_wip_excerpt(uuid) TO authenticated;
 REVOKE ALL ON FUNCTION public.create_wip_excerpt(text,text,text,text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.list_wip_excerpts(text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.get_wip_excerpt(text) FROM PUBLIC;

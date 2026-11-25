@@ -250,14 +250,31 @@ export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = ()
                 const label = document.createElement("p"); label.textContent = `${item.title} · ${item.wordCount.toLocaleString()} words${item.revokedAt ? " · Disabled" : ""}`; row.append(label);
                 if (!item.revokedAt) {
                     const open = document.createElement("a"); open.href = item.url; open.textContent = "Open"; open.target = "_blank"; open.rel = "noopener noreferrer";
-                    const revoke = document.createElement("button"); revoke.type = "button"; revoke.className = "quote-button"; revoke.textContent = "Disable link";
-                    revoke.addEventListener("click", async () => {
-                        revoke.disabled = true;
-                        try { await excerptApi.revoke(item.id); status.textContent = "Link disabled. New visits can no longer open the section."; find("quote-link-result").hidden = true; await loadLinks(); }
-                        catch(error) { showError(error); revoke.disabled = false; }
-                    });
-                    row.append(open, revoke);
+                    row.append(open);
                 }
+                const toggle = document.createElement("button");
+                toggle.type = "button";
+                toggle.className = "quote-button";
+                toggle.textContent = item.revokedAt ? "Re-enable link" : "Disable link";
+                toggle.addEventListener("click", async () => {
+                    toggle.disabled = true;
+                    errorEl.hidden = true;
+                    try {
+                        if (item.revokedAt) {
+                            await excerptApi.restore(item.id);
+                            status.textContent = "Link re-enabled. Anyone with the original link can read this excerpt again.";
+                        } else {
+                            await excerptApi.revoke(item.id);
+                            status.textContent = "Link disabled. New visits can no longer open the section.";
+                            find("quote-link-result").hidden = true;
+                        }
+                        await loadLinks();
+                    } catch (error) {
+                        showError(error);
+                        toggle.disabled = false;
+                    }
+                });
+                row.append(toggle);
                 list.append(row);
             }
         } catch(error) { list.textContent = error?.message || "Could not load reading links."; }

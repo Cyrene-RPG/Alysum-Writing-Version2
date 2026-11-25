@@ -47,6 +47,23 @@ test('reader returns no section after revocation and rejects malformed tokens be
  assert.equal(await api.read('bad-token'),null);assert.equal(calls,0);
  assert.equal((await api.read(token)).excerpt,longText);await api.revoke('uuid');assert.equal(await api.read(token),null);
 });
+test('restoring a disabled link makes the original token readable again', async () => {
+ let disabled = true;
+ const api = createExcerptApi({async rpc(name, args) {
+   if (name === 'restore_wip_excerpt') {
+     if (args.p_id !== 'owned-id') return {data:false};
+     disabled = false;
+     return {data:true};
+   }
+   assert.equal(name,'get_wip_excerpt');
+   assert.equal(args.p_token,token);
+   return {data:disabled ? null : {excerpt:longText}};
+ }}, {origin:'https://alysum.example'});
+ assert.equal(await api.read(token),null);
+ await assert.rejects(api.restore('other-id'),/could not be re-enabled/);
+ await api.restore('owned-id');
+ assert.equal((await api.read(token)).excerpt,longText);
+});
 test('missing schema is reported as unavailable rather than creating a fake local link',async()=>{
  const api=createExcerptApi({async rpc(){return {error:{message:'Could not find the function create_wip_excerpt in the schema cache'}};}},{origin:'https://alysum.example'});
  await assert.rejects(api.create('book',{excerpt:'Selected text'}),/has not been enabled/);
