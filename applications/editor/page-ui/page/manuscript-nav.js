@@ -15,7 +15,7 @@ import {
     reorderSectionChapters,
     setChapterContent,
 } from "@alysum/writing-engine/manuscript.js?v=5";
-import { expandTreeItem, markTreeActive, renderOutline, renderTree } from "../tree.js?v=19";
+import { expandTreeItem, markTreeActive, renderOutline, renderTree } from "../tree.js?v=20";
 import {
     applyChapterTypographyStyles,
     chapterTypography,

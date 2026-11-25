@@ -1,5 +1,13 @@
+import { confirmAction } from "./prompt.js";
 import Sortable from "./sortable.js?v=2";
 import { paintChipInk } from "@alysum/site-appearance/js-runtime/text-ink.js";
+
+// Let a swipe scroll the chapter list before a stationary touch can start a drag.
+const treeTouchDrag = {
+    delay: 1000,
+    delayOnTouchOnly: true,
+    touchStartThreshold: 5,
+};
 
 function escapeHtml(str) {
     return String(str ?? "")
@@ -158,6 +166,37 @@ function placeDraggedNote(drag, related, originalEvent) {
     return nestNoteUnderChapter(drag, chapter) ? "nested" : "";
 }
 
+async function finishTreeMove(evt, saveOrder) {
+    const { item, from, oldIndex, originalEvent } = evt;
+    const touch = originalEvent?.pointerType === "touch" || originalEvent?.type.startsWith("touch");
+    if (!touch) {
+        saveOrder();
+        return;
+    }
+    const destination = item.parentElement;
+    const position = Array.from(destination.children).indexOf(item);
+    if (destination === from && position === oldIndex) return;
+    const next = item.nextElementSibling;
+    const originalNext = Array.from(from.children).filter(child => child !== item)[oldIndex] || null;
+    from.insertBefore(item, originalNext);
+    if (originalEvent.type.endsWith("cancel")) return;
+
+    const kind = item.dataset.kind || "chapter";
+    const title = item.querySelector("[data-tree-open]")?.textContent || "Untitled";
+    const parentTitle = destination.closest(".writer-tree-node")?.querySelector("[data-tree-open]")?.textContent;
+    const location = parentTitle ? ` in “${parentTitle}”` : "";
+    const accepted = await confirmAction({
+        title: `Move this ${kind}?`,
+        text: `Move “${title}” to position ${position + 1}${location}?`,
+        confirmLabel: "Move",
+    });
+    // A refresh may have replaced the tree while the confirmation was open.
+    if (!accepted || !destination.isConnected || !item.isConnected || item.parentElement !== from) return;
+    if (next && next.parentElement !== destination) return;
+    destination.insertBefore(item, next);
+    saveOrder();
+}
+
 function bindOutlineSortable(ul, mount, onEnd) {
     let expandTimer = 0;
     const sortable = Sortable.create(ul, {
@@ -166,6 +205,7 @@ function bindOutlineSortable(ul, mount, onEnd) {
             pull: true,
             put: true,
         },
+        ...treeTouchDrag,
         animation: 200,
         draggable: ".writer-tree-node",
         ghostClass: "writer-tree-ghost",
@@ -193,7 +233,7 @@ function bindOutlineSortable(ul, mount, onEnd) {
             window.clearTimeout(expandTimer);
             mount.classList.remove("is-note-dragging");
             if (evt.item?.dataset?.kind !== "note" && evt.from === evt.to && evt.oldIndex === evt.newIndex) return;
-            onEnd();
+            void finishTreeMove(evt, onEnd);
         },
     });
     mount._sortables.push(sortable);
@@ -206,6 +246,7 @@ function bindNotesSortable(ul, mount, onEnd) {
             pull: true,
             put: (_to, _from, dragEl) => dragEl?.dataset?.kind === "note",
         },
+        ...treeTouchDrag,
         animation: 200,
         draggable: ".writer-tree-node",
         ghostClass: "writer-tree-ghost",
@@ -224,9 +265,9 @@ function bindNotesSortable(ul, mount, onEnd) {
             if (placeDraggedNote(evt.dragged, evt.related, evt.originalEvent)) return false;
             return true;
         },
-        onEnd() {
+        onEnd(evt) {
             mount.classList.remove("is-note-dragging");
-            onEnd();
+            void finishTreeMove(evt, onEnd);
         },
     });
     mount._sortables.push(sortable);
@@ -322,6 +363,7 @@ export function renderTree({ mount, chapters, selectedId, onSelect, onDelete, on
     mount._sortables = [];
     mount._sortables.push(Sortable.create(mount, {
         group: `matter-${mount.id || "list"}`,
+        ...treeTouchDrag,
         animation: 200,
         draggable: ".writer-tree-item",
         ghostClass: "writer-tree-ghost",
@@ -330,7 +372,7 @@ export function renderTree({ mount, chapters, selectedId, onSelect, onDelete, on
         preventOnFilter: false,
         onEnd(evt) {
             if (evt.from === evt.to && evt.oldIndex === evt.newIndex) return;
-            onReorder?.(chapterIdsFromList(mount));
+            void finishTreeMove(evt, () => onReorder?.(chapterIdsFromList(mount)));
         },
     }));
     paintActiveRowInk(mount);
