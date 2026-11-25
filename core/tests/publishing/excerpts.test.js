@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizeExcerpt, countExcerptWords, createExcerptApi, excerptUrl } from "../../publishing/excerpts.js";
+import { normalizeExcerpt, countExcerptWords, createExcerptApi, excerptUrl, MAX_EXCERPT_WORDS, MAX_EXCERPT_CHARACTERS } from "../../publishing/excerpts.js";
 const longText=Array.from({length:4500},(_,i)=>`word${i}`).join(' ');
 const token='a'.repeat(48);
 test('4,500 words are preserved in a long section without truncation',()=>{
@@ -9,10 +9,25 @@ test('4,500 words are preserved in a long section without truncation',()=>{
  assert.deepEqual(Object.keys(data).sort(),['title','author','excerpt','wordCount'].sort());
 });
 test('limits enforce both words and characters',()=>{
- assert.throws(()=>normalizeExcerpt({excerpt:'word '.repeat(20001)}));
- assert.throws(()=>normalizeExcerpt({excerpt:'x'.repeat(150001)}));
+ assert.throws(()=>normalizeExcerpt({excerpt:'word '.repeat(MAX_EXCERPT_WORDS + 1)}));
+ assert.throws(()=>normalizeExcerpt({excerpt:'x'.repeat(MAX_EXCERPT_CHARACTERS + 1)}));
+ assert.equal(normalizeExcerpt({excerpt:'x'.repeat(MAX_EXCERPT_CHARACTERS)}).excerpt.length,MAX_EXCERPT_CHARACTERS);
  assert.throws(()=>normalizeExcerpt({excerpt:' \n\t '}));
- assert.equal(normalizeExcerpt({excerpt:'word '.repeat(20000)}).wordCount,20000);
+ assert.equal(normalizeExcerpt({excerpt:'word '.repeat(MAX_EXCERPT_WORDS)}).wordCount,MAX_EXCERPT_WORDS);
+});
+test('ten long chapter selections survive creation and reading in order', async () => {
+ const excerpt = Array.from({length:10}, (_, i) => `Chapter ${i+1}\n` + 'passage '.repeat(5000).trim()).join('\n\n');
+ let snapshot;
+ const api = createExcerptApi({async rpc(name, args) {
+   if (name === 'create_wip_excerpt') {
+     snapshot = {title:args.p_title, author:args.p_author, excerpt:args.p_excerpt};
+     return {data:{id:'share',token}};
+   }
+   assert.equal(name,'get_wip_excerpt');
+   return {data:snapshot};
+ }}, {origin:'https://alysum.example'});
+ await api.create('book', {excerpt});
+ assert.equal((await api.read(token)).excerpt, excerpt);
 });
 test('URLs contain only an unguessable token, not the section or manuscript id',()=>{
  const url=new URL(excerptUrl(token,'https://alysum.example/editor?book=private'));

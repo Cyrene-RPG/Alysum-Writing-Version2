@@ -11,7 +11,7 @@ import { mountDraftSwitcher } from "./draft-switcher.js";
 import { mountDraftRevisions } from "./draft-revisions.js?v=2";
 import { createSnippetDownloadApi } from "/core/publishing/snippet-download.js";
 import { createExcerptApi } from "/core/publishing/excerpts.js";
-import { mountSnippetSharing } from "./snippets.js";
+import { mountSnippetSharing } from "./snippets.js?v=2";
 import { supabase } from "@alysum/authentication/client.js";
 import { requireStudioSession } from "@alysum/desktop/studio-session.js";
 import { createBooksApi } from "@alysum/synchronization-engine/books.js?v=14";
@@ -512,6 +512,7 @@ async function boot() {
     typewriter.setToolbarApi(toolbarApi);
     mountSnippetSharing({
         button: document.getElementById("share-snippet"),
+        getChapterId: () => selectedId,
         excerptApi: createExcerptApi(supabase, { origin: window.location.origin }),
         downloadApi: createSnippetDownloadApi(supabase, { origin: window.location.origin, getBook: () => book }),
         pageEl,

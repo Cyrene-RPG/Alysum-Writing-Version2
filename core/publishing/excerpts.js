@@ -1,12 +1,12 @@
 /** Stored snapshots of explicitly selected manuscript text. */
-export const MAX_EXCERPT_WORDS = 20000;
-export const MAX_EXCERPT_CHARACTERS = 150000;
+export const MAX_EXCERPT_WORDS = 500_000;
+export const MAX_EXCERPT_CHARACTERS = 3_000_000;
 export function countExcerptWords(text) { return String(text || "").trim().split(/\s+/u).filter(Boolean).length; }
 export function normalizeExcerpt(value) {
     const excerpt = typeof value?.excerpt === "string" ? value.excerpt.replace(/\r\n?/g, "\n").trim() : "";
     if (!excerpt) throw new Error("Select or paste the section you want to share.");
     const wordCount = countExcerptWords(excerpt);
-    if (wordCount > MAX_EXCERPT_WORDS || excerpt.length > MAX_EXCERPT_CHARACTERS) throw new Error("Choose a section of up to 20,000 words and 150,000 characters.");
+    if (wordCount > MAX_EXCERPT_WORDS || excerpt.length > MAX_EXCERPT_CHARACTERS) throw new Error(`Choose up to ${MAX_EXCERPT_WORDS.toLocaleString()} words and ${MAX_EXCERPT_CHARACTERS.toLocaleString()} characters per reading link.`);
     const title = typeof value?.title === "string" ? value.title.trim() : "";
     const author = typeof value?.author === "string" ? value.author.trim() : "";
     if (title.length > 160 || author.length > 80) throw new Error("Shorten the title or author name.");

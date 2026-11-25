@@ -10,11 +10,18 @@ CREATE TABLE IF NOT EXISTS public.wip_excerpts (
   token text NOT NULL UNIQUE DEFAULT encode(gen_random_bytes(24), 'hex'),
   title text NOT NULL CHECK (char_length(title) BETWEEN 1 AND 160),
   author text NOT NULL DEFAULT '' CHECK (char_length(author) <= 80),
-  excerpt text NOT NULL CHECK (char_length(excerpt) BETWEEN 1 AND 150000),
-  word_count integer NOT NULL CHECK (word_count BETWEEN 1 AND 20000),
+  excerpt text NOT NULL,
+  word_count integer NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   revoked_at timestamptz
 );
+-- Replace the original checks on existing installations as well as new ones.
+ALTER TABLE public.wip_excerpts
+  DROP CONSTRAINT IF EXISTS wip_excerpts_excerpt_check,
+  DROP CONSTRAINT IF EXISTS wip_excerpts_word_count_check;
+ALTER TABLE public.wip_excerpts
+  ADD CONSTRAINT wip_excerpts_excerpt_check CHECK (char_length(excerpt) BETWEEN 1 AND 3000000),
+  ADD CONSTRAINT wip_excerpts_word_count_check CHECK (word_count BETWEEN 1 AND 500000);
 CREATE INDEX IF NOT EXISTS wip_excerpts_owner_book_idx ON public.wip_excerpts(owner_id, book_id, created_at DESC);
 ALTER TABLE public.wip_excerpts ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.wip_excerpts FROM anon, authenticated;
@@ -30,9 +37,9 @@ BEGIN
   IF NOT EXISTS(SELECT 1 FROM public.books WHERE id = p_book_id AND user_id = auth.uid()) THEN
     RAISE EXCEPTION 'Only the owner can share a section from this book';
   END IF;
-  IF char_length(v_text) < 1 OR char_length(v_text) > 150000 THEN RAISE EXCEPTION 'Choose a section of up to 150,000 characters'; END IF;
+  IF char_length(v_text) < 1 OR char_length(v_text) > 3000000 THEN RAISE EXCEPTION 'Choose a section of up to 3,000,000 characters'; END IF;
   v_words := cardinality(regexp_split_to_array(v_text, '\s+'));
-  IF v_words > 20000 THEN RAISE EXCEPTION 'Choose a section of up to 20,000 words'; END IF;
+  IF v_words > 500000 THEN RAISE EXCEPTION 'Choose a section of up to 500,000 words'; END IF;
   IF char_length(coalesce(p_title,'')) > 160 OR char_length(coalesce(p_author,'')) > 80 THEN RAISE EXCEPTION 'Shorten the title or author name'; END IF;
   -- Serialize per-owner creation to enforce the active-link cap under concurrent requests.
   PERFORM pg_advisory_xact_lock(hashtextextended(auth.uid()::text, 0));

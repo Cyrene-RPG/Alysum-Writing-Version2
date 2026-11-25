@@ -12,7 +12,7 @@ Run checks with `node --test core/tests/publishing/snippet-card.test.js`.
 
 ## Longer reading links
 
-The share dialog now has **Reading link** and **Image card** modes. Reading links accept up to 20,000 whitespace-separated words and 150,000 characters, whichever comes first. All selected text is preserved. Image cards have a separate 30,000-character limit. Switching modes never truncates the selection.
+The share dialog now has **Reading link** and **Image card** modes. Reading links accept up to 500,000 whitespace-separated words and 3,000,000 characters across all selected passages, whichever comes first. All selected text is preserved. Image cards have a separate 30,000-character limit. Switching modes never truncates the selection.
 
 A reading link saves a separate, immutable plain-text snapshot containing only the selected section, title, and author. It never makes the manuscript or other chapters public and is not listed in the Library. Owner-only link management lists saved links and can disable future access. Previously copied or already displayed text cannot be taken back. Public reader responses expose no manuscript identifiers, owner identifiers, or editor credentials.
 

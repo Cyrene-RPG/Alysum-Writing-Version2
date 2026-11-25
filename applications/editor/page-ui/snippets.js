@@ -46,7 +46,7 @@ function captureCardFormatting(range) {
     return trimmed ? { text: trimmed, italicMask: mask.slice(start, start + trimmed.length) } : null;
 }
 
-export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () => "", initialExcerpt = "", excerptApi = null, downloadApi = null, betaReadApi = null }) {
+export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = () => null, getAuthor = () => "", initialExcerpt = "", excerptApi = null, downloadApi = null, betaReadApi = null }) {
     if (!button || !pageEl) return;
     const dialog = document.createElement("dialog");
     dialog.className = "quote-dialog";
@@ -80,17 +80,32 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
     const selectionNotice = selectionBar.querySelector("p");
     const useSelection = selectionBar.querySelector("[data-use-selection]");
     let selectAfterClose = false;
+    let addingSection = false;
+    let capturedChapter = null;
+    function selectionPrompt() {
+        return addingSection
+            ? "Open any chapter, highlight the passage you want, then choose Add selection."
+            : "Highlight text in your WIP, then choose Share selection.";
+    }
     function showSelectionBar() {
         selectionBar.hidden = false;
         capturedText = "";
         useSelection.disabled = true;
-        selectionNotice.textContent = "Highlight text in your WIP, then choose Share selection.";
+        capturedRange = null;
+        if (addingSection) window.getSelection()?.removeAllRanges();
+        useSelection.textContent = addingSection ? "Add selection" : "Share selection";
+        selectionNotice.textContent = selectionPrompt();
         pageEl.focus({ preventScroll: true });
         selectionBar.scrollIntoView({ block: "nearest", behavior: "auto" });
     }
     function captureSelection() {
         const text = readSelection();
-        if (text.trim()) capturedText = text;
+        if (text.trim()) {
+            capturedText = text;
+            capturedChapter = getChapterId();
+        } else if (addingSection && (capturedChapter !== getChapterId() || !capturedRange || capturedRange.collapsed)) {
+            capturedText = "";
+        }
         return capturedText;
     }
     document.addEventListener("selectionchange", () => {
@@ -98,11 +113,16 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         const text = captureSelection();
         if (selectionBar.hidden) return;
         useSelection.disabled = !text.trim();
-        selectionNotice.textContent = text.trim() ? `${text.trim().split(/\s+/u).length} words selected` : "Highlight text in your WIP, then choose Share selection.";
+        selectionNotice.textContent = text.trim() ? `${text.trim().split(/\s+/u).length} words selected` : selectionPrompt();
     });
     useSelection.addEventListener("pointerdown", captureSelection);
     useSelection.addEventListener("click", () => { if (captureSelection().trim()) button.click(); });
-    selectionBar.querySelector("[data-cancel-selection]").addEventListener("click", () => { selectionBar.hidden = true; capturedText = ""; });
+    selectionBar.querySelector("[data-cancel-selection]").addEventListener("click", () => {
+        selectionBar.hidden = true;
+        capturedText = "";
+        capturedRange = null;
+        if (addingSection) resumeReadingLink();
+    });
 
     const find = (id) => dialog.querySelector(`#${id}`);
     const form = find("quote-form");
@@ -247,6 +267,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         clearImage();
         errorEl.hidden = true;
         const words = countExcerptWords(excerpt.value);
+        find("quote-select-in-wip").textContent = mode === "link" && words ? "Add another section or chapter" : "Select text in WIP";
         find("quote-create-link").disabled = true;
         find("quote-count").textContent = mode === "link" ? `${words.toLocaleString()} / ${MAX_EXCERPT_WORDS.toLocaleString()} words · ${excerpt.value.length.toLocaleString()} / ${MAX_EXCERPT_CHARACTERS.toLocaleString()} characters` : `${words} words · ${excerpt.value.length.toLocaleString()} / ${MAX_CARD_CHARACTERS.toLocaleString()} characters`;
         if (!excerpt.value.trim()) {
@@ -330,9 +351,32 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         find("quote-link-result").hidden = true;
         renderTimer = setTimeout(render, 120);
     }
+    function resumeReadingLink() {
+        addingSection = false;
+        selectionBar.hidden = true;
+        capturedText = "";
+        capturedRange = null;
+        dialog.showModal();
+        setMode("link");
+        find("quote-select-in-wip").focus();
+    }
     button.addEventListener("pointerdown", captureSelection);
     button.addEventListener("click", () => {
-        const manuscriptSelection = readSelection() || capturedText;
+        const manuscriptSelection = captureSelection();
+        if (addingSection) {
+            if (!manuscriptSelection.trim()) return;
+            const combined = excerpt.value.trimEnd() + "\n\n" + manuscriptSelection.trim();
+            try {
+                normalizeExcerpt({ excerpt: combined });
+            } catch (error) {
+                selectionNotice.textContent = error.message + " Highlight a shorter passage or cancel to return.";
+                return;
+            }
+            excerpt.value = combined;
+            cardSelection = null;
+            resumeReadingLink();
+            return;
+        }
         const selected = manuscriptSelection || initialExcerpt;
         cardSelection = manuscriptSelection && capturedRange ? captureCardFormatting(capturedRange) : null;
         capturedRange = null;
@@ -348,9 +392,13 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         dialog.showModal();
         setMode("link");
         void loadLinks();
-        if (selected.length > MAX_EXCERPT_CHARACTERS) showError(new Error("That section is too long. Select up to 150,000 characters."));
+        if (selected.length > MAX_EXCERPT_CHARACTERS) showError(new Error(`That section is too long. Select up to ${MAX_EXCERPT_CHARACTERS.toLocaleString()} characters.`));
     });
-    find("quote-select-in-wip").addEventListener("click", () => { selectAfterClose = true; dialog.close(); });
+    find("quote-select-in-wip").addEventListener("click", () => {
+        addingSection = mode === "link" && Boolean(excerpt.value.trim());
+        selectAfterClose = true;
+        dialog.close();
+    });
     dialog.querySelector(".quote-close").addEventListener("click", () => dialog.close());
     dialog.addEventListener("close", () => {
         generation++;
@@ -358,7 +406,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getAuthor = () =>
         clearTimeout(renderTimer);
         clearImage();
         clearBackgroundImage();
-        form.reset();
+        if (!addingSection) form.reset();
         canvas.width = 1;
         canvas.height = 1;
         if (selectAfterClose) { selectAfterClose = false; showSelectionBar(); }
