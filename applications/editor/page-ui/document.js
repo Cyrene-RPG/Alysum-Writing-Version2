@@ -35,8 +35,11 @@ export function mountDocument({ pageEl, onInput }) {
 
     function restoreSelection() {
         if (!savedRange || !pageEl.contains(savedRange.startContainer) || !pageEl.contains(savedRange.endContainer)) return;
-        pageEl.focus();
         const selection = window.getSelection();
+        // Replacing a live caret range can discard the browser’s pending typing styles.
+        if (document.activeElement === pageEl && selection?.rangeCount &&
+            pageEl.contains(selection.anchorNode) && pageEl.contains(selection.focusNode)) return;
+        pageEl.focus();
         selection.removeAllRanges();
         selection.addRange(savedRange.cloneRange());
     }

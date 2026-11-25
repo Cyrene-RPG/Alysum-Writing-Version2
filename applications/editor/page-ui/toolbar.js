@@ -33,10 +33,10 @@ const SPACE_LABELS = {
 const DEFAULT_LINE_SPACE = "comfortable";
 
 const ACTIONS = [
-    { command: "bold", label: "B", title: "Bold (Ctrl+B / ⌘B)", shortcut: "Control+b Meta+b" },
-    { command: "italic", label: "I", title: "Italic (Ctrl+I / ⌘I)", shortcut: "Control+i Meta+i" },
-    { command: "underline", label: "U", title: "Underline (Ctrl+U / ⌘U)", shortcut: "Control+u Meta+u" },
-    { command: "strikeThrough", label: "S", title: "Strikethrough" },
+    { command: "bold", toggle: true, label: "B", title: "Bold (Ctrl+B / ⌘B)", shortcut: "Control+b Meta+b" },
+    { command: "italic", toggle: true, label: "I", title: "Italic (Ctrl+I / ⌘I)", shortcut: "Control+i Meta+i" },
+    { command: "underline", toggle: true, label: "U", title: "Underline (Ctrl+U / ⌘U)", shortcut: "Control+u Meta+u" },
+    { command: "strikeThrough", toggle: true, label: "S", title: "Strikethrough" },
     { command: "formatBlock", value: "h1", label: "H1", title: "Heading 1" },
     { command: "formatBlock", value: "h2", label: "H2", title: "Heading 2" },
     { command: "insertUnorderedList", label: "•", title: "Bullet list" },
@@ -179,7 +179,7 @@ export function mountToolbar({
         `<div class="writer-toolbar-cluster">`,
         `<button type="button" class="writer-tool" data-indent-toggle aria-pressed="${indentOn ? "true" : "false"}" title="Auto indent" aria-label="Auto indent">Indent</button>`,
         ...ACTIONS.map((action) => (
-            `<button type="button" class="writer-tool" data-command="${action.command}" data-value="${action.value || ""}" title="${action.title}" aria-label="${action.title}"${action.shortcut ? ` aria-keyshortcuts="${action.shortcut}"` : ""}>${action.label}</button>`
+            `<button type="button" class="writer-tool" data-command="${action.command}"${action.toggle ? ' aria-pressed="false"' : ""} data-value="${action.value || ""}" title="${action.title}" aria-label="${action.title}"${action.shortcut ? ` aria-keyshortcuts="${action.shortcut}"` : ""}>${action.label}</button>`
         )),
         menuBlock("font", "Font", "Font", fontMenuHtml()),
         menuBlock("size", "Size", "Text size", sizeMenuHtml()),
@@ -194,6 +194,20 @@ export function mountToolbar({
     ].join("");
     if (wordcount) mount.appendChild(wordcount);
     bindToolbarOverflow(mount);
+
+    const formatButtons = mount.querySelectorAll("[data-command][aria-pressed]");
+    function syncFormatButtons() {
+        const selection = window.getSelection();
+        const inPage = selection?.rangeCount && pageEl?.contains(selection.anchorNode) && pageEl.contains(selection.focusNode);
+        for (const button of formatButtons) {
+            const active = Boolean(inPage && document.queryCommandState?.(button.dataset.command));
+            button.setAttribute("aria-pressed", String(active));
+        }
+    }
+    document.addEventListener("selectionchange", syncFormatButtons);
+    pageEl?.addEventListener("input", syncFormatButtons);
+    pageEl?.addEventListener("keyup", syncFormatButtons);
+    syncFormatButtons();
 
     function typography() {
         return getChapterTypography?.() || { fontId: DEFAULT_FONT_ID, fontSizePx: String(DEFAULT_FONT_SIZE_PX) };
@@ -325,6 +339,7 @@ export function mountToolbar({
         if (!btn?.dataset.command) return;
         closeMenus();
         editor.command(btn.dataset.command, btn.dataset.value || undefined);
+        syncFormatButtons();
     });
 
     document.addEventListener("mousedown", (event) => {

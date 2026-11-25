@@ -57,6 +57,15 @@ try {
         }, {html,caret});
     };
     const active = command => page.evaluate(command => document.queryCommandState(command), command);
+    for (const command of ["italic", "bold", "underline", "strikeThrough"]) {
+        await select("<p>Plain</p>", true);
+        const button = page.locator(`[data-command="${command}"]`);
+        for (const expected of [true, false]) {
+            await button.click();
+            assert.equal(await active(command), expected);
+            assert.equal(await button.getAttribute("aria-pressed"), String(expected));
+        }
+    }
     for (const modifier of ["Control", "Meta"]) {
         for (const [key, command] of [["b","bold"],["i","italic"],["u","underline"]]) {
             await select();

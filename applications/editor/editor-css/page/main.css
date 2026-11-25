@@ -182,8 +182,10 @@
     font-weight: 800;
     cursor: pointer;
 }
-.writer-tool:hover {
-    background: color-mix(in srgb, var(--accent, #6d28d9) 35%, transparent);
+@media (hover: hover) {
+    .writer-tool:not([data-command][aria-pressed]):hover {
+        background: color-mix(in srgb, var(--accent, #6d28d9) 35%, transparent);
+    }
 }
 .writer-tool[aria-pressed="true"],
 .writer-tool[aria-expanded="true"] {
