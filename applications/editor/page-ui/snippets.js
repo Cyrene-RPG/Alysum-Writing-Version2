@@ -455,7 +455,7 @@ export function mountSnippetSharing({ button, pageEl, getBook, getChapterId = ()
             find("quote-reading-url").value = result.url;
             find("quote-open-link").href = result.url;
             find("quote-link-result").hidden = false;
-            status.textContent = "Reading link created. Its preview uses the title, author and first sentence of this saved section.";
+            status.textContent = "Reading link created. Its preview includes the word count, estimated reading time and opening sentence.";
             find("quote-copy-link").focus();
             void loadLinks();
         } catch(error) { if(dialog.open)showError(error); }

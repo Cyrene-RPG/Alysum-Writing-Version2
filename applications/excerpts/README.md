@@ -1,6 +1,6 @@
 # Shared excerpt previews
 
-Reading links use `/shared-section/<token>` so link-preview fetchers can receive metadata in the initial HTML. Cloudflare Pages and Vercel use the same server handler. Previews show the saved excerpt title, its provided author, Alysum's existing image/branding, and the first sentence (up to 240 characters). The reading page keeps its existing appearance and displays only the selected snapshot.
+Reading links use `/shared-section/<token>` so link-preview fetchers can receive metadata in the initial HTML. Cloudflare Pages and Vercel use the same server handler. Previews show the saved excerpt title, its provided author, Alysum's existing image/branding, the total word count, estimated reading time at 220 words per minute, and the first sentence (up to 240 characters). The reading page keeps its existing appearance and displays only the selected snapshot.
 
 The existing anonymous `get_wip_excerpt` RPC checks the token and revocation. No manuscript tables are read directly. Responses disable browser/CDN caching, indexing and referrers. To enable the larger reading links on an existing installation, rerun `supabase/live-site/supabase-wip-excerpts.sql` before deploying the editor. It updates the creation function and both existing size constraints in one transaction. Sharing platforms may retain their own cached previews.
 

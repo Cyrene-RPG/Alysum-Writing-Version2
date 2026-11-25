@@ -14,7 +14,7 @@ test('each reading link has its own first-sentence preview in the initial HTML, 
         const response = await handleSharedSection(new Request(url), { token, read: async () => ({ ...section, excerpt }) });
         const html = await response.text();
         assert.equal(response.status, 200);
-        assert.ok(html.includes(`<meta property="og:description" content="${firstExcerptSentence(excerpt)}">`));
+        assert.ok(html.includes(`<meta property="og:description" content="14 words · 1 min read · ${firstExcerptSentence(excerpt)}">`));
         assert.ok(html.includes('property="og:title" content="The Harbor by A Writer — Alysum"'));
         assert.ok(html.includes('content="https://alysum.example/Alysum-3.png"'));
         assert.ok(html.includes('name="twitter:card" content="summary_large_image"'));
@@ -116,4 +116,15 @@ test('only explicitly added sections start new reader pages', () => {
     assert.ok(html.includes('<div data-reading-page hidden>Final passage.</div>'));
     const legacy = renderSharedSection({ ...section, excerpt: first }, new URL(url));
     assert.equal((legacy.match(/data-reading-page/g) || []).length, 1);
+});
+
+test('all preview descriptions lead with totals across every excerpt page', async () => {
+    const excerpt = 'The boat arrived.' + EXCERPT_PAGE_BREAK + 'wave '.repeat(1000);
+    const read = token => readSharedExcerpt(token, async () => Response.json({ ...section, excerpt }));
+    const html = await (await handleSharedSection(new Request(url), { token, read })).text();
+    const summary = '1,003 words · 5 min read';
+    for (const attribute of ['name="description"', 'property="og:description"', 'name="twitter:description"']) {
+        assert.ok(html.includes(`<meta ${attribute} content="${summary} · The boat arrived.">`));
+    }
+    assert.ok(html.includes(`<p id="section-meta">${summary}</p>`));
 });
