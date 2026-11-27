@@ -70,7 +70,7 @@
     padding: 0;
     border: 0;
     border-radius: 8px;
-    background: transparent;
+    background: #090909;
     color: #b9b5af;
     font-size: 22px;
     line-height: 1;
@@ -118,7 +118,8 @@ html.is-typewriter .writer-shell.is-tree-collapsed.is-rail-collapsed {
 }
 html.is-typewriter .writer-main,
 html.is-typewriter .writer-shell:not(.is-tree-collapsed):not(.is-rail-collapsed) .writer-main {
-    background: #090909;
+    isolation: isolate;
+    background: #000;
     color: #f4eee5;
     color-scheme: dark;
     border: 0;
@@ -128,7 +129,29 @@ html.is-typewriter .writer-shell:not(.is-tree-collapsed):not(.is-rail-collapsed)
     width: 100%;
     justify-self: stretch;
 }
+/* The beam stays anchored to the viewport while the manuscript scrolls over it. */
+html.is-typewriter .writer-main::before {
+    --beam-angle: var(--focus-beam-angle, 35deg);
+    content: "";
+    position: absolute;
+    inset: var(--focus-beam-top, 28px) 0 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse 56px 28px at 50% 100%, #c29a6973, transparent),
+        conic-gradient(
+            from calc(0deg - var(--beam-angle)) at 50% 100%,
+            transparent,
+            #7355374d calc(var(--beam-angle) * 0.38),
+            #b28c5e68 var(--beam-angle),
+            #7355374d calc(var(--beam-angle) * 1.62),
+            transparent calc(var(--beam-angle) * 2)
+        );
+    mask-image: linear-gradient(to bottom, transparent, #000 min(40px, 45%));
+}
 html.is-typewriter .writer-main-scroll {
+    position: relative;
+    z-index: 1;
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
@@ -146,38 +169,26 @@ html.is-typewriter .draft-workspace[data-pane] > .writer-main-scroll {
 html.is-typewriter .writer-main .writer-page {
     --focus-y: 72px;
     --focus-radius: 14px;
-    position: relative;
-    isolation: isolate;
     width: 100%;
     max-width: 52rem;
     margin-inline: auto;
     min-height: 100%;
     padding-top: calc(60px + env(safe-area-inset-top, 0px));
     padding-bottom: max(48px, env(safe-area-inset-bottom, 0px));
-    background: radial-gradient(
-        ellipse 62% calc(var(--focus-radius) + 32px) at center var(--focus-y),
-        #373023 0%, #201c16 58%, transparent 100%
-    );
     color: #f4eee5;
     caret-color: #fff3db;
     box-shadow: none;
     text-shadow: none;
+    /* Fade the text independently of the light behind it. */
+    mask-image: linear-gradient(
+        transparent calc(var(--focus-y) - var(--focus-radius) - 18px),
+        #000 calc(var(--focus-y) - var(--focus-radius)),
+        #000 calc(var(--focus-y) + var(--focus-radius)),
+        transparent calc(var(--focus-y) + var(--focus-radius) + 18px)
+    );
 }
 html.is-typewriter .writer-page blockquote {
     color: inherit;
-}
-/* Shade the manuscript around the active block without touching the editable HTML. */
-html.is-typewriter .writer-page::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: linear-gradient(
-        #09090980 calc(var(--focus-y) - var(--focus-radius) - 12px),
-        transparent calc(var(--focus-y) - var(--focus-radius)),
-        transparent calc(var(--focus-y) + var(--focus-radius)),
-        #09090980 calc(var(--focus-y) + var(--focus-radius) + 12px)
-    );
 }
 html.is-typewriter .writer-typewriter-exit:not([hidden]) {
     display: grid;

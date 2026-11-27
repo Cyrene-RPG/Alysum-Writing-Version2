@@ -222,7 +222,10 @@ try {
  }, manuscript);
  await focusPage.locator('#focusMode').click();
  assert.deepEqual(await focusPage.locator('#writerShell').boundingBox(), { x: 0, y: 0, width: 1280, height: 844 });
- assert.equal(await focusPage.locator('.writer-main').evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(9, 9, 9)');
+ const writingPane = focusPage.locator('.writer-main');
+ assert.equal(await writingPane.evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(0, 0, 0)');
+ assert.match(await writingPane.evaluate(node => getComputedStyle(node, '::before').backgroundImage), /conic-gradient.*at 50% 100%/);
+ assert.match(await editor.evaluate(node => getComputedStyle(node).maskImage), /^linear-gradient/);
  const expectSpotlight = index => focusPage.waitForFunction(index => {
   const page = document.getElementById('pageEditor');
   const block = page.children[index].getBoundingClientRect();
@@ -239,6 +242,24 @@ try {
  await focusPage.keyboard.press('Enter');
  await expectSpotlight(3);
  assert.equal(await editor.locator('p').count(), 4);
+
+ await editor.evaluate(node => {
+  for (let i = 0; i < 40; i++) {
+   const paragraph = document.createElement('p');
+   paragraph.textContent = 'Another paragraph';
+   node.append(paragraph);
+  }
+  getSelection().collapse(node.children[14].firstChild, 0);
+ });
+ await expectSpotlight(14);
+ const beamTop = () => writingPane.evaluate(node => parseFloat(node.style.getPropertyValue('--focus-beam-top')));
+ const beforeScroll = await beamTop();
+ await writingPane.locator('.writer-main-scroll').evaluate(node => { node.scrollTop = 160; });
+ await focusPage.waitForFunction(previous => {
+  const top = parseFloat(document.querySelector('.writer-main').style.getPropertyValue('--focus-beam-top'));
+  return Math.abs(previous - top - 160) < 1;
+ }, beforeScroll);
+ await expectSpotlight(14);
  await focusPage.keyboard.press('Escape');
  assert.equal(await focusPage.locator('#typewriterExit').isVisible(), false);
  assert.equal(await focusPage.locator('#focusMode').evaluate(node => document.activeElement === node), true);
