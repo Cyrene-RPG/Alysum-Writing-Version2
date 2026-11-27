@@ -71,14 +71,14 @@
     border: 0;
     border-radius: 8px;
     background: transparent;
-    color: var(--muted);
+    color: #b9b5af;
     font-size: 22px;
     line-height: 1;
     cursor: pointer;
 }
-.writer-typewriter-exit:hover {
-    color: var(--text);
-    background: color-mix(in srgb, var(--accent, #6d28d9) 28%, transparent);
+.writer-typewriter-exit:is(:hover, :focus-visible) {
+    color: #fff;
+    background: #242321;
 }
 html.is-typewriter .wd-welcome-bar,
 html.is-typewriter .wd-nav-wrap,
@@ -93,7 +93,13 @@ html.is-typewriter .snippet-editor-action,
 html.is-typewriter .writer-tool-dropdown,
 html.is-typewriter .writer-find,
 html.is-typewriter .writer-folder-view,
-html.is-typewriter .writer-status {
+html.is-typewriter .writer-bg,
+html.is-typewriter .writer-draft-switch,
+html.is-typewriter .draft-mode-bar,
+html.is-typewriter .draft-reference,
+html.is-typewriter .draft-divider,
+html.is-typewriter .writer-sound-controls,
+html.is-typewriter .writer-status:not(#saveStatus) {
     display: none !important;
 }
 html.is-typewriter .wrap {
@@ -103,13 +109,18 @@ html.is-typewriter .writer-shell,
 html.is-typewriter .writer-shell.is-tree-collapsed,
 html.is-typewriter .writer-shell.is-rail-collapsed,
 html.is-typewriter .writer-shell.is-tree-collapsed.is-rail-collapsed {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
+    position: fixed;
+    inset: 0 0 auto;
+    height: var(--focus-viewport-height, 100dvh);
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
     gap: 0;
     padding: 0;
 }
 html.is-typewriter .writer-main,
 html.is-typewriter .writer-shell:not(.is-tree-collapsed):not(.is-rail-collapsed) .writer-main {
+    background: #090909;
+    color: #f4eee5;
+    color-scheme: dark;
     border: 0;
     border-radius: 0;
     box-shadow: none;
@@ -126,41 +137,49 @@ html.is-typewriter .writer-main-scroll::-webkit-scrollbar {
     width: 0;
     height: 0;
 }
-html.is-typewriter .writer-page {
-    align-self: center;
-    width: min(var(--typewriter-page-width, 42rem), calc(100vw - 48px));
-    max-width: 100%;
-    margin-left: auto;
-    margin-right: auto;
+html.is-typewriter .draft-workspace {
+    grid-template-columns: minmax(0, 1fr);
+}
+html.is-typewriter .draft-workspace[data-pane] > .writer-main-scroll {
+    display: flex;
+}
+html.is-typewriter .writer-main .writer-page {
+    --focus-y: 72px;
+    --focus-radius: 14px;
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    max-width: 52rem;
+    margin-inline: auto;
     min-height: 100%;
-    box-sizing: border-box;
-}
-html.is-typewriter .writer-page:focus {
+    padding-top: calc(60px + env(safe-area-inset-top, 0px));
+    padding-bottom: max(48px, env(safe-area-inset-bottom, 0px));
+    background: radial-gradient(
+        ellipse 62% calc(var(--focus-radius) + 32px) at center var(--focus-y),
+        #373023 0%, #201c16 58%, transparent 100%
+    );
+    color: #f4eee5;
+    caret-color: #fff3db;
     box-shadow: none;
+    text-shadow: none;
 }
-html.is-typewriter .writer-typewriter-exit {
+html.is-typewriter .writer-page blockquote {
+    color: inherit;
+}
+/* Shade the manuscript around the active block without touching the editable HTML. */
+html.is-typewriter .writer-page::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+        #09090980 calc(var(--focus-y) - var(--focus-radius) - 12px),
+        transparent calc(var(--focus-y) - var(--focus-radius)),
+        transparent calc(var(--focus-y) + var(--focus-radius)),
+        #09090980 calc(var(--focus-y) + var(--focus-radius) + 12px)
+    );
+}
+html.is-typewriter .writer-typewriter-exit:not([hidden]) {
     display: grid;
     place-items: center;
-}
-@media (max-width: 720px) {
-    html.is-typewriter .writer-shell,
-    html.is-typewriter .writer-shell.is-tree-collapsed,
-    html.is-typewriter .writer-shell.is-rail-collapsed,
-    html.is-typewriter .writer-shell.is-tree-collapsed.is-rail-collapsed {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: minmax(0, 1fr);
-        gap: 0;
-        padding: 0;
-    }
-}
-
-/* Keep the editable page and read-only reference in independent scroll panes. */
-html.is-typewriter .draft-mode-bar {
-    padding-inline-end: calc(72px + env(safe-area-inset-right, 0px));
-}
-html.is-typewriter .draft-reference-text {
-    width: 100%;
-    min-height: 0;
-    margin: 0;
-    align-self: stretch;
 }

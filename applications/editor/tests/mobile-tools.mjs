@@ -164,8 +164,10 @@ try {
    await page.locator('#typewriterExit').tap();
    await page.waitForFunction(()=>document.getElementById('editorActions').parentElement.id==='writerMobileActions');
    await page.locator('#mobileRailOpen').tap();await page.setViewportSize({width:1280,height:844});
-   await page.waitForFunction(()=>!document.getElementById('writerMobileActions').inert);
-   assert.equal(await page.locator('#writerShell').evaluate(n=>n.classList.contains('is-rail-drawer-open')),false,'resize clears stale drawer state');
+   await page.waitForFunction(() =>
+    !document.getElementById('writerMobileActions').inert &&
+    !document.getElementById('writerShell').classList.contains('is-rail-drawer-open'),
+   );
    assert.equal(await page.locator('#writerRail .writer-rail-title').textContent(),'Editor tools');
    await page.setViewportSize({width,height:844});await page.waitForFunction(()=>document.getElementById('editorActions').parentElement.id==='writerMobileActions');
   }else{
@@ -192,6 +194,11 @@ try {
   assert.equal(await page.locator('#focusMode').isVisible(),true);
   await page.locator('#focusMode').click();
   assert.equal(await page.locator('#typewriterExit').isVisible(),true);
+  await page.waitForFunction(() => {
+   const shell = document.getElementById('writerShell').getBoundingClientRect();
+   return shell.top === 0 && shell.left === 0 && shell.width === innerWidth &&
+    Math.abs(shell.height - visualViewport.height) <= 1;
+  });
   assert.equal(await page.locator('.writer-daily-goal').isVisible(),false,'Focus remains free of the goal bar');
   for(const id of actionIds)assert.equal(await page.locator('#'+id).isVisible(),false,'Focus hides '+id+' on phone and desktop');
   await page.screenshot({path:out+'/'+name+'-'+width+'-focus.png',fullPage:true});
@@ -201,6 +208,44 @@ try {
   assert.equal(await page.locator('#pageEditor').textContent(),'Keep this manuscript and its editing state unchanged.');
   assert.deepEqual(errors,[]);await page.close();
  }
+ const focusPage = await browser.newPage({ viewport: { width: 1280, height: 844 } });
+ await focusPage.route('**/*', route => new URL(route.request().url()).origin === base ? route.continue() : route.abort());
+ await focusPage.goto(base + '/fixture');
+ await focusPage.waitForFunction(() => window.toolsReady);
+ const manuscript = '<p>First paragraph</p><p><em>Second paragraph</em></p><p>Third paragraph</p>';
+ const editor = focusPage.locator('#pageEditor');
+ await editor.evaluate((node, html) => {
+  node.innerHTML = html;
+  document.body.style.background = '#ffffff';
+  node.focus();
+  getSelection().collapse(node.querySelector('em').firstChild, 3);
+ }, manuscript);
+ await focusPage.locator('#focusMode').click();
+ assert.deepEqual(await focusPage.locator('#writerShell').boundingBox(), { x: 0, y: 0, width: 1280, height: 844 });
+ assert.equal(await focusPage.locator('.writer-main').evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(9, 9, 9)');
+ const expectSpotlight = index => focusPage.waitForFunction(index => {
+  const page = document.getElementById('pageEditor');
+  const block = page.children[index].getBoundingClientRect();
+  const center = block.top - page.getBoundingClientRect().top + block.height / 2;
+  return Math.abs(parseFloat(page.style.getPropertyValue('--focus-y')) - center) < 1;
+ }, index);
+ await expectSpotlight(1);
+ assert.equal(await editor.innerHTML(), manuscript, 'spotlighting does not change saved markup');
+ await focusPage.keyboard.press('ArrowUp');
+ await expectSpotlight(0);
+ await editor.locator('p').last().click();
+ await expectSpotlight(2);
+ await focusPage.keyboard.press('End');
+ await focusPage.keyboard.press('Enter');
+ await expectSpotlight(3);
+ assert.equal(await editor.locator('p').count(), 4);
+ await focusPage.keyboard.press('Escape');
+ assert.equal(await focusPage.locator('#typewriterExit').isVisible(), false);
+ assert.equal(await focusPage.locator('#focusMode').evaluate(node => document.activeElement === node), true);
+ assert.equal(await editor.evaluate(node => node.style.getPropertyValue('--focus-y')), '');
+ assert.equal(await focusPage.locator('body').evaluate(node => node.style.background), 'rgb(255, 255, 255)');
+ await focusPage.close();
+
  const goalPage=await browser.newPage({viewport:{width:390,height:844}});
  await goalPage.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
  await goalPage.goto(base+'/fixture');await goalPage.waitForFunction(()=>window.toolsReady);
