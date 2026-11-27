@@ -129,43 +129,33 @@ html.is-typewriter .writer-shell:not(.is-tree-collapsed):not(.is-rail-collapsed)
     width: 100%;
     justify-self: stretch;
 }
-/* Keep the light at the viewport and paint its reflection separately from the shaft. */
-html.is-typewriter .writer-main::before,
-html.is-typewriter .writer-main::after {
-    content: "";
-    position: absolute;
-    z-index: 0;
-    pointer-events: none;
-}
+/* The beam stays anchored to the viewport while the manuscript scrolls over it. */
 html.is-typewriter .writer-main::before {
     --beam-angle: var(--focus-beam-angle, 35deg);
-    inset: var(--focus-beam-top, 28px) 0 -64px;
+    content: "";
+    position: absolute;
+    inset: var(--focus-beam-top, 28px) 0 0;
+    z-index: 0;
+    pointer-events: none;
     background: conic-gradient(
         from calc(0deg - var(--beam-angle)) at 50% 100%,
         transparent,
-        #b8ad9214 calc(var(--beam-angle) * 0.62),
-        #b8ad922a var(--beam-angle),
-        #b8ad9214 calc(var(--beam-angle) * 1.38),
+        #b4ac9810 calc(var(--beam-angle) * 0.28),
+        #b4ac982f calc(var(--beam-angle) * 0.64),
+        #b4ac984b var(--beam-angle),
+        #b4ac9831 calc(var(--beam-angle) * 1.32),
+        #b4ac980e calc(var(--beam-angle) * 1.76),
         transparent calc(var(--beam-angle) * 2)
     );
-    filter: blur(clamp(9px, 1vw, 16px));
-    mask-image: linear-gradient(to bottom, transparent, #0007 19%, #000 100%);
-}
-html.is-typewriter .writer-main::after {
-    --light-y: var(--focus-light-y, 72px);
-    --light-radius: var(--focus-light-radius, 14px);
-    inset: 0;
-    background:
-        radial-gradient(
-            ellipse min(27rem, 49vw) calc(var(--light-radius) + 54px)
-            at 48% calc(var(--light-y) - 5px),
-            #bfb79946 0%, #aba38527 40%, #9a907514 68%, transparent 100%
-        ),
-        radial-gradient(
-            ellipse min(34rem, 57vw) calc(var(--light-radius) + 82px)
-            at 52% calc(var(--light-y) + 17px),
-            #c3bba619 0%, #c3bba609 55%, transparent 100%
-        );
+    filter: blur(clamp(4px, 0.6vw, 8px));
+    mask-image: linear-gradient(
+        to bottom,
+        transparent,
+        #0006 min(32px, 30%),
+        #000a 42%,
+        #000e 86%,
+        #0009 100%
+    );
 }
 html.is-typewriter .writer-main-scroll {
     position: relative;

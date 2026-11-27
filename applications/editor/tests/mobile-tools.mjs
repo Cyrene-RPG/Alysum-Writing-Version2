@@ -225,16 +225,12 @@ try {
  const writingPane = focusPage.locator('.writer-main');
  assert.equal(await writingPane.evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(0, 0, 0)');
  assert.match(await writingPane.evaluate(node => getComputedStyle(node, '::before').backgroundImage), /conic-gradient.*at 50% 100%/);
- assert.match(await writingPane.evaluate(node => getComputedStyle(node, '::after').backgroundImage), /radial-gradient/);
  assert.match(await editor.evaluate(node => getComputedStyle(node).maskImage), /^linear-gradient/);
  const expectSpotlight = index => focusPage.waitForFunction(index => {
   const page = document.getElementById('pageEditor');
   const block = page.children[index].getBoundingClientRect();
-  const pane = page.closest('.writer-main');
-  const center = block.top + block.height / 2;
-  const textCenter = page.getBoundingClientRect().top + parseFloat(page.style.getPropertyValue('--focus-y'));
-  const lightCenter = pane.getBoundingClientRect().top + parseFloat(pane.style.getPropertyValue('--focus-light-y'));
-  return Math.abs(textCenter - center) < 1 && Math.abs(lightCenter - center) < 1;
+  const center = block.top - page.getBoundingClientRect().top + block.height / 2;
+  return Math.abs(parseFloat(page.style.getPropertyValue('--focus-y')) - center) < 1;
  }, index);
  await expectSpotlight(1);
  assert.equal(await editor.innerHTML(), manuscript, 'spotlighting does not change saved markup');
