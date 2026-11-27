@@ -99,7 +99,9 @@ test('Don’t ask again persists across books and sessions for the same writer',
  const first=await mount({userId:'writer'});
  let savedPreferences;
  try{
-  click(first,'Don’t ask again');
+  overlay(first).querySelector('input[type=checkbox]').click();
+  click(first,'Yes');
+  click(first,'3 hours');
   assert.equal(overlay(first).hidden,true);
   savedPreferences=Object.entries(first.dom.window.localStorage);
  }finally{first.close();}
@@ -107,9 +109,20 @@ test('Don’t ask again persists across books and sessions for the same writer',
  try{
   assert.equal(overlay(next).hidden,true);
   next.dom.window.document.getElementById('break-reminders').click();
+  const checkbox=overlay(next).querySelector('input[type=checkbox]');
+  assert.equal(checkbox.checked,true);
+  checkbox.click();
+  assert.equal(next.dom.window.localStorage.length,0);
   click(next,'1 hour');
   assert.equal(next.dom.window.document.getElementById('break-reminder-status').hidden,false);
  }finally{next.close();}
  const other=await mount({userId:'another-writer',savedPreferences});
  try{assert.equal(overlay(other).hidden,false);}finally{other.close();}
+});
+
+test('a previous No allows the prompt on the next editor opening',async()=>{
+ const first=await mount();
+ try{click(first,'No');}finally{first.close();}
+ const reopened=await mount({storage:first.storage});
+ try{assert.equal(overlay(reopened).hidden,false);}finally{reopened.close();}
 });

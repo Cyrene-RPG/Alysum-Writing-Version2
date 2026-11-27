@@ -1,5 +1,5 @@
 import { mountEditorDailyGoal } from "./daily-goal.js";
-import { mountBreakReminders } from "./break-reminders.js?v=2";
+import { mountBreakReminders } from "./break-reminders.js?v=3";
 import { mountEditorSound } from "./sound.js?v=2";
 import { mountWriterBackground } from "./writer-background.js";
 import { mountForceSyncButton } from "./force-sync.js";

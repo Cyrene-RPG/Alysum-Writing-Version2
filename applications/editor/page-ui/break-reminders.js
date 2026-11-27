@@ -43,7 +43,18 @@ export function mountBreakReminders({
     text.id = 'breakReminderText';
     const actions = root.createElement('div');
     actions.className = 'confirm-actions';
-    card.append(title, text, actions);
+    const preference = root.createElement('label');
+    const hidePrompt = root.createElement('input');
+    hidePrompt.type = 'checkbox';
+    preference.append(hidePrompt, ' Don’t ask again when opening the editor');
+    hidePrompt.addEventListener('change', () => {
+        try {
+            const prefs = root.defaultView.localStorage;
+            if (hidePrompt.checked) prefs.setItem(promptKey, '1');
+            else prefs.removeItem(promptKey);
+        } catch { /* Browser storage may be unavailable. */ }
+    });
+    card.append(title, text, preference, actions);
     overlay.append(card);
     root.body.append(overlay);
 
@@ -90,6 +101,8 @@ export function mountBreakReminders({
         title.textContent = heading;
         text.textContent = body;
         actions.classList.toggle('break-reminder-intervals', nextView === 'interval');
+        preference.hidden = nextView === 'due';
+        hidePrompt.checked = promptHidden();
         actions.replaceChildren(...buttons);
         overlay.hidden = false;
         buttons[0]?.focus();
@@ -146,17 +159,15 @@ export function mountBreakReminders({
         try { return root.defaultView.localStorage.getItem(promptKey) === '1'; }
         catch { return false; }
     }
-    function stopAsking() {
-        try { root.defaultView.localStorage.setItem(promptKey, '1'); }
-        catch { /* The session choice still applies when persistent storage is unavailable. */ }
-        decline();
-    }
     function showPrompt() {
-        if (read() || promptHidden() || !overlay.hidden || otherDialogOpen()) return;
-        open('prompt', 'Would you like to set break reminders?', 'Choose No to skip this session. You can set reminders anytime in editor tools.', [
+        if (read()?.enabled || promptHidden() || !overlay.hidden) return;
+        if (otherDialogOpen()) {
+            promptTimer = root.defaultView.setTimeout(showPrompt, 500);
+            return;
+        }
+        open('prompt', 'Would you like to set break reminders?', 'Choose No to skip this time. You can set reminders anytime in editor tools.', [
             button('Yes', 'confirm-yes', showIntervals),
             button('No', 'confirm-no', decline),
-            button('Don’t ask again', 'confirm-no', stopAsking),
         ]);
     }
     function showIntervals() {
@@ -228,7 +239,7 @@ export function mountBreakReminders({
 
     const existing = read();
     if (existing?.enabled) schedule(existing);
-    else if (!existing) {
+    else if (!promptHidden()) {
         promptTimer = root.defaultView?.setTimeout(showPrompt, promptDelayMs) || 0;
     }
     paint();

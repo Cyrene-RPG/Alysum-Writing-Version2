@@ -285,6 +285,7 @@ try {
  const breakOff=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
  await breakOff.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
  await breakOff.goto(base+'/fixture?breaks=off');await breakOff.waitForFunction(()=>window.toolsReady);
+ await breakOff.locator('#breakReminderOverlay').getByRole('button',{name:'No',exact:true}).click();
  assert.equal(await breakOff.locator('#break-reminder-status').isHidden(),true);
  await breakOff.locator('#mobileRailOpen').tap();
  await breakOff.waitForFunction(()=>{
