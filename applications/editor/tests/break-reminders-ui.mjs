@@ -13,6 +13,7 @@ function memoryStore() {
 }
 async function mount(options={}) {
  const dom=new JSDOM('<div id="editorActions"></div><main></main>',{url:'https://example.com/editor?book=one',runScripts:'outside-only'});
+ for (const [key,value] of options.savedPreferences || []) dom.window.localStorage.setItem(key,value);
  const context=dom.getInternalVMContext();
  const api=new vm.SourceTextModule(core,{context});await api.link(()=>{});await api.evaluate();
  const module=new vm.SourceTextModule(ui,{context});await module.link(()=>api);await module.evaluate();
@@ -92,4 +93,23 @@ test('the live timer opens remaining time, change, and turn off',async()=>{
   assert.equal(JSON.parse(h.storage.getItem('alysum:editor:break-reminder:one')).enabled,false);
   assert.equal(h.dom.window.document.getElementById('break-reminder-status').hidden,true);
  }finally{h.close();}
+});
+
+test('Don’t ask again persists across books and sessions for the same writer',async()=>{
+ const first=await mount({userId:'writer'});
+ let savedPreferences;
+ try{
+  click(first,'Don’t ask again');
+  assert.equal(overlay(first).hidden,true);
+  savedPreferences=Object.entries(first.dom.window.localStorage);
+ }finally{first.close();}
+ const next=await mount({userId:'writer',bookId:'another',savedPreferences});
+ try{
+  assert.equal(overlay(next).hidden,true);
+  next.dom.window.document.getElementById('break-reminders').click();
+  click(next,'1 hour');
+  assert.equal(next.dom.window.document.getElementById('break-reminder-status').hidden,false);
+ }finally{next.close();}
+ const other=await mount({userId:'another-writer',savedPreferences});
+ try{assert.equal(overlay(other).hidden,false);}finally{other.close();}
 });

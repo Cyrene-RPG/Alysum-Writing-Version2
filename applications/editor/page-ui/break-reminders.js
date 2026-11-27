@@ -11,6 +11,7 @@ import {
 
 export function mountBreakReminders({
     bookId,
+    userId,
     getWriterName = () => '',
     storage,
     now = () => Date.now(),
@@ -21,6 +22,7 @@ export function mountBreakReminders({
 } = {}) {
     const store = storage || root.defaultView?.sessionStorage;
     const key = storageKeyForBook(bookId);
+    const promptKey = `alysum:editor:hide-break-prompt:${userId || 'local'}`;
     if (!store || !key || root.getElementById('breakReminderOverlay')) return { destroy() {} };
 
     const overlay = root.createElement('div');
@@ -140,11 +142,21 @@ export function mountBreakReminders({
         clearTimer();
         paint();
     }
+    function promptHidden() {
+        try { return root.defaultView.localStorage.getItem(promptKey) === '1'; }
+        catch { return false; }
+    }
+    function stopAsking() {
+        try { root.defaultView.localStorage.setItem(promptKey, '1'); }
+        catch { /* The session choice still applies when persistent storage is unavailable. */ }
+        decline();
+    }
     function showPrompt() {
-        if (read() || !overlay.hidden || otherDialogOpen()) return;
-        open('prompt', 'Would you like to set break reminders?', 'Yes sets a gentle check-in while you write. No leaves this session quiet.', [
+        if (read() || promptHidden() || !overlay.hidden || otherDialogOpen()) return;
+        open('prompt', 'Would you like to set break reminders?', 'Choose No to skip this session. You can set reminders anytime in editor tools.', [
             button('Yes', 'confirm-yes', showIntervals),
             button('No', 'confirm-no', decline),
+            button('Don’t ask again', 'confirm-no', stopAsking),
         ]);
     }
     function showIntervals() {
