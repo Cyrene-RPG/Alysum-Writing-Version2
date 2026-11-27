@@ -56,6 +56,8 @@ export function mountTypewriter({ pageEl, editor, typewriterExit, focusMode = do
             const beamAngle = Math.atan2(page.width * 0.64, pane.height - beamTop) * 180 / Math.PI;
             writingPane.style.setProperty("--focus-beam-top", `${beamTop}px`);
             writingPane.style.setProperty("--focus-beam-angle", `${beamAngle}deg`);
+            writingPane.style.setProperty("--focus-light-y", `${page.top + top + height / 2 - pane.top}px`);
+            writingPane.style.setProperty("--focus-light-radius", `${height / 2}px`);
         }
     }
 
@@ -81,6 +83,8 @@ export function mountTypewriter({ pageEl, editor, typewriterExit, focusMode = do
             pageEl.style.removeProperty("--focus-radius");
             writingPane?.style.removeProperty("--focus-beam-top");
             writingPane?.style.removeProperty("--focus-beam-angle");
+            writingPane?.style.removeProperty("--focus-light-y");
+            writingPane?.style.removeProperty("--focus-light-radius");
             focusMode?.focus({ preventScroll: true });
         }
     }
