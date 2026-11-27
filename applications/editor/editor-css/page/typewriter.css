@@ -129,33 +129,32 @@ html.is-typewriter .writer-shell:not(.is-tree-collapsed):not(.is-rail-collapsed)
     width: 100%;
     justify-self: stretch;
 }
-/* The beam stays anchored to the viewport while the manuscript scrolls over it. */
+html.is-typewriter .writer-main {
+    --lamp-x: 50%;
+    --rail-y: 84%;
+}
 html.is-typewriter .writer-main::before {
-    --beam-angle: var(--focus-beam-angle, 35deg);
     content: "";
     position: absolute;
-    inset: var(--focus-beam-top, 28px) 0 0;
-    z-index: 0;
+    left: var(--lamp-x);
+    top: var(--rail-y);
+    width: clamp(260px, 48vw, 630px);
+    height: clamp(160px, 40%, 370px);
+    transform: translate(-50%, -100%);
     pointer-events: none;
-    background: conic-gradient(
-        from calc(0deg - var(--beam-angle)) at 50% 100%,
-        transparent,
-        #b4ac9810 calc(var(--beam-angle) * 0.28),
-        #b4ac982f calc(var(--beam-angle) * 0.64),
-        #b4ac984b var(--beam-angle),
-        #b4ac9831 calc(var(--beam-angle) * 1.32),
-        #b4ac980e calc(var(--beam-angle) * 1.76),
-        transparent calc(var(--beam-angle) * 2)
-    );
-    filter: blur(clamp(4px, 0.6vw, 8px));
-    mask-image: linear-gradient(
-        to bottom,
-        transparent,
-        #0006 min(32px, 30%),
-        #000a 42%,
-        #000e 86%,
-        #0009 100%
-    );
+    background: conic-gradient(from -54deg at 50% 100%, transparent, #517aaa30 14deg,
+        #799dc176 35deg, #86adda96 54deg, #7398bd68 74deg, #5879a02a 93deg, transparent 108deg);
+    mask-image: radial-gradient(ellipse 52% 100% at 50% 100%, black 3%, #000c 30%, #0005 65%, transparent);
+    filter: blur(5px);
+}
+html.is-typewriter .writer-main::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse 8px 3px at var(--lamp-x) var(--rail-y), #9dc9f5 76%, transparent),
+        linear-gradient(transparent calc(84% - 1px), #252e39 84%, transparent calc(84% + 1px));
 }
 html.is-typewriter .writer-main-scroll {
     position: relative;
@@ -175,25 +174,22 @@ html.is-typewriter .draft-workspace[data-pane] > .writer-main-scroll {
     display: flex;
 }
 html.is-typewriter .writer-main .writer-page {
-    --focus-y: 72px;
-    --focus-radius: 14px;
     width: 100%;
     max-width: 52rem;
     margin-inline: auto;
     min-height: 100%;
-    padding-top: calc(60px + env(safe-area-inset-top, 0px));
-    padding-bottom: max(48px, env(safe-area-inset-bottom, 0px));
-    color: #f4eee5;
-    caret-color: #fff3db;
+    padding-top: calc(var(--focus-viewport-height, 100dvh) * 0.84 - 1em);
+    padding-bottom: calc(var(--focus-viewport-height, 100dvh) * 0.2);
+    color: #cee7ff;
+    caret-color: #d3ebff;
     box-shadow: none;
     text-shadow: none;
-    /* Fade the text independently of the light behind it. */
-    mask-image: linear-gradient(
-        transparent calc(var(--focus-y) - var(--focus-radius) - 18px),
-        #000 calc(var(--focus-y) - var(--focus-radius)),
-        #000 calc(var(--focus-y) + var(--focus-radius)),
-        transparent calc(var(--focus-y) + var(--focus-radius) + 18px)
-    );
+}
+html.is-typewriter .writer-main-scroll {
+    mask-image:
+        radial-gradient(ellipse clamp(175px, 32vw, 470px) 190px at var(--lamp-x) var(--rail-y),
+            black 7%, #000d 30%, #0006 62%, transparent),
+        linear-gradient(to top, transparent calc(16% - 10px), #0004 calc(16% + 14px), transparent calc(16% + 140px));
 }
 html.is-typewriter .writer-page blockquote {
     color: inherit;

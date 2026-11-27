@@ -53,7 +53,7 @@ import {
 } from "./page/helpers.js?v=41";
 import { createFolderView } from "./page/folder-view.js?v=41";
 import { mountWriterChrome } from "./page/chrome.js?v=48";
-import { mountTypewriter } from "./page/typewriter.js?v=43";
+import { mountTypewriter } from "./page/typewriter.js?v=45";
 import { maybeCreateAutoVersion } from "@alysum/writing-engine/version-api.js";
 import { mountPreviewSession } from "./page/preview-session.js?v=23";
 import { bindPersistHooks } from "./page/persist-hooks.js?v=1";

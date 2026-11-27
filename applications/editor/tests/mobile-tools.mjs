@@ -225,45 +225,19 @@ try {
  const writingPane = focusPage.locator('.writer-main');
  assert.equal(await writingPane.evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(0, 0, 0)');
  assert.match(await writingPane.evaluate(node => getComputedStyle(node, '::before').backgroundImage), /conic-gradient.*at 50% 100%/);
- assert.match(await editor.evaluate(node => getComputedStyle(node).maskImage), /^linear-gradient/);
- const expectSpotlight = index => focusPage.waitForFunction(index => {
-  const page = document.getElementById('pageEditor');
-  const block = page.children[index].getBoundingClientRect();
-  const center = block.top - page.getBoundingClientRect().top + block.height / 2;
-  return Math.abs(parseFloat(page.style.getPropertyValue('--focus-y')) - center) < 1;
- }, index);
- await expectSpotlight(1);
- assert.equal(await editor.innerHTML(), manuscript, 'spotlighting does not change saved markup');
- await focusPage.keyboard.press('ArrowUp');
- await expectSpotlight(0);
- await editor.locator('p').last().click();
- await expectSpotlight(2);
- await focusPage.keyboard.press('End');
+ const lampX = () => writingPane.evaluate(node => parseFloat(node.style.getPropertyValue('--lamp-x')));
+ const firstX = await lampX();
+ await focusPage.keyboard.type('extra');
+ await focusPage.waitForFunction(x => parseFloat(document.querySelector('.writer-main').style.getPropertyValue('--lamp-x')) > x, firstX);
+ const endX = await lampX();
  await focusPage.keyboard.press('Enter');
- await expectSpotlight(3);
+ await focusPage.keyboard.type('A');
+ await focusPage.waitForFunction(x => parseFloat(document.querySelector('.writer-main').style.getPropertyValue('--lamp-x')) < x, endX);
  assert.equal(await editor.locator('p').count(), 4);
-
- await editor.evaluate(node => {
-  for (let i = 0; i < 40; i++) {
-   const paragraph = document.createElement('p');
-   paragraph.textContent = 'Another paragraph';
-   node.append(paragraph);
-  }
-  getSelection().collapse(node.children[14].firstChild, 0);
- });
- await expectSpotlight(14);
- const beamTop = () => writingPane.evaluate(node => parseFloat(node.style.getPropertyValue('--focus-beam-top')));
- const beforeScroll = await beamTop();
- await writingPane.locator('.writer-main-scroll').evaluate(node => { node.scrollTop = 160; });
- await focusPage.waitForFunction(previous => {
-  const top = parseFloat(document.querySelector('.writer-main').style.getPropertyValue('--focus-beam-top'));
-  return Math.abs(previous - top - 160) < 1;
- }, beforeScroll);
- await expectSpotlight(14);
  await focusPage.keyboard.press('Escape');
  assert.equal(await focusPage.locator('#typewriterExit').isVisible(), false);
  assert.equal(await focusPage.locator('#focusMode').evaluate(node => document.activeElement === node), true);
- assert.equal(await editor.evaluate(node => node.style.getPropertyValue('--focus-y')), '');
+ assert.equal(await writingPane.evaluate(node => node.style.getPropertyValue('--lamp-x')), '');
  assert.equal(await focusPage.locator('body').evaluate(node => node.style.background), 'rgb(255, 255, 255)');
  await focusPage.close();
 
