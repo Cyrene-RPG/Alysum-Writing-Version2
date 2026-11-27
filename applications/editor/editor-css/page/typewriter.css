@@ -137,17 +137,25 @@ html.is-typewriter .writer-main::before {
     inset: var(--focus-beam-top, 28px) 0 0;
     z-index: 0;
     pointer-events: none;
-    background:
-        radial-gradient(ellipse 56px 28px at 50% 100%, #c29a6973, transparent),
-        conic-gradient(
-            from calc(0deg - var(--beam-angle)) at 50% 100%,
-            transparent,
-            #7355374d calc(var(--beam-angle) * 0.38),
-            #b28c5e68 var(--beam-angle),
-            #7355374d calc(var(--beam-angle) * 1.62),
-            transparent calc(var(--beam-angle) * 2)
-        );
-    mask-image: linear-gradient(to bottom, transparent, #000 min(40px, 45%));
+    background: conic-gradient(
+        from calc(0deg - var(--beam-angle)) at 50% 100%,
+        transparent,
+        #b4ac9810 calc(var(--beam-angle) * 0.28),
+        #b4ac982f calc(var(--beam-angle) * 0.64),
+        #b4ac984b var(--beam-angle),
+        #b4ac9831 calc(var(--beam-angle) * 1.32),
+        #b4ac980e calc(var(--beam-angle) * 1.76),
+        transparent calc(var(--beam-angle) * 2)
+    );
+    filter: blur(clamp(4px, 0.6vw, 8px));
+    mask-image: linear-gradient(
+        to bottom,
+        transparent,
+        #0006 min(32px, 30%),
+        #000a 42%,
+        #000e 86%,
+        #0009 100%
+    );
 }
 html.is-typewriter .writer-main-scroll {
     position: relative;
